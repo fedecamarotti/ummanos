@@ -7,7 +7,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   body {
     font-family: 'Montserrat', sans-serif;
     background: #d1d1c9;
@@ -16,8 +15,6 @@
     align-items: center;
     justify-content: center;
   }
-
-  /* ── LOGIN ── */
   #login-screen {
     display: flex;
     flex-direction: column;
@@ -25,16 +22,13 @@
     gap: 40px;
     animation: fadeIn 0.8s ease both;
   }
-
   #login-screen img { height: clamp(2.8rem, 8vw, 5.5rem); width: auto; }
-
   #login-form {
     display: flex;
     flex-direction: column;
     gap: 14px;
     width: 260px;
   }
-
   #login-form input {
     font-family: 'Montserrat', sans-serif;
     font-size: 0.8rem;
@@ -48,10 +42,8 @@
     outline: none;
     transition: border-color 0.25s;
   }
-
   #login-form input::placeholder { color: #888; }
   #login-form input:focus { border-color: #777; }
-
   #login-form button {
     font-family: 'Montserrat', sans-serif;
     font-size: 0.7rem;
@@ -67,10 +59,8 @@
     margin-top: 4px;
     transition: background 0.2s, transform 0.15s;
   }
-
   #login-form button:hover { background: #222; }
   #login-form button:active { transform: scale(0.98); }
-
   #error-msg {
     font-size: 0.72rem;
     letter-spacing: 0.06em;
@@ -80,20 +70,14 @@
     opacity: 0;
     transition: opacity 0.3s;
   }
-
   #error-msg.visible { opacity: 1; }
-
-  /* ── ADMIN ── */
   #admin-screen {
     display: none;
     flex-direction: column;
     align-items: center;
     animation: fadeIn 0.8s ease both;
   }
-
   #admin-screen img { height: clamp(2.8rem, 8vw, 5.5rem); width: auto; }
-
-  /* ── PROFESIONALES ── */
   #pro-screen {
     display: none;
     flex-direction: column;
@@ -103,10 +87,7 @@
     padding: 60px 20px 80px;
     animation: fadeIn 0.8s ease both;
   }
-
   #pro-screen img { height: clamp(1.6rem, 4vw, 2.2rem); width: auto; margin-bottom: 48px; }
-
-  /* ── ACCORDION ── */
   .accordion-wrap {
     width: 100%;
     max-width: 640px;
@@ -114,9 +95,7 @@
     flex-direction: column;
     gap: 10px;
   }
-
   .acc-item { border: 1px solid #b5b5ae; border-radius: 3px; overflow: hidden; }
-
   .acc-header {
     width: 100%;
     display: flex;
@@ -134,32 +113,23 @@
     text-align: left;
     transition: background 0.2s;
   }
-
   .acc-header:hover { background: #c8c8c0; }
-
   .acc-arrow { width: 14px; height: 14px; flex-shrink: 0; transition: transform 0.3s ease; }
   .acc-item.open .acc-arrow { transform: rotate(180deg); }
-
   .acc-body {
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.4s ease;
     background: #c8c8c0;
   }
-
   .acc-item.open .acc-body { max-height: 1400px; border-top: 1px solid #b5b5ae; }
-
   .acc-body ul { list-style: none; padding: 8px 0; }
-
-  /* Each file row */
   .acc-body ul li {
     display: flex;
     align-items: center;
     border-bottom: 1px solid rgba(0,0,0,0.06);
   }
-
   .acc-body ul li:last-child { border-bottom: none; }
-
   .file-link {
     flex: 1;
     display: flex;
@@ -174,11 +144,8 @@
     text-decoration: none;
     transition: background 0.15s, color 0.15s;
   }
-
   .file-link:hover { background: #bbbbb3; color: #111; }
   .file-link svg { flex-shrink: 0; opacity: 0.35; }
-
-  /* Action buttons */
   .file-actions {
     display: flex;
     align-items: center;
@@ -186,8 +153,7 @@
     padding: 0 14px 0 0;
     flex-shrink: 0;
   }
-
-  .btn-dl, .btn-wa {
+  .btn-ver, .btn-dl, .btn-open {
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -201,11 +167,10 @@
     white-space: nowrap;
     transition: opacity 0.2s;
   }
-
-  .btn-dl { background: #3a3a38; color: #d1d1c9; }
-  .btn-dl:hover { opacity: 0.78; }
-
-  /* ── LOGOUT ── */
+  .btn-ver  { background: #7a7a72; color: #fff; }
+  .btn-dl   { background: #3a3a38; color: #d1d1c9; }
+  .btn-open { background: #3a3a38; color: #d1d1c9; }
+  .btn-ver:hover, .btn-dl:hover, .btn-open:hover { opacity: 0.75; }
   #logout-btn {
     position: fixed;
     top: 22px;
@@ -221,9 +186,7 @@
     display: none;
     transition: opacity 0.2s;
   }
-
   #logout-btn:hover { opacity: 0.9; }
-
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -231,171 +194,14 @@
 </style>
 </head>
 <body id="body">
-
-  <!-- LOGIN -->
-  <div id="login-screen">
-    <img src="image/logoummanabc.png" alt="ummana" />
-    <div id="login-form">
-      <input type="email" id="username" placeholder="email" autocomplete="off" />
-      <input type="password" id="password" placeholder="contraseña" />
-      <button onclick="handleLogin()">ingresar</button>
-      <p id="error-msg">usuario o contraseña incorrectos</p>
-    </div>
-  </div>
-
-  <!-- ADMIN -->
-  <div id="admin-screen">
-    <img src="image/logoummanabc.png" alt="ummana" />
-  </div>
-
-  <!-- PROFESIONALES -->
-  <div id="pro-screen">
-    <img src="image/logoummanabc.png" alt="ummana" />
-    <div class="accordion-wrap">
-
-      <!-- PLANILLAS GENERALES -->
-      <div class="acc-item">
-        <button class="acc-header" onclick="toggleAcc(this)">PLANILLAS GENERALES<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="acc-body"><ul>
-          <li>
-            <a class="file-link" href="https://docs.google.com/spreadsheets/d/13TBCoaNd9KLnsB5828kBcVkD1iIeMe9k/edit?gid=584419732#gid=584419732" target="_blank">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Planilla de derivación
-            </a>
-          </li>
-        </ul></div>
-      </div>
-
-      <!-- ACTIVIDAD FÍSICA -->
-      <div class="acc-item">
-        <button class="acc-header" onclick="toggleAcc(this)">ACTIVIDAD FÍSICA<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="acc-body"><ul>
-          <li>
-            <a class="file-link" href="planillas/actividad para estimulación vagal.pdf" target="_blank">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Actividad física recomendada para la estimulación vagal
-            </a>
-            <div class="file-actions">
-              <a class="btn-dl" href="planillas/actividad para estimulación vagal.pdf" download>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>descargar
-              </a>
-            </div>
-          </li>
-          <li>
-            <a class="file-link" href="planillas/actividad para mujer sana.pdf" target="_blank">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Actividad física para la mujer sana
-            </a>
-            <div class="file-actions">
-              <a class="btn-dl" href="planillas/actividad para mujer sana.pdf" download>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>descargar
-              </a>
-            </div>
-          </li>
-        </ul></div>
-      </div>
-
-      <!-- COSMETOLOGÍA -->
-      <div class="acc-item">
-        <button class="acc-header" onclick="toggleAcc(this)">COSMETOLOGÍA<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="acc-body"><ul>
-          <li><a class="file-link" href="planillas/metodo-de-trabajo.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Método de trabajo</a></li>
-          <li><a class="file-link" href="planillas/indicaciones-post-peeling.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Indicaciones post peeling</a></li>
-          <li><a class="file-link" href="planillas/indicaciones-post-microneedling.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Indicaciones post microneedling</a></li>
-          <li><a class="file-link" href="planillas/indicaciones-post-radiofrecuencia-endymed.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Indicaciones post radiofrecuencia Endymed</a></li>
-        </ul></div>
-      </div>
-
-      <!-- DERMATOLOGÍA Y ESTÉTICA -->
-      <div class="acc-item">
-        <button class="acc-header" onclick="toggleAcc(this)">DERMATOLOGÍA Y ESTÉTICA<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="acc-body"><ul>
-          <li><a class="file-link" href="planillas/toxina-botulinica-dysport.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Toxina botulínica Dysport</a></li>
-          <li><a class="file-link" href="planillas/peeling-facial.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Peeling facial</a></li>
-          <li><a class="file-link" href="planillas/laser-co2-facial.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Láser CO2 facial</a></li>
-          <li><a class="file-link" href="planillas/laser-co2-cicatrices.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Láser CO2 para cicatrices</a></li>
-          <li><a class="file-link" href="planillas/bioestimuladores.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Bioestimuladores</a></li>
-          <li><a class="file-link" href="planillas/radiofrecuencia-facial-endymed.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Radiofrecuencia facial Endymed</a></li>
-          <li><a class="file-link" href="planillas/radiofrecuencia-corporal-endymed.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Radiofrecuencia corporal Endymed</a></li>
-          <li><a class="file-link" href="planillas/mesoterapia-facial.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Mesoterapia facial</a></li>
-          <li><a class="file-link" href="planillas/mesoterapia-capilar.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Mesoterapia capilar</a></li>
-          <li><a class="file-link" href="planillas/prp-plasma-rico-en-plaquetas.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PRP (Plasma Rico en Plaquetas)</a></li>
-        </ul></div>
-      </div>
-
-      <!-- ESTRÉS ADRENAL -->
-      <div class="acc-item">
-        <button class="acc-header" onclick="toggleAcc(this)">ESTRÉS ADRENAL<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="acc-body"><ul>
-          <li><a class="file-link" href="planillas/protocolo-respiracion-diafragmatica.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Protocolo de respiración diafragmática</a></li>
-          <li><a class="file-link" href="planillas/habitos-relajacion-regulacion.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Hábitos diarios de relajación y regulación</a></li>
-          <li><a class="file-link" href="planillas/protocolo-exposicion-frio.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Protocolo de exposición progresiva al frío</a></li>
-        </ul></div>
-      </div>
-
-      <!-- GINECOLOGÍA -->
-      <div class="acc-item">
-        <button class="acc-header" onclick="toggleAcc(this)">GINECOLOGÍA<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="acc-body"><ul>
-          <li><a class="file-link" href="planillas/pellet-testosterona.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Pellet testosterona</a></li>
-          <li><a class="file-link" href="planillas/laser-genital-femenino.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Láser genital femenino</a></li>
-          <li><a class="file-link" href="planillas/prp-acido-hialuronico-vaginal.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PRP / Ácido hialurónico vaginal</a></li>
-        </ul></div>
-      </div>
-
-      <!-- GASTROENTEROLOGÍA -->
-      <div class="acc-item">
-        <button class="acc-header" onclick="toggleAcc(this)">GASTROENTEROLOGÍA<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="acc-body"><ul>
-          <li><a class="file-link" href="planillas/sibo.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Sibo</a></li>
-          <li><a class="file-link" href="planillas/medidas-naturales-acidez-gastrica.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Medidas naturales para el abordaje de la acidez gástrica</a></li>
-          <li><a class="file-link" href="planillas/medidas-naturales-evacuacion.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Medidas naturales para favorecer la evacuación</a></li>
-        </ul></div>
-      </div>
-
-      <!-- NUTRICIÓN -->
-      <div class="acc-item">
-        <button class="acc-header" onclick="toggleAcc(this)">NUTRICIÓN<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="acc-body"><ul>
-          <li><a class="file-link" href="planillas/organizacion-diaria.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Organización diaria</a></li>
-          <li><a class="file-link" href="planillas/primeras-pautas-alimentacion.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Primeras pautas para comenzar tu cambio en la alimentación</a></li>
-          <li><a class="file-link" href="planillas/pautas-alimentacion-consciente.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Pautas para continuar tu cambio en la alimentación consciente</a></li>
-          <li><a class="file-link" href="planillas/grupos-alimentos-saludable.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Grupos de alimentos para una alimentación saludable</a></li>
-          <li><a class="file-link" href="planillas/alimentacion-anemia-ferropenica.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Sugerencias de alimentación para pacientes con anemia ferropénica</a></li>
-          <li><a class="file-link" href="planillas/estrategias-indice-glucemico.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Estrategias para bajar el índice glucémico de los alimentos</a></li>
-        </ul></div>
-      </div>
-
-      <!-- SUEÑO Y DESCANSO -->
-      <div class="acc-item">
-        <button class="acc-header" onclick="toggleAcc(this)">SUEÑO Y DESCANSO<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="acc-body"><ul>
-          <li><a class="file-link" href="planillas/guia-alimentacion-antiinflamatoria.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Guía de alimentación antiinflamatoria</a></li>
-          <li><a class="file-link" href="planillas/importancia-cortisol-saliva.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>La importancia de evaluar el cortisol en saliva</a></li>
-          <li><a class="file-link" href="planillas/como-usar-xylitol.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Cómo usar tu Xylitol</a></li>
-          <li><a class="file-link" href="planillas/ebook-liberate-alergia-estacional.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Ebook: Liberate de la alergia estacional</a></li>
-          <li><a class="file-link" href="planillas/guia-mejorar-sueno.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Guía para mejorar tu sueño</a></li>
-          <li><a class="file-link" href="planillas/sensor.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Sensor</a></li>
-          <li><a class="file-link" href="planillas/oidos-tapados-destapados.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>¿Por qué se me tapan y destapan los oídos?</a></li>
-          <li><a class="file-link" href="planillas/reglas-higiene-sueno.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Reglas de higiene del sueño</a></li>
-          <li><a class="file-link" href="planillas/tecnicas-estimulacion-vagal-descanso.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Técnicas de estimulación vagal para favorecer el descanso</a></li>
-          <li><a class="file-link" href="planillas/cpap-hoja-educativa-paciente.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Hoja educativa para paciente</a></li>
-          <li><a class="file-link" href="planillas/cpap-guia-entender-usar.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Guía para entender y usar tu CPAP</a></li>
-          <li><a class="file-link" href="planillas/cpap-humidificador.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Humidificador</a></li>
-          <li><a class="file-link" href="planillas/cpap-cambio-mascarilla.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Cuándo debo cambiar la mascarilla</a></li>
-          <li><a class="file-link" href="planillas/cpap-fugas.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Fugas</a></li>
-          <li><a class="file-link" href="planillas/cpap-uso-avion.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Uso en avión</a></li>
-          <li><a class="file-link" href="planillas/cpap-otras-preguntas.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Otras preguntas</a></li>
-          <li><a class="file-link" href="planillas/certificado-constancia-medica.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Certificado / Constancia médica</a></li>
-        </ul></div>
-      </div>
-
-    </div>
-  </div>
-
-  <button id="logout-btn" onclick="handleLogout()">salir</button>
-
-<script type="module">
+<svg style="display:none"><defs>
+<symbol id="ico-pdf" viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline fill="none" stroke="currentColor" stroke-width="2" points="14 2 14 8 20 8"/></symbol>
+<symbol id="ico-eye" viewBox="0 0 24 24" width="10" height="10"><path fill="none" stroke="currentColor" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle fill="none" stroke="currentColor" stroke-width="2" cx="12" cy="12" r="3"/></symbol>
+<symbol id="ico-dl" viewBox="0 0 24 24" width="10" height="10"><path fill="none" stroke="currentColor" stroke-width="2.5" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline fill="none" stroke="currentColor" stroke-width="2.5" points="7 10 12 15 17 10"/><line fill="none" stroke="currentColor" stroke-width="2.5" x1="12" y1="15" x2="12" y2="3"/></symbol>
+</defs></svg>
+<!-- LOGIN --><div id="login-screen"><img src="image/logoummanabc.png" alt="ummana" /><div id="login-form"><input type="email" id="username" placeholder="email" autocomplete="off" /><input type="password" id="password" placeholder="contraseña" /><button onclick="handleLogin()">ingresar</button><p id="error-msg">usuario o contraseña incorrectos</p></div></div><!-- ADMIN --><div id="admin-screen"><img src="image/logoummanabc.png" alt="ummana" /></div><!-- PROFESIONALES --><div id="pro-screen"><img src="image/logoummanabc.png" alt="ummana" /><div class="accordion-wrap"><!-- PLANILLAS GENERALES --><div class="acc-item"><button class="acc-header" onclick="toggleAcc(this)">PLANILLAS GENERALES<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button><div class="acc-body"><ul><li><a class="file-link" href="https://docs.google.com/spreadsheets/d/13TBCoaNd9KLnsB5828kBcVkD1iIeMe9k/edit?gid=584419732#gid=584419732" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Planilla de derivación</a><div class="file-actions"><a class="btn-open" href="https://docs.google.com/spreadsheets/d/13TBCoaNd9KLnsB5828kBcVkD1iIeMe9k/edit?gid=584419732#gid=584419732" target="_blank">abrir planilla</a></div></li><li><a class="file-link" href="planillas/evolución drapp.pdf" target="_blank"><use href="#ico-pdf"></use>Guía de evolución en Dr.App</a><div class="file-actions"><a class="btn-ver" href="planillas/evolución drapp.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/evolución drapp.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/planilla-redes.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Planilla para redes</a><div class="file-actions"><a class="btn-open" href="planillas/planilla-redes.pdf" target="_blank">abrir planilla</a></div></li></ul></div></div><!-- ACTIVIDAD FÍSICA --><div class="acc-item"><button class="acc-header" onclick="toggleAcc(this)">ACTIVIDAD FÍSICA<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button><div class="acc-body"><ul><li><a class="file-link" href="planillas/actividad para estimulación vagal.pdf" target="_blank"><use href="#ico-pdf"></use>Actividad física recomendada para la estimulación vagal</a><div class="file-actions"><a class="btn-ver" href="planillas/actividad para estimulación vagal.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/actividad para estimulación vagal.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/actividad para mujer sana.pdf" target="_blank"><use href="#ico-pdf"></use>Actividad física para la mujer sana</a><div class="file-actions"><a class="btn-ver" href="planillas/actividad para mujer sana.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/actividad para mujer sana.pdf" download><use href="#ico-dl"></use>descargar</a></div></li></ul></div></div><!-- COSMETOLOGÍA --><div class="acc-item"><button class="acc-header" onclick="toggleAcc(this)">COSMETOLOGÍA<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button><div class="acc-body"><ul><li><a class="file-link" href="planillas/CÓMO TRABAJAMOS.pdf" target="_blank"><use href="#ico-pdf"></use>Método de trabajo</a><div class="file-actions"><a class="btn-ver" href="planillas/CÓMO TRABAJAMOS.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/CÓMO TRABAJAMOS.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/POST PEELING.pdf" target="_blank"><use href="#ico-pdf"></use>Indicaciones post peeling</a><div class="file-actions"><a class="btn-ver" href="planillas/POST PEELING.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/POST PEELING.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/POST MICRONEEDLING.pdf" target="_blank"><use href="#ico-pdf"></use>Indicaciones post microneedling</a><div class="file-actions"><a class="btn-ver" href="planillas/POST MICRONEEDLING.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/POST MICRONEEDLING.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/POST RF ENDYMED.pdf" target="_blank"><use href="#ico-pdf"></use>Indicaciones post radiofrecuencia Endymed</a><div class="file-actions"><a class="btn-ver" href="planillas/POST RF ENDYMED.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/POST RF ENDYMED.pdf" download><use href="#ico-dl"></use>descargar</a></div></li></ul></div></div><!-- DERMATOLOGÍA Y ESTÉTICA --><div class="acc-item"><button class="acc-header" onclick="toggleAcc(this)">DERMATOLOGÍA Y ESTÉTICA<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button><div class="acc-body"><ul><li><a class="file-link" href="planillas/toxina-botulinica-dysport.pdf" target="_blank"><use href="#ico-pdf"></use>Toxina botulínica Dysport</a><div class="file-actions"><a class="btn-ver" href="planillas/toxina-botulinica-dysport.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/toxina-botulinica-dysport.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/peeling-facial.pdf" target="_blank"><use href="#ico-pdf"></use>Peeling facial</a><div class="file-actions"><a class="btn-ver" href="planillas/peeling-facial.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/peeling-facial.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/laser-co2-facial.pdf" target="_blank"><use href="#ico-pdf"></use>Láser CO2 facial</a><div class="file-actions"><a class="btn-ver" href="planillas/laser-co2-facial.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/laser-co2-facial.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/laser-co2-cicatrices.pdf" target="_blank"><use href="#ico-pdf"></use>Láser CO2 para cicatrices</a><div class="file-actions"><a class="btn-ver" href="planillas/laser-co2-cicatrices.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/laser-co2-cicatrices.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/bioestimuladores.pdf" target="_blank"><use href="#ico-pdf"></use>Bioestimuladores</a><div class="file-actions"><a class="btn-ver" href="planillas/bioestimuladores.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/bioestimuladores.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/radiofrecuencia-facial-endymed.pdf" target="_blank"><use href="#ico-pdf"></use>Radiofrecuencia facial Endymed</a><div class="file-actions"><a class="btn-ver" href="planillas/radiofrecuencia-facial-endymed.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/radiofrecuencia-facial-endymed.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/radiofrecuencia-corporal-endymed.pdf" target="_blank"><use href="#ico-pdf"></use>Radiofrecuencia corporal Endymed</a><div class="file-actions"><a class="btn-ver" href="planillas/radiofrecuencia-corporal-endymed.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/radiofrecuencia-corporal-endymed.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/mesoterapia-facial.pdf" target="_blank"><use href="#ico-pdf"></use>Mesoterapia facial</a><div class="file-actions"><a class="btn-ver" href="planillas/mesoterapia-facial.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/mesoterapia-facial.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/mesoterapia-capilar.pdf" target="_blank"><use href="#ico-pdf"></use>Mesoterapia capilar</a><div class="file-actions"><a class="btn-ver" href="planillas/mesoterapia-capilar.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/mesoterapia-capilar.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/prp-plasma-rico-en-plaquetas.pdf" target="_blank"><use href="#ico-pdf"></use>PRP (Plasma Rico en Plaquetas)</a><div class="file-actions"><a class="btn-ver" href="planillas/prp-plasma-rico-en-plaquetas.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/prp-plasma-rico-en-plaquetas.pdf" download><use href="#ico-dl"></use>descargar</a></div></li></ul></div></div><!-- ESTRÉS ADRENAL --><div class="acc-item"><button class="acc-header" onclick="toggleAcc(this)">ESTRÉS ADRENAL<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button><div class="acc-body"><ul><li><a class="file-link" href="planillas/protocolo-respiracion-diafragmatica.pdf" target="_blank"><use href="#ico-pdf"></use>Protocolo de respiración diafragmática</a><div class="file-actions"><a class="btn-ver" href="planillas/protocolo-respiracion-diafragmatica.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/protocolo-respiracion-diafragmatica.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/habitos-relajacion-regulacion.pdf" target="_blank"><use href="#ico-pdf"></use>Hábitos diarios de relajación y regulación</a><div class="file-actions"><a class="btn-ver" href="planillas/habitos-relajacion-regulacion.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/habitos-relajacion-regulacion.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/protocolo-exposicion-frio.pdf" target="_blank"><use href="#ico-pdf"></use>Protocolo de exposición progresiva al frío</a><div class="file-actions"><a class="btn-ver" href="planillas/protocolo-exposicion-frio.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/protocolo-exposicion-frio.pdf" download><use href="#ico-dl"></use>descargar</a></div></li></ul></div></div><!-- GINECOLOGÍA --><div class="acc-item"><button class="acc-header" onclick="toggleAcc(this)">GINECOLOGÍA<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button><div class="acc-body"><ul><li><a class="file-link" href="planillas/pellet-testosterona.pdf" target="_blank"><use href="#ico-pdf"></use>Pellet testosterona</a><div class="file-actions"><a class="btn-ver" href="planillas/pellet-testosterona.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/pellet-testosterona.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/laser-genital-femenino.pdf" target="_blank"><use href="#ico-pdf"></use>Láser genital femenino</a><div class="file-actions"><a class="btn-ver" href="planillas/laser-genital-femenino.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/laser-genital-femenino.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/prp-acido-hialuronico-vaginal.pdf" target="_blank"><use href="#ico-pdf"></use>PRP / Ácido hialurónico vaginal</a><div class="file-actions"><a class="btn-ver" href="planillas/prp-acido-hialuronico-vaginal.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/prp-acido-hialuronico-vaginal.pdf" download><use href="#ico-dl"></use>descargar</a></div></li></ul></div></div><!-- GASTROENTEROLOGÍA --><div class="acc-item"><button class="acc-header" onclick="toggleAcc(this)">GASTROENTEROLOGÍA<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button><div class="acc-body"><ul><li><a class="file-link" href="planillas/sibo.pdf" target="_blank"><use href="#ico-pdf"></use>Sibo</a><div class="file-actions"><a class="btn-ver" href="planillas/sibo.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/sibo.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/medidas-naturales-acidez-gastrica.pdf" target="_blank"><use href="#ico-pdf"></use>Medidas naturales para el abordaje de la acidez gástrica</a><div class="file-actions"><a class="btn-ver" href="planillas/medidas-naturales-acidez-gastrica.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/medidas-naturales-acidez-gastrica.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/medidas-naturales-evacuacion.pdf" target="_blank"><use href="#ico-pdf"></use>Medidas naturales para favorecer la evacuación</a><div class="file-actions"><a class="btn-ver" href="planillas/medidas-naturales-evacuacion.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/medidas-naturales-evacuacion.pdf" download><use href="#ico-dl"></use>descargar</a></div></li></ul></div></div><!-- NUTRICIÓN --><div class="acc-item"><button class="acc-header" onclick="toggleAcc(this)">NUTRICIÓN<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button><div class="acc-body"><ul><li><a class="file-link" href="planillas/organizacion-diaria.pdf" target="_blank"><use href="#ico-pdf"></use>Organización diaria</a><div class="file-actions"><a class="btn-ver" href="planillas/organizacion-diaria.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/organizacion-diaria.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/primeras-pautas-alimentacion.pdf" target="_blank"><use href="#ico-pdf"></use>Primeras pautas para comenzar tu cambio en la alimentación</a><div class="file-actions"><a class="btn-ver" href="planillas/primeras-pautas-alimentacion.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/primeras-pautas-alimentacion.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/pautas-alimentacion-consciente.pdf" target="_blank"><use href="#ico-pdf"></use>Pautas para continuar tu cambio en la alimentación consciente</a><div class="file-actions"><a class="btn-ver" href="planillas/pautas-alimentacion-consciente.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/pautas-alimentacion-consciente.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/grupos-alimentos-saludable.pdf" target="_blank"><use href="#ico-pdf"></use>Grupos de alimentos para una alimentación saludable</a><div class="file-actions"><a class="btn-ver" href="planillas/grupos-alimentos-saludable.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/grupos-alimentos-saludable.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/alimentacion-anemia-ferropenica.pdf" target="_blank"><use href="#ico-pdf"></use>Sugerencias de alimentación para pacientes con anemia ferropénica</a><div class="file-actions"><a class="btn-ver" href="planillas/alimentacion-anemia-ferropenica.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/alimentacion-anemia-ferropenica.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/estrategias-indice-glucemico.pdf" target="_blank"><use href="#ico-pdf"></use>Estrategias para bajar el índice glucémico de los alimentos</a><div class="file-actions"><a class="btn-ver" href="planillas/estrategias-indice-glucemico.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/estrategias-indice-glucemico.pdf" download><use href="#ico-dl"></use>descargar</a></div></li></ul></div></div><!-- SUEÑO Y DESCANSO --><div class="acc-item"><button class="acc-header" onclick="toggleAcc(this)">SUEÑO Y DESCANSO<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button><div class="acc-body"><ul><li><a class="file-link" href="planillas/guia-alimentacion-antiinflamatoria.pdf" target="_blank"><use href="#ico-pdf"></use>Guía de alimentación antiinflamatoria</a><div class="file-actions"><a class="btn-ver" href="planillas/guia-alimentacion-antiinflamatoria.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/guia-alimentacion-antiinflamatoria.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/importancia-cortisol-saliva.pdf" target="_blank"><use href="#ico-pdf"></use>La importancia de evaluar el cortisol en saliva</a><div class="file-actions"><a class="btn-ver" href="planillas/importancia-cortisol-saliva.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/importancia-cortisol-saliva.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/como-usar-xylitol.pdf" target="_blank"><use href="#ico-pdf"></use>Cómo usar tu Xylitol</a><div class="file-actions"><a class="btn-ver" href="planillas/como-usar-xylitol.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/como-usar-xylitol.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/ebook-liberate-alergia-estacional.pdf" target="_blank"><use href="#ico-pdf"></use>Ebook: Liberate de la alergia estacional</a><div class="file-actions"><a class="btn-ver" href="planillas/ebook-liberate-alergia-estacional.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/ebook-liberate-alergia-estacional.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/guia-mejorar-sueno.pdf" target="_blank"><use href="#ico-pdf"></use>Guía para mejorar tu sueño</a><div class="file-actions"><a class="btn-ver" href="planillas/guia-mejorar-sueno.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/guia-mejorar-sueno.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/sensor.pdf" target="_blank"><use href="#ico-pdf"></use>Sensor</a><div class="file-actions"><a class="btn-ver" href="planillas/sensor.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/sensor.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/oidos-tapados-destapados.pdf" target="_blank"><use href="#ico-pdf"></use>¿Por qué se me tapan y destapan los oídos?</a><div class="file-actions"><a class="btn-ver" href="planillas/oidos-tapados-destapados.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/oidos-tapados-destapados.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/reglas-higiene-sueno.pdf" target="_blank"><use href="#ico-pdf"></use>Reglas de higiene del sueño</a><div class="file-actions"><a class="btn-ver" href="planillas/reglas-higiene-sueno.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/reglas-higiene-sueno.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/tecnicas-estimulacion-vagal-descanso.pdf" target="_blank"><use href="#ico-pdf"></use>Técnicas de estimulación vagal para favorecer el descanso</a><div class="file-actions"><a class="btn-ver" href="planillas/tecnicas-estimulacion-vagal-descanso.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/tecnicas-estimulacion-vagal-descanso.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/cpap-hoja-educativa-paciente.pdf" target="_blank"><use href="#ico-pdf"></use>CPAP: Hoja educativa para paciente</a><div class="file-actions"><a class="btn-ver" href="planillas/cpap-hoja-educativa-paciente.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/cpap-hoja-educativa-paciente.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/cpap-guia-entender-usar.pdf" target="_blank"><use href="#ico-pdf"></use>CPAP: Guía para entender y usar tu CPAP</a><div class="file-actions"><a class="btn-ver" href="planillas/cpap-guia-entender-usar.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/cpap-guia-entender-usar.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/cpap-humidificador.pdf" target="_blank"><use href="#ico-pdf"></use>CPAP: Humidificador</a><div class="file-actions"><a class="btn-ver" href="planillas/cpap-humidificador.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/cpap-humidificador.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/cpap-cambio-mascarilla.pdf" target="_blank"><use href="#ico-pdf"></use>CPAP: Cuándo debo cambiar la mascarilla</a><div class="file-actions"><a class="btn-ver" href="planillas/cpap-cambio-mascarilla.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/cpap-cambio-mascarilla.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/cpap-fugas.pdf" target="_blank"><use href="#ico-pdf"></use>CPAP: Fugas</a><div class="file-actions"><a class="btn-ver" href="planillas/cpap-fugas.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/cpap-fugas.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/cpap-uso-avion.pdf" target="_blank"><use href="#ico-pdf"></use>CPAP: Uso en avión</a><div class="file-actions"><a class="btn-ver" href="planillas/cpap-uso-avion.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/cpap-uso-avion.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/cpap-otras-preguntas.pdf" target="_blank"><use href="#ico-pdf"></use>CPAP: Otras preguntas</a><div class="file-actions"><a class="btn-ver" href="planillas/cpap-otras-preguntas.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/cpap-otras-preguntas.pdf" download><use href="#ico-dl"></use>descargar</a></div></li><li><a class="file-link" href="planillas/certificado-constancia-medica.pdf" target="_blank"><use href="#ico-pdf"></use>Certificado / Constancia médica</a><div class="file-actions"><a class="btn-ver" href="planillas/certificado-constancia-medica.pdf" target="_blank"><use href="#ico-eye"></use>ver</a><a class="btn-dl" href="planillas/certificado-constancia-medica.pdf" download><use href="#ico-dl"></use>descargar</a></div></li></ul></div></div></div></div><button id="logout-btn" onclick="handleLogout()">salir</button><script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
   const firebaseConfig = {
     apiKey: "AIzaSyCp3Wy9c6UYiNMlEFLwfNwjpHdufjYbhr4",
     authDomain: "ummanainterno.firebaseapp.com",
@@ -404,22 +210,17 @@
     messagingSenderId: "224573570065",
     appId: "1:224573570065:web:bfe3a723b7316ed6e245b0"
   };
-
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
-
-  // Rol según email
   function getRoleFromEmail(email) {
     if (email === 'administracion@ummana.ar') return 'admin';
     if (email === 'profesionales@ummana.ar') return 'pro';
     return null;
   }
-
   async function handleLogin() {
     const email = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
     const err = document.getElementById('error-msg');
-
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
       const role = getRoleFromEmail(result.user.email);
@@ -431,7 +232,6 @@
       document.getElementById('password').focus();
     }
   }
-
   function showScreen(role) {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('logout-btn').style.display = 'block';
@@ -443,7 +243,6 @@
       document.body.style.alignItems = 'flex-start';
     }
   }
-
   async function handleLogout() {
     await signOut(auth);
     document.getElementById('admin-screen').style.display = 'none';
@@ -455,16 +254,12 @@
     document.getElementById('password').value = '';
     document.querySelectorAll('.acc-item').forEach(i => i.classList.remove('open'));
   }
-
   function toggleAcc(btn) {
     btn.parentElement.classList.toggle('open');
   }
-
-  // Exponer funciones al HTML
   window.handleLogin = handleLogin;
   window.handleLogout = handleLogout;
   window.toggleAcc = toggleAcc;
-
   ['username','password'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => {
       if (e.key === 'Enter') handleLogin();
