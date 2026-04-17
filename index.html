@@ -26,10 +26,7 @@
     animation: fadeIn 0.8s ease both;
   }
 
-  #login-screen img {
-    height: clamp(2.8rem, 8vw, 5.5rem);
-    width: auto;
-  }
+  #login-screen img { height: clamp(2.8rem, 8vw, 5.5rem); width: auto; }
 
   #login-form {
     display: flex;
@@ -94,10 +91,7 @@
     animation: fadeIn 0.8s ease both;
   }
 
-  #admin-screen img {
-    height: clamp(2.8rem, 8vw, 5.5rem);
-    width: auto;
-  }
+  #admin-screen img { height: clamp(2.8rem, 8vw, 5.5rem); width: auto; }
 
   /* ── PROFESIONALES ── */
   #pro-screen {
@@ -110,25 +104,18 @@
     animation: fadeIn 0.8s ease both;
   }
 
-  #pro-screen img {
-    height: clamp(1.6rem, 4vw, 2.2rem);
-    width: auto;
-    margin-bottom: 48px;
-  }
+  #pro-screen img { height: clamp(1.6rem, 4vw, 2.2rem); width: auto; margin-bottom: 48px; }
 
+  /* ── ACCORDION ── */
   .accordion-wrap {
     width: 100%;
-    max-width: 620px;
+    max-width: 640px;
     display: flex;
     flex-direction: column;
     gap: 10px;
   }
 
-  .acc-item {
-    border: 1px solid #b5b5ae;
-    border-radius: 3px;
-    overflow: hidden;
-  }
+  .acc-item { border: 1px solid #b5b5ae; border-radius: 3px; overflow: hidden; }
 
   .acc-header {
     width: 100%;
@@ -150,13 +137,7 @@
 
   .acc-header:hover { background: #c8c8c0; }
 
-  .acc-arrow {
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
-    transition: transform 0.3s ease;
-  }
-
+  .acc-arrow { width: 14px; height: 14px; flex-shrink: 0; transition: transform 0.3s ease; }
   .acc-item.open .acc-arrow { transform: rotate(180deg); }
 
   .acc-body {
@@ -166,18 +147,25 @@
     background: #c8c8c0;
   }
 
-  .acc-item.open .acc-body {
-    max-height: 1200px;
-    border-top: 1px solid #b5b5ae;
-  }
+  .acc-item.open .acc-body { max-height: 1400px; border-top: 1px solid #b5b5ae; }
 
   .acc-body ul { list-style: none; padding: 8px 0; }
 
-  .acc-body ul li a {
+  /* Each file row */
+  .acc-body ul li {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+
+  .acc-body ul li:last-child { border-bottom: none; }
+
+  .file-link {
+    flex: 1;
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 11px 22px;
+    padding: 11px 12px 11px 22px;
     font-family: 'Montserrat', sans-serif;
     font-size: 0.75rem;
     font-weight: 400;
@@ -187,8 +175,35 @@
     transition: background 0.15s, color 0.15s;
   }
 
-  .acc-body ul li a:hover { background: #bbbbb3; color: #111; }
-  .acc-body ul li a svg { flex-shrink: 0; opacity: 0.35; }
+  .file-link:hover { background: #bbbbb3; color: #111; }
+  .file-link svg { flex-shrink: 0; opacity: 0.35; }
+
+  /* Action buttons */
+  .file-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 14px 0 0;
+    flex-shrink: 0;
+  }
+
+  .btn-dl, .btn-wa {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 9px;
+    border-radius: 2px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+  }
+
+  .btn-dl { background: #3a3a38; color: #d1d1c9; }
+  .btn-dl:hover { opacity: 0.78; }
 
   /* ── LOGOUT ── */
   #logout-btn {
@@ -202,12 +217,12 @@
     background: none;
     border: none;
     cursor: pointer;
-    opacity: 0.5;
+    opacity: 0.4;
     display: none;
     transition: opacity 0.2s;
   }
 
-  #logout-btn:hover { opacity: 1; }
+  #logout-btn:hover { opacity: 0.9; }
 
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
@@ -238,106 +253,137 @@
     <img src="image/logoummanabc.png" alt="ummana" />
     <div class="accordion-wrap">
 
+      <!-- PLANILLAS GENERALES -->
       <div class="acc-item">
         <button class="acc-header" onclick="toggleAcc(this)">PLANILLAS GENERALES<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="acc-body"><ul>
-          <li><a href="https://docs.google.com/spreadsheets/d/13TBCoaNd9KLnsB5828kBcVkD1iIeMe9k/edit?gid=584419732#gid=584419732" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Planilla de derivación</a></li>
+          <li>
+            <a class="file-link" href="https://docs.google.com/spreadsheets/d/13TBCoaNd9KLnsB5828kBcVkD1iIeMe9k/edit?gid=584419732#gid=584419732" target="_blank">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Planilla de derivación
+            </a>
+          </li>
         </ul></div>
       </div>
 
+      <!-- ACTIVIDAD FÍSICA -->
       <div class="acc-item">
         <button class="acc-header" onclick="toggleAcc(this)">ACTIVIDAD FÍSICA<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="acc-body"><ul>
-          <li><a href="planillas/actividad para estimulación vagal.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Actividad física recomendada para la estimulación vagal</a></li>
-          <li><a href="planillas/actividad para mujer sana.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Actividad física para la mujer sana</a></li>
+          <li>
+            <a class="file-link" href="planillas/actividad para estimulación vagal.pdf" target="_blank">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Actividad física recomendada para la estimulación vagal
+            </a>
+            <div class="file-actions">
+              <a class="btn-dl" href="planillas/actividad para estimulación vagal.pdf" download>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>descargar
+              </a>
+            </div>
+          </li>
+          <li>
+            <a class="file-link" href="planillas/actividad para mujer sana.pdf" target="_blank">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Actividad física para la mujer sana
+            </a>
+            <div class="file-actions">
+              <a class="btn-dl" href="planillas/actividad para mujer sana.pdf" download>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>descargar
+              </a>
+            </div>
+          </li>
         </ul></div>
       </div>
 
+      <!-- COSMETOLOGÍA -->
       <div class="acc-item">
         <button class="acc-header" onclick="toggleAcc(this)">COSMETOLOGÍA<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="acc-body"><ul>
-          <li><a href="pdfs/metodo-de-trabajo.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Método de trabajo</a></li>
-          <li><a href="pdfs/indicaciones-post-peeling.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Indicaciones post peeling</a></li>
-          <li><a href="pdfs/indicaciones-post-microneedling.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Indicaciones post microneedling</a></li>
-          <li><a href="pdfs/indicaciones-post-radiofrecuencia-endymed.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Indicaciones post radiofrecuencia Endymed</a></li>
+          <li><a class="file-link" href="planillas/metodo-de-trabajo.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Método de trabajo</a></li>
+          <li><a class="file-link" href="planillas/indicaciones-post-peeling.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Indicaciones post peeling</a></li>
+          <li><a class="file-link" href="planillas/indicaciones-post-microneedling.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Indicaciones post microneedling</a></li>
+          <li><a class="file-link" href="planillas/indicaciones-post-radiofrecuencia-endymed.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Indicaciones post radiofrecuencia Endymed</a></li>
         </ul></div>
       </div>
 
+      <!-- DERMATOLOGÍA Y ESTÉTICA -->
       <div class="acc-item">
         <button class="acc-header" onclick="toggleAcc(this)">DERMATOLOGÍA Y ESTÉTICA<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="acc-body"><ul>
-          <li><a href="pdfs/toxina-botulinica-dysport.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Toxina botulínica Dysport</a></li>
-          <li><a href="pdfs/peeling-facial.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Peeling facial</a></li>
-          <li><a href="pdfs/laser-co2-facial.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Láser CO2 facial</a></li>
-          <li><a href="pdfs/laser-co2-cicatrices.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Láser CO2 para cicatrices</a></li>
-          <li><a href="pdfs/bioestimuladores.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Bioestimuladores</a></li>
-          <li><a href="pdfs/radiofrecuencia-facial-endymed.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Radiofrecuencia facial Endymed</a></li>
-          <li><a href="pdfs/radiofrecuencia-corporal-endymed.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Radiofrecuencia corporal Endymed</a></li>
-          <li><a href="pdfs/mesoterapia-facial.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Mesoterapia facial</a></li>
-          <li><a href="pdfs/mesoterapia-capilar.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Mesoterapia capilar</a></li>
-          <li><a href="pdfs/prp-plasma-rico-en-plaquetas.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PRP (Plasma Rico en Plaquetas)</a></li>
+          <li><a class="file-link" href="planillas/toxina-botulinica-dysport.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Toxina botulínica Dysport</a></li>
+          <li><a class="file-link" href="planillas/peeling-facial.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Peeling facial</a></li>
+          <li><a class="file-link" href="planillas/laser-co2-facial.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Láser CO2 facial</a></li>
+          <li><a class="file-link" href="planillas/laser-co2-cicatrices.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Láser CO2 para cicatrices</a></li>
+          <li><a class="file-link" href="planillas/bioestimuladores.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Bioestimuladores</a></li>
+          <li><a class="file-link" href="planillas/radiofrecuencia-facial-endymed.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Radiofrecuencia facial Endymed</a></li>
+          <li><a class="file-link" href="planillas/radiofrecuencia-corporal-endymed.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Radiofrecuencia corporal Endymed</a></li>
+          <li><a class="file-link" href="planillas/mesoterapia-facial.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Mesoterapia facial</a></li>
+          <li><a class="file-link" href="planillas/mesoterapia-capilar.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Mesoterapia capilar</a></li>
+          <li><a class="file-link" href="planillas/prp-plasma-rico-en-plaquetas.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PRP (Plasma Rico en Plaquetas)</a></li>
         </ul></div>
       </div>
 
+      <!-- ESTRÉS ADRENAL -->
       <div class="acc-item">
         <button class="acc-header" onclick="toggleAcc(this)">ESTRÉS ADRENAL<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="acc-body"><ul>
-          <li><a href="pdfs/protocolo-respiracion-diafragmatica.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Protocolo de respiración diafragmática</a></li>
-          <li><a href="pdfs/habitos-relajacion-regulacion.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Hábitos diarios de relajación y regulación</a></li>
-          <li><a href="pdfs/protocolo-exposicion-frio.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Protocolo de exposición progresiva al frío</a></li>
+          <li><a class="file-link" href="planillas/protocolo-respiracion-diafragmatica.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Protocolo de respiración diafragmática</a></li>
+          <li><a class="file-link" href="planillas/habitos-relajacion-regulacion.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Hábitos diarios de relajación y regulación</a></li>
+          <li><a class="file-link" href="planillas/protocolo-exposicion-frio.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Protocolo de exposición progresiva al frío</a></li>
         </ul></div>
       </div>
 
+      <!-- GINECOLOGÍA -->
       <div class="acc-item">
         <button class="acc-header" onclick="toggleAcc(this)">GINECOLOGÍA<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="acc-body"><ul>
-          <li><a href="pdfs/pellet-testosterona.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Pellet testosterona</a></li>
-          <li><a href="pdfs/laser-genital-femenino.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Láser genital femenino</a></li>
-          <li><a href="pdfs/prp-acido-hialuronico-vaginal.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PRP / Ácido hialurónico vaginal</a></li>
+          <li><a class="file-link" href="planillas/pellet-testosterona.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Pellet testosterona</a></li>
+          <li><a class="file-link" href="planillas/laser-genital-femenino.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Láser genital femenino</a></li>
+          <li><a class="file-link" href="planillas/prp-acido-hialuronico-vaginal.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PRP / Ácido hialurónico vaginal</a></li>
         </ul></div>
       </div>
 
+      <!-- GASTROENTEROLOGÍA -->
       <div class="acc-item">
         <button class="acc-header" onclick="toggleAcc(this)">GASTROENTEROLOGÍA<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="acc-body"><ul>
-          <li><a href="pdfs/sibo.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Sibo</a></li>
-          <li><a href="pdfs/medidas-naturales-acidez-gastrica.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Medidas naturales para el abordaje de la acidez gástrica</a></li>
-          <li><a href="pdfs/medidas-naturales-evacuacion.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Medidas naturales para favorecer la evacuación</a></li>
+          <li><a class="file-link" href="planillas/sibo.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Sibo</a></li>
+          <li><a class="file-link" href="planillas/medidas-naturales-acidez-gastrica.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Medidas naturales para el abordaje de la acidez gástrica</a></li>
+          <li><a class="file-link" href="planillas/medidas-naturales-evacuacion.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Medidas naturales para favorecer la evacuación</a></li>
         </ul></div>
       </div>
 
+      <!-- NUTRICIÓN -->
       <div class="acc-item">
         <button class="acc-header" onclick="toggleAcc(this)">NUTRICIÓN<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="acc-body"><ul>
-          <li><a href="pdfs/organizacion-diaria.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Organización diaria</a></li>
-          <li><a href="pdfs/primeras-pautas-alimentacion.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Primeras pautas para comenzar tu cambio en la alimentación</a></li>
-          <li><a href="pdfs/pautas-alimentacion-consciente.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Pautas para continuar tu cambio en la alimentación consciente</a></li>
-          <li><a href="pdfs/grupos-alimentos-saludable.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Grupos de alimentos para una alimentación saludable</a></li>
-          <li><a href="pdfs/alimentacion-anemia-ferropenica.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Sugerencias de alimentación para pacientes con anemia ferropénica</a></li>
-          <li><a href="pdfs/estrategias-indice-glucemico.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Estrategias para bajar el índice glucémico de los alimentos</a></li>
+          <li><a class="file-link" href="planillas/organizacion-diaria.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Organización diaria</a></li>
+          <li><a class="file-link" href="planillas/primeras-pautas-alimentacion.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Primeras pautas para comenzar tu cambio en la alimentación</a></li>
+          <li><a class="file-link" href="planillas/pautas-alimentacion-consciente.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Pautas para continuar tu cambio en la alimentación consciente</a></li>
+          <li><a class="file-link" href="planillas/grupos-alimentos-saludable.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Grupos de alimentos para una alimentación saludable</a></li>
+          <li><a class="file-link" href="planillas/alimentacion-anemia-ferropenica.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Sugerencias de alimentación para pacientes con anemia ferropénica</a></li>
+          <li><a class="file-link" href="planillas/estrategias-indice-glucemico.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Estrategias para bajar el índice glucémico de los alimentos</a></li>
         </ul></div>
       </div>
 
+      <!-- SUEÑO Y DESCANSO -->
       <div class="acc-item">
         <button class="acc-header" onclick="toggleAcc(this)">SUEÑO Y DESCANSO<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="acc-body"><ul>
-          <li><a href="pdfs/guia-alimentacion-antiinflamatoria.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Guía de alimentación antiinflamatoria</a></li>
-          <li><a href="pdfs/importancia-cortisol-saliva.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>La importancia de evaluar el cortisol en saliva</a></li>
-          <li><a href="pdfs/como-usar-xylitol.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Cómo usar tu Xylitol</a></li>
-          <li><a href="pdfs/ebook-liberate-alergia-estacional.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Ebook: Liberate de la alergia estacional</a></li>
-          <li><a href="pdfs/guia-mejorar-sueno.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Guía para mejorar tu sueño</a></li>
-          <li><a href="pdfs/sensor.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Sensor</a></li>
-          <li><a href="pdfs/oidos-tapados-destapados.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>¿Por qué se me tapan y destapan los oídos?</a></li>
-          <li><a href="pdfs/reglas-higiene-sueno.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Reglas de higiene del sueño</a></li>
-          <li><a href="pdfs/tecnicas-estimulacion-vagal-descanso.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Técnicas de estimulación vagal para favorecer el descanso</a></li>
-          <li><a href="pdfs/cpap-hoja-educativa-paciente.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Hoja educativa para paciente</a></li>
-          <li><a href="pdfs/cpap-guia-entender-usar.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Guía para entender y usar tu CPAP</a></li>
-          <li><a href="pdfs/cpap-humidificador.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Humidificador</a></li>
-          <li><a href="pdfs/cpap-cambio-mascarilla.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Cuándo debo cambiar la mascarilla</a></li>
-          <li><a href="pdfs/cpap-fugas.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Fugas</a></li>
-          <li><a href="pdfs/cpap-uso-avion.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Uso en avión</a></li>
-          <li><a href="pdfs/cpap-otras-preguntas.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Otras preguntas</a></li>
-          <li><a href="pdfs/certificado-constancia-medica.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Certificado / Constancia médica</a></li>
+          <li><a class="file-link" href="planillas/guia-alimentacion-antiinflamatoria.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Guía de alimentación antiinflamatoria</a></li>
+          <li><a class="file-link" href="planillas/importancia-cortisol-saliva.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>La importancia de evaluar el cortisol en saliva</a></li>
+          <li><a class="file-link" href="planillas/como-usar-xylitol.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Cómo usar tu Xylitol</a></li>
+          <li><a class="file-link" href="planillas/ebook-liberate-alergia-estacional.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Ebook: Liberate de la alergia estacional</a></li>
+          <li><a class="file-link" href="planillas/guia-mejorar-sueno.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Guía para mejorar tu sueño</a></li>
+          <li><a class="file-link" href="planillas/sensor.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Sensor</a></li>
+          <li><a class="file-link" href="planillas/oidos-tapados-destapados.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>¿Por qué se me tapan y destapan los oídos?</a></li>
+          <li><a class="file-link" href="planillas/reglas-higiene-sueno.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Reglas de higiene del sueño</a></li>
+          <li><a class="file-link" href="planillas/tecnicas-estimulacion-vagal-descanso.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Técnicas de estimulación vagal para favorecer el descanso</a></li>
+          <li><a class="file-link" href="planillas/cpap-hoja-educativa-paciente.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Hoja educativa para paciente</a></li>
+          <li><a class="file-link" href="planillas/cpap-guia-entender-usar.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Guía para entender y usar tu CPAP</a></li>
+          <li><a class="file-link" href="planillas/cpap-humidificador.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Humidificador</a></li>
+          <li><a class="file-link" href="planillas/cpap-cambio-mascarilla.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Cuándo debo cambiar la mascarilla</a></li>
+          <li><a class="file-link" href="planillas/cpap-fugas.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Fugas</a></li>
+          <li><a class="file-link" href="planillas/cpap-uso-avion.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Uso en avión</a></li>
+          <li><a class="file-link" href="planillas/cpap-otras-preguntas.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CPAP: Otras preguntas</a></li>
+          <li><a class="file-link" href="planillas/certificado-constancia-medica.pdf" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Certificado / Constancia médica</a></li>
         </ul></div>
       </div>
 
