@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ummana</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Montserrat', sans-serif;
+    background: #fcfaf8;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #login-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+    animation: fadeIn 0.8s ease both;
+  }
+  #login-screen img { height: clamp(2.8rem, 8vw, 5.5rem); width: auto; filter: brightness(0) saturate(100%) invert(18%) sepia(5%) saturate(500%) hue-rotate(10deg) brightness(95%); }
+  #login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 260px;
+  }
+  #login-form input {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    padding: 12px 16px;
+    border: 1px solid #e0ddd9;
+    border-radius: 2px;
+    background: #fcfaf8;
+    color: #111;
+    outline: none;
+    transition: border-color 0.25s;
+  }
+  #login-form input::placeholder { color: #888; }
+  #login-form input:focus { border-color: #777; }
+  #login-form button {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.15em;
+    text-transform: lowercase;
+    padding: 12px 16px;
+    background: #3a3a38;
+    color: #fcfaf8;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: background 0.2s, transform 0.15s;
+  }
+  #login-form button:hover { background: #222; }
+  #login-form button:active { transform: scale(0.98); }
+  #error-msg {
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: #9a3030;
+    text-align: center;
+    min-height: 1rem;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  #error-msg.visible { opacity: 1; }
+  #admin-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    animation: fadeIn 0.8s ease both;
+  }
+  #admin-screen img { height: clamp(2.8rem, 8vw, 5.5rem); width: auto; filter: brightness(0) saturate(100%) invert(18%) sepia(5%) saturate(500%) hue-rotate(10deg) brightness(95%); }
+  #pro-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    min-height: 100vh;
+    padding: 60px 20px 80px;
+    animation: fadeIn 0.8s ease both;
+  }
+  #pro-screen img { height: clamp(1.6rem, 4vw, 2.2rem); width: auto; margin-bottom: 36px; filter: brightness(0) saturate(100%) invert(18%) sepia(5%) saturate(500%) hue-rotate(10deg) brightness(95%); }
+
+  .quick-links {
+    width: 100%;
+    max-width: 640px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 28px;
+  }
+
+  .quick-links a {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    color: #3a3a38;
+    text-decoration: none;
+    padding: 10px 4px;
+    border-bottom: 1px solid #e0ddd9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: color 0.2s, padding-left 0.2s;
+  }
+
+  .quick-links a:first-child { border-top: 1px solid #e0ddd9; }
+
+  .quick-links a::after {
+    content: '↗';
+    font-size: 0.7rem;
+    opacity: 0.35;
+  }
+
+  .quick-links a:hover {
+    color: #111;
+    padding-left: 6px;
+  }
+  .info-section {
+    width: 100%;
+    max-width: 640px;
+    margin-bottom: 32px;
+    border: 1px solid #e0ddd9;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .info-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    color: #222;
+    padding: 14px 22px 10px;
+    background: #fcfaf8;
+  }
+
+  .info-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 22px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    color: #3a3a38;
+    text-decoration: none;
+    background: #f4f2ef;
+    border-top: 1px solid #e0ddd9;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .info-link::after { content: '↗'; font-size: 0.7rem; opacity: 0.4; }
+  .info-link:hover { background: #eeece9; color: #111; }
+
+  .accordion-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .acc-item { border: 1px solid #e0ddd9; border-radius: 3px; overflow: hidden; }
+  .acc-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    background: #fcfaf8;
+    border: none;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    color: #222;
+    text-align: left;
+    transition: background 0.2s;
+  }
+  .acc-header:hover { background: #f4f2ef; }
+  .acc-arrow { width: 14px; height: 14px; flex-shrink: 0; transition: transform 0.3s ease; }
+  .acc-item.open .acc-arrow { transform: rotate(180deg); }
+  .acc-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+    background: #f4f2ef;
+  }
+  .acc-item.open .acc-body { max-height: 1400px; border-top: 1px solid #e0ddd9; }
+  .acc-body ul { list-style: none; padding: 8px 0; }
+  .acc-body ul li {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+  }
+  .acc-body ul li:last-child { border-bottom: none; }
+  .file-name {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 12px 11px 22px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    color: #333;
+  }
+  .file-name svg { flex-shrink: 0; opacity: 0.6; }
+  .file-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 14px 0 0;
+    flex-shrink: 0;
+  }
+  .btn-ver, .btn-dl, .btn-open {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 9px;
+    border-radius: 2px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+  }
+  .btn-ver  { background: #7a7a72; color: #fff; }
+  .btn-dl   { background: #3a3a38; color: #fcfaf8; }
+  .btn-open { background: #3a3a38; color: #fcfaf8; }
+  .btn-ver:hover, .btn-dl:hover, .btn-open:hover { opacity: 0.75; }
+  #logout-btn {
+    position: fixed;
+    top: 22px;
+    right: 24px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    color: #555;
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0.4;
+    display: none;
+    transition: opacity 0.2s;
+  }
+  #logout-btn:hover { opacity: 0.9; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body id="body">
+<svg style="display:none"><defs>
+<symbol id="ico-sheet" viewBox="0 0 24 24" width="14" height="14"><rect fill="none" stroke="currentColor" stroke-width="2" x="3" y="3" width="18" height="18" rx="2"/><path fill="none" stroke="currentColor" stroke-width="2" d="M3 9h18M9 21V9"/></symbol><symbol id="ico-pdf" viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline fill="none" stroke="currentColor" stroke-width="2" points="14 2 14 8 20 8"/></symbol>
+<symbol id="ico-eye" viewBox="0 0 24 24" width="10" height="10"><path fill="none" stroke="currentColor" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle fill="none" stroke="currentColor" stroke-width="2" cx="12" cy="12" r="3"/></symbol>
+<symbol id="ico-dl" viewBox="0 0 24 24" width="10" height="10"><path fill="none" stroke="currentColor" stroke-width="2.5" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline fill="none" stroke="currentColor" stroke-width="2.5" points="7 10 12 15 17 10"/><line fill="none" stroke="currentColor" stroke-width="2.5" x1="12" y1="15" x2="12" y2="3"/></symbol>
+</defs></svg>
+<!-- LOGIN --><div id="login-screen"><img src="image/logoummanabc.png" alt="ummana" /><div id="login-form"><input type="email" id="username" placeholder="email" autocomplete="off" /><input type="password" id="password" placeholder="contraseña" /><button onclick="handleLogin()">ingresar</button><p id="error-msg">usuario o contraseña incorrectos</p></div></div><!-- ADMIN --><div id="admin-screen"><img src="image/logoummanabc.png" alt="ummana" /></div><!-- PROFESIONALES --><div id="pro-screen"><img src="image/logoummanabc.png" alt="ummana" /><div class="info-section"><p class="info-title">INFORMACIÓN IMPORTANTE PARA PROFESIONALES</p><a class="info-link" href="planillas/ummanaguiaevoluciondrapp.png" target="_blank">Guía de evolución en Dr.App</a><a class="info-link" href="planillas/ummanaordendeconsultorios.png" target="_blank">Orden de consultorios e insumos</a></div><div class="accordion-wrap"><!-- PLANILLAS GENERALES --><div class="acc-item"><button class="acc-header" onclick="toggleAcc(this)">PLANILLAS GENERALES<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button><div class="acc-body"><ul><li><span class="file-name"><svg width="18" height="18"><use href="#ico-sheet"/></svg>Planilla de derivación</span><div class="file-actions"><a class="btn-open" href="https://docs.google.com/spreadsheets/d/13TBCoaNd9KLnsB5828kBcVkD1iIeMe9k/edit?gid=584419732#gid=584419732" target="_blank">abrir planilla</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-sheet"/></svg>Planilla para redes</span><div class="file-actions"><a class="btn-open" href="planillas/planilla-redes.pdf" target="_blank">abrir planilla</a></div></li></ul></div></div><!-- ACTIVIDAD FÍSICA --><div class="acc-item"><button class="acc-header" onclick="toggleAcc(this)">ACTIVIDAD FÍSICA<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button><div class="acc-body"><ul><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Actividad física para la mujer sana</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanaactividadmujersana.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanaactividadmujersana.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Actividad física recomendada para la estimulación vagal</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanaestimulacionvagal.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanaestimulacionvagal.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li></ul></div></div><!-- COSMETOLOGÍA --><div class="acc-item"><button class="acc-header" onclick="toggleAcc(this)">COSMETOLOGÍA<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button><div class="acc-body"><ul><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Método de trabajo</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanacosmetologia.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanacosmetologia.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Indicaciones post microneedling</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanacuidadospostmicro.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanacuidadospostmicro.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Indicaciones post peeling</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanacuidadospostpeeling.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanacuidadospostpeeling.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Indicaciones post radiofrecuencia Endymed</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanacuidadospostradio.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanacuidadospostradio.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li></ul></div></div><!-- DERMATOLOGÍA Y ESTÉTICA --><div class="acc-item"><button class="acc-header" onclick="toggleAcc(this)">DERMATOLOGÍA Y ESTÉTICA<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button><div class="acc-body"><ul><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Bioestimuladores</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanabioestimuladores.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanabioestimuladores.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Láser CO2 para cicatrices</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanalasercicatrices.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanalasercicatrices.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Láser CO2 facial</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanalaserfacial.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanalaserfacial.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Mesoterapia capilar</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanamesocapilar.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanamesocapilar.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Mesoterapia facial</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanamesofacial.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanamesofacial.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Peeling facial</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanapeelingfacial.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanapeelingfacial.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>PRP (Plasma Rico en Plaquetas)</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanaprp.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanaprp.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Radiofrecuencia corporal Endymed</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanaradiocorporal.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanaradiocorporal.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Radiofrecuencia facial Endymed</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanaradiofacial.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanaradiofacial.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Toxina botulínica Dysport</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanatoxinadysport.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanatoxinadysport.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li></ul></div></div><!-- ESTRÉS ADRENAL --><div class="acc-item"><button class="acc-header" onclick="toggleAcc(this)">ESTRÉS ADRENAL<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button><div class="acc-body"><ul><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Hábitos diarios de relajación y regulación</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanahabitosdiariosrelajacion.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanahabitosdiariosrelajacion.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Protocolo de exposición progresiva al frío</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanaprotocoloexposicionalfrio.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanaprotocoloexposicionalfrio.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Protocolo de respiración diafragmática</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanaprotocolorespiracionfragmatica.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanaprotocolorespiracionfragmatica.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li></ul></div></div><!-- GINECOLOGÍA --><div class="acc-item"><button class="acc-header" onclick="toggleAcc(this)">GINECOLOGÍA<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button><div class="acc-body"><ul><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Láser genital femenino</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanalasergenitalfemenino.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanalasergenitalfemenino.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>PRP / Ácido hialurónico vaginal</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanaprpacidohialuronico.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanaprpacidohialuronico.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Pellet testosterona</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanapellettestosterona.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanapellettestosterona.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li></ul></div></div><!-- GASTROENTEROLOGÍA --><div class="acc-item"><button class="acc-header" onclick="toggleAcc(this)">GASTROENTEROLOGÍA<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button><div class="acc-body"><ul><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Indicaciones Test de aire aspirado</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanatestdehidrogeno.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanatestdehidrogeno.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Medidas naturales para el abordaje de la acidez gástrica</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanamedidasacidez.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanamedidasacidez.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Medidas naturales para favorecer la evacuación</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanamedidasevacuacion.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanamedidasevacuacion.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Sibo</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanasibo.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanasibo.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li></ul></div></div><!-- NUTRICIÓN --><div class="acc-item"><button class="acc-header" onclick="toggleAcc(this)">NUTRICIÓN<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button><div class="acc-body"><ul><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Estrategias para bajar el índice glucémico de los alimentos</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanaestrategiasindiceglucemico .pdf" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanaestrategiasindiceglucemico .pdf" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Grupos de alimentos para una alimentación saludable</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanagruposdealimentos.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanagruposdealimentos.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Organización diaria</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanaorganizaciondiaria.pdf" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanaorganizaciondiaria.pdf" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Pautas para continuar tu cambio en la alimentación consciente</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanapautascontinuarcambios.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanapautascontinuarcambios.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Primeras pautas para comenzar tu cambio en la alimentación</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanaprimeraspautasorganizacion.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanaprimeraspautasorganizacion.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Sugerencias de alimentación para pacientes con anemia ferropénica</span><div class="file-actions"><a class="btn-ver" href="planillas/ummanasugerenciasanemia.png" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ummanasugerenciasanemia.png" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li></ul></div></div><!-- SUEÑO Y DESCANSO --><div class="acc-item"><button class="acc-header" onclick="toggleAcc(this)">SUEÑO Y DESCANSO<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button><div class="acc-body"><ul><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>CPAP: Cuándo debo cambiar la mascarilla</span><div class="file-actions"><a class="btn-ver" href="planillas/cpap-cambio-mascarilla.pdf" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/cpap-cambio-mascarilla.pdf" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>CPAP: Fugas</span><div class="file-actions"><a class="btn-ver" href="planillas/cpap-fugas.pdf" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/cpap-fugas.pdf" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>CPAP: Guía para entender y usar tu CPAP</span><div class="file-actions"><a class="btn-ver" href="planillas/cpap-guia-entender-usar.pdf" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/cpap-guia-entender-usar.pdf" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>CPAP: Hoja educativa para paciente</span><div class="file-actions"><a class="btn-ver" href="planillas/cpap-hoja-educativa-paciente.pdf" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/cpap-hoja-educativa-paciente.pdf" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>CPAP: Humidificador</span><div class="file-actions"><a class="btn-ver" href="planillas/cpap-humidificador.pdf" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/cpap-humidificador.pdf" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>CPAP: Otras preguntas</span><div class="file-actions"><a class="btn-ver" href="planillas/cpap-otras-preguntas.pdf" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/cpap-otras-preguntas.pdf" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>CPAP: Uso en avión</span><div class="file-actions"><a class="btn-ver" href="planillas/cpap-uso-avion.pdf" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/cpap-uso-avion.pdf" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Certificado / Constancia médica</span><div class="file-actions"><a class="btn-ver" href="planillas/certificado-constancia-medica.pdf" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/certificado-constancia-medica.pdf" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Cómo usar tu Xylitol</span><div class="file-actions"><a class="btn-ver" href="planillas/como-usar-xylitol.pdf" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/como-usar-xylitol.pdf" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Ebook: Liberate de la alergia estacional</span><div class="file-actions"><a class="btn-ver" href="planillas/ebook-liberate-alergia-estacional.pdf" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/ebook-liberate-alergia-estacional.pdf" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Guía de alimentación antiinflamatoria</span><div class="file-actions"><a class="btn-ver" href="planillas/guia-alimentacion-antiinflamatoria.pdf" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/guia-alimentacion-antiinflamatoria.pdf" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Guía para mejorar tu sueño</span><div class="file-actions"><a class="btn-ver" href="planillas/guia-mejorar-sueno.pdf" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/guia-mejorar-sueno.pdf" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>La importancia de evaluar el cortisol en saliva</span><div class="file-actions"><a class="btn-ver" href="planillas/importancia-cortisol-saliva.pdf" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/importancia-cortisol-saliva.pdf" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>¿Por qué se me tapan y destapan los oídos?</span><div class="file-actions"><a class="btn-ver" href="planillas/oidos-tapados-destapados.pdf" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/oidos-tapados-destapados.pdf" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Reglas de higiene del sueño</span><div class="file-actions"><a class="btn-ver" href="planillas/reglas-higiene-sueno.pdf" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/reglas-higiene-sueno.pdf" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Sensor</span><div class="file-actions"><a class="btn-ver" href="planillas/sensor.pdf" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/sensor.pdf" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li><li><span class="file-name"><svg width="18" height="18"><use href="#ico-pdf"/></svg>Técnicas de estimulación vagal para favorecer el descanso</span><div class="file-actions"><a class="btn-ver" href="planillas/tecnicas-estimulacion-vagal-descanso.pdf" target="_blank"><svg width="10" height="10"><use href="#ico-eye"/></svg>ver</a><a class="btn-dl" href="planillas/tecnicas-estimulacion-vagal-descanso.pdf" download><svg width="10" height="10"><use href="#ico-dl"/></svg>descargar</a></div></li></ul></div></div></div></div><button id="logout-btn" onclick="handleLogout()">salir</button><script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyCp3Wy9c6UYiNMlEFLwfNwjpHdufjYbhr4",
+    authDomain: "ummanainterno.firebaseapp.com",
+    projectId: "ummanainterno",
+    storageBucket: "ummanainterno.firebasestorage.app",
+    messagingSenderId: "224573570065",
+    appId: "1:224573570065:web:bfe3a723b7316ed6e245b0"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  function getRoleFromEmail(email) {
+    if (email === 'administracion@ummana.ar') return 'admin';
+    if (email === 'profesionales@ummana.ar') return 'pro';
+    return null;
+  }
+
+  // Mantener sesión activa entre recargas
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      const role = getRoleFromEmail(user.email);
+      if (role) showScreen(role);
+    }
+  });
+  async function handleLogin() {
+    const email = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const err = document.getElementById('error-msg');
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      const role = getRoleFromEmail(result.user.email);
+      err.classList.remove('visible');
+      showScreen(role);
+    } catch (e) {
+      err.classList.add('visible');
+      document.getElementById('password').value = '';
+      document.getElementById('password').focus();
+    }
+  }
+  function showScreen(role) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('logout-btn').style.display = 'block';
+    if (role === 'admin') {
+      document.getElementById('admin-screen').style.display = 'flex';
+      document.body.style.alignItems = 'center';
+    } else {
+      document.getElementById('pro-screen').style.display = 'flex';
+      document.body.style.alignItems = 'flex-start';
+    }
+  }
+  async function handleLogout() {
+    await signOut(auth);
+    document.getElementById('admin-screen').style.display = 'none';
+    document.getElementById('pro-screen').style.display = 'none';
+    document.getElementById('logout-btn').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    document.body.style.alignItems = 'center';
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+    document.querySelectorAll('.acc-item').forEach(i => i.classList.remove('open'));
+  }
+  function toggleAcc(btn) {
+    btn.parentElement.classList.toggle('open');
+  }
+  window.handleLogin = handleLogin;
+  window.handleLogout = handleLogout;
+  window.toggleAcc = toggleAcc;
+  ['username','password'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleLogin();
+    });
+  });
+</script>
+</body>
+</html>
