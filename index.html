@@ -743,6 +743,7 @@
  totalClasesPrueba: {
  title: 'TOTAL CLASES DE PRUEBA',
  type: 'bar',
+ showValueLabels: true,
  fields: [
  { key: 'clases', label: 'CLASES DE PRUEBA', color: '#4a7ba3' },
  { key: 'asistencias', label: 'ASISTENCIAS', color: '#cf9a52' },
@@ -773,6 +774,7 @@
  detalleIngresoPautas: {
  title: 'DETALLE INGRESO POR PAUTAS',
  type: 'pie',
+ dynamicCategories: true,
  valueFormat: 'currency',
  categories: [
  'BIENESTAR', 'COSMETOLOGÍA', 'CURSOS Y TALLERES', 'GASTROENTEROLOGÍA',
@@ -808,6 +810,15 @@
  function categoryColor(config, categoria) {
  const idx = (config.categories || []).indexOf(categoria);
  return idx >= 0 ? config.categoryColors[idx] : '#999';
+ }
+ // Un mes "tiene datos" si, según el tipo de gráfico, hay al menos un valor cargado > 0.
+ // Se usa al leer (no solo al guardar) para que meses viejos guardados en 0 tampoco se muestren.
+ function monthHasData(config, entry) {
+ if (!entry) return false;
+ if (config.dynamicCategories) {
+ return Array.isArray(entry) && entry.some(r => r.categoria && Number(r.valor) > 0);
+ }
+ return (config.fields || []).some(f => Number(entry[f.key]) > 0);
  }
  // Devuelve un "salto" redondo (1, 2 o 5 x potencia de 10) para que el eje Y quede en números lindos
  function niceAxisStep(rawMax, divisions) {
@@ -862,7 +873,7 @@
  const empty = card.querySelector('.chart-empty');
  const legend = card.querySelector('.chart-legend');
  const entries = chartsData[chartId] || {};
- const keys = Object.keys(entries).sort();
+ const keys = Object.keys(entries).filter(k => monthHasData(config, entries[k])).sort();
  svg.innerHTML = '';
  legend.innerHTML = '';
  if (keys.length === 0) {
@@ -996,7 +1007,7 @@
  const card = document.querySelector(`.chart-card[data-chart-id="${chartId}"]`);
  const select = card.querySelector('.pie-month-select');
  const entries = chartsData[chartId] || {};
- const keys = Object.keys(entries).sort();
+ const keys = Object.keys(entries).filter(k => monthHasData(config, entries[k])).sort();
  select.innerHTML = keys.map(k => {
  const [y, m] = k.split('-');
  const monthLabel = (MONTHS.find(mm => mm.v === m) || {}).l || m;
@@ -1020,7 +1031,7 @@
  const legend = card.querySelector('.chart-legend');
  const monthSelector = card.querySelector('.pie-month-selector');
  const entries = chartsData[chartId] || {};
- const keys = Object.keys(entries).sort();
+ const keys = Object.keys(entries).filter(k => monthHasData(config, entries[k])).sort();
  svg.innerHTML = '';
  legend.innerHTML = '';
  legend.style.display = 'none';
