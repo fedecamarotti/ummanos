@@ -9,7 +9,7 @@
  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
  body {
  font-family: 'Montserrat', sans-serif;
- background: #fcfaf8;
+ background: #fffcf5;
  min-height: 100vh;
  display: flex;
  align-items: center;
@@ -35,9 +35,9 @@
  font-weight: 400;
  letter-spacing: 0.08em;
  padding: 12px 16px;
- border: 1px solid #e0ddd9;
+ border: 1px solid #e6dbc2;
  border-radius: 2px;
- background: #fcfaf8;
+ background: #fffcf5;
  color: #111;
  outline: none;
  transition: border-color 0.25s;
@@ -51,15 +51,15 @@
  letter-spacing: 0.15em;
  text-transform: lowercase;
  padding: 12px 16px;
- background: #3a3a38;
- color: #fcfaf8;
+ background: #e6d8b6;
+ color: #3a2f1c;
  border: none;
  border-radius: 2px;
  cursor: pointer;
  margin-top: 4px;
  transition: background 0.2s, transform 0.15s;
  }
- #login-form button:hover { background: #222; }
+ #login-form button:hover { background: #dccba3; }
  #login-form button:active { transform: scale(0.98); }
  #error-msg {
  font-size: 0.72rem;
@@ -90,9 +90,9 @@
  }
  .admin-item {
  padding: 18px 22px;
- border: 1px solid #e0ddd9;
+ border: 1px solid #e6dbc2;
  border-radius: 3px;
- background: #fcfaf8;
+ background: #fffcf5;
  font-family: 'Montserrat', sans-serif;
  font-size: 0.72rem;
  font-weight: 500;
@@ -101,15 +101,15 @@
  cursor: pointer;
  transition: background 0.2s;
  }
- .admin-item:hover { background: #f4f2ef; }
- .admin-list .acc-item { border: 1px solid #e0ddd9; border-radius: 3px; overflow: hidden; }
+ .admin-item:hover { background: #f6f0de; }
+ .admin-list .acc-item { border: 1px solid #e6dbc2; border-radius: 3px; overflow: hidden; }
  .admin-list .acc-header {
  width: 100%;
  display: flex;
  align-items: center;
  justify-content: space-between;
  padding: 18px 22px;
- background: #fcfaf8;
+ background: #fffcf5;
  border: none;
  cursor: pointer;
  font-family: 'Montserrat', sans-serif;
@@ -120,8 +120,8 @@
  text-align: left;
  transition: background 0.2s;
  }
- .admin-list .acc-header:hover { background: #f4f2ef; }
- .admin-list .acc-body { background: #f4f2ef; }
+ .admin-list .acc-header:hover { background: #f6f0de; }
+ .admin-list .acc-body { background: #f6f0de; }
  .admin-list .acc-body ul li { display: flex; align-items: center; justify-content: space-between; padding: 11px 22px; border-bottom: 1px solid rgba(0,0,0,0.04); }
  .admin-list .acc-body ul li:last-child { border-bottom: none; }
  .admin-list .file-name { font-family: 'Montserrat', sans-serif; font-size: 0.72rem; font-weight: 400; letter-spacing: 0.1em; color: #333; }
@@ -133,9 +133,9 @@
  gap: 22px;
  }
  .chart-card {
- border: 1px solid #e0ddd9;
+ border: 1px solid #e6dbc2;
  border-radius: 3px;
- background: #fcfaf8;
+ background: #fffcf5;
  padding: 25px 27px;
  }
  .chart-card-header {
@@ -174,13 +174,13 @@
  letter-spacing: 0.1em;
  padding: 8px 14px;
  border-radius: 2px;
- border: 1px solid #3a3a38;
+ border: 1px solid #d8c69c;
  background: transparent;
  color: #3a3a38;
  cursor: pointer;
  transition: background 0.2s, color 0.2s;
  }
- .btn-edit:hover { background: #3a3a38; color: #fcfaf8; }
+ .btn-edit:hover { background: #e6d8b6; color: #3a2f1c; }
  .chart-body { position: relative; display: none; }
  .chart-card.open .chart-body { display: block; }
  .chart-svg { width: 100%; height: auto; display: block; }
@@ -242,7 +242,7 @@
  }
  .chart-modal-overlay.open { display: flex; }
  .chart-modal {
- background: #fcfaf8;
+ background: #fffcf5;
  border-radius: 4px;
  padding: 30px 28px;
  width: 100%;
@@ -275,7 +275,7 @@
  font-family: 'Montserrat', sans-serif;
  font-size: 0.78rem;
  padding: 10px 12px;
- border: 1px solid #e0ddd9;
+ border: 1px solid #e6dbc2;
  border-radius: 2px;
  background: #fff;
  color: #111;
@@ -296,8 +296,8 @@
  border: none;
  transition: opacity 0.2s;
  }
- .btn-cancel { background: #eee9e4; color: #3a3a38; }
- .btn-save { background: #3a3a38; color: #fcfaf8; }
+ .btn-cancel { background: #f0e8cf; color: #3a3a38; }
+ .btn-save { background: #e6d8b6; color: #3a2f1c; }
  .chart-modal-actions button:hover { opacity: 0.8; }
  .chart-modal-status {
  font-family: 'Montserrat', sans-serif;
@@ -319,7 +319,7 @@
  font-family: 'Montserrat', sans-serif;
  font-size: 0.72rem;
  padding: 9px 10px;
- border: 1px solid #e0ddd9;
+ border: 1px solid #e6dbc2;
  border-radius: 2px;
  background: #fff;
  color: #111;
@@ -331,7 +331,7 @@
  font-family: 'Montserrat', sans-serif;
  font-size: 0.78rem;
  padding: 9px 10px;
- border: 1px solid #e0ddd9;
+ border: 1px solid #e6dbc2;
  border-radius: 2px;
  background: #fff;
  color: #111;
@@ -342,7 +342,7 @@
  width: 28px;
  height: 28px;
  border-radius: 2px;
- border: 1px solid #e0ddd9;
+ border: 1px solid #e6dbc2;
  background: transparent;
  color: #9a3030;
  font-size: 0.9rem;
@@ -365,14 +365,14 @@
  cursor: pointer;
  transition: background 0.2s;
  }
- .pie-row-add:hover { background: #f4f2ef; }
+ .pie-row-add:hover { background: #f6f0de; }
  .pie-month-selector { display: flex; justify-content: center; margin-bottom: 12px; }
  .pie-month-select {
  font-family: 'Montserrat', sans-serif;
  font-size: 0.68rem;
  letter-spacing: 0.06em;
  padding: 8px 12px;
- border: 1px solid #e0ddd9;
+ border: 1px solid #e6dbc2;
  border-radius: 2px;
  background: #fff;
  color: #333;
@@ -444,13 +444,13 @@
  color: #3a3a38;
  text-decoration: none;
  padding: 10px 4px;
- border-bottom: 1px solid #e0ddd9;
+ border-bottom: 1px solid #e6dbc2;
  display: flex;
  align-items: center;
  justify-content: space-between;
  transition: color 0.2s, padding-left 0.2s;
  }
- .quick-links a:first-child { border-top: 1px solid #e0ddd9; }
+ .quick-links a:first-child { border-top: 1px solid #e6dbc2; }
  .quick-links a::after {
  content: '↗';
  font-size: 0.7rem;
@@ -464,7 +464,7 @@
  width: 100%;
  max-width: 640px;
  margin-bottom: 32px;
- border: 1px solid #e0ddd9;
+ border: 1px solid #e6dbc2;
  border-radius: 3px;
  overflow: hidden;
  }
@@ -475,7 +475,7 @@
  letter-spacing: 0.14em;
  color: #222;
  padding: 14px 22px 10px;
- background: #fcfaf8;
+ background: #fffcf5;
  }
  .info-link {
  display: flex;
@@ -488,25 +488,25 @@
  letter-spacing: 0.05em;
  color: #3a3a38;
  text-decoration: none;
- background: #f4f2ef;
- border-top: 1px solid #e0ddd9;
+ background: #f6f0de;
+ border-top: 1px solid #e6dbc2;
  transition: background 0.15s, color 0.15s;
  }
  .info-link::after { content: '↗'; font-size: 0.7rem; opacity: 0.4; }
- .info-link:hover { background: #eeece9; color: #111; }
+ .info-link:hover { background: #f0e8cf; color: #111; }
  .accordion-wrap {
  display: flex;
  flex-direction: column;
  gap: 10px;
  }
- .acc-item { border: 1px solid #e0ddd9; border-radius: 3px; overflow: hidden; }
+ .acc-item { border: 1px solid #e6dbc2; border-radius: 3px; overflow: hidden; }
  .acc-header {
  width: 100%;
  display: flex;
  align-items: center;
  justify-content: space-between;
  padding: 18px 22px;
- background: #fcfaf8;
+ background: #fffcf5;
  border: none;
  cursor: pointer;
  font-family: 'Montserrat', sans-serif;
@@ -517,16 +517,16 @@
  text-align: left;
  transition: background 0.2s;
  }
- .acc-header:hover { background: #f4f2ef; }
+ .acc-header:hover { background: #f6f0de; }
  .acc-arrow { width: 14px; height: 14px; flex-shrink: 0; transition: transform 0.3s ease; }
  .acc-item.open .acc-arrow { transform: rotate(180deg); }
  .acc-body {
  max-height: 0;
  overflow: hidden;
  transition: max-height 0.4s ease;
- background: #f4f2ef;
+ background: #f6f0de;
  }
- .acc-item.open .acc-body { max-height: 1400px; border-top: 1px solid #e0ddd9; }
+ .acc-item.open .acc-body { max-height: 1400px; border-top: 1px solid #e6dbc2; }
  .acc-body ul { list-style: none; padding: 8px 0; }
  .acc-subtitle {
  padding: 10px 22px 4px;
@@ -581,8 +581,8 @@
  cursor: pointer;
  }
  .btn-ver { background: #7a7a72; color: #fff; }
- .btn-dl { background: #3a3a38; color: #fcfaf8; }
- .btn-open { background: #3a3a38; color: #fcfaf8; }
+ .btn-dl { background: #e6d8b6; color: #3a2f1c; }
+ .btn-open { background: #e6d8b6; color: #3a2f1c; }
  .btn-ver:hover, .btn-dl:hover, .btn-open:hover { opacity: 0.75; }
  #logout-btn {
  position: fixed;
@@ -616,16 +616,57 @@
  .home-botones { display: flex; flex-direction: column; gap: 12px; width: 260px; }
  .home-botones button, .home-botones a {
  font-family: 'Montserrat', sans-serif; font-size: 0.7rem; font-weight: 400; letter-spacing: 0.15em;
- text-transform: lowercase; padding: 14px 16px; background: #3a3a38; color: #fcfaf8;
+ text-transform: lowercase; padding: 14px 16px; background: #e6d8b6; color: #3a2f1c;
  border: none; border-radius: 2px; cursor: pointer; text-align: center; text-decoration: none;
  transition: background 0.2s, transform 0.15s;
  }
- .home-botones button:hover, .home-botones a:hover { background: #222; }
+ .home-botones button:hover, .home-botones a:hover { background: #dccba3; }
  .home-botones button:active, .home-botones a:active { transform: scale(0.98); }
  @keyframes fadeIn {
  from { opacity: 0; transform: translateY(10px); }
  to { opacity: 1; transform: translateY(0); }
  }
+
+ /* ---------- Paleta y login de la caja ---------- */
+ body { background: linear-gradient(135deg, #f8f3e8, #efe3c4) fixed; color: #24262b; }
+ .btn-ver { background: #f0e8cf !important; color: #3a2f1c !important; }
+ .btn-ver:hover { background: #e6d8b6 !important; }
+ #login-screen {
+ position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+ gap: 0; padding: 16px; background: linear-gradient(135deg, #f8f3e8, #efe3c4); animation: none;
+ }
+ .login-card {
+ background: #fffcf5; border: 1px solid #e6dbc2; border-radius: 16px;
+ padding: 36px 34px; width: 100%; max-width: 360px; box-shadow: 0 12px 40px rgba(20,20,30,0.08);
+ animation: fadeIn 0.6s ease both;
+ }
+ .login-logo { height: 40px; display: block; margin: 0 auto 10px; filter: none !important; }
+ .login-sub { font-size: 12px; color: #9c9179; margin-bottom: 22px; text-align: center; }
+ .login-field { margin-bottom: 14px; }
+ .login-field label { display: block; font-size: 11px; font-weight: 600; color: #9c9179; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.3px; }
+ .login-field input {
+ width: 100%; padding: 10px 12px; border: 1px solid #e6dbc2; border-radius: 8px;
+ font-family: 'Montserrat', sans-serif; font-size: 13px; color: #24262b; background: #fdfbf2; outline: none;
+ }
+ .login-field input:focus { border-color: #c9b183; background: #fffcf5; }
+ .login-btn, .home-botones button, .home-botones a {
+ display: block; width: 100%; padding: 11px; margin-top: 6px; border: 1px solid #d8c69c; border-radius: 8px;
+ background: #e6d8b6; color: #3a2f1c; font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 600;
+ letter-spacing: 0; text-transform: none; text-align: center; text-decoration: none; cursor: pointer;
+ transition: background 0.2s, transform 0.15s;
+ }
+ .login-btn:hover, .home-botones button:hover, .home-botones a:hover { background: #dccba3; }
+ .login-btn:active, .home-botones button:active, .home-botones a:active { transform: scale(0.98); }
+ #error-msg {
+ display: none; opacity: 1; min-height: 0; text-align: left; letter-spacing: 0;
+ background: #fdeeee; border: 1px solid #f3d3d3; color: #a13a3a; font-size: 11.5px;
+ padding: 9px 12px; border-radius: 8px; margin: 0 0 14px;
+ }
+ #error-msg.visible { display: block; }
+ #home-screen { gap: 0; }
+ #home-screen .login-card { text-align: center; }
+ #home-hola { margin: 0 0 18px; font-size: 13px; letter-spacing: 0; text-transform: none; color: #9c9179; }
+ .home-botones { width: 100%; gap: 10px; }
 </style>
 </head>
 <body id="body">
@@ -634,7 +675,7 @@
 <symbol id="ico-eye" viewBox="0 0 24 24" width="10" height="10"><path fill="none" stroke="currentColor" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle fill="none" stroke="currentColor" stroke-width="2" cx="12" cy="12" r="3"/></symbol>
 <symbol id="ico-dl" viewBox="0 0 24 24" width="10" height="10"><path fill="none" stroke="currentColor" stroke-width="2.5" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline fill="none" stroke="currentColor" stroke-width="2.5" points="7 10 12 15 17 10"/><line fill="none" stroke="currentColor" stroke-width="2.5" x1="12" y1="15" x2="12" y2="3"/></symbol>
 </defs></svg>
-<!-- LOGIN --><div id="login-screen"><img src="image/logoummanabc.png" alt="ummana" /><div id="login-form"><input type="email" id="username" placeholder="email" autocomplete="off" /><input type="password" id="password" placeholder="contraseña" /><button onclick="handleLogin()">ingresar</button><p id="error-msg">usuario o contraseña incorrectos</p></div></div><!-- INICIO (usuarios personales) --><div id="home-screen"><img src="image/logoummanabc.png" alt="ummana" /><p id="home-hola">hola</p><div class="home-botones"><button onclick="irGlosario()">glosario</button><a id="home-caja" href="caja/">caja diaria</a><a id="home-sueros" href="caja/">aplicación de sueros</a></div></div><!-- ADMIN -->
+<!-- LOGIN --><div id="login-screen"><div class="login-card"><img src="caja/images/logo.png" alt="Ummana" class="login-logo" /><div class="login-sub">Ingresá con tu usuario para continuar</div><p id="error-msg">Usuario o contraseña incorrectos.</p><div class="login-field"><label for="username">Email</label><input type="email" id="username" autocomplete="username" /></div><div class="login-field"><label for="password">Contraseña</label><input type="password" id="password" autocomplete="current-password" /></div><button class="login-btn" onclick="handleLogin()">Ingresar</button></div></div><!-- INICIO (usuarios personales) --><div id="home-screen"><div class="login-card"><img src="caja/images/logo.png" alt="Ummana" class="login-logo" /><p id="home-hola">Hola</p><div class="home-botones"><button onclick="irGlosario()">Glosario</button><a id="home-caja" href="caja/">Caja diaria</a><a id="home-sueros" href="caja/">Aplicación de sueros</a></div></div></div><!-- ADMIN -->
 <div id="admin-screen"><img src="image/logoummanabc.png" alt="ummana" /><div class="charts-grid" id="charts-grid">
 <div class="chart-card" data-chart-id="renta">
 <div class="chart-card-header" onclick="toggleChartCard(this)"><h3 class="chart-title">RENTA</h3><div class="chart-card-header-right"><button class="btn-edit" onclick="event.stopPropagation(); openChartEditor('renta')">editar</button><svg class="chart-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div></div>
@@ -1486,7 +1527,7 @@
  ocultarPantallas();
  if (role === 'home') {
  const nom = (usuarioActual && usuarioActual.nombre || '').trim();
- document.getElementById('home-hola').textContent = nom ? `hola, ${nom.toLowerCase()}` : 'hola';
+ document.getElementById('home-hola').textContent = nom ? `Hola, ${nom}` : 'Hola';
  document.getElementById('home-caja').style.display = esCaja(usuarioActual) ? '' : 'none';
  document.getElementById('home-sueros').style.display = (!esCaja(usuarioActual) && cargaSueros(usuarioActual)) ? '' : 'none';
  document.getElementById('home-screen').style.display = 'flex';
