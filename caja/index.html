@@ -97,10 +97,10 @@
     background:#e53935;border:2px solid #fffcf5;
   }
   .menu-dropdown{
-    position:absolute;top:calc(100% + 10px);left:0;width:270px;
+    position:absolute;top:calc(100% + 10px);right:0;left:auto;width:270px;max-width:calc(100vw - 24px);
     background:#fffcf5;border:1px solid var(--border);border-radius:14px;
     box-shadow:0 18px 44px rgba(58,47,28,0.16), 0 2px 6px rgba(58,47,28,0.06);
-    padding:8px;transform-origin:top left;
+    padding:8px;transform-origin:top right;
     opacity:0;visibility:hidden;pointer-events:none;
     transform:translateY(-6px) scale(.97);
     clip-path:inset(0 0 100% 0 round 14px);
