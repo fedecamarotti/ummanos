@@ -301,6 +301,18 @@
   .p-bar h2{font-size:15px;font-weight:700;margin:0 6px 0 4px;}
   .p-bar input[type=date]{width:auto;padding:7px 10px;}
   .p-spacer{flex:1;}
+  .an-wrap{position:relative;display:flex;justify-content:flex-end;margin-top:6px;}
+  .an-chip{border:1px solid #f0c98a;background:#fff1dc;color:#9a5b00;border-radius:20px;padding:3px 10px;font-size:10.5px;font-weight:700;cursor:pointer;}
+  .an-chip:hover{background:#ffe7c2;}
+  .an-pop{position:absolute;top:calc(100% + 6px);right:0;width:min(360px, 90vw);max-height:260px;overflow:auto;z-index:90;
+    background:#fffcf5;border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 30px rgba(58,47,28,.18);}
+  .an-head{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#f6f0de;}
+  .an-head span{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.3px;}
+  .an-head button{border:none;background:none;color:var(--muted);font-size:13px;cursor:pointer;}
+  .an-nota{padding:8px 12px;border-bottom:1px solid var(--border);font-size:12px;line-height:1.4;}
+  .an-nota:last-child{border-bottom:none;}
+  .an-meta{font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:2px;}
+  .an-tipo{float:right;font-weight:600;color:#b3a98e;}
   .p-a{font-size:12px;font-weight:600;color:var(--muted);}
   .p-btn-nuevo{background:#c9b183;border-color:#c9b183;color:#3a2f1c;}
   .p-btn-nuevo:hover{background:#bfa473;}
@@ -652,6 +664,13 @@
     <div class="field">
       <label>Paciente</label>
       <div class="ac-wrap"><input type="text" id="aPaciente" placeholder="APELLIDO, NOMBRE" autocomplete="off"></div>
+      <div class="an-wrap col-hidden" id="aNotasWrap">
+        <button type="button" class="an-chip" id="aVerNotas">ver notas</button>
+        <div class="an-pop col-hidden" id="aNotasPop">
+          <div class="an-head"><span>Notas del paciente</span><button type="button" id="aNotasCerrar" title="Cerrar">✕</button></div>
+          <div id="aNotasLista"></div>
+        </div>
+      </div>
     </div>
     <div class="field">
       <label>Insumos</label>
@@ -4410,7 +4429,43 @@ function renderHistorialHC(){
 const overlayAplic = document.getElementById('overlayAplic');
 const aPaciente = document.getElementById('aPaciente');
 let aEditId = null;
-attachAutocomplete(aPaciente, ()=> pacienteRegistry);
+attachAutocomplete(aPaciente, ()=> pacienteRegistry, ()=> actualizarNotasPaciente());
+aPaciente.addEventListener('change', ()=> actualizarNotasPaciente());
+aPaciente.addEventListener('blur', ()=> setTimeout(actualizarNotasPaciente, 150));
+
+/* ---- "ver notas": notas de la ficha y de aplicaciones anteriores del paciente ---- */
+let notasPacToken = 0, notasPacNombre = null;
+async function actualizarNotasPaciente(){
+  const nombre = mayus(aPaciente.value.trim());
+  if(nombre === notasPacNombre) return;
+  notasPacNombre = nombre;
+  const token = ++notasPacToken;
+  const wrap = document.getElementById('aNotasWrap');
+  wrap.classList.add('col-hidden');
+  document.getElementById('aNotasPop').classList.add('col-hidden');
+  if(!nombre) return;
+  const notas = aplicacionesSueros()
+    .filter(m=> m.tercero===nombre && m.notas && m.id!==aEditId)
+    .map(m=> ({fechaISO: m.fechaISO, texto: m.notas, autor: m.creadoPor||'', orden: m.creadoEn && m.creadoEn.toMillis ? m.creadoEn.toMillis() : 0, tipo:'Aplicación'}));
+  const p = pacientesFullList.find(x=> mayus(x.nombreCompleto)===nombre);
+  if(p){
+    try{
+      const d = await db.collection('historiasSueros').doc(p.id).get();
+      if(d.exists) (d.data().notas||[]).forEach(n=> notas.push({fechaISO: n.fechaISO, texto: n.texto, autor: n.autor||'', orden: n.creadoMs||0, tipo:'Nota'}));
+    }catch(e){ /* sin acceso a la ficha: se muestran solo las notas de aplicaciones */ }
+  }
+  if(token !== notasPacToken || !notas.length) return;
+  notas.sort((a,b)=> a.fechaISO===b.fechaISO ? b.orden - a.orden : (a.fechaISO < b.fechaISO ? 1 : -1));
+  document.getElementById('aVerNotas').textContent = `ver notas (${notas.length})`;
+  document.getElementById('aNotasLista').innerHTML = notas.map(n=>`
+    <div class="an-nota">
+      <div class="an-meta">${fechaLarga(n.fechaISO)}${n.autor ? ` · ${n.autor}` : ''}<span class="an-tipo">${n.tipo}</span></div>
+      <div>${n.texto}</div>
+    </div>`).join('');
+  wrap.classList.remove('col-hidden');
+}
+document.getElementById('aVerNotas').onclick = ()=> document.getElementById('aNotasPop').classList.toggle('col-hidden');
+document.getElementById('aNotasCerrar').onclick = ()=> document.getElementById('aNotasPop').classList.add('col-hidden');
 
 function pAgregarItem(it){
   const row = document.createElement('div');
@@ -4440,6 +4495,8 @@ function abrirAplic(id){
   document.getElementById('aEliminar').classList.toggle('col-hidden', !m);
   document.getElementById('aFecha').value = m ? m.fechaISO : (rangoPortal()[0]===rangoPortal()[1] ? rangoPortal()[0] : hoyISO());
   aPaciente.value = m ? (m.tercero||'') : '';
+  notasPacNombre = null;
+  actualizarNotasPaciente();
   document.getElementById('aNotas').value = m ? (m.notas||'') : '';
   document.getElementById('aItems').innerHTML = '';
   if(m && (m.items||[]).length) m.items.forEach(it=> pAgregarItem(it)); else pAgregarItem();
