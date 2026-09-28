@@ -264,6 +264,9 @@
   .menu-links button.activo{background:#f4ecd6;}
   .menu-links a.menu-inicio{display:flex;align-items:center;gap:10px;padding:10px;border:none;border-radius:9px;background:transparent;font-size:12.5px;font-weight:600;color:var(--text);text-decoration:none;}
   .menu-links a.menu-inicio:hover{background:#f0e8cf;}
+  .falta-input{width:92px !important;padding:3px 8px !important;border:1px solid #f0c98a !important;border-radius:20px !important;background:#fff1dc !important;color:#9a5b00;font-size:10.5px !important;font-weight:700;text-align:center;}
+  .falta-input::placeholder{color:#9a5b00;font-weight:700;letter-spacing:0.4px;}
+  .falta-input:focus{outline:none;border-color:#c98a2e !important;background:#fffcf5 !important;}
   .falta{display:inline-block;padding:2px 8px;border-radius:20px;background:#fff1dc;border:1px solid #f0c98a;color:#9a5b00;font-size:9.5px;font-weight:700;letter-spacing:0.4px;}
   .s-textarea{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit;color:var(--text);background:#fdfbf2;resize:vertical;}
   .s-textarea:focus{outline:none;border-color:var(--accent);background:#fffcf5;}
@@ -3484,6 +3487,31 @@ function detalleSuero(m){
 const celdaReparto = v => v==null ? '<span class="pend">—</span>' : fmtPesos(v);
 
 /* ---- Pestaña 1: Movimientos sueros ---- */
+// Cargar el pago directo desde la celda "FALTA" (Enter o al salir del campo)
+async function guardarTotalInline(id, valor){
+  const m = sueros.find(x=> x.id===id);
+  if(!m || !esFede() || String(valor).trim()==='') return;
+  const total = parseMonto(valor);
+  const insumos = Number(m.insumosTotal)||0, sabrina = Number(m.sabrina)||0;
+  const gabriela = m.gabrielaManual ? (Number(m.gabriela)||0) : calcularGabrielaAuto(total, insumos, sabrina);
+  try{
+    await db.collection('sueros').doc(id).update({
+      total, pagoPendiente: false, gabriela,
+      ummana: calcularUmmana(total, insumos, sabrina, gabriela),
+      actualizadoEn: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  }catch(e){ alert("No se pudo guardar el pago: " + e.message); }
+}
+function activarInputsFalta(tb){
+  tb.querySelectorAll('.falta-input').forEach(inp=>{
+    inp.addEventListener('input', ()=> formatearInputMonto(inp));
+    inp.addEventListener('keydown', e=>{
+      if(e.key==='Enter'){ e.preventDefault(); inp.blur(); }
+      if(e.key==='Escape'){ inp.value=''; inp.blur(); }
+    });
+    inp.addEventListener('blur', ()=>{ if(inp.value.trim()!=='') guardarTotalInline(inp.dataset.falta, inp.value); });
+  });
+}
 function renderSuerosTabla(){
   const tb = document.getElementById('sTbody');
   const f = id => document.getElementById(id).value;
@@ -3514,13 +3542,14 @@ function renderSuerosTabla(){
         <td>${isoToDisplay(m.fechaISO)}</td>
         <td class="left">${m.tercero||''}</td>
         <td class="concepto">${detalleSuero(m)}</td>
-        <td class="monto total ${esEg?'egreso':'ingreso'}">${m.pagoPendiente ? '<span class="falta">FALTA</span>' : fmtPesos(esEg ? -m.total : (m.total||0))}</td>
+        <td class="monto total ${esEg?'egreso':'ingreso'}">${m.pagoPendiente ? `<input class="falta-input" data-falta="${m.id}" inputmode="numeric" placeholder="FALTA" title="Escribí el pago y tocá Enter">` : fmtPesos(esEg ? -m.total : (m.total||0))}</td>
         <td class="monto">${celdaReparto(r.insumos)}</td>
         <td class="monto">${celdaReparto(r.sabrina)}</td>
         <td class="monto">${celdaReparto(r.gabriela)}</td>
         <td class="monto ${r.ummana!=null && r.ummana<0 ? 'neg' : ''}">${celdaReparto(r.ummana)}</td>
       </tr>`;
   }).join('');
+  activarInputsFalta(tb);
 }
 
 /* ---- Pestaña 2: Stock ---- */
