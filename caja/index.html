@@ -1001,7 +1001,7 @@
     </div>
 
     <div class="s-panel col-hidden" id="cPanelStock">
-      <div class="s-caption">Precios en dólares de cada producto (se usan para Valor USD y Costo)</div>
+      <div class="s-caption">Cremas: venta y costo en dólares. Colágenos: costo en pesos.</div>
       <div class="sheet-wrap" style="flex:0 1 auto;width:calc(100% - 56px);max-width:900px;margin:6px auto 20px;">
         <table class="tabla-stock">
           <colgroup><col style="width:90px"><col><col style="width:130px"><col style="width:130px"><col style="width:130px"></colgroup>
@@ -1011,7 +1011,7 @@
               <th><input type="text" class="th-search th-search-left" id="cfStock" placeholder="Producto" autocomplete="off" style="padding-left:14px;"></th>
               <th><div class="th-search">Área</div></th>
               <th><div class="th-search">Venta USD</div></th>
-              <th><div class="th-search">Costo USD</div></th>
+              <th><div class="th-search">Costo</div></th>
             </tr>
           </thead>
           <tbody id="cStockBody"></tbody>
@@ -4699,6 +4699,7 @@ const PARTICULAR = 'PARTICULAR';
 const fmtUsd = v => 'US$ ' + Number(v).toLocaleString('es-AR', {maximumFractionDigits: 2});
 const parseDecimal = v => { const n = Number(String(v||'').replace(/\./g,'').replace(',','.')); return isNaN(n) ? 0 : n; };
 
+function esColageno(prof){ return normBusqueda(prof).includes('colag'); }
 function esProfCremas(prof){ const n = normBusqueda(prof); return n.includes('crema') || n.includes('colag'); }
 function cMesInicio(){ return `${mesCremas.year}-${String(mesCremas.month).padStart(2,'0')}-01`; }
 function cMesFin(){ let y = mesCremas.year, m = mesCremas.month+1; if(m>12){ m=1; y++; } return `${y}-${String(m).padStart(2,'0')}-01`; }
@@ -4746,10 +4747,12 @@ function calcularCrema(m){
   const indica = ex.indica || PARTICULAR;
   const cot = Number(ex.cot)||0;
   const costo = prod.costo!=null && prod.costo!=='' ? Number(prod.costo) : null;
-  const aPagar = cot && costo!=null ? Math.round(costo * cot) : null;
+  const colageno = esColageno(m.prof);
+  // Cremas: costo en USD × cotización. Colágenos: el costo ya está en pesos.
+  const aPagar = colageno ? (costo!=null ? Math.round(costo) : null) : (cot && costo!=null ? Math.round(costo * cot) : null);
   const prof = aPagar==null ? null : (indica===PARTICULAR ? 0 : Math.round((pago - aPagar) / 2));
   const ummana = aPagar==null ? null : pago - aPagar - prof;
-  return { pago, indica, cot, venta: prod.venta!=null && prod.venta!=='' ? Number(prod.venta) : null, costo, aPagar, prof, ummana };
+  return { pago, indica, cot, colageno, venta: !colageno && prod.venta!=null && prod.venta!=='' ? Number(prod.venta) : null, costo, aPagar, prof, ummana };
 }
 
 /* ---- Vista, mes y pestañas ---- */
@@ -4793,20 +4796,20 @@ function renderCremasMovs(){
   let tPago=0, tPagar=0, tProf=0, tUmm=0;
   tb.innerHTML = filas.map(m=>{
     const c = calcularCrema(m);
-    tPago += c.pago; tPagar += c.aPagar||0; tProf += c.prof||0; tUmm += c.ummana||0;
+    tPago += c.pago; tPagar += c.aPagar||0; tProf += c.prof||0; tUmm += c.ummana||0;   // en colágenos, A pagar = costo en pesos
     const opts = profs.map(n=> `<option ${n===c.indica?'selected':''}>${n}</option>`).join('');
-    const sinStock = c.venta==null && c.costo==null;
+    const sinStock = c.colageno ? c.costo==null : (c.venta==null && c.costo==null);
     return `<tr>
       <td>${isoToDisplay(m.fechaISO)}</td>
       <td class="left">${m.pac||''}</td>
       <td class="codigo">${m.codigo||''}</td>
       <td class="concepto">${m.concepto||''}${sinStock ? ' <span class="c-aviso" title="Este producto no tiene precios en Stock">sin precio</span>' : ''}</td>
-      <td class="monto">${c.venta==null ? '<span class="pend">—</span>' : fmtUsd(c.venta)}</td>
+      <td class="monto">${c.colageno || c.venta==null ? '<span class="pend">—</span>' : fmtUsd(c.venta)}</td>
       <td class="monto total ingreso">${m.moneda==='USD' ? 'US$ ' : '$'}${Number(c.pago).toLocaleString('es-AR')}</td>
       <td><select class="c-indica" data-id="${m.id}">${opts}</select></td>
-      <td class="monto">${c.costo==null ? '<span class="pend">—</span>' : fmtUsd(c.costo)}</td>
-      <td><input class="c-cot" data-id="${m.id}" inputmode="numeric" value="${c.cot ? c.cot.toLocaleString('es-AR') : ''}" placeholder="—"></td>
-      <td class="monto">${celdaMonto(c.aPagar)}</td>
+      <td class="monto">${c.costo==null ? '<span class="pend">—</span>' : (c.colageno ? fmtPesos(c.costo) : fmtUsd(c.costo))}</td>
+      <td>${c.colageno ? '<span class="pend">—</span>' : `<input class="c-cot" data-id="${m.id}" inputmode="numeric" value="${c.cot ? c.cot.toLocaleString('es-AR') : ''}" placeholder="—">`}</td>
+      <td class="monto">${c.colageno ? '<span class="pend">—</span>' : celdaMonto(c.aPagar)}</td>
       <td class="monto">${celdaMonto(c.prof)}</td>
       <td class="monto ${c.ummana!=null && c.ummana<0 ? 'neg' : ''}">${celdaMonto(c.ummana)}</td>
     </tr>`;
@@ -4835,8 +4838,8 @@ async function guardarExtraCrema(id, datos){
 }
 // Cotización para todas las filas del mes que todavía no la tienen
 document.getElementById('cBtnCotTodos').onclick = async ()=>{
-  const faltan = movimientosCremas().filter(m=> !Number((cremasExtra[m.id]||{}).cot));
-  if(!faltan.length){ alert("Todos los movimientos de este mes ya tienen cotización."); return; }
+  const faltan = movimientosCremas().filter(m=> !esColageno(m.prof) && !Number((cremasExtra[m.id]||{}).cot));
+  if(!faltan.length){ alert("Todas las cremas de este mes ya tienen cotización."); return; }
   const v = parseMonto(prompt(`Cotización para ${faltan.length} movimiento(s) sin cotización:`) || '');
   if(!v) return;
   try{
@@ -4867,8 +4870,8 @@ function renderCremasStock(){
       <td class="codigo">${p.codigo}</td>
       <td class="left">${p.nombre}</td>
       <td class="codigo">${p.prof}</td>
-      <td><input class="c-precio" data-k="${p.clave.replace(/"/g,'&quot;')}" data-campo="venta" inputmode="decimal" value="${s.venta!=null && s.venta!=='' ? String(s.venta).replace('.',',') : ''}" placeholder="US$"></td>
-      <td><input class="c-precio" data-k="${p.clave.replace(/"/g,'&quot;')}" data-campo="costo" inputmode="decimal" value="${s.costo!=null && s.costo!=='' ? String(s.costo).replace('.',',') : ''}" placeholder="US$"></td>
+      <td>${esColageno(p.prof) ? '<span class="pend">—</span>' : `<input class="c-precio" data-k="${p.clave.replace(/"/g,'&quot;')}" data-campo="venta" inputmode="decimal" value="${s.venta!=null && s.venta!=='' ? String(s.venta).replace('.',',') : ''}" placeholder="US$">`}</td>
+      <td><input class="c-precio" data-k="${p.clave.replace(/"/g,'&quot;')}" data-campo="costo" inputmode="decimal" value="${s.costo!=null && s.costo!=='' ? (esColageno(p.prof) ? Number(s.costo).toLocaleString('es-AR') : String(s.costo).replace('.',',')) : ''}" placeholder="${esColageno(p.prof) ? '$ (pesos)' : 'US$'}"></td>
     </tr>`;
   }).join('');
   tb.querySelectorAll('.c-precio').forEach(inp=>{
