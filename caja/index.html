@@ -262,7 +262,12 @@
   .s-total-egreso span{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.3px;}
   .s-total-egreso strong{font-size:16px;color:#a13a3a;}
   .menu-links button.activo{background:#f4ecd6;}
-  .tabla-cremas{min-width:1320px;}
+  .tabla-cremas{min-width:1380px;}
+  .tabla-cremas select.c-pag{width:100%;padding:2px 2px;font-size:9.5px;font-weight:700;border-radius:20px;text-align:center;text-align-last:center;cursor:pointer;-webkit-appearance:none;appearance:none;}
+  .tabla-cremas select.c-pag-no{background:#fbdada;color:#c62828;border:1px solid #f3c1c1;}
+  .tabla-cremas select.c-pag-si{background:#dff3d8;color:#2f7a2f;border:1px solid #c5e6b9;}
+  .tabla-cremas select.c-pag-bon{background:#dff1fb;color:#2f86b3;border:1px solid #c3e2f3;}
+  .tabla-cremas select.c-pag option{background:#fffcf5;color:var(--text);}
   .tabla-cremas td.monto{font-weight:700;white-space:nowrap;}
   .tabla-cremas td.monto.neg{color:#a13a3a;}
   .tabla-cremas .pend{color:#c4b995;font-weight:500;}
@@ -967,7 +972,7 @@
         <button class="s-tab c-tab active" data-ctab="movs" role="tab">Movimientos cremas/colágenos</button>
         <button class="s-tab c-tab" data-ctab="stock" role="tab">Stock</button>
       </div>
-      <div style="justify-self:end;"><button class="btn s-cfg-btn" id="cBtnCotTodos" title="Poner la misma cotización a los movimientos del mes que no la tienen">$ Cot. para todos</button></div>
+      <div></div>
     </div>
 
     <div class="s-panel" id="cPanelMovs">
@@ -976,7 +981,7 @@
           <colgroup>
             <col style="width:58px"><col style="width:15%"><col style="width:74px"><col>
             <col style="width:84px"><col style="width:100px"><col style="width:150px"><col style="width:84px">
-            <col style="width:84px"><col style="width:100px"><col style="width:100px"><col style="width:100px">
+            <col style="width:84px"><col style="width:100px"><col style="width:56px"><col style="width:100px"><col style="width:100px">
           </colgroup>
           <thead>
             <tr>
@@ -990,6 +995,7 @@
               <th><div class="th-search">Costo</div></th>
               <th><div class="th-search">Cot.</div></th>
               <th><div class="th-search">A pagar</div></th>
+              <th><div class="th-search">Pag.</div></th>
               <th><div class="th-search">50% prof</div></th>
               <th><div class="th-search">Ummana</div></th>
             </tr>
@@ -4716,7 +4722,7 @@ function suscribirCremas(){
     });
     renderCremas();
   }, err=>{
-    document.getElementById('cTbody').innerHTML = `<tr><td colspan="12" class="empty-state" style="color:#a13a3a;">No se pudieron cargar los datos de cremas: ${err.message}</td></tr>`;
+    document.getElementById('cTbody').innerHTML = `<tr><td colspan="13" class="empty-state" style="color:#a13a3a;">No se pudieron cargar los datos de cremas: ${err.message}</td></tr>`;
   });
 }
 // Movimientos del mes: si coincide con el mes de la tabla principal se usan esos (ya están en vivo);
@@ -4752,7 +4758,7 @@ function calcularCrema(m){
   const aPagar = colageno ? (costo!=null ? Math.round(costo) : null) : (cot && costo!=null ? Math.round(costo * cot) : null);
   const prof = aPagar==null ? null : (indica===PARTICULAR ? 0 : Math.round((pago - aPagar) / 2));
   const ummana = aPagar==null ? null : pago - aPagar - prof;
-  return { pago, indica, cot, colageno, venta: !colageno && prod.venta!=null && prod.venta!=='' ? Number(prod.venta) : null, costo, aPagar, prof, ummana };
+  return { pago, indica, cot, colageno, pagado: ['si','bon'].includes(ex.pagado) ? ex.pagado : 'no', venta: !colageno && prod.venta!=null && prod.venta!=='' ? Number(prod.venta) : null, costo, aPagar, prof, ummana };
 }
 
 /* ---- Vista, mes y pestañas ---- */
@@ -4770,7 +4776,6 @@ function renderCremas(){
   document.querySelectorAll('.c-tab[data-ctab]').forEach(b=> b.classList.toggle('active', b.dataset.ctab===cTab));
   document.getElementById('cPanelMovs').classList.toggle('col-hidden', cTab!=='movs');
   document.getElementById('cPanelStock').classList.toggle('col-hidden', cTab!=='stock');
-  document.getElementById('cBtnCotTodos').classList.toggle('col-hidden', cTab!=='movs');
   if(cTab==='movs') renderCremasMovs(); else renderCremasStock();
 }
 
@@ -4789,7 +4794,7 @@ function renderCremasMovs(){
       && (!f('cfIndica') || contiene(c.indica, f('cfIndica')));
   });
   if(!filas.length){
-    tb.innerHTML = `<tr><td colspan="12" class="empty-state">No hay movimientos de cremas o colágenos en este mes.</td></tr>`;
+    tb.innerHTML = `<tr><td colspan="13" class="empty-state">No hay movimientos de cremas o colágenos en este mes.</td></tr>`;
     tf.innerHTML = ''; return;
   }
   const profs = [PARTICULAR, ...todosLosNombresDeProfesionales().filter(n=> !esProfCremas(n))];
@@ -4810,6 +4815,11 @@ function renderCremasMovs(){
       <td class="monto">${c.costo==null ? '<span class="pend">—</span>' : (c.colageno ? fmtPesos(c.costo) : fmtUsd(c.costo))}</td>
       <td>${c.colageno ? '<span class="pend">—</span>' : `<input class="c-cot" data-id="${m.id}" inputmode="numeric" value="${c.cot ? c.cot.toLocaleString('es-AR') : ''}" placeholder="—">`}</td>
       <td class="monto">${c.colageno ? '<span class="pend">—</span>' : celdaMonto(c.aPagar)}</td>
+      <td><select class="c-pag c-pag-${c.pagado}" data-id="${m.id}">
+        <option value="no" ${c.pagado==='no'?'selected':''}>NO</option>
+        <option value="si" ${c.pagado==='si'?'selected':''}>SI</option>
+        <option value="bon" ${c.pagado==='bon'?'selected':''}>BON</option>
+      </select></td>
       <td class="monto">${celdaMonto(c.prof)}</td>
       <td class="monto ${c.ummana!=null && c.ummana<0 ? 'neg' : ''}">${celdaMonto(c.ummana)}</td>
     </tr>`;
@@ -4817,9 +4827,10 @@ function renderCremasMovs(){
   tf.innerHTML = `<tr>
     <td colspan="5" class="left">TOTAL</td>
     <td class="monto">${fmtPesos(tPago)}</td><td></td><td></td><td></td>
-    <td class="monto">${fmtPesos(tPagar)}</td><td class="monto">${fmtPesos(tProf)}</td>
+    <td class="monto">${fmtPesos(tPagar)}</td><td></td><td class="monto">${fmtPesos(tProf)}</td>
     <td class="monto ${tUmm<0?'neg':''}">${fmtPesos(tUmm)}</td></tr>`;
   tb.querySelectorAll('.c-indica').forEach(sel=> sel.onchange = ()=> guardarExtraCrema(sel.dataset.id, {indica: sel.value}));
+  tb.querySelectorAll('.c-pag').forEach(sel=> sel.onchange = ()=> guardarExtraCrema(sel.dataset.id, {pagado: sel.value}));
   tb.querySelectorAll('.c-cot').forEach(inp=>{
     inp.addEventListener('input', ()=> formatearInputMonto(inp));
     inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } });
@@ -4836,20 +4847,6 @@ async function guardarExtraCrema(id, datos){
   try{ await db.collection('cremas').doc(id).set(datos, {merge:true}); }
   catch(e){ alert("No se pudo guardar: " + e.message); }
 }
-// Cotización para todas las filas del mes que todavía no la tienen
-document.getElementById('cBtnCotTodos').onclick = async ()=>{
-  const faltan = movimientosCremas().filter(m=> !esColageno(m.prof) && !Number((cremasExtra[m.id]||{}).cot));
-  if(!faltan.length){ alert("Todas las cremas de este mes ya tienen cotización."); return; }
-  const v = parseMonto(prompt(`Cotización para ${faltan.length} movimiento(s) sin cotización:`) || '');
-  if(!v) return;
-  try{
-    const lote = db.batch();
-    faltan.forEach(m=>{ cremasExtra[m.id] = {...(cremasExtra[m.id]||{}), cot: v}; lote.set(db.collection('cremas').doc(m.id), {cot: v}, {merge:true}); });
-    renderCremasMovs();
-    await lote.commit();
-  }catch(e){ alert("No se pudo guardar: " + e.message); }
-};
-
 /* ---- Pestaña: stock (precios de venta y costo en USD) ---- */
 function productosCremas(){
   const porClave = {};
