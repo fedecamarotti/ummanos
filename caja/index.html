@@ -2086,6 +2086,9 @@ function attachAutocomplete(input, getOptions, onPick, etiqueta){
       if(indiceActivo >= 0){
         e.preventDefault();
         elegir(opcionesActuales[indiceActivo]);
+      } else if(input.value.trim() && opcionesActuales.length){
+        e.preventDefault();
+        elegir(opcionesActuales[0]);
       }
     } else if(e.key === 'Escape'){
       dd.classList.remove('show');
@@ -3913,6 +3916,15 @@ document.querySelectorAll('#sTipo button').forEach(b=>{
 });
 
 // Fila de insumo (sirve para compras "sItems" y para insumos usados en una aplicación "sItemsIng")
+// Pasa al próximo insumo; si era el último, agrega una fila vacía (las vacías no se guardan)
+function siguienteInsumo(row, contId, sel, agregar){
+  const filas = [...document.getElementById(contId).children];
+  const i = filas.indexOf(row);
+  if(i === filas.length - 1) agregar();
+  const next = document.getElementById(contId).children[i+1];
+  const inp = next && next.querySelector(sel);
+  if(inp) inp.focus();
+}
 function sAgregarItem(it, contId){
   const row = document.createElement('div');
   row.className = 's-item';
@@ -3934,7 +3946,8 @@ function sAgregarItem(it, contId){
     if(p && (contId==='sItemsIng' || !inVu.value)) inVu.value = p.toLocaleString('es-AR');
     if(contId==='sItemsIng' && !inCant.value) inCant.value = '1';
     sRecalcular();
-    inCant.focus(); inCant.select();
+    if(contId==='sItemsIng') siguienteInsumo(row, 'sItemsIng', '.si-insumo', ()=> sAgregarItem(null, 'sItemsIng'));
+    else { inCant.focus(); inCant.select(); }
   }, etiquetaInsumo);
   [inCant, inVu].forEach(inp=> inp.addEventListener('input', ()=>{ formatearInputMonto(inp); sRecalcular(); }));
   row.querySelector('.btn-quitar').onclick = ()=>{ row.remove(); sRecalcular(); };
@@ -4291,7 +4304,7 @@ function abrirFichaHC(id){
   document.getElementById('hcPaciente').textContent = p.nombreCompleto;
   document.getElementById('hcFnac').value = fnacISO(p.fnac);
   document.getElementById('hcEdad').textContent = edadDesde(fnacISO(p.fnac));
-  document.getElementById('hcInicio').value = '';
+  document.getElementById('hcInicio').value = hoyISO();
   document.querySelectorAll('[data-hc]').forEach(el=> el.value = '');
   document.getElementById('hcEstado').textContent = '';
   document.getElementById('hcNotaForm').classList.add('col-hidden');
@@ -4303,7 +4316,7 @@ function abrirFichaHC(id){
     hcDatos = d.exists ? d.data() : {};
     if(primera){   // los campos se completan al abrir; después no se pisa lo que se está escribiendo
       primera = false;
-      document.getElementById('hcInicio').value = hcDatos.hcInicio || '';
+      document.getElementById('hcInicio').value = hcDatos.hcInicio || hoyISO();
       document.querySelectorAll('[data-hc]').forEach(el=> el.value = hcDatos[el.dataset.hc] || '');
       document.getElementById('hcEstado').textContent = hcDatos.actualizadoPor ? `Última edición: ${hcDatos.actualizadoPor}` : '';
     }
@@ -4411,7 +4424,7 @@ function pAgregarItem(it){
   if(it){ inIns.value = it.insumo||''; inCant.value = it.cant ? Number(it.cant).toLocaleString('es-AR') : ''; }
   attachAutocomplete(inIns, insumosConocidos, ()=>{
     if(!inCant.value) inCant.value = '1';
-    inCant.focus(); inCant.select();
+    siguienteInsumo(row, 'aItems', '.pi-insumo', ()=> pAgregarItem());
   });
   inCant.addEventListener('input', ()=> formatearInputMonto(inCant));
   row.querySelector('.btn-quitar').onclick = ()=> row.remove();
