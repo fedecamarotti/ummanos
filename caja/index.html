@@ -301,6 +301,7 @@
   .p-bar h2{font-size:15px;font-weight:700;margin:0 6px 0 4px;}
   .p-bar input[type=date]{width:auto;padding:7px 10px;}
   .p-spacer{flex:1;}
+  .p-a{font-size:12px;font-weight:600;color:var(--muted);}
   .p-btn-nuevo{background:#c9b183;border-color:#c9b183;color:#3a2f1c;}
   .p-btn-nuevo:hover{background:#bfa473;}
   .p-num{display:inline-block;min-width:24px;padding:2px 7px;border-radius:20px;background:#f0e8cf;color:#5a4a2c;font-size:10px;font-weight:700;}
@@ -614,18 +615,21 @@
   <div id="pSueros" class="col-hidden">
     <div class="p-bar">
       <button class="btn" id="pVolver">← Inicio</button>
-      <h2>Aplicaciones del día</h2>
-      <input type="date" id="pFecha">
+      <h2 id="pTitulo">Aplicaciones del día</h2>
+      <input type="date" id="pDesde" title="Desde">
+      <span class="p-a">a</span>
+      <input type="date" id="pHasta" title="Hasta">
       <button class="btn" id="pBtnPacientes">Pacientes</button>
       <span class="p-spacer"></span>
       <button class="btn p-btn-nuevo" id="pBtnNuevo">+ Nuevo suero</button>
     </div>
     <div class="sheet-wrap">
       <table class="tabla-mov" style="min-width:720px;">
-        <colgroup><col style="width:34px"><col style="width:64px"><col style="width:26%"><col><col style="width:28%"></colgroup>
+        <colgroup><col style="width:34px"><col style="width:82px"><col style="width:64px"><col style="width:26%"><col><col style="width:28%"></colgroup>
         <thead>
           <tr>
             <th class="editcol"></th>
+            <th><div class="th-search">Fecha</div></th>
             <th><div class="th-search">N°</div></th>
             <th><div class="th-search th-search-left">Paciente</div></th>
             <th><div class="th-search">Insumos</div></th>
@@ -4138,14 +4142,21 @@ function portalIr(v){
   document.getElementById('pHome').classList.toggle('col-hidden', v!=='home');
   document.getElementById('pSueros').classList.toggle('col-hidden', v!=='sueros');
   if(v==='sueros'){
-    if(!document.getElementById('pFecha').value) document.getElementById('pFecha').value = hoyISO();
+    if(!document.getElementById('pDesde').value) document.getElementById('pDesde').value = hoyISO();
+    if(!document.getElementById('pHasta').value) document.getElementById('pHasta').value = hoyISO();
     renderPortalSueros();
   }
 }
 document.getElementById('pLogout').onclick = ()=> auth.signOut().then(()=> location.replace('../'));
 document.getElementById('pIrSueros').onclick = ()=>{ if(puedeCargarSueros()) portalIr('sueros'); };
 document.getElementById('pVolver').onclick = ()=> location.href = '../';
-document.getElementById('pFecha').addEventListener('change', renderPortalSueros);
+['pDesde','pHasta'].forEach(id=> document.getElementById(id).addEventListener('change', renderPortalSueros));
+function rangoPortal(){
+  let d = document.getElementById('pDesde').value || hoyISO();
+  let h = document.getElementById('pHasta').value || d;
+  if(d > h){ [d, h] = [h, d]; document.getElementById('pDesde').value = d; document.getElementById('pHasta').value = h; }
+  return [d, h];
+}
 
 /* ---- Aplicaciones (sin valores) ---- */
 function aplicacionesSueros(){ return sueros.filter(m=> m.tipo==='ingreso'); }
@@ -4160,15 +4171,17 @@ const insumosTexto = m => (m.items||[]).map(it=> `${it.insumo} ×${Number(it.can
 function renderPortalSueros(){
   const tb = document.getElementById('pLista');
   if(!tb || document.getElementById('pSueros').classList.contains('col-hidden')) return;
-  const fecha = document.getElementById('pFecha').value || hoyISO();
+  const [desde, hasta] = rangoPortal();
+  document.getElementById('pTitulo').textContent = desde===hasta ? 'Aplicaciones del día' : 'Aplicaciones';
   const num = numerosDeAplicacion();
-  const delDia = aplicacionesSueros().filter(m=> m.fechaISO===fecha);
+  const delDia = aplicacionesSueros().filter(m=> m.fechaISO>=desde && m.fechaISO<=hasta);
   if(!delDia.length){
-    tb.innerHTML = `<tr><td colspan="5" class="empty-state">No hay aplicaciones cargadas este día.</td></tr>`;
+    tb.innerHTML = `<tr><td colspan="6" class="empty-state">${desde===hasta ? 'No hay aplicaciones cargadas este día.' : 'No hay aplicaciones cargadas en estas fechas.'}</td></tr>`;
   } else {
     tb.innerHTML = delDia.map(m=>`
       <tr>
         <td class="editcol"><button class="editbtn" title="Editar" onclick="abrirAplic('${m.id}')">&#9998;</button></td>
+        <td>${fechaLarga(m.fechaISO)}</td>
         <td><span class="p-num">${num[m.id]}</span></td>
         <td class="left">${m.tercero||''}</td>
         <td class="concepto">${insumosTexto(m) || '<span class="pend">—</span>'}</td>
@@ -4412,7 +4425,7 @@ function abrirAplic(id){
   document.getElementById('aplicTitulo').textContent = m ? 'Editar aplicación' : 'Nuevo suero';
   document.getElementById('aGuardar').textContent = m ? 'Guardar cambios' : 'Guardar';
   document.getElementById('aEliminar').classList.toggle('col-hidden', !m);
-  document.getElementById('aFecha').value = m ? m.fechaISO : (document.getElementById('pFecha').value || hoyISO());
+  document.getElementById('aFecha').value = m ? m.fechaISO : (rangoPortal()[0]===rangoPortal()[1] ? rangoPortal()[0] : hoyISO());
   aPaciente.value = m ? (m.tercero||'') : '';
   document.getElementById('aNotas').value = m ? (m.notas||'') : '';
   document.getElementById('aItems').innerHTML = '';
@@ -4496,7 +4509,8 @@ document.getElementById('aGuardar').onclick = async ()=>{
       datos.creadoEn = firebase.firestore.FieldValue.serverTimestamp();
       await db.collection('sueros').add(datos);
     }
-    document.getElementById('pFecha').value = fechaISO;
+    const [d0, h0] = rangoPortal();
+    if(fechaISO < d0 || fechaISO > h0){ document.getElementById('pDesde').value = fechaISO; document.getElementById('pHasta').value = fechaISO; }
     cerrarAplic();
     renderPortalSueros();
   }catch(e){ alert("No se pudo guardar: " + e.message); }
