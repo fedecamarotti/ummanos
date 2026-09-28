@@ -278,6 +278,12 @@
   .tabla-cremas tfoot td{position:sticky;bottom:0;background:#f4eeda;font-weight:700;font-size:10.5px;border-top:1px solid var(--border);padding-top:7px;padding-bottom:7px;}
   .tabla-cremas tfoot td.left{padding-left:14px;}
   .c-aviso{display:inline-block;padding:0 6px;border-radius:10px;background:#fff1dc;color:#9a5b00;font-size:9px;font-weight:700;}
+  .csi-lista{max-height:52vh;overflow:auto;border:1px solid var(--border);border-radius:10px;}
+  .csi-fila{display:grid;grid-template-columns:80px 1fr 90px;gap:10px;align-items:center;padding:6px 12px;border-bottom:1px solid var(--border);font-size:12px;}
+  .csi-fila:last-child{border-bottom:none;}
+  .csi-fila .codigo{color:var(--muted);font-size:11px;}
+  .csi-fila input{padding:5px 8px;text-align:right;font-weight:700;}
+  .tabla-stock td.neg{color:#a13a3a;}
   .tabla-stock input.c-precio{width:100%;padding:4px 8px;font-size:11.5px;border-radius:6px;text-align:right;font-weight:700;}
   .menu-links a.menu-inicio{display:flex;align-items:center;gap:10px;padding:10px;border:none;border-radius:9px;background:transparent;font-size:12.5px;font-weight:600;color:var(--text);text-decoration:none;}
   .menu-links a.menu-inicio:hover{background:#f0e8cf;}
@@ -972,7 +978,7 @@
         <button class="s-tab c-tab active" data-ctab="movs" role="tab">Movimientos cremas/colágenos</button>
         <button class="s-tab c-tab" data-ctab="stock" role="tab">Stock</button>
       </div>
-      <div></div>
+      <div style="justify-self:end;"><button class="btn s-cfg-btn" id="cBtnStockIni" title="Cargar el conteo inicial de cada producto">📦 Stock inicial</button></div>
     </div>
 
     <div class="s-panel" id="cPanelMovs">
@@ -1010,7 +1016,7 @@
       <div class="s-caption">Cremas: venta y costo en dólares. Colágenos: costo en pesos.</div>
       <div class="sheet-wrap" style="flex:0 1 auto;width:calc(100% - 56px);max-width:900px;margin:6px auto 20px;">
         <table class="tabla-stock">
-          <colgroup><col style="width:90px"><col><col style="width:130px"><col style="width:130px"><col style="width:130px"></colgroup>
+          <colgroup><col style="width:90px"><col><col style="width:120px"><col style="width:120px"><col style="width:120px"><col style="width:80px"></colgroup>
           <thead>
             <tr>
               <th><div class="th-search">Código</div></th>
@@ -1018,6 +1024,7 @@
               <th><div class="th-search">Área</div></th>
               <th><div class="th-search">Venta USD</div></th>
               <th><div class="th-search">Costo</div></th>
+              <th><div class="th-search">Stock</div></th>
             </tr>
           </thead>
           <tbody id="cStockBody"></tbody>
@@ -1419,6 +1426,22 @@
     <div id="exLista"></div>
     <div class="modal-actions">
       <button class="btn" id="cerrarExcep">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: STOCK INICIAL (CREMAS / COLÁGENOS) ============ -->
+<div class="overlay" id="overlayCStockIni">
+  <div class="modal wide">
+    <button class="close-x" id="closeCStockIni">✕</button>
+    <h2>Stock inicial</h2>
+    <div class="modal-sub">Cantidad de cada producto al día elegido. Desde esa fecha, cada venta en los movimientos diarios descuenta 1.</div>
+    <div class="field" style="max-width:220px;"><label>Fecha del conteo</label><input type="date" id="csiFecha"></div>
+    <input type="text" id="csiBuscar" placeholder="Buscar producto…" autocomplete="off" style="margin-bottom:10px;">
+    <div class="csi-lista" id="csiLista"></div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelCStockIni">Cancelar</button>
+      <button class="btn btn-primary" id="guardarCStockIni">Guardar stock inicial</button>
     </div>
   </div>
 </div>
@@ -3529,7 +3552,7 @@ function mostrarVista(v){
   document.getElementById('btnSueros').classList.toggle('activo', v==='sueros');
   document.getElementById('btnCremas').classList.toggle('activo', v==='cremas');
   if(v==='sueros'){ suscribirSueros(); renderSueros(); }
-  if(v==='cremas'){ suscribirCremas(); cargarMovsCremas(); renderCremas(); }
+  if(v==='cremas'){ suscribirCremas(); cargarMovsCremas(); cremasVentas = null; renderCremas(); }
 }
 document.getElementById('btnVistaMovimientos').onclick = ()=> mostrarVista('movimientos');
 document.getElementById('btnSueros').onclick = ()=> mostrarVista('sueros');
@@ -4701,6 +4724,8 @@ let cremasMesCargado = null;
 let cremasExtra = {};            // { idMovimiento: {indica, cot} }
 let cremasStock = {};            // { CODIGO: {venta, costo} }
 let unsubCremas = null;
+let cremasInicial = {fecha:'', cantidades:{}};   // cremas/_stockInicial
+let cremasVentas = null;                          // todos los movimientos de cremas/colágenos (para descontar stock)
 const PARTICULAR = 'PARTICULAR';
 const fmtUsd = v => 'US$ ' + Number(v).toLocaleString('es-AR', {maximumFractionDigits: 2});
 const parseDecimal = v => { const n = Number(String(v||'').replace(/\./g,'').replace(',','.')); return isNaN(n) ? 0 : n; };
@@ -4715,9 +4740,10 @@ function claveProducto(m){ return mayus((m.codigo||'').trim()) || mayus((m.conce
 function suscribirCremas(){
   if(unsubCremas || !esFede()) return;
   unsubCremas = db.collection('cremas').onSnapshot(snap=>{
-    cremasExtra = {}; cremasStock = {};
+    cremasExtra = {}; cremasStock = {}; cremasInicial = {fecha:'', cantidades:{}};
     snap.docs.forEach(d=>{
       if(d.id==='_stock') cremasStock = d.data().productos || {};
+      else if(d.id==='_stockInicial') cremasInicial = {fecha:'', cantidades:{}, ...d.data()};
       else cremasExtra[d.id] = d.data();
     });
     renderCremas();
@@ -4776,7 +4802,7 @@ function renderCremas(){
   document.querySelectorAll('.c-tab[data-ctab]').forEach(b=> b.classList.toggle('active', b.dataset.ctab===cTab));
   document.getElementById('cPanelMovs').classList.toggle('col-hidden', cTab!=='movs');
   document.getElementById('cPanelStock').classList.toggle('col-hidden', cTab!=='stock');
-  if(cTab==='movs') renderCremasMovs(); else renderCremasStock();
+  if(cTab==='movs') renderCremasMovs(); else { if(cremasVentas==null) cargarVentasCremas(); renderCremasStock(); }
 }
 
 /* ---- Pestaña: movimientos cremas/colágenos ---- */
@@ -4848,6 +4874,70 @@ async function guardarExtraCrema(id, datos){
   catch(e){ alert("No se pudo guardar: " + e.message); }
 }
 /* ---- Pestaña: stock (precios de venta y costo en USD) ---- */
+function precioTxt(v, mon){
+  if(v==null || v==='') return '';
+  return mon==='ars' ? fmtPesos(Number(v)) : 'USD ' + Number(v).toLocaleString('es-AR', {maximumFractionDigits:2});
+}
+// Ventas (movimientos diarios de cremas/colágenos) desde la fecha del stock inicial
+async function cargarVentasCremas(){
+  const profs = Object.keys(CONCEPTOS).filter(esProfCremas);
+  if(!profs.length){ cremasVentas = []; return; }
+  try{
+    const snap = await db.collection('movimientos').where('prof','in', profs.slice(0,10)).get();
+    cremasVentas = snap.docs.map(d=> ({id:d.id, ...d.data()}));
+  }catch(e){ cremasVentas = []; console.warn('No se pudieron leer las ventas de cremas', e); }
+  if(cTab==='stock') renderCremasStock();
+}
+function stockProducto(clave){
+  const c = cremasInicial.cantidades || {};
+  if(c[clave]==null || c[clave]==='') return null;
+  const desde = cremasInicial.fecha || '0000-00-00';
+  const vendidos = (cremasVentas||[]).filter(m=> claveProducto(m)===clave && m.fechaISO>=desde && !m.saldaDeuda && !esEgreso(m.prof, m.concepto)).length;
+  return Number(c[clave]) - vendidos;
+}
+function stockTxt(clave){
+  const n = stockProducto(clave);
+  if(n==null) return {txt:'<span class="pend">—</span>', neg:false};
+  if(cremasVentas==null) return {txt:'…', neg:false};
+  return {txt: n.toLocaleString('es-AR'), neg: n<0};
+}
+
+/* ---- Stock inicial ---- */
+const overlayCStockIni = document.getElementById('overlayCStockIni');
+document.getElementById('cBtnStockIni').onclick = ()=>{
+  if(!esFede()) return;
+  document.getElementById('csiFecha').value = cremasInicial.fecha || hoyISO();
+  document.getElementById('csiBuscar').value = '';
+  const c = cremasInicial.cantidades || {};
+  document.getElementById('csiLista').innerHTML = productosCremas().map(p=>`
+    <div class="csi-fila" data-texto="${(p.codigo+' '+p.nombre).replace(/"/g,'&quot;')}">
+      <span class="codigo">${p.codigo}</span>
+      <span class="nom">${p.nombre}</span>
+      <input type="text" inputmode="numeric" data-k="${p.clave.replace(/"/g,'&quot;')}" value="${c[p.clave]!=null && c[p.clave]!=='' ? c[p.clave] : ''}" placeholder="—">
+    </div>`).join('') || '<div class="empty-state">No hay productos de cremas o colágenos en Conceptos.</div>';
+  document.querySelectorAll('#csiLista input').forEach(inp=> inp.addEventListener('input', ()=> inp.value = inp.value.replace(/\D/g,'')));
+  overlayCStockIni.classList.add('show');
+};
+document.getElementById('csiBuscar').addEventListener('input', e=>{
+  const q = e.target.value;
+  document.querySelectorAll('#csiLista .csi-fila').forEach(f=> f.style.display = !q || contiene(f.dataset.texto, q) ? '' : 'none');
+});
+const cerrarCStockIni = ()=> overlayCStockIni.classList.remove('show');
+document.getElementById('closeCStockIni').onclick = cerrarCStockIni;
+document.getElementById('cancelCStockIni').onclick = cerrarCStockIni;
+document.getElementById('guardarCStockIni').onclick = async ()=>{
+  if(!esFede()) return;
+  const fecha = document.getElementById('csiFecha').value;
+  if(!fecha){ alert("Elegí la fecha del conteo."); return; }
+  const cantidades = {};
+  document.querySelectorAll('#csiLista input').forEach(inp=>{ if(inp.value!=='') cantidades[inp.dataset.k] = Number(inp.value); });
+  try{
+    await db.collection('cremas').doc('_stockInicial').set({fecha, cantidades, actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()});
+    cremasInicial = {fecha, cantidades};
+    cerrarCStockIni();
+    cTab = 'stock'; renderCremas();
+  }catch(e){ alert("No se pudo guardar: " + e.message); }
+};
 function productosCremas(){
   const porClave = {};
   Object.keys(CONCEPTOS).filter(esProfCremas).forEach(prof=>
@@ -4860,22 +4950,30 @@ function renderCremasStock(){
   if(document.activeElement && tb.contains(document.activeElement)) return;
   const q = document.getElementById('cfStock').value;
   const lista = productosCremas().filter(p=> !q || contiene(p.codigo+' '+p.nombre, q));
-  if(!lista.length){ tb.innerHTML = `<tr><td colspan="5" class="empty-state">No hay productos de cremas o colágenos en Conceptos.</td></tr>`; return; }
+  if(!lista.length){ tb.innerHTML = `<tr><td colspan="6" class="empty-state">No hay productos de cremas o colágenos en Conceptos.</td></tr>`; return; }
   tb.innerHTML = lista.map(p=>{
     const s = cremasStock[p.clave] || {};
     return `<tr>
       <td class="codigo">${p.codigo}</td>
       <td class="left">${p.nombre}</td>
       <td class="codigo">${p.prof}</td>
-      <td>${esColageno(p.prof) ? '<span class="pend">—</span>' : `<input class="c-precio" data-k="${p.clave.replace(/"/g,'&quot;')}" data-campo="venta" inputmode="decimal" value="${s.venta!=null && s.venta!=='' ? String(s.venta).replace('.',',') : ''}" placeholder="US$">`}</td>
-      <td><input class="c-precio" data-k="${p.clave.replace(/"/g,'&quot;')}" data-campo="costo" inputmode="decimal" value="${s.costo!=null && s.costo!=='' ? (esColageno(p.prof) ? Number(s.costo).toLocaleString('es-AR') : String(s.costo).replace('.',',')) : ''}" placeholder="${esColageno(p.prof) ? '$ (pesos)' : 'US$'}"></td>
+      <td>${esColageno(p.prof) ? '<span class="pend">—</span>' : `<input class="c-precio" data-k="${p.clave.replace(/"/g,'&quot;')}" data-campo="venta" data-mon="usd" inputmode="decimal" value="${precioTxt(s.venta,'usd')}">`}</td>
+      <td><input class="c-precio" data-k="${p.clave.replace(/"/g,'&quot;')}" data-campo="costo" data-mon="${esColageno(p.prof)?'ars':'usd'}" inputmode="decimal" value="${precioTxt(s.costo, esColageno(p.prof)?'ars':'usd')}"></td>
+      <td class="${stockTxt(p.clave).neg ? 'neg' : ''}" style="font-weight:700;">${stockTxt(p.clave).txt}</td>
     </tr>`;
   }).join('');
   tb.querySelectorAll('.c-precio').forEach(inp=>{
     inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } });
+    inp.addEventListener('focus', ()=>{   // al editar se ve solo el número
+      const v = (cremasStock[inp.dataset.k]||{})[inp.dataset.campo];
+      inp.value = v==null || v==='' ? '' : String(v).replace('.',',');
+      inp.select();
+    });
     inp.addEventListener('blur', async ()=>{
       const k = inp.dataset.k, campo = inp.dataset.campo;
-      const v = inp.value.trim()==='' ? '' : parseDecimal(inp.value);
+      const limpio = inp.value.replace(/[^\d,.]/g,'');
+      const v = limpio==='' ? '' : parseDecimal(limpio);
+      inp.value = precioTxt(v, inp.dataset.mon);
       if(String((cremasStock[k]||{})[campo] ?? '') === String(v)) return;
       cremasStock[k] = {...(cremasStock[k]||{}), [campo]: v};
       try{ await db.collection('cremas').doc('_stock').set({productos: {[k]: {[campo]: v}}}, {merge:true}); }
