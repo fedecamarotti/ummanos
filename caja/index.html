@@ -319,6 +319,44 @@
   .p-pac-tabla td.left{text-align:left;}
   .p-pac-tabla tr:last-child td{border-bottom:none;}
   .ex-chk input, .ex-row input{accent-color:var(--accent);}
+  .modal.hc-modal{max-width:860px;}
+  .hc-nota-form textarea:focus{outline:none;border-color:var(--accent);}
+  .hc-busca{display:flex;gap:8px;margin-bottom:12px;}
+  .hc-busca input{flex:1;}
+  .hc-lista{max-height:56vh;overflow:auto;border:1px solid var(--border);border-radius:10px;}
+  .hc-item{display:flex;justify-content:space-between;align-items:center;width:100%;padding:11px 14px;border:none;border-bottom:1px solid var(--border);background:#fffcf5;text-align:left;font-size:12.5px;font-weight:600;color:var(--text);}
+  .hc-item:last-child{border-bottom:none;}
+  .hc-item:hover{background:#f6f0de;}
+  .hc-item .cant{font-size:11px;color:var(--muted);font-weight:600;}
+  .hc-volver{font-size:11.5px;padding:6px 12px;margin-bottom:12px;}
+  .hc-ficha{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fffcf5;}
+  .hc-banda{background:#b5b09a;color:#fff;text-align:center;font-weight:700;font-size:12px;letter-spacing:0.3px;padding:9px 12px;line-height:1.35;}
+  .hc-banda small{display:block;font-weight:500;font-size:11px;letter-spacing:0;}
+  .hc-cuerpo{padding:12px 14px 14px;}
+  .hc-fila4{display:grid;grid-template-columns:2fr 1.2fr .6fr 1.2fr;gap:10px;margin-bottom:10px;}
+  .hc-fila2{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;}
+  .hc-campo label{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:3px;}
+  .hc-campo textarea, .hc-campo input{width:100%;padding:6px 9px;font-size:12px;border:1px solid var(--border);border-radius:7px;background:#fdfbf2;font-family:inherit;resize:vertical;}
+  .hc-campo textarea:focus, .hc-campo input:focus{outline:none;border-color:var(--accent);background:#fffcf5;}
+  .hc-valor{padding:6px 0;font-size:12.5px;font-weight:700;}
+  .hc-acciones{display:flex;align-items:center;gap:10px;margin-top:12px;}
+  .hc-estado{flex:1;font-size:11px;color:var(--muted);text-align:right;}
+  .hc-nota-form{margin-top:10px;padding:10px 12px;background:#f6f0de;border:1px solid var(--border);border-radius:8px;}
+  .hc-nota-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .hc-nota-top label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;}
+  .hc-nota-top input{width:auto;padding:5px 8px;font-size:12px;}
+  .hc-nota-form textarea{width:100%;padding:7px 9px;font-size:12px;border:1px solid var(--border);border-radius:7px;background:#fffcf5;font-family:inherit;resize:vertical;}
+  .hc-hist-titulo{margin:16px 0 8px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;}
+  .hc-ev{display:grid;grid-template-columns:86px 1fr;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:#fffcf5;}
+  .hc-ev .fecha{font-size:11.5px;font-weight:700;}
+  .hc-ev .tipo{display:inline-block;margin-top:4px;}
+  .hc-ev .det{font-size:12px;line-height:1.45;}
+  .hc-ev .det .muted{color:var(--muted);}
+  .hc-ev.nota{background:#fbf6e9;border-style:dashed;}
+  .hc-ev .tag-nota{display:inline-block;padding:1px 7px;border-radius:20px;background:#efe3c4;color:#6b5530;font-size:9.5px;font-weight:700;}
+  .hc-ev .quitar{float:right;border:none;background:none;color:#c62828;font-size:12px;cursor:pointer;opacity:.6;}
+  .hc-ev .quitar:hover{opacity:1;}
+  @media (max-width:720px){ .hc-fila4{grid-template-columns:1fr 1fr;} .hc-fila2{grid-template-columns:1fr;} }
   .ex-row .btn-quitar{width:30px;height:30px;border:1px solid var(--border);background:#fffcf5;border-radius:8px;color:#c62828;}
 
   .tabla-sueros td.monto.neg{color:#a13a3a;}
@@ -527,7 +565,7 @@
 <body>
 
 <!-- ============ LOGIN ============ -->
-<div id="loginScreen">
+<div id="loginScreen" class="col-hidden">
   <div class="login-card">
     <img src="images/logo.png" alt="Ummana" class="login-logo">
     <div class="sub">Ingresá con tu usuario para continuar</div>
@@ -625,13 +663,72 @@
 
 <!-- ============ MODAL: PACIENTES (portal) ============ -->
 <div class="overlay" id="overlayPPacientes">
-  <div class="modal wide">
+  <div class="modal hc-modal">
     <button class="close-x" id="closePPac">✕</button>
-    <h2>Pacientes</h2>
-    <div class="modal-sub">Historial de aplicaciones de cada paciente.</div>
-    <input type="text" id="pBuscarPac" placeholder="Buscar paciente…" autocomplete="off" style="margin-bottom:12px;">
-    <div id="pPacLista" class="p-pac-lista"></div>
-    <div class="modal-actions"><button class="btn" id="cerrarPPac">Cerrar</button></div>
+
+    <!-- Lista -->
+    <div id="pPacVistaLista">
+      <h2>Pacientes</h2>
+      <div class="modal-sub">Buscá un paciente para ver su ficha y su historial.</div>
+      <div class="hc-busca">
+        <input type="text" id="pBuscarPac" placeholder="Buscar paciente…" autocomplete="off">
+        <button class="btn p-btn-nuevo" id="pBtnNuevoPac">+ Paciente nuevo</button>
+      </div>
+      <div class="subcard col-hidden" id="pNuevoPacCard">
+        <h3>Paciente nuevo</h3>
+        <div class="row2">
+          <div class="field"><label>Apellido</label><input type="text" id="pNpApellido"></div>
+          <div class="field"><label>Nombre</label><input type="text" id="pNpNombre"></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;">
+          <button class="btn" id="pNpCancelar">Cancelar</button>
+          <button class="btn btn-primary" id="pNpGuardar">Crear paciente</button>
+        </div>
+      </div>
+      <div id="pPacLista" class="hc-lista"></div>
+    </div>
+
+    <!-- Ficha -->
+    <div id="pPacVistaFicha" class="col-hidden">
+      <button class="btn hc-volver" id="pPacVolver">← Pacientes</button>
+      <div class="hc-ficha">
+        <div class="hc-banda">RESUMEN DE HISTORIA CLÍNICA + ORDEN DE SUEROTERAPIA<small>(completa profesional derivante)</small></div>
+        <div class="hc-cuerpo">
+          <div class="hc-fila4">
+            <div class="hc-campo hc-ancho2"><label>Paciente</label><div class="hc-valor" id="hcPaciente"></div></div>
+            <div class="hc-campo"><label>Fecha de nacimiento</label><input type="date" id="hcFnac"></div>
+            <div class="hc-campo hc-chico"><label>Edad</label><div class="hc-valor" id="hcEdad">—</div></div>
+            <div class="hc-campo"><label>Inicio historia clínica</label><input type="date" id="hcInicio"></div>
+          </div>
+          <div class="hc-fila2">
+            <div class="hc-campo"><label>Antecedentes personales relevantes</label><textarea rows="2" data-hc="antPersonales"></textarea></div>
+            <div class="hc-campo"><label>Antecedentes familiares (si aportan)</label><textarea rows="2" data-hc="antFamiliares"></textarea></div>
+            <div class="hc-campo"><label>Medicaciones actuales</label><textarea rows="2" data-hc="medicaciones"></textarea></div>
+            <div class="hc-campo"><label>Suplementos actuales</label><textarea rows="2" data-hc="suplementos"></textarea></div>
+            <div class="hc-campo"><label>Motivo de derivación / objetivo terapéutico</label><textarea rows="2" data-hc="motivo"></textarea></div>
+            <div class="hc-campo"><label>Plan propuesto por derivante <span class="opt">(opcional)</span></label><textarea rows="2" data-hc="plan"></textarea></div>
+            <div class="hc-campo"><label>Profesional derivante</label><input type="text" data-hc="derivante"></div>
+          </div>
+          <div class="hc-acciones">
+            <button class="btn" id="hcBtnNota">+ Nota</button>
+            <span class="hc-estado" id="hcEstado"></span>
+            <button class="btn btn-primary" id="hcGuardar">Guardar ficha</button>
+          </div>
+          <div class="hc-nota-form col-hidden" id="hcNotaForm">
+            <div class="hc-nota-top">
+              <label>Fecha</label><input type="date" id="hcNotaFecha">
+            </div>
+            <textarea rows="3" id="hcNotaTexto" placeholder="Escribí la nota…"></textarea>
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
+              <button class="btn" id="hcNotaCancelar">Cancelar</button>
+              <button class="btn btn-primary" id="hcNotaGuardar">Guardar nota</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="hc-hist-titulo">Historial</div>
+      <div id="hcHistorial"></div>
+    </div>
   </div>
 </div>
 
@@ -4052,41 +4149,206 @@ function renderPortalSueros(){
   if(document.getElementById('overlayPPacientes').classList.contains('show')) renderPortalPacientes();
 }
 
-/* ---- Pacientes: historial de aplicaciones ---- */
+/* ---- Pacientes: lista, paciente nuevo, ficha (historia clínica) e historial ---- */
 const overlayPPac = document.getElementById('overlayPPacientes');
+let hcPaciente = null;        // {id, nombreCompleto, fnac}
+let hcDatos = {};             // documento historiasSueros/{id}
+let unsubHC = null;
+const HC_CAMPOS = ['antPersonales','antFamiliares','medicaciones','suplementos','motivo','plan','derivante'];
+
 document.getElementById('pBtnPacientes').onclick = ()=>{
   document.getElementById('pBuscarPac').value = '';
-  renderPortalPacientes();
+  document.getElementById('pNuevoPacCard').classList.add('col-hidden');
+  pacVista('lista');
   overlayPPac.classList.add('show');
   document.getElementById('pBuscarPac').focus();
 };
-const cerrarPPac = ()=> overlayPPac.classList.remove('show');
+const cerrarPPac = ()=>{ overlayPPac.classList.remove('show'); cerrarFichaHC(); };
 document.getElementById('closePPac').onclick = cerrarPPac;
-document.getElementById('cerrarPPac').onclick = cerrarPPac;
 document.getElementById('pBuscarPac').addEventListener('input', renderPortalPacientes);
+document.getElementById('pPacVolver').onclick = ()=>{ cerrarFichaHC(); pacVista('lista'); };
+
+function pacVista(v){
+  document.getElementById('pPacVistaLista').classList.toggle('col-hidden', v!=='lista');
+  document.getElementById('pPacVistaFicha').classList.toggle('col-hidden', v!=='ficha');
+  if(v==='lista') renderPortalPacientes();
+  overlayPPac.scrollTop = 0;
+}
+
 function renderPortalPacientes(){
+  if(overlayPPac.classList.contains('show') && !document.getElementById('pPacVistaFicha').classList.contains('col-hidden')){
+    renderHistorialHC();   // ficha abierta: solo se actualiza el historial
+    return;
+  }
   const q = document.getElementById('pBuscarPac').value;
-  const num = numerosDeAplicacion();
-  const porPac = {};
-  aplicacionesSueros().forEach(m=> (porPac[m.tercero] = porPac[m.tercero] || []).push(m));
-  const nombres = Object.keys(porPac).filter(n=> !q || contiene(n, q)).sort((a,b)=> a.localeCompare(b,'es'));
+  const cuenta = {};
+  aplicacionesSueros().forEach(m=> cuenta[m.tercero] = (cuenta[m.tercero]||0) + 1);
+  let lista = pacientesFullList.filter(p=> !q || contiene(p.nombreCompleto, q))
+    .sort((a,b)=> (a.nombreCompleto||'').localeCompare(b.nombreCompleto||'','es'));
+  if(!q) lista = lista.filter(p=> cuenta[p.nombreCompleto]);   // sin búsqueda: solo los que ya tienen sueros
   const cont = document.getElementById('pPacLista');
-  if(!nombres.length){ cont.innerHTML = `<div class="empty-state">${Object.keys(porPac).length ? 'No hay pacientes con ese nombre.' : 'Todavía no hay aplicaciones cargadas.'}</div>`; return; }
-  cont.innerHTML = nombres.map(n=>{
-    const apps = porPac[n].slice().reverse();   // la más reciente arriba
-    return `<details class="p-pac" ${nombres.length===1 ? 'open' : ''}>
-      <summary><span class="nom">${n}</span><span class="cant">${apps.length} ${apps.length===1?'aplicación':'aplicaciones'}</span></summary>
-      <table class="p-pac-tabla">
-        <thead><tr><th>N°</th><th>Fecha</th><th style="text-align:left;">Insumos</th><th style="text-align:left;">Notas</th></tr></thead>
-        <tbody>${apps.map(m=>`<tr>
-          <td><span class="p-num">${num[m.id]}</span></td>
-          <td>${fechaLarga(m.fechaISO)}</td>
-          <td class="left">${insumosTexto(m) || '—'}</td>
-          <td class="left">${m.notas||''}</td>
-        </tr>`).join('')}</tbody>
-      </table>
-    </details>`;
+  if(!lista.length){
+    cont.innerHTML = `<div class="empty-state">${q ? 'No hay pacientes con ese nombre.' : 'Escribí un nombre para buscar, o creá un paciente nuevo.'}</div>`;
+    return;
+  }
+  cont.innerHTML = lista.slice(0,80).map(p=>{
+    const n = cuenta[p.nombreCompleto]||0;
+    return `<button class="hc-item" data-id="${p.id}"><span>${p.nombreCompleto}</span><span class="cant">${n ? `${n} ${n===1?'aplicación':'aplicaciones'}` : ''}</span></button>`;
   }).join('');
+  cont.querySelectorAll('.hc-item').forEach(b=> b.onclick = ()=> abrirFichaHC(b.dataset.id));
+}
+
+/* Paciente nuevo */
+document.getElementById('pBtnNuevoPac').onclick = ()=>{
+  const card = document.getElementById('pNuevoPacCard');
+  card.classList.toggle('col-hidden');
+  document.getElementById('pNpApellido').value = '';
+  document.getElementById('pNpNombre').value = '';
+  if(!card.classList.contains('col-hidden')) document.getElementById('pNpApellido').focus();
+};
+document.getElementById('pNpCancelar').onclick = ()=> document.getElementById('pNuevoPacCard').classList.add('col-hidden');
+document.getElementById('pNpGuardar').onclick = async ()=>{
+  const ape = mayus(document.getElementById('pNpApellido').value.trim());
+  const nom = mayus(document.getElementById('pNpNombre').value.trim());
+  if(!ape || !nom){ alert("Completá apellido y nombre."); return; }
+  const nombreCompleto = `${ape}, ${nom}`;
+  const existente = pacientesFullList.find(p=> mayus(p.nombreCompleto)===nombreCompleto);
+  if(existente){ alert("Ese paciente ya existe."); abrirFichaHC(existente.id); return; }
+  try{
+    const ref = await db.collection('pacientes').add({ apellido: ape, nombre: nom, nombreCompleto,
+      creadoEn: firebase.firestore.FieldValue.serverTimestamp() });
+    document.getElementById('pNuevoPacCard').classList.add('col-hidden');
+    pacientesFullList.push({id: ref.id, apellido: ape, nombre: nom, nombreCompleto});
+    abrirFichaHC(ref.id);
+  }catch(e){ alert("No se pudo crear el paciente: " + e.message); }
+};
+
+/* Ficha */
+function edadDesde(iso){
+  if(!iso) return '—';
+  const n = new Date(iso + 'T12:00:00'), h = new Date();
+  if(isNaN(n)) return '—';
+  let e = h.getFullYear() - n.getFullYear();
+  if(h.getMonth() < n.getMonth() || (h.getMonth()===n.getMonth() && h.getDate() < n.getDate())) e--;
+  return e >= 0 ? `${e} años` : '—';
+}
+// fnac guardado en pacientes puede venir como AAAA-MM-DD o DD/MM/AAAA
+function fnacISO(v){
+  if(!v) return '';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  const m = String(v).match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if(!m) return '';
+  const y = m[3].length===2 ? '19'+m[3] : m[3];
+  return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+}
+function abrirFichaHC(id){
+  const p = pacientesFullList.find(x=> x.id===id);
+  if(!p) return;
+  hcPaciente = p;
+  hcDatos = {};
+  document.getElementById('hcPaciente').textContent = p.nombreCompleto;
+  document.getElementById('hcFnac').value = fnacISO(p.fnac);
+  document.getElementById('hcEdad').textContent = edadDesde(fnacISO(p.fnac));
+  document.getElementById('hcInicio').value = '';
+  document.querySelectorAll('[data-hc]').forEach(el=> el.value = '');
+  document.getElementById('hcEstado').textContent = '';
+  document.getElementById('hcNotaForm').classList.add('col-hidden');
+  pacVista('ficha');
+  renderHistorialHC();
+  if(unsubHC) unsubHC();
+  let primera = true;
+  unsubHC = db.collection('historiasSueros').doc(id).onSnapshot(d=>{
+    hcDatos = d.exists ? d.data() : {};
+    if(primera){   // los campos se completan al abrir; después no se pisa lo que se está escribiendo
+      primera = false;
+      document.getElementById('hcInicio').value = hcDatos.hcInicio || '';
+      document.querySelectorAll('[data-hc]').forEach(el=> el.value = hcDatos[el.dataset.hc] || '');
+      document.getElementById('hcEstado').textContent = hcDatos.actualizadoPor ? `Última edición: ${hcDatos.actualizadoPor}` : '';
+    }
+    renderHistorialHC();
+  }, err=>{
+    document.getElementById('hcEstado').textContent = 'No se pudo cargar la ficha: ' + err.message;
+  });
+}
+function cerrarFichaHC(){
+  if(unsubHC){ unsubHC(); unsubHC = null; }
+  hcPaciente = null;
+}
+document.getElementById('hcFnac').addEventListener('change', e=>{
+  document.getElementById('hcEdad').textContent = edadDesde(e.target.value);
+});
+document.getElementById('hcGuardar').onclick = async ()=>{
+  if(!hcPaciente) return;
+  const datos = { hcInicio: document.getElementById('hcInicio').value || '',
+    actualizadoPor: currentUser.nombre, actualizadoEn: firebase.firestore.FieldValue.serverTimestamp() };
+  document.querySelectorAll('[data-hc]').forEach(el=> datos[el.dataset.hc] = mayus(el.value.trim()));
+  const btn = document.getElementById('hcGuardar');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  try{
+    await db.collection('historiasSueros').doc(hcPaciente.id).set(datos, {merge:true});
+    const fnac = document.getElementById('hcFnac').value;
+    if(fnac !== fnacISO(hcPaciente.fnac)){
+      await db.collection('pacientes').doc(hcPaciente.id).update({fnac});
+      hcPaciente.fnac = fnac;
+    }
+    document.getElementById('hcEstado').textContent = '✓ Ficha guardada';
+  }catch(e){ alert("No se pudo guardar la ficha: " + e.message); }
+  btn.disabled = false; btn.textContent = 'Guardar ficha';
+};
+
+/* Notas */
+document.getElementById('hcBtnNota').onclick = ()=>{
+  const f = document.getElementById('hcNotaForm');
+  f.classList.toggle('col-hidden');
+  document.getElementById('hcNotaFecha').value = hoyISO();
+  document.getElementById('hcNotaTexto').value = '';
+  if(!f.classList.contains('col-hidden')) document.getElementById('hcNotaTexto').focus();
+};
+document.getElementById('hcNotaCancelar').onclick = ()=> document.getElementById('hcNotaForm').classList.add('col-hidden');
+document.getElementById('hcNotaGuardar').onclick = async ()=>{
+  if(!hcPaciente) return;
+  const texto = mayus(document.getElementById('hcNotaTexto').value.trim());
+  const fechaISO = document.getElementById('hcNotaFecha').value || hoyISO();
+  if(!texto){ alert("Escribí la nota."); return; }
+  const nota = { id: Date.now().toString(36) + Math.random().toString(36).slice(2,6), fechaISO, texto, autor: currentUser.nombre, creadoMs: Date.now() };
+  try{
+    await db.collection('historiasSueros').doc(hcPaciente.id).set(
+      { notas: firebase.firestore.FieldValue.arrayUnion(nota) }, {merge:true});
+    document.getElementById('hcNotaForm').classList.add('col-hidden');
+  }catch(e){ alert("No se pudo guardar la nota: " + e.message); }
+};
+async function quitarNotaHC(id){
+  const nota = (hcDatos.notas||[]).find(n=> n.id===id);
+  if(!nota || !hcPaciente) return;
+  if(!confirm("¿Eliminar esta nota?")) return;
+  try{
+    await db.collection('historiasSueros').doc(hcPaciente.id).update({ notas: firebase.firestore.FieldValue.arrayRemove(nota) });
+  }catch(e){ alert("No se pudo eliminar: " + e.message); }
+}
+window.quitarNotaHC = quitarNotaHC;
+
+/* Historial: aplicaciones y notas juntas, de la más reciente a la más vieja */
+function renderHistorialHC(){
+  const cont = document.getElementById('hcHistorial');
+  if(!hcPaciente || !cont) return;
+  const num = numerosDeAplicacion();
+  const ev = [];
+  aplicacionesSueros().filter(m=> m.tercero===hcPaciente.nombreCompleto).forEach(m=>{
+    const t = m.creadoEn && m.creadoEn.toMillis ? m.creadoEn.toMillis() : 0;
+    ev.push({ tipo:'app', fechaISO: m.fechaISO, orden: t, m });
+  });
+  (hcDatos.notas||[]).forEach(n=> ev.push({ tipo:'nota', fechaISO: n.fechaISO, orden: n.creadoMs||0, n }));
+  ev.sort((a,b)=> a.fechaISO===b.fechaISO ? b.orden - a.orden : (a.fechaISO < b.fechaISO ? 1 : -1));
+  if(!ev.length){ cont.innerHTML = '<div class="empty-state">Todavía no hay aplicaciones ni notas.</div>'; return; }
+  cont.innerHTML = ev.map(e=> e.tipo==='app' ? `
+    <div class="hc-ev">
+      <div><div class="fecha">${fechaLarga(e.fechaISO)}</div><span class="p-num tipo">N° ${num[e.m.id]}</span></div>
+      <div class="det"><div>${insumosTexto(e.m) || '<span class="muted">Sin insumos</span>'}</div>${e.m.notas ? `<div class="muted">${e.m.notas}</div>` : ''}</div>
+    </div>` : `
+    <div class="hc-ev nota">
+      <div><div class="fecha">${fechaLarga(e.fechaISO)}</div><span class="tag-nota tipo">NOTA</span></div>
+      <div class="det"><button class="quitar" title="Eliminar nota" onclick="quitarNotaHC('${e.n.id}')">✕</button>${e.n.texto}${e.n.autor ? `<div class="muted" style="margin-top:3px;font-size:10.5px;">${e.n.autor}</div>` : ''}</div>
+    </div>`).join('');
 }
 
 /* ---- + Nuevo suero ---- */

@@ -663,13 +663,14 @@
  padding: 9px 12px; border-radius: 8px; margin: 0 0 14px;
  }
  #error-msg.visible { display: block; }
+ body.cargando #login-screen { display: none; }
  #home-screen { gap: 0; }
  #home-screen .login-card { text-align: center; }
  #home-hola { margin: 0 0 18px; font-size: 13px; letter-spacing: 0; text-transform: none; color: #9c9179; }
  .home-botones { width: 100%; gap: 10px; }
 </style>
 </head>
-<body id="body">
+<body id="body" class="cargando">
 <svg style="display:none"><defs>
 <symbol id="ico-sheet" viewBox="0 0 24 24" width="14" height="14"><rect fill="none" stroke="currentColor" stroke-width="2" x="3" y="3" width="18" height="18" rx="2"/><path fill="none" stroke="currentColor" stroke-width="2" d="M3 9h18M9 21V9"/></symbol><symbol id="ico-pdf" viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline fill="none" stroke="currentColor" stroke-width="2" points="14 2 14 8 20 8"/></symbol>
 <symbol id="ico-eye" viewBox="0 0 24 24" width="10" height="10"><path fill="none" stroke="currentColor" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle fill="none" stroke="currentColor" stroke-width="2" cx="12" cy="12" r="3"/></symbol>
@@ -1500,6 +1501,7 @@
  const role = await resolveRole(user);
  if (role) showScreen(role);
  }
+ document.body.classList.remove('cargando');   // recién ahora se muestra el login (si hace falta)
  });
  async function handleLogin() {
  const email = document.getElementById('username').value.trim();
