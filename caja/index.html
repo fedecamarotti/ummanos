@@ -262,6 +262,18 @@
   .s-total-egreso span{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.3px;}
   .s-total-egreso strong{font-size:16px;color:#a13a3a;}
   .menu-links button.activo{background:#f4ecd6;}
+  .tabla-cremas{min-width:1320px;}
+  .tabla-cremas td.monto{font-weight:700;white-space:nowrap;}
+  .tabla-cremas td.monto.neg{color:#a13a3a;}
+  .tabla-cremas .pend{color:#c4b995;font-weight:500;}
+  .tabla-cremas select.c-indica{width:100%;padding:3px 6px;font-size:10.5px;border-radius:6px;background:#fdfbf2;}
+  .tabla-cremas input.c-cot, .tabla-stock input.c-precio{border:1px solid var(--border);background:#fdfbf2;font-family:inherit;color:var(--text);}
+  .tabla-cremas input.c-cot:focus, .tabla-stock input.c-precio:focus, .tabla-cremas select.c-indica:focus{outline:none;border-color:var(--accent);background:#fffcf5;}
+  .tabla-cremas input.c-cot{width:100%;padding:3px 6px;font-size:10.5px;border-radius:6px;text-align:right;font-weight:700;}
+  .tabla-cremas tfoot td{position:sticky;bottom:0;background:#f4eeda;font-weight:700;font-size:10.5px;border-top:1px solid var(--border);padding-top:7px;padding-bottom:7px;}
+  .tabla-cremas tfoot td.left{padding-left:14px;}
+  .c-aviso{display:inline-block;padding:0 6px;border-radius:10px;background:#fff1dc;color:#9a5b00;font-size:9px;font-weight:700;}
+  .tabla-stock input.c-precio{width:100%;padding:4px 8px;font-size:11.5px;border-radius:6px;text-align:right;font-weight:700;}
   .menu-links a.menu-inicio{display:flex;align-items:center;gap:10px;padding:10px;border:none;border-radius:9px;background:transparent;font-size:12.5px;font-weight:600;color:var(--text);text-decoration:none;}
   .menu-links a.menu-inicio:hover{background:#f0e8cf;}
   .falta-input{width:92px !important;padding:3px 8px !important;border:1px solid #f0c98a !important;border-radius:20px !important;background:#fff1dc !important;color:#9a5b00;font-size:10.5px !important;font-weight:700;text-align:center;}
@@ -791,6 +803,7 @@
           <button class="btn col-hidden" id="btnProveedoresPanel"><span class="side-icon">👨🏻‍💼</span> Proveedores</button>
           <button class="btn btn-deudores" id="btnDeudores"><span class="side-icon">🕵🏻‍♂️</span> Deudores <span class="badge-count col-hidden" id="deudoresCount">0</span></button>
           <button class="btn col-hidden" id="btnSueros"><span class="side-icon">💉</span> Sueros</button>
+          <button class="btn col-hidden" id="btnCremas"><span class="side-icon">🧴</span> Cremas/Colágenos</button>
           <button class="btn col-hidden" id="btnInformes"><span class="side-icon">📊</span> Informes</button>
           <button class="btn" id="btnReporteDiario"><span class="side-icon">🧾</span> Reporte diario</button>
           <button class="btn" id="btnPagoProfesional"><span class="side-icon">🧮</span> Calcular pago profesional</button>
@@ -941,6 +954,71 @@
       <div class="s-resumen" id="sResumen"></div>
     </div>
    </div><!-- /#vistaSueros -->
+
+   <!-- ============ VISTA: CREMAS / COLÁGENOS (solo Fede) ============ -->
+   <div class="vista col-hidden" id="vistaCremas">
+    <div class="sueros-bar">
+      <div class="mes-selector">
+        <button id="cMesPrev" title="Mes anterior">◀</button>
+        <span id="cMesLabel"></span>
+        <button id="cMesNext" title="Mes siguiente">▶</button>
+      </div>
+      <div class="s-tabs" role="tablist" aria-label="Cremas y colágenos">
+        <button class="s-tab c-tab active" data-ctab="movs" role="tab">Movimientos cremas/colágenos</button>
+        <button class="s-tab c-tab" data-ctab="stock" role="tab">Stock</button>
+      </div>
+      <div style="justify-self:end;"><button class="btn s-cfg-btn" id="cBtnCotTodos" title="Poner la misma cotización a los movimientos del mes que no la tienen">$ Cot. para todos</button></div>
+    </div>
+
+    <div class="s-panel" id="cPanelMovs">
+      <div class="sheet-wrap">
+        <table class="tabla-mov tabla-cremas">
+          <colgroup>
+            <col style="width:58px"><col style="width:15%"><col style="width:74px"><col>
+            <col style="width:84px"><col style="width:100px"><col style="width:150px"><col style="width:84px">
+            <col style="width:84px"><col style="width:100px"><col style="width:100px"><col style="width:100px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th><input type="text" class="th-search" id="cfFecha" placeholder="Fecha" autocomplete="off"></th>
+              <th><input type="text" class="th-search th-search-left" id="cfPaciente" placeholder="Paciente" autocomplete="off"></th>
+              <th><input type="text" class="th-search" id="cfCodigo" placeholder="Código" autocomplete="off"></th>
+              <th><input type="text" class="th-search" id="cfConcepto" placeholder="Concepto" autocomplete="off"></th>
+              <th><div class="th-search">Valor USD</div></th>
+              <th><div class="th-search">Pago px</div></th>
+              <th><input type="text" class="th-search" id="cfIndica" placeholder="Indica" autocomplete="off"></th>
+              <th><div class="th-search">Costo</div></th>
+              <th><div class="th-search">Cot.</div></th>
+              <th><div class="th-search">A pagar</div></th>
+              <th><div class="th-search">50% prof</div></th>
+              <th><div class="th-search">Ummana</div></th>
+            </tr>
+          </thead>
+          <tbody id="cTbody"></tbody>
+          <tfoot id="cTfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="s-panel col-hidden" id="cPanelStock">
+      <div class="s-caption">Precios en dólares de cada producto (se usan para Valor USD y Costo)</div>
+      <div class="sheet-wrap" style="flex:0 1 auto;width:calc(100% - 56px);max-width:900px;margin:6px auto 20px;">
+        <table class="tabla-stock">
+          <colgroup><col style="width:90px"><col><col style="width:130px"><col style="width:130px"><col style="width:130px"></colgroup>
+          <thead>
+            <tr>
+              <th><div class="th-search">Código</div></th>
+              <th><input type="text" class="th-search th-search-left" id="cfStock" placeholder="Producto" autocomplete="off" style="padding-left:14px;"></th>
+              <th><div class="th-search">Área</div></th>
+              <th><div class="th-search">Venta USD</div></th>
+              <th><div class="th-search">Costo USD</div></th>
+            </tr>
+          </thead>
+          <tbody id="cStockBody"></tbody>
+        </table>
+      </div>
+    </div>
+   </div><!-- /#vistaCremas -->
   </div>
 </div>
 
@@ -1881,6 +1959,7 @@ auth.onAuthStateChanged(async (user)=>{
     if(unsubProfesionales) unsubProfesionales();
     if(unsubProveedores) unsubProveedores();
     if(unsubSueros){ unsubSueros(); unsubSueros = null; }
+    if(typeof unsubCremas!=='undefined' && unsubCremas){ unsubCremas(); unsubCremas = null; }
     if(unsubPortalPac){ unsubPortalPac(); unsubPortalPac = null; }
     document.getElementById('portal').classList.add('col-hidden');
     return;
@@ -1945,6 +2024,7 @@ function aplicarRolUI(){
   document.getElementById('btnProveedoresPanel').classList.toggle('col-hidden', !esAdmin);
   document.getElementById('btnVistaMovimientos').classList.toggle('col-hidden', !esFede());
   document.getElementById('btnSueros').classList.toggle('col-hidden', !esFede());
+  document.getElementById('btnCremas').classList.toggle('col-hidden', !esFede());
   mostrarVista('movimientos');
 }
 
@@ -2153,6 +2233,7 @@ function pasaFiltros(m){
 }
 
 function renderTabla(){
+  if(vistaActual==='cremas' && typeof renderCremas==='function') renderCremas();
   tbody.innerHTML = "";
   movimientos.filter(pasaFiltros).forEach(m=>{
     const esGasto = esEgreso(m.prof, m.concepto);
@@ -3432,14 +3513,17 @@ function consumosDeIngreso(m){
 }
 
 function mostrarVista(v){
-  if(v==='sueros' && !esFede()) return;
+  if((v==='sueros' || v==='cremas') && !esFede()) return;
   vistaActual = v;
   document.getElementById('vistaMovimientos').classList.toggle('col-hidden', v!=='movimientos');
   document.getElementById('vistaSueros').classList.toggle('col-hidden', v!=='sueros');
-  document.getElementById('btnNuevo').classList.toggle('col-hidden', v==='sueros');
+  document.getElementById('vistaCremas').classList.toggle('col-hidden', v!=='cremas');
+  document.getElementById('btnNuevo').classList.toggle('col-hidden', v!=='movimientos');
   document.getElementById('btnVistaMovimientos').classList.toggle('activo', v==='movimientos');
   document.getElementById('btnSueros').classList.toggle('activo', v==='sueros');
+  document.getElementById('btnCremas').classList.toggle('activo', v==='cremas');
   if(v==='sueros'){ suscribirSueros(); renderSueros(); }
+  if(v==='cremas'){ suscribirCremas(); cargarMovsCremas(); renderCremas(); }
 }
 document.getElementById('btnVistaMovimientos').onclick = ()=> mostrarVista('movimientos');
 document.getElementById('btnSueros').onclick = ()=> mostrarVista('sueros');
@@ -4595,6 +4679,210 @@ document.getElementById('aEliminar').onclick = async ()=>{
   try{ await db.collection('sueros').doc(aEditId).delete(); cerrarAplic(); }
   catch(e){ alert("No se pudo eliminar: " + e.message); }
 };
+
+
+/* =====================================================================
+   CREMAS / COLÁGENOS (solo Fede)
+   Toma de los movimientos diarios todo lo cargado con profesional Cremas o Colágenos.
+   Datos propios en la colección "cremas":
+     cremas/{idMovimiento} → { indica, cot }
+     cremas/_stock         → { productos: { CODIGO: { venta, costo } } }   (USD)
+   ===================================================================== */
+let cTab = 'movs';
+let mesCremas = { year: hoyRef.getFullYear(), month: hoyRef.getMonth()+1 };
+let cremasMovsMes = [];          // movimientos diarios del mes elegido (si no es el mes de la tabla principal)
+let cremasMesCargado = null;
+let cremasExtra = {};            // { idMovimiento: {indica, cot} }
+let cremasStock = {};            // { CODIGO: {venta, costo} }
+let unsubCremas = null;
+const PARTICULAR = 'PARTICULAR';
+const fmtUsd = v => 'US$ ' + Number(v).toLocaleString('es-AR', {maximumFractionDigits: 2});
+const parseDecimal = v => { const n = Number(String(v||'').replace(/\./g,'').replace(',','.')); return isNaN(n) ? 0 : n; };
+
+function esProfCremas(prof){ const n = normBusqueda(prof); return n.includes('crema') || n.includes('colag'); }
+function cMesInicio(){ return `${mesCremas.year}-${String(mesCremas.month).padStart(2,'0')}-01`; }
+function cMesFin(){ let y = mesCremas.year, m = mesCremas.month+1; if(m>12){ m=1; y++; } return `${y}-${String(m).padStart(2,'0')}-01`; }
+function cEsMesTabla(){ return mesCremas.year===mesActual.year && mesCremas.month===mesActual.month; }
+function claveProducto(m){ return mayus((m.codigo||'').trim()) || mayus((m.concepto||'').trim()); }
+
+function suscribirCremas(){
+  if(unsubCremas || !esFede()) return;
+  unsubCremas = db.collection('cremas').onSnapshot(snap=>{
+    cremasExtra = {}; cremasStock = {};
+    snap.docs.forEach(d=>{
+      if(d.id==='_stock') cremasStock = d.data().productos || {};
+      else cremasExtra[d.id] = d.data();
+    });
+    renderCremas();
+  }, err=>{
+    document.getElementById('cTbody').innerHTML = `<tr><td colspan="12" class="empty-state" style="color:#a13a3a;">No se pudieron cargar los datos de cremas: ${err.message}</td></tr>`;
+  });
+}
+// Movimientos del mes: si coincide con el mes de la tabla principal se usan esos (ya están en vivo);
+// si no, se leen una vez de la base.
+async function cargarMovsCremas(){
+  if(cEsMesTabla()){ cremasMesCargado = null; return; }
+  const key = cMesInicio();
+  if(cremasMesCargado === key) return;
+  cremasMesCargado = key;
+  try{
+    const snap = await db.collection('movimientos').where('fechaISO','>=', cMesInicio()).where('fechaISO','<', cMesFin()).get();
+    if(cremasMesCargado !== key) return;
+    cremasMovsMes = snap.docs.map(d=> ({id:d.id, ...d.data()}));
+  }catch(e){ cremasMovsMes = []; alert("No se pudieron cargar los movimientos: " + e.message); }
+  renderCremas();
+}
+function movimientosCremas(){
+  const base = cEsMesTabla() ? movimientos : cremasMovsMes;
+  return base
+    .filter(m=> esProfCremas(m.prof) && !m.saldaDeuda && !esEgreso(m.prof, m.concepto))
+    .sort((a,b)=> a.fechaISO===b.fechaISO ? 0 : (a.fechaISO < b.fechaISO ? -1 : 1));
+}
+// Cuentas de cada fila
+function calcularCrema(m){
+  const ex = cremasExtra[m.id] || {};
+  const prod = cremasStock[claveProducto(m)] || {};
+  const pago = Number(m.valor)||0;
+  const indica = ex.indica || PARTICULAR;
+  const cot = Number(ex.cot)||0;
+  const costo = prod.costo!=null && prod.costo!=='' ? Number(prod.costo) : null;
+  const aPagar = cot && costo!=null ? Math.round(costo * cot) : null;
+  const prof = aPagar==null ? null : (indica===PARTICULAR ? 0 : Math.round((pago - aPagar) / 2));
+  const ummana = aPagar==null ? null : pago - aPagar - prof;
+  return { pago, indica, cot, venta: prod.venta!=null && prod.venta!=='' ? Number(prod.venta) : null, costo, aPagar, prof, ummana };
+}
+
+/* ---- Vista, mes y pestañas ---- */
+document.getElementById('btnCremas').onclick = ()=> mostrarVista('cremas');
+document.getElementById('cMesPrev').onclick = ()=>{ mesCremas.month--; if(mesCremas.month<1){ mesCremas.month=12; mesCremas.year--; } cargarMovsCremas(); renderCremas(); };
+document.getElementById('cMesNext').onclick = ()=>{ mesCremas.month++; if(mesCremas.month>12){ mesCremas.month=1; mesCremas.year++; } cargarMovsCremas(); renderCremas(); };
+document.querySelectorAll('.c-tab[data-ctab]').forEach(b=> b.onclick = ()=>{ cTab = b.dataset.ctab; renderCremas(); });
+['cfFecha','cfPaciente','cfCodigo','cfConcepto','cfIndica'].forEach(id=> document.getElementById(id).addEventListener('input', renderCremas));
+document.getElementById('cfStock').addEventListener('input', renderCremasStock);
+
+function renderCremas(){
+  if(vistaActual!=='cremas') return;
+  document.getElementById('cMesLabel').textContent = `${MESES[mesCremas.month-1]} ${mesCremas.year}`;
+  document.getElementById('cMesNext').disabled = mesCremas.year===hoyRef.getFullYear() && mesCremas.month===(hoyRef.getMonth()+1);
+  document.querySelectorAll('.c-tab[data-ctab]').forEach(b=> b.classList.toggle('active', b.dataset.ctab===cTab));
+  document.getElementById('cPanelMovs').classList.toggle('col-hidden', cTab!=='movs');
+  document.getElementById('cPanelStock').classList.toggle('col-hidden', cTab!=='stock');
+  document.getElementById('cBtnCotTodos').classList.toggle('col-hidden', cTab!=='movs');
+  if(cTab==='movs') renderCremasMovs(); else renderCremasStock();
+}
+
+/* ---- Pestaña: movimientos cremas/colágenos ---- */
+const celdaMonto = v => v==null ? '<span class="pend">—</span>' : fmtPesos(v);
+function renderCremasMovs(){
+  const tb = document.getElementById('cTbody'), tf = document.getElementById('cTfoot');
+  if(document.activeElement && tb.contains(document.activeElement) && document.activeElement.classList.contains('c-cot')) return; // no pisar lo que se está escribiendo
+  const f = id => document.getElementById(id).value;
+  const filas = movimientosCremas().filter(m=>{
+    const c = calcularCrema(m);
+    return (!f('cfFecha') || contiene(isoToDisplay(m.fechaISO), f('cfFecha')))
+      && (!f('cfPaciente') || contiene(m.pac, f('cfPaciente')))
+      && (!f('cfCodigo') || contiene(m.codigo, f('cfCodigo')))
+      && (!f('cfConcepto') || contiene(m.concepto, f('cfConcepto')))
+      && (!f('cfIndica') || contiene(c.indica, f('cfIndica')));
+  });
+  if(!filas.length){
+    tb.innerHTML = `<tr><td colspan="12" class="empty-state">No hay movimientos de cremas o colágenos en este mes.</td></tr>`;
+    tf.innerHTML = ''; return;
+  }
+  const profs = [PARTICULAR, ...todosLosNombresDeProfesionales().filter(n=> !esProfCremas(n))];
+  let tPago=0, tPagar=0, tProf=0, tUmm=0;
+  tb.innerHTML = filas.map(m=>{
+    const c = calcularCrema(m);
+    tPago += c.pago; tPagar += c.aPagar||0; tProf += c.prof||0; tUmm += c.ummana||0;
+    const opts = profs.map(n=> `<option ${n===c.indica?'selected':''}>${n}</option>`).join('');
+    const sinStock = c.venta==null && c.costo==null;
+    return `<tr>
+      <td>${isoToDisplay(m.fechaISO)}</td>
+      <td class="left">${m.pac||''}</td>
+      <td class="codigo">${m.codigo||''}</td>
+      <td class="concepto">${m.concepto||''}${sinStock ? ' <span class="c-aviso" title="Este producto no tiene precios en Stock">sin precio</span>' : ''}</td>
+      <td class="monto">${c.venta==null ? '<span class="pend">—</span>' : fmtUsd(c.venta)}</td>
+      <td class="monto total ingreso">${m.moneda==='USD' ? 'US$ ' : '$'}${Number(c.pago).toLocaleString('es-AR')}</td>
+      <td><select class="c-indica" data-id="${m.id}">${opts}</select></td>
+      <td class="monto">${c.costo==null ? '<span class="pend">—</span>' : fmtUsd(c.costo)}</td>
+      <td><input class="c-cot" data-id="${m.id}" inputmode="numeric" value="${c.cot ? c.cot.toLocaleString('es-AR') : ''}" placeholder="—"></td>
+      <td class="monto">${celdaMonto(c.aPagar)}</td>
+      <td class="monto">${celdaMonto(c.prof)}</td>
+      <td class="monto ${c.ummana!=null && c.ummana<0 ? 'neg' : ''}">${celdaMonto(c.ummana)}</td>
+    </tr>`;
+  }).join('');
+  tf.innerHTML = `<tr>
+    <td colspan="5" class="left">TOTAL</td>
+    <td class="monto">${fmtPesos(tPago)}</td><td></td><td></td><td></td>
+    <td class="monto">${fmtPesos(tPagar)}</td><td class="monto">${fmtPesos(tProf)}</td>
+    <td class="monto ${tUmm<0?'neg':''}">${fmtPesos(tUmm)}</td></tr>`;
+  tb.querySelectorAll('.c-indica').forEach(sel=> sel.onchange = ()=> guardarExtraCrema(sel.dataset.id, {indica: sel.value}));
+  tb.querySelectorAll('.c-cot').forEach(inp=>{
+    inp.addEventListener('input', ()=> formatearInputMonto(inp));
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } });
+    inp.addEventListener('blur', ()=>{
+      const v = parseMonto(inp.value), antes = Number((cremasExtra[inp.dataset.id]||{}).cot)||0;
+      if(v !== antes) guardarExtraCrema(inp.dataset.id, {cot: v}); else renderCremasMovs();
+    });
+  });
+}
+async function guardarExtraCrema(id, datos){
+  if(!esFede()) return;
+  cremasExtra[id] = {...(cremasExtra[id]||{}), ...datos};
+  renderCremasMovs();
+  try{ await db.collection('cremas').doc(id).set(datos, {merge:true}); }
+  catch(e){ alert("No se pudo guardar: " + e.message); }
+}
+// Cotización para todas las filas del mes que todavía no la tienen
+document.getElementById('cBtnCotTodos').onclick = async ()=>{
+  const faltan = movimientosCremas().filter(m=> !Number((cremasExtra[m.id]||{}).cot));
+  if(!faltan.length){ alert("Todos los movimientos de este mes ya tienen cotización."); return; }
+  const v = parseMonto(prompt(`Cotización para ${faltan.length} movimiento(s) sin cotización:`) || '');
+  if(!v) return;
+  try{
+    const lote = db.batch();
+    faltan.forEach(m=>{ cremasExtra[m.id] = {...(cremasExtra[m.id]||{}), cot: v}; lote.set(db.collection('cremas').doc(m.id), {cot: v}, {merge:true}); });
+    renderCremasMovs();
+    await lote.commit();
+  }catch(e){ alert("No se pudo guardar: " + e.message); }
+};
+
+/* ---- Pestaña: stock (precios de venta y costo en USD) ---- */
+function productosCremas(){
+  const porClave = {};
+  Object.keys(CONCEPTOS).filter(esProfCremas).forEach(prof=>
+    CONCEPTOS[prof].forEach(c=>{ const k = mayus((c.codigo||'').trim()) || mayus(c.concepto); if(k) porClave[k] = {clave:k, codigo:c.codigo||'', nombre:c.concepto, prof}; }));
+  Object.keys(cremasStock).forEach(k=>{ if(!porClave[k]) porClave[k] = {clave:k, codigo:k, nombre:'', prof:''}; });
+  return Object.values(porClave).sort((a,b)=> (a.codigo||a.nombre).localeCompare(b.codigo||b.nombre, 'es', {numeric:true}));
+}
+function renderCremasStock(){
+  const tb = document.getElementById('cStockBody');
+  if(document.activeElement && tb.contains(document.activeElement)) return;
+  const q = document.getElementById('cfStock').value;
+  const lista = productosCremas().filter(p=> !q || contiene(p.codigo+' '+p.nombre, q));
+  if(!lista.length){ tb.innerHTML = `<tr><td colspan="5" class="empty-state">No hay productos de cremas o colágenos en Conceptos.</td></tr>`; return; }
+  tb.innerHTML = lista.map(p=>{
+    const s = cremasStock[p.clave] || {};
+    return `<tr>
+      <td class="codigo">${p.codigo}</td>
+      <td class="left">${p.nombre}</td>
+      <td class="codigo">${p.prof}</td>
+      <td><input class="c-precio" data-k="${p.clave.replace(/"/g,'&quot;')}" data-campo="venta" inputmode="decimal" value="${s.venta!=null && s.venta!=='' ? String(s.venta).replace('.',',') : ''}" placeholder="US$"></td>
+      <td><input class="c-precio" data-k="${p.clave.replace(/"/g,'&quot;')}" data-campo="costo" inputmode="decimal" value="${s.costo!=null && s.costo!=='' ? String(s.costo).replace('.',',') : ''}" placeholder="US$"></td>
+    </tr>`;
+  }).join('');
+  tb.querySelectorAll('.c-precio').forEach(inp=>{
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } });
+    inp.addEventListener('blur', async ()=>{
+      const k = inp.dataset.k, campo = inp.dataset.campo;
+      const v = inp.value.trim()==='' ? '' : parseDecimal(inp.value);
+      if(String((cremasStock[k]||{})[campo] ?? '') === String(v)) return;
+      cremasStock[k] = {...(cremasStock[k]||{}), [campo]: v};
+      try{ await db.collection('cremas').doc('_stock').set({productos: {[k]: {[campo]: v}}}, {merge:true}); }
+      catch(e){ alert("No se pudo guardar el precio: " + e.message); }
+    });
+  });
+}
 
 /* =====================================================================
    INFORMES (admin) — rango de fechas + filtro por profesional
