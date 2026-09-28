@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Migrar gráficos</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;font-family:'Montserrat',sans-serif;}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#fcfaf8;color:#3a3a38;padding:24px 16px;}
+  .card{width:100%;max-width:420px;}
+  h1{font-size:0.9rem;letter-spacing:0.12em;text-transform:lowercase;font-weight:600;margin:0 0 8px;}
+  p{font-size:0.75rem;line-height:1.6;color:#777;margin:0 0 20px;}
+  input,button{width:100%;font-size:0.8rem;padding:12px 16px;border-radius:2px;margin-bottom:12px;}
+  input{border:1px solid #e0ddd9;background:#fcfaf8;letter-spacing:0.04em;}
+  input:focus{outline:none;border-color:#777;}
+  button{background:#3a3a38;color:#fcfaf8;border:none;cursor:pointer;letter-spacing:0.15em;text-transform:lowercase;}
+  button:hover{background:#222;} button:disabled{opacity:.5;cursor:default;}
+  #log{font-size:0.72rem;line-height:1.7;white-space:pre-wrap;color:#555;}
+  .ok{color:#2f7a2f;} .err{color:#a13a3a;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>migrar gráficos de administración</h1>
+  <p>Copia los datos de los gráficos del sistema anterior al sistema unificado. Se hace una sola vez. Usá el usuario de administración (el mismo mail y contraseña en los dos sistemas).</p>
+  <input type="email" id="email" value="administracion@ummana.ar" autocomplete="off">
+  <input type="password" id="pass" placeholder="contraseña">
+  <button id="btn">migrar</button>
+  <div id="log"></div>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const viejo = initializeApp({
+  apiKey: "AIzaSyCp3Wy9c6UYiNMlEFLwfNwjpHdufjYbhr4",
+  authDomain: "ummanainterno.firebaseapp.com",
+  projectId: "ummanainterno",
+  storageBucket: "ummanainterno.firebasestorage.app",
+  messagingSenderId: "224573570065",
+  appId: "1:224573570065:web:bfe3a723b7316ed6e245b0"
+}, 'viejo');
+const nuevo = initializeApp({
+  apiKey: "AIzaSyAql_waJ1I2gIeV6V3MCwVx0OhncgxCsko",
+  authDomain: "ummanasistema.firebaseapp.com",
+  projectId: "ummanasistema",
+  storageBucket: "ummanasistema.firebasestorage.app",
+  messagingSenderId: "370814125756",
+  appId: "1:370814125756:web:0a42e08ba90376fab032b9"
+}, 'nuevo');
+
+const log = (t, cls='') => { const d = document.createElement('div'); d.textContent = t; if(cls) d.className = cls; document.getElementById('log').appendChild(d); };
+
+document.getElementById('btn').onclick = async () => {
+  const email = document.getElementById('email').value.trim();
+  const pass = document.getElementById('pass').value;
+  const btn = document.getElementById('btn');
+  document.getElementById('log').innerHTML = '';
+  btn.disabled = true;
+  try {
+    log('ingresando al sistema anterior…');
+    await signInWithEmailAndPassword(getAuth(viejo), email, pass);
+    log('ingresando al sistema unificado…');
+    await signInWithEmailAndPassword(getAuth(nuevo), email, pass);
+    const snap = await getDocs(collection(getFirestore(viejo), 'adminCharts'));
+    log(`gráficos encontrados: ${snap.size}`);
+    for (const d of snap.docs) {
+      await setDoc(doc(getFirestore(nuevo), 'adminCharts', d.id), d.data());
+      log(`✓ ${d.id}`, 'ok');
+    }
+    log('¡listo! ya podés cerrar esta página.', 'ok');
+  } catch (e) {
+    log('error: ' + (e.code || e.message), 'err');
+  }
+  try { await signOut(getAuth(viejo)); await signOut(getAuth(nuevo)); } catch(_) {}
+  btn.disabled = false;
+};
+</script>
+</body>
+</html>
