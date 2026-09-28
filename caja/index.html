@@ -1631,6 +1631,9 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+// Caché local de Firestore: al recargar la página no se vuelve a leer todo desde el servidor,
+// solo lo que cambió (baja mucho las "lecturas" que cuenta Firebase). Sirve con varias pestañas abiertas.
+db.enablePersistence({ synchronizeTabs: true }).catch(err=> console.warn('Sin caché local de Firestore:', err.code));
 
 /* =====================================================================
    CATÁLOGO DE PROFESIONALES / CONCEPTOS
