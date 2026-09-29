@@ -1087,9 +1087,18 @@
     <h2>Nuevo movimiento</h2>
     <div class="modal-sub">Completá los datos del movimiento.</div>
 
-    <div class="field">
-      <label>Fecha</label>
-      <input type="date" id="inpFechaMovimiento">
+    <div class="row2">
+      <div class="field">
+        <label>Fecha</label>
+        <input type="date" id="inpFechaMovimiento">
+      </div>
+      <div class="field">
+        <label>Tipo</label>
+        <div class="tipo-toggle" id="movTipo">
+          <button type="button" data-tipo="ingreso" class="active">Ingreso</button>
+          <button type="button" data-tipo="egreso">Egreso</button>
+        </div>
+      </div>
     </div>
 
     <div class="field" id="campoPacienteIngreso">
@@ -2647,8 +2656,28 @@ function ordenarConceptos(profesional, opts){
 
 let conceptosDisponiblesActual = [];
 
+// Tipo del movimiento (Ingreso / Egreso): filtra profesionales/áreas y conceptos
+let movTipo = 'ingreso';
+const tipoConcepto = (prof, concepto)=> esEgreso(prof, concepto) ? 'egreso' : 'ingreso';
+function profesionalesDelTipo(){
+  return todosLosNombresDeProfesionales().filter(n=>{
+    const cs = CONCEPTOS[n] || [];
+    return cs.length ? cs.some(c=> tipoConcepto(n, c.concepto)===movTipo) : movTipo==='ingreso';
+  });
+}
+function setMovTipo(t, limpiar){
+  movTipo = t;
+  document.querySelectorAll('#movTipo button').forEach(b=> b.classList.toggle('active', b.dataset.tipo===t));
+  if(limpiar){
+    selProfesional.value = ''; selConcepto.value = '';
+    selPaciente.value = ''; document.getElementById('inpDestinatario').value = '';
+  }
+  actualizarConceptosDesdeProfesional();
+}
+document.querySelectorAll('#movTipo button').forEach(b=> b.onclick = ()=>{ if(b.dataset.tipo!==movTipo) setMovTipo(b.dataset.tipo, true); });
+
 function actualizarSoloConceptos(){
-  const opts = CONCEPTOS[selProfesional.value] || [];
+  const opts = (CONCEPTOS[selProfesional.value] || []).filter(c=> tipoConcepto(selProfesional.value, c.concepto)===movTipo);
   if(opts.length){
     selConcepto.disabled = false;
     selConcepto.placeholder = "Escribí para buscar…";
@@ -2656,7 +2685,7 @@ function actualizarSoloConceptos(){
   } else {
     selConcepto.disabled = true;
     selConcepto.value = "";
-    selConcepto.placeholder = "Sin conceptos configurados";
+    selConcepto.placeholder = selProfesional.value.trim() ? "Sin conceptos de este tipo" : "Elegí primero un profesional/área…";
     conceptosDisponiblesActual = [];
   }
 }
@@ -2667,7 +2696,7 @@ function actualizarConceptosDesdeProfesional(){
 attachAutocomplete(selConcepto, ()=> conceptosDisponiblesActual.map(c=>c.concepto));
 
 function actualizarCampoPacienteSegunTipo(){
-  const egreso = esEgreso(selProfesional.value, selConcepto.value);
+  const egreso = movTipo==='egreso';
   document.getElementById('campoPacienteIngreso').classList.toggle('col-hidden', egreso);
   document.getElementById('campoPacienteEgreso').classList.toggle('col-hidden', !egreso);
   document.getElementById('pagosLista').classList.toggle('oculta-quien', egreso);
@@ -2699,7 +2728,7 @@ document.getElementById('guardarProveedor').onclick = async ()=>{
     alert("No se pudo guardar: " + e.message);
   }
 };
-attachAutocomplete(selProfesional, ()=> todosLosNombresDeProfesionales());
+attachAutocomplete(selProfesional, ()=> profesionalesDelTipo());
 selProfesional.addEventListener('input', actualizarConceptosDesdeProfesional);
 
 document.getElementById('btnNuevo').onclick = ()=>{
@@ -2718,6 +2747,7 @@ function abrirEdicion(id){
   const m = movimientos.find(x=>x.id===id);
   if(!m) return;
   modo = 'editar'; editingId = id;
+  setMovTipo(tipoConcepto(m.prof, m.concepto), false);
   modalTitle.textContent = "Editar movimiento";
   btnGuardarMov.textContent = "Guardar cambios";
   btnEliminar.classList.remove('col-hidden');
@@ -2794,6 +2824,7 @@ function resetModal(){
   document.getElementById('cardNuevoPaciente').classList.add('col-hidden');
   document.getElementById('deudasPacienteBox').classList.add('col-hidden');
   document.getElementById('deudasPacienteLista').innerHTML = "";
+  setMovTipo('ingreso', false);
   modo = 'nuevo'; editingId = null;
   modalTitle.textContent = "Nuevo movimiento";
   btnGuardarMov.textContent = "Guardar movimiento";
