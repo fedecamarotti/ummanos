@@ -721,18 +721,6 @@
       <div class="modal-sub">Buscá un paciente para ver su ficha y su historial.</div>
       <div class="hc-busca">
         <input type="text" id="pBuscarPac" placeholder="Buscar paciente…" autocomplete="off">
-        <button class="btn p-btn-nuevo" id="pBtnNuevoPac">+ Paciente nuevo</button>
-      </div>
-      <div class="subcard col-hidden" id="pNuevoPacCard">
-        <h3>Paciente nuevo</h3>
-        <div class="row2">
-          <div class="field"><label>Apellido</label><input type="text" id="pNpApellido"></div>
-          <div class="field"><label>Nombre</label><input type="text" id="pNpNombre"></div>
-        </div>
-        <div style="display:flex;justify-content:flex-end;gap:8px;">
-          <button class="btn" id="pNpCancelar">Cancelar</button>
-          <button class="btn btn-primary" id="pNpGuardar">Crear paciente</button>
-        </div>
       </div>
       <div id="pPacLista" class="hc-lista"></div>
     </div>
@@ -4396,7 +4384,6 @@ const HC_CAMPOS = ['antPersonales','antFamiliares','medicaciones','suplementos',
 
 document.getElementById('pBtnPacientes').onclick = ()=>{
   document.getElementById('pBuscarPac').value = '';
-  document.getElementById('pNuevoPacCard').classList.add('col-hidden');
   pacVista('lista');
   overlayPPac.classList.add('show');
   document.getElementById('pBuscarPac').focus();
@@ -4426,7 +4413,7 @@ function renderPortalPacientes(){
   if(!q) lista = lista.filter(p=> cuenta[p.nombreCompleto]);   // sin búsqueda: solo los que ya tienen sueros
   const cont = document.getElementById('pPacLista');
   if(!lista.length){
-    cont.innerHTML = `<div class="empty-state">${q ? 'No hay pacientes con ese nombre.' : 'Escribí un nombre para buscar, o creá un paciente nuevo.'}</div>`;
+    cont.innerHTML = `<div class="empty-state">${q ? 'No hay pacientes con ese nombre. Los pacientes nuevos se cargan desde la caja diaria.' : 'Escribí un nombre para buscar.'}</div>`;
     return;
   }
   cont.innerHTML = lista.slice(0,80).map(p=>{
@@ -4435,31 +4422,6 @@ function renderPortalPacientes(){
   }).join('');
   cont.querySelectorAll('.hc-item').forEach(b=> b.onclick = ()=> abrirFichaHC(b.dataset.id));
 }
-
-/* Paciente nuevo */
-document.getElementById('pBtnNuevoPac').onclick = ()=>{
-  const card = document.getElementById('pNuevoPacCard');
-  card.classList.toggle('col-hidden');
-  document.getElementById('pNpApellido').value = '';
-  document.getElementById('pNpNombre').value = '';
-  if(!card.classList.contains('col-hidden')) document.getElementById('pNpApellido').focus();
-};
-document.getElementById('pNpCancelar').onclick = ()=> document.getElementById('pNuevoPacCard').classList.add('col-hidden');
-document.getElementById('pNpGuardar').onclick = async ()=>{
-  const ape = mayus(document.getElementById('pNpApellido').value.trim());
-  const nom = mayus(document.getElementById('pNpNombre').value.trim());
-  if(!ape || !nom){ alert("Completá apellido y nombre."); return; }
-  const nombreCompleto = `${ape}, ${nom}`;
-  const existente = pacientesFullList.find(p=> mayus(p.nombreCompleto)===nombreCompleto);
-  if(existente){ alert("Ese paciente ya existe."); abrirFichaHC(existente.id); return; }
-  try{
-    const ref = await db.collection('pacientes').add({ apellido: ape, nombre: nom, nombreCompleto,
-      creadoEn: firebase.firestore.FieldValue.serverTimestamp() });
-    document.getElementById('pNuevoPacCard').classList.add('col-hidden');
-    pacientesFullList.push({id: ref.id, apellido: ape, nombre: nom, nombreCompleto});
-    abrirFichaHC(ref.id);
-  }catch(e){ alert("No se pudo crear el paciente: " + e.message); }
-};
 
 /* Ficha */
 function edadDesde(iso){
@@ -4700,18 +4662,10 @@ document.getElementById('aGuardar').onclick = async ()=>{
   const sinStockP = insumosSinStock(itemsRaw, aEditId);
   if(sinStockP.length){ avisoSinStock(sinStockP); return; }
 
-  // Paciente nuevo: se crea en el momento
+  // Los pacientes se dan de alta solo desde la caja diaria
   if(!pacienteRegistry.some(p=> mayus(p)===tercero)){
-    const partes = tercero.split(',').map(x=> x.trim());
-    if(partes.length<2 || !partes[0] || !partes[1]){
-      alert(`"${tercero}" no está en la lista de pacientes. Si es nuevo, escribilo como APELLIDO, NOMBRE.`); return;
-    }
-    if(!confirm(`"${tercero}" no está en la lista de pacientes. ¿Agregarlo como paciente nuevo?`)) return;
-    try{
-      tercero = `${partes[0]}, ${partes.slice(1).join(' ')}`;
-      await db.collection('pacientes').add({ apellido: partes[0], nombre: partes.slice(1).join(' '), nombreCompleto: tercero,
-        creadoEn: firebase.firestore.FieldValue.serverTimestamp() });
-    }catch(e){ alert("No se pudo crear el paciente: " + e.message); return; }
+    alert(`"${tercero}" no está en la lista de pacientes. Elegilo de la lista; si es nuevo, tiene que cargarse primero en la caja diaria.`);
+    return;
   }
 
   // Valores (ella no los ve): precios a la fecha, Sabrina/Gabriela según valores fijos y excepciones
