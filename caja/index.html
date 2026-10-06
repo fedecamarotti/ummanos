@@ -4491,7 +4491,7 @@ document.getElementById('hcGuardar').onclick = async ()=>{
       await db.collection('pacientes').doc(hcPaciente.id).update({fnac});
       hcPaciente.fnac = fnac;
     }
-    document.getElementById('hcEstado').textContent = '✓ Ficha guardada';
+    cerrarFichaHC(); pacVista('lista');   // vuelve a la lista de pacientes
   }catch(e){ alert("No se pudo guardar la ficha: " + e.message); }
   btn.disabled = false; btn.textContent = 'Guardar ficha';
 };
