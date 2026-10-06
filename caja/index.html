@@ -1987,6 +1987,7 @@ auth.onAuthStateChanged(async (user)=>{
     if(unsubSueros){ unsubSueros(); unsubSueros = null; }
     if(typeof unsubCremas!=='undefined' && unsubCremas){ unsubCremas(); unsubCremas = null; }
     if(unsubPortalPac){ unsubPortalPac(); unsubPortalPac = null; }
+    if(unsubFichasSueros){ unsubFichasSueros(); unsubFichasSueros = null; }
     document.getElementById('portal').classList.add('col-hidden');
     return;
   }
@@ -4289,6 +4290,16 @@ document.getElementById('sEliminar').onclick = async ()=>{
    Inicio con botones: Glosario y, si corresponde, Aplicación de sueros.
    ===================================================================== */
 let unsubPortalPac = null;
+let unsubFichasSueros = null;
+let fichasSuerosIds = new Set();
+// Pacientes de sueroterapia: los que tienen ficha de sueros o ya tienen aplicaciones cargadas
+function pacientesSueros(){
+  const conApps = new Set(aplicacionesSueros().map(m=> m.tercero));
+  return pacientesFullList
+    .filter(p=> fichasSuerosIds.has(p.id) || conApps.has(p.nombreCompleto))
+    .map(p=> p.nombreCompleto)
+    .sort((a,b)=> a.localeCompare(b,'es'));
+}
 const USUARIOS_CAJA = ['FEDE','FEDERICO','PEDRO','ORIANA','TIARA','STEPHANIE'];
 function primerNombre(){ return mayus(((currentUser && currentUser.nombre) || '').trim()).split(/[\s,]+/)[0]; }
 function esUsuarioCaja(){
@@ -4319,6 +4330,11 @@ function mostrarPortal(){
         pacientesFullList = snap.docs.map(d=> ({id:d.id, ...d.data()}));
         pacienteRegistry = pacientesFullList.map(p=> p.nombreCompleto);
       });
+    }
+    if(!unsubFichasSueros){
+      unsubFichasSueros = db.collection('historiasSueros').onSnapshot(snap=>{
+        fichasSuerosIds = new Set(snap.docs.map(d=> d.id));
+      }, ()=>{});
     }
   }
 }
@@ -4555,7 +4571,7 @@ function renderHistorialHC(){
 const overlayAplic = document.getElementById('overlayAplic');
 const aPaciente = document.getElementById('aPaciente');
 let aEditId = null;
-attachAutocomplete(aPaciente, ()=> pacienteRegistry, ()=> actualizarNotasPaciente());
+attachAutocomplete(aPaciente, ()=> pacientesSueros(), ()=> actualizarNotasPaciente());
 aPaciente.addEventListener('change', ()=> actualizarNotasPaciente());
 aPaciente.addEventListener('blur', ()=> setTimeout(actualizarNotasPaciente, 150));
 
@@ -4663,8 +4679,8 @@ document.getElementById('aGuardar').onclick = async ()=>{
   if(sinStockP.length){ avisoSinStock(sinStockP); return; }
 
   // Los pacientes se dan de alta solo desde la caja diaria
-  if(!pacienteRegistry.some(p=> mayus(p)===tercero)){
-    alert(`"${tercero}" no está en la lista de pacientes. Elegilo de la lista; si es nuevo, tiene que cargarse primero en la caja diaria.`);
+  if(!pacientesSueros().some(p=> mayus(p)===tercero)){
+    alert(`"${tercero}" no tiene ficha de sueros. Creale la ficha desde Pacientes (si es nuevo, primero tiene que cargarse en la caja diaria).`);
     return;
   }
 
