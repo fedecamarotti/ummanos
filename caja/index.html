@@ -4064,7 +4064,11 @@ function setTipoSuero(t, limpiar){
   document.getElementById('sBloqueEgreso').classList.toggle('col-hidden', t!=='egreso');
   if(limpiar) sTercero.value = '';
   if(t==='egreso' && !document.querySelector('#sItems .s-item')) sAgregarItem(null, 'sItems');
-  if(t==='ingreso' && !document.querySelector('#sItemsIng .s-item')) sAgregarItem(null, 'sItemsIng');
+  if(t==='ingreso' && !document.querySelector('#sItemsIng .s-item')){
+    const v = insumoVias();
+    if(v) sAgregarItem({insumo: v, cant: 1, valorUnit: precioStock(v)}, 'sItemsIng');
+    sAgregarItem(null, 'sItemsIng');
+  }
   sRecalcular();
 }
 document.querySelectorAll('#sTipo button').forEach(b=>{
@@ -4094,6 +4098,8 @@ function insumosSinStock(items, editId){
 function avisoSinStock(faltan){
   alert(faltan.map(f=> f.quedan > 0 ? `No hay stock suficiente de ${f.insumo} (quedan ${f.quedan}).` : `No hay stock de ${f.insumo}.`).join('\n'));
 }
+// "VIAS Y OTROS INSUMOS" va precargado (cantidad 1) en cada aplicación nueva
+function insumoVias(){ return insumosConocidos().find(n=> normBusqueda(n).startsWith('vias y otros')) || null; }
 function sAgregarItem(it, contId){
   const row = document.createElement('div');
   row.className = 's-item';
@@ -4641,7 +4647,8 @@ function abrirAplic(id){
   actualizarNotasPaciente();
   document.getElementById('aNotas').value = m ? (m.notas||'') : '';
   document.getElementById('aItems').innerHTML = '';
-  if(m && (m.items||[]).length) m.items.forEach(it=> pAgregarItem(it)); else pAgregarItem();
+  if(m && (m.items||[]).length) m.items.forEach(it=> pAgregarItem(it));
+  else { const v = insumoVias(); if(v) pAgregarItem({insumo: v, cant: 1}); pAgregarItem(); }
   overlayAplic.classList.add('show');
 }
 window.abrirAplic = abrirAplic;
