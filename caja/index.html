@@ -221,6 +221,8 @@
   .s-panel > .sheet-wrap thead th{z-index:3;}
   .tabla-sueros{min-width:1020px;}
   .tabla-sueros td.monto{font-weight:700;white-space:nowrap;}
+  .ins-sep{font-weight:800;color:#8a7650;}
+  .tabla-sueros td.cortable{white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;}
   .tabla-sueros .pend, .tabla-stock .pend, .s-kpi .pend{color:#c4b995;font-weight:500;}
   .s-caption{flex:none;width:calc(100% - 56px);max-width:860px;margin:12px auto 0;font-size:11.5px;font-weight:600;color:var(--muted);}
   #sPanelStock > .sheet-wrap{flex:0 1 auto;width:calc(100% - 56px);max-width:860px;margin:6px auto 20px;}
@@ -660,7 +662,7 @@
     </div>
     <div class="sheet-wrap">
       <table class="tabla-mov" style="min-width:720px;">
-        <colgroup><col style="width:34px"><col style="width:82px"><col style="width:64px"><col style="width:26%"><col><col style="width:28%"></colgroup>
+        <colgroup><col style="width:34px"><col style="width:82px"><col style="width:64px"><col style="width:26%"><col><col style="width:24%"></colgroup>
         <thead>
           <tr>
             <th class="editcol"></th>
@@ -913,7 +915,7 @@
               <th class="editcol"></th>
               <th><input type="text" class="th-search" id="sfFecha" placeholder="Fecha" autocomplete="off"></th>
               <th><input type="text" class="th-search th-search-left" id="sfTercero" placeholder="Paciente/Proveedor" autocomplete="off"></th>
-              <th><input type="text" class="th-search" id="sfDetalle" placeholder="Detalle" autocomplete="off"></th>
+              <th><input type="text" class="th-search" id="sfDetalle" placeholder="Insumos" autocomplete="off"></th>
               <th><input type="text" class="th-search" id="sfTotal" placeholder="Total" autocomplete="off"></th>
               <th><input type="text" class="th-search" id="sfInsumos" placeholder="Insumos" autocomplete="off"></th>
               <th><input type="text" class="th-search" id="sfSabrina" placeholder="Sabrina" autocomplete="off"></th>
@@ -3643,6 +3645,27 @@ function suerosDelMes(){
   const ini = sMesInicio(), fin = sMesFin();
   return sueros.filter(m=> m.tipo!=='ajuste' && m.fechaISO>=ini && m.fechaISO<fin);
 }
+// "VITAMINA C / BERBERIS / GALIUM (2)" — la cantidad solo si es más de 1
+function insumosTxt(m){
+  return (m.items||[]).map(it=> it.insumo + (Number(it.cant)>1 ? ` (${Number(it.cant).toLocaleString('es-AR')})` : '')).join(' / ');
+}
+function insumosHTML(m){
+  return (m.items||[]).map(it=> it.insumo + (Number(it.cant)>1 ? ` (${Number(it.cant).toLocaleString('es-AR')})` : '')).join('<b class="ins-sep"> / </b>');
+}
+// Ajusta el ancho de una columna al texto más largo que se ve (+ margen)
+const medidorTexto = document.createElement('canvas').getContext('2d');
+function ajustarColumna(col, textos, fuente, extra, minimo){
+  if(!col) return;
+  medidorTexto.font = fuente;
+  const max = textos.reduce((a,t)=> Math.max(a, medidorTexto.measureText(t||'').width), (minimo||80) - (extra||24));
+  col.style.width = Math.ceil(max + (extra||24)) + 'px';
+}
+// Tooltip solo si el texto quedó cortado con "…"
+function tooltipSiCortado(cont){
+  cont.querySelectorAll('.cortable').forEach(td=>{
+    td.onmouseenter = ()=>{ td.title = td.scrollWidth > td.clientWidth ? td.dataset.full : ''; };
+  });
+}
 function detalleSuero(m){
   // Egresos: el detalle escrito (los insumos se ven solo al editar). Aplicaciones: las notas.
   return m.tipo==='egreso' ? (m.detalle || 'COMPRA DE INSUMOS') : (m.notas || m.detalle || '');
@@ -3685,7 +3708,7 @@ function renderSuerosTabla(){
     const vs = v => v==null ? '' : fmtPesos(v);
     return (!f('sfFecha')    || contiene(isoToDisplay(m.fechaISO), f('sfFecha')))
         && (!f('sfTercero')  || contiene(m.tercero, f('sfTercero')))
-        && (!f('sfDetalle')  || contiene(detalleSuero(m), f('sfDetalle')))
+        && (!f('sfDetalle')  || contiene(m.tipo==='egreso' ? detalleSuero(m) : insumosTxt(m), f('sfDetalle')))
         && (!f('sfTotal')    || contiene(totTxt, f('sfTotal')))
         && (!f('sfInsumos')  || contiene(vs(r.insumos), f('sfInsumos')))
         && (!f('sfSabrina')  || contiene(vs(r.sabrina), f('sfSabrina')))
@@ -3704,7 +3727,8 @@ function renderSuerosTabla(){
         <td class="editcol"><button class="editbtn" title="Editar" onclick="abrirModalSuero('${m.id}')">&#9998;</button></td>
         <td>${isoToDisplay(m.fechaISO)}</td>
         <td class="left">${m.tercero||''}</td>
-        <td class="concepto">${detalleSuero(m)}</td>
+        ${esEg ? `<td class="concepto cortable" data-full="${detalleSuero(m).replace(/"/g,'&quot;')}">${detalleSuero(m)}</td>`
+               : `<td class="concepto cortable" data-full="${insumosTxt(m).replace(/"/g,'&quot;')}">${insumosHTML(m) || '<span class="pend">—</span>'}</td>`}
         <td class="monto total ${esEg?'egreso':'ingreso'}">${m.pagoPendiente ? `<input class="falta-input" data-falta="${m.id}" inputmode="numeric" placeholder="FALTA" title="Escribí el pago y tocá Enter">` : fmtPesos(esEg ? -m.total : (m.total||0))}</td>
         <td class="monto">${celdaReparto(r.insumos)}</td>
         <td class="monto">${celdaReparto(r.sabrina)}</td>
@@ -3713,6 +3737,8 @@ function renderSuerosTabla(){
       </tr>`;
   }).join('');
   activarInputsFalta(tb);
+  ajustarColumna(document.querySelector('.tabla-sueros col:nth-child(3)'), filas.map(m=> m.tercero), '500 10.5px Montserrat, sans-serif', 26, 165);
+  tooltipSiCortado(tb);
 }
 
 /* ---- Pestaña 2: Stock ---- */
@@ -4372,7 +4398,7 @@ function numerosDeAplicacion(){
   aplicacionesSueros().forEach(m=>{ cont[m.tercero] = (cont[m.tercero]||0) + 1; num[m.id] = cont[m.tercero]; });
   return num;
 }
-const insumosTexto = m => (m.items||[]).map(it=> `${it.insumo} ×${Number(it.cant).toLocaleString('es-AR')}`).join(', ');
+const insumosTexto = m => insumosHTML(m);
 
 function renderPortalSueros(){
   const tb = document.getElementById('pLista');
@@ -4390,9 +4416,10 @@ function renderPortalSueros(){
         <td>${fechaLarga(m.fechaISO)}</td>
         <td><span class="p-num">${num[m.id]}</span></td>
         <td class="left">${m.tercero||''}</td>
-        <td class="concepto">${insumosTexto(m) || '<span class="pend">—</span>'}</td>
+        <td class="concepto">${insumosHTML(m) || '<span class="pend">—</span>'}</td>
         <td class="notas">${m.notas||''}</td>
       </tr>`).join('');
+    ajustarColumna(document.querySelector('#pSueros col:nth-child(4)'), delDia.map(m=> m.tercero), '500 10.5px Montserrat, sans-serif', 26);
   }
   if(document.getElementById('overlayPPacientes').classList.contains('show')) renderPortalPacientes();
 }
