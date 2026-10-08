@@ -291,6 +291,8 @@
   .menu-links a.menu-inicio:hover{background:#f0e8cf;}
   .falta-input{width:92px !important;padding:3px 8px !important;border:1px solid #f0c98a !important;border-radius:20px !important;background:#fff1dc !important;color:#9a5b00;font-size:10.5px !important;font-weight:700;text-align:center;}
   .falta-input::placeholder{color:#9a5b00;font-weight:700;letter-spacing:0.4px;}
+  .total-edit{cursor:pointer;border-bottom:1px dashed transparent;}
+  .total-edit:hover{border-bottom-color:currentColor;}
   .falta-input:focus{outline:none;border-color:#c98a2e !important;background:#fffcf5 !important;}
   .falta{display:inline-block;padding:2px 8px;border-radius:20px;background:#fff1dc;border:1px solid #f0c98a;color:#9a5b00;font-size:9.5px;font-weight:700;letter-spacing:0.4px;}
   .s-textarea{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit;color:var(--text);background:#fdfbf2;resize:vertical;}
@@ -3832,6 +3834,30 @@ async function guardarTotalInline(id, valor){
   }catch(e){ alert("No se pudo guardar el pago: " + e.message); }
 }
 function activarInputsFalta(tb){
+  // Pagos ya cargados: al tocarlos se pueden modificar (Esc o vacío deja el valor como estaba)
+  tb.querySelectorAll('.total-edit').forEach(sp=>{
+    sp.onclick = ()=>{
+      const m = sueros.find(x=> x.id===sp.dataset.total);
+      if(!m) return;
+      const inp = document.createElement('input');
+      inp.className = 'falta-input'; inp.inputMode = 'numeric';
+      inp.value = Number(m.total||0).toLocaleString('es-AR');
+      sp.replaceWith(inp);
+      inp.focus(); inp.select();
+      inp.addEventListener('input', ()=> formatearInputMonto(inp));
+      let listo = false;
+      const terminar = guardar=>{
+        if(listo) return; listo = true;
+        if(guardar && inp.value.trim()!=='' && parseMonto(inp.value)!==Number(m.total||0)) guardarTotalInline(m.id, inp.value);
+        renderSuerosTabla();
+      };
+      inp.addEventListener('keydown', e=>{
+        if(e.key==='Enter'){ e.preventDefault(); terminar(true); }
+        if(e.key==='Escape'){ e.preventDefault(); terminar(false); }
+      });
+      inp.addEventListener('blur', ()=> terminar(true));
+    };
+  });
   tb.querySelectorAll('.falta-input').forEach(inp=>{
     inp.addEventListener('input', ()=> formatearInputMonto(inp));
     inp.addEventListener('keydown', e=>{
@@ -3873,7 +3899,7 @@ function renderSuerosTabla(){
         <td class="left">${m.tercero||''}</td>
         ${esEg ? `<td class="concepto cortable" data-full="${detalleSuero(m).replace(/"/g,'&quot;')}">${detalleSuero(m)}</td>`
                : `<td class="concepto cortable" data-full="${insumosTxt(m).replace(/"/g,'&quot;')}">${insumosHTML(m) || '<span class="pend">—</span>'}</td>`}
-        <td class="monto total ${esEg?'egreso':'ingreso'}">${m.pagoPendiente ? `<input class="falta-input" data-falta="${m.id}" inputmode="numeric" placeholder="FALTA" title="Escribí el pago y tocá Enter">` : fmtPesos(esEg ? -m.total : (m.total||0))}</td>
+        <td class="monto total ${esEg?'egreso':'ingreso'}">${m.pagoPendiente ? `<input class="falta-input" data-falta="${m.id}" inputmode="numeric" placeholder="FALTA" title="Escribí el pago y tocá Enter">` : esEg ? fmtPesos(-m.total) : `<span class="total-edit" data-total="${m.id}" title="Tocá para modificar el pago">${fmtPesos(m.total||0)}</span>`}</td>
         <td class="monto">${celdaReparto(r.insumos)}</td>
         <td class="monto">${celdaReparto(r.sabrina)}</td>
         <td class="monto">${celdaReparto(r.gabriela)}</td>
@@ -4460,13 +4486,15 @@ function siguienteInsumo(row, contId, sel, agregar){
   if(inp) inp.focus();
 }
 // Insumos sin stock suficiente para una aplicación (al editar, se devuelve lo que ya usaba)
-function insumosSinStock(items, editId){
+function insumosSinStock(items, editId, fechaISO){
+  fechaISO = fechaISO || hoyISO();
+  if(fechaISO < STOCK_DESDE) return [];   // antes del 1/10/2026 el stock no se controla
   const disp = {};
   insumosStock().forEach(i=> disp[i.insumo] = i.cant);
   const prev = editId ? sueros.find(x=> x.id===editId) : null;
   if(prev && prev.tipo!=='egreso') consumosDeIngreso(prev).forEach(c=> disp[c.insumo] = (disp[c.insumo]||0) + c.cant);
   const pedido = {};
-  expandirKit(items, hoyISO()).forEach(c=> pedido[c.insumo] = (pedido[c.insumo]||0) + c.cant);
+  expandirKit(items, fechaISO).forEach(c=> pedido[c.insumo] = (pedido[c.insumo]||0) + c.cant);
   return Object.keys(pedido).filter(k=> pedido[k] > (disp[k]||0)).map(k=> ({insumo:k, quedan: Math.max(0, disp[k]||0)}));
 }
 function avisoSinStock(faltan){
@@ -4607,7 +4635,7 @@ document.getElementById('sGuardar').onclick = async ()=>{
     const noExiste = items.find(it=> !enStock.has(it.insumo));
     if(noExiste){ alert(`"${noExiste.insumo || '(vacío)'}" no está en el stock. Elegí un insumo de la lista.`); return; }
     if(items.some(it=> !it.cant)){ alert("Cada insumo necesita una cantidad."); return; }
-    const sinStockF = insumosSinStock(items, sEditId);
+    const sinStockF = insumosSinStock(items, sEditId, fechaISO);
     if(sinStockF.length){ avisoSinStock(sinStockF); return; }
     datos.items = items;
     datos.insumosTotal = items.reduce((a,it)=> a+it.subtotal, 0);
@@ -5116,7 +5144,7 @@ document.getElementById('aGuardar').onclick = async ()=>{
   const noExiste = itemsRaw.find(it=> !enStock.has(it.insumo));
   if(noExiste){ alert(`"${noExiste.insumo || '(vacío)'}" no está en la lista de insumos. Elegilo de la lista.`); return; }
   if(itemsRaw.some(it=> !it.cant)){ alert("Cada insumo necesita una cantidad."); return; }
-  const sinStockP = insumosSinStock(itemsRaw, aEditId);
+  const sinStockP = insumosSinStock(itemsRaw, aEditId, fechaISO);
   if(sinStockP.length){ avisoSinStock(sinStockP); return; }
 
   // Los pacientes se dan de alta solo desde la caja diaria
