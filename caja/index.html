@@ -355,6 +355,13 @@
   .p-items-head{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:5px;}
   .p-item{margin-bottom:8px;}
   .p-item input{min-width:0;}
+  .pi-cant-wrap{position:relative;}
+  .pi-cant-wrap .pi-cant{width:100%;padding-right:24px;}
+  .pi-flechas{position:absolute;top:3px;bottom:3px;right:3px;display:flex;flex-direction:column;width:18px;}
+  .pi-flechas button{flex:1;border:none;background:#f3ecd8;color:var(--muted);font-size:7px;line-height:1;padding:0;cursor:pointer;}
+  .pi-flechas button:first-child{border-radius:4px 4px 0 0;margin-bottom:1px;}
+  .pi-flechas button:last-child{border-radius:0 0 4px 4px;}
+  .pi-flechas button:hover{background:#e6d8b6;color:var(--text);}
   .p-item .btn-quitar{width:32px;height:34px;border:1px solid var(--border);background:#fffcf5;border-radius:8px;color:#c62828;font-size:14px;}
   .p-pac-lista{max-height:60vh;overflow:auto;}
   .p-pac{border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:#fffcf5;}
@@ -387,6 +394,11 @@
   .hc-fila2{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;}
   .hc-campo label{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:3px;}
   .hc-campo textarea, .hc-campo input{width:100%;padding:6px 9px;font-size:12px;border:1px solid var(--border);border-radius:7px;background:#fdfbf2;font-family:inherit;resize:vertical;}
+  .hc-campo select{width:100%;padding:6px 9px;font-size:12px;border:1px solid var(--border);border-radius:7px;background:#fdfbf2;font-family:inherit;}
+  .hc-plan{display:flex;gap:10px;align-items:center;}
+  .hc-plan > select{flex:1;min-width:0;}
+  .hc-campo .hc-ses{display:flex;align-items:center;gap:6px;margin:0;white-space:nowrap;}
+  .hc-campo .hc-ses select{width:64px;}
   .hc-campo textarea:focus, .hc-campo input:focus{outline:none;border-color:var(--accent);background:#fffcf5;}
   .hc-valor{padding:6px 0;font-size:12.5px;font-weight:700;}
   .hc-acciones{display:flex;align-items:center;gap:10px;margin-top:12px;}
@@ -777,7 +789,19 @@
             <div class="hc-campo"><label>Suplementos actuales</label><textarea rows="2" data-hc="suplementos"></textarea></div>
             <div class="hc-campo"><label>Motivo de derivación / objetivo terapéutico</label><textarea rows="2" data-hc="motivo"></textarea></div>
             <div class="hc-campo"><label>Plan propuesto por derivante <span class="opt">(opcional)</span></label><textarea rows="2" data-hc="plan"></textarea></div>
-            <div class="hc-campo"><label>Profesional derivante</label><input type="text" data-hc="derivante"></div>
+            <div class="hc-campo"><label>Profesional derivante</label><select data-hc="derivante" id="hcDerivante"></select></div>
+            <div class="hc-campo"><label>Plan</label>
+              <div class="hc-plan">
+                <select data-hc="planTipo">
+                  <option value="">—</option>
+                  <option>Base + Amp Heel (hasta 4)</option>
+                  <option>Base + Amp Heel (hasta 7)</option>
+                </select>
+                <label class="hc-ses">Sesiones recomendadas
+                  <select data-hc="sesiones"><option value="">—</option></select>
+                </label>
+              </div>
+            </div>
           </div>
           <div class="hc-acciones">
             <button class="btn" id="hcBtnNota">+ Nota</button>
@@ -4683,6 +4707,12 @@ function mostrarPortal(){
     if(!unsubFichasSueros){
       unsubFichasSueros = db.collection('historiasSueros').onSnapshot(snap=>{
         fichasSuerosIds = new Set(snap.docs.map(d=> d.id));
+        snap.docs.forEach(d=>{
+          const v = d.data().derivante;
+          if(!v) return;
+          const n = derivanteNormalizado(v);
+          if(n && n !== v) db.collection('historiasSueros').doc(d.id).update({derivante: n}).catch(()=>{});
+        });
       }, ()=>{});
     }
   }
@@ -4799,6 +4829,29 @@ function renderPortalPacientes(){
 }
 
 /* Ficha */
+// Profesionales derivantes (en este orden)
+const DERIVANTES = ['Dra. María Gabriela Baslini', 'Dra. Victoria Barbieri'];
+// Reconoce lo que se escribió antes a mano ("GABRIELA", "BARBIERI"…) y lo pasa al nombre de la lista
+function derivanteNormalizado(v){
+  const k = claveInsumo(v||'');
+  if(!k) return '';
+  if(k.includes('gabriela') || k.includes('baslini')) return DERIVANTES[0];
+  if(k.includes('victoria') || k.includes('barbieri')) return DERIVANTES[1];
+  const exacto = DERIVANTES.find(d=> claveInsumo(d)===k);
+  return exacto || null;   // null: no se reconoce, se deja como está
+}
+function llenarDerivantes(actual){
+  const sel = document.getElementById('hcDerivante');
+  const opciones = ['', ...DERIVANTES];
+  if(actual && !opciones.includes(actual)) opciones.push(actual);   // valor viejo no reconocido: se conserva
+  sel.innerHTML = opciones.map(o=> `<option value="${o.replace(/"/g,'&quot;')}">${o || '—'}</option>`).join('');
+  sel.value = actual || '';
+}
+(function(){
+  const ses = document.querySelector('[data-hc="sesiones"]');
+  ses.innerHTML = '<option value="">—</option>' + Array.from({length:20}, (_,i)=> `<option>${i+1}</option>`).join('');
+})();
+const HC_SIN_MAYUS = ['derivante','planTipo','sesiones'];
 function edadDesde(iso){
   if(!iso) return '—';
   const n = new Date(iso + 'T12:00:00'), h = new Date();
@@ -4826,6 +4879,7 @@ function abrirFichaHC(id){
   document.getElementById('hcEdad').textContent = edadDesde(fnacISO(p.fnac));
   document.getElementById('hcInicio').value = hoyISO();
   document.querySelectorAll('[data-hc]').forEach(el=> el.value = '');
+  llenarDerivantes('');
   document.getElementById('hcEstado').textContent = '';
   document.getElementById('hcNotaForm').classList.add('col-hidden');
   pacVista('ficha');
@@ -4837,7 +4891,9 @@ function abrirFichaHC(id){
     if(primera){   // los campos se completan al abrir; después no se pisa lo que se está escribiendo
       primera = false;
       document.getElementById('hcInicio').value = hcDatos.hcInicio || hoyISO();
-      document.querySelectorAll('[data-hc]').forEach(el=> el.value = hcDatos[el.dataset.hc] || '');
+      document.querySelectorAll('[data-hc]').forEach(el=>{ if(el.dataset.hc!=='derivante') el.value = hcDatos[el.dataset.hc] || ''; });
+      const dv = hcDatos.derivante || '';
+      llenarDerivantes(derivanteNormalizado(dv) ?? dv);
       document.getElementById('hcEstado').textContent = hcDatos.actualizadoPor ? `Última edición: ${hcDatos.actualizadoPor}` : '';
     }
     renderHistorialHC();
@@ -4856,7 +4912,7 @@ document.getElementById('hcGuardar').onclick = async ()=>{
   if(!hcPaciente) return;
   const datos = { hcInicio: document.getElementById('hcInicio').value || '',
     actualizadoPor: currentUser.nombre, actualizadoEn: firebase.firestore.FieldValue.serverTimestamp() };
-  document.querySelectorAll('[data-hc]').forEach(el=> datos[el.dataset.hc] = mayus(el.value.trim()));
+  document.querySelectorAll('[data-hc]').forEach(el=> datos[el.dataset.hc] = HC_SIN_MAYUS.includes(el.dataset.hc) ? el.value : mayus(el.value.trim()));
   const btn = document.getElementById('hcGuardar');
   btn.disabled = true; btn.textContent = 'Guardando…';
   try{
@@ -4973,9 +5029,17 @@ function pAgregarItem(it){
   row.className = 'p-item';
   row.innerHTML = `
     <div class="ac-wrap"><input type="text" class="pi-insumo" placeholder="Insumo…" autocomplete="off"></div>
-    <input type="text" class="pi-cant" inputmode="numeric" placeholder="0">
+    <div class="pi-cant-wrap">
+      <input type="text" class="pi-cant" inputmode="numeric" placeholder="0">
+      <div class="pi-flechas"><button type="button" tabindex="-1" data-d="1" title="Sumar">▲</button><button type="button" tabindex="-1" data-d="-1" title="Restar">▼</button></div>
+    </div>
     <button type="button" class="btn-quitar" title="Quitar">✕</button>`;
   document.getElementById('aItems').appendChild(row);
+  row.querySelectorAll('.pi-flechas button').forEach(b=> b.onclick = ()=>{
+    const c = row.querySelector('.pi-cant');
+    const n = Math.max(1, (parseMonto(c.value)||0) + Number(b.dataset.d));
+    c.value = n.toLocaleString('es-AR');
+  });
   const inIns = row.querySelector('.pi-insumo'), inCant = row.querySelector('.pi-cant');
   if(it){ inIns.value = it.insumo||''; inCant.value = it.cant ? Number(it.cant).toLocaleString('es-AR') : ''; }
   attachAutocomplete(inIns, insumosConocidos, ()=>{
