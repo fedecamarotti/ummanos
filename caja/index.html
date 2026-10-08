@@ -296,6 +296,7 @@
   .s-textarea{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit;color:var(--text);background:#fdfbf2;resize:vertical;}
   .s-textarea:focus{outline:none;border-color:var(--accent);background:#fffcf5;}
   .s-caption-row{display:flex;justify-content:space-between;align-items:center;}
+  .s-stock-aviso{margin-left:10px;padding:2px 9px;border-radius:20px;background:#fff1dc;border:1px solid #f0c98a;color:#9a5b00;font-size:10.5px;font-weight:700;}
   .s-ord{display:inline-flex;gap:2px;}
   .s-ord button{border:1px solid var(--border);background:#fffcf5;border-radius:6px;width:22px;height:22px;font-size:9px;color:var(--muted);padding:0;}
   .s-ord button:hover{background:#f0e8cf;color:var(--text);}
@@ -3867,14 +3868,18 @@ function ordenarPorInsumo(lista){
     return a.insumo.localeCompare(b.insumo,'es');
   });
 }
+// El stock se contabiliza desde esta fecha: los meses anteriores se muestran sin valores
+const STOCK_DESDE = '2026-10-01';
 function renderStock(){
   const y = mesSueros.year, m = mesSueros.month;
   const ultimoDia = new Date(y, m, 0).getDate();
-  document.getElementById('sStockCaption').textContent = sEsMesActual()
+  const previo = sMesInicio() < STOCK_DESDE;
+  document.getElementById('sStockCaption').innerHTML = (sEsMesActual()
     ? 'Stock actual'
-    : `Stock al ${ultimoDia}/${m}/${y}`;
+    : `Stock al ${ultimoDia}/${m}/${y}`)
+    + (previo ? ' <span class="s-stock-aviso">Stock contabilizado a partir del 1/10/2026</span>' : '');
   const q = document.getElementById('sfInsumoStock').value;
-  const todos = calcularStock(sMesFin());
+  const todos = previo ? insumosStock() : calcularStock(sMesFin());
   const btnOrd = document.getElementById('sBtnOrdenar');
   btnOrd.textContent = sOrdenando ? '✓ Listo' : '↕ Ordenar';
   btnOrd.classList.toggle('btn-primary', sOrdenando);
@@ -3883,6 +3888,16 @@ function renderStock(){
   const foot = document.getElementById('sStockFoot');
   if(!lista.length){
     body.innerHTML = `<tr><td colspan="4" class="empty-state">${todos.length ? 'No hay insumos con ese nombre.' : 'Todavía no hay insumos. Cargá una compra (egreso) para empezar el stock.'}</td></tr>`;
+    foot.innerHTML = '';
+    return;
+  }
+  if(previo){
+    body.innerHTML = lista.map(i=>`
+    <tr>
+      <td class="left">${i.insumo}</td>
+      <td><span class="pend">—</span></td><td><span class="pend">—</span></td><td><span class="pend">—</span></td>
+      <td class="editcol"></td>
+    </tr>`).join('');
     foot.innerHTML = '';
     return;
   }
