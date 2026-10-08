@@ -305,6 +305,14 @@
   .ex-row{display:flex;align-items:center;gap:14px;padding:8px 4px;border-bottom:1px solid var(--border);}
   .ex-row .ex-nom{flex:1;font-size:12.5px;font-weight:600;}
   /* ---------- PORTAL ---------- */
+  .s-solo-limitado{display:none;}
+  body.sueros-limitado .s-solo-limitado{display:inline-flex;}
+  body.sueros-limitado #vistaSueros [data-tab="movs"],
+  body.sueros-limitado #sBtnNuevo, body.sueros-limitado #sBtnCfg,
+  body.sueros-limitado #sBtnExcep, body.sueros-limitado #sBtnOrdenar{display:none !important;}
+  body.sueros-limitado .tabla-stock .editcol{visibility:hidden;}
+  #pExtra{padding-top:16px;}
+  #pExtra #vistaSueros .sheet-wrap{max-height:calc(100vh - 190px);}
   #portal{min-height:100vh;}
   .p-user{align-self:center;font-size:12px;font-weight:600;color:var(--muted);margin-right:4px;}
   .p-home{min-height:calc(100vh - 67px);display:flex;align-items:center;justify-content:center;padding:24px 16px;}
@@ -661,11 +669,13 @@
           <span class="ic">📖</span><span>Glosario<small>Planillas e información para profesionales</small></span>
         </a>
         <button class="p-boton col-hidden" id="pIrSueros">
-          <span class="ic">💉</span><span>Aplicación de sueros<small>Cargar y consultar aplicaciones</small></span>
+          <span class="ic">💉</span><span>Sueroterapia<small>Cargar y consultar aplicaciones</small></span>
         </button>
       </div>
     </div>
   </div>
+
+  <div id="pExtra" class="col-hidden"></div>
 
   <div id="pSueros" class="col-hidden">
     <div class="p-bar">
@@ -675,6 +685,8 @@
       <span class="p-a">a</span>
       <input type="date" id="pHasta" title="Hasta">
       <button class="btn" id="pBtnPacientes">Pacientes</button>
+      <button class="btn col-hidden" id="pBtnStock">Stock</button>
+      <button class="btn col-hidden" id="pBtnInformes">Informes</button>
       <span class="p-spacer"></span>
       <button class="btn p-btn-nuevo" id="pBtnNuevo">+ Nuevo suero</button>
     </div>
@@ -910,6 +922,7 @@
         <button class="s-tab s-tab-nuevo" id="sBtnNuevo">+ Nuevo mov.</button>
       </div>
       <div style="justify-self:end;display:flex;gap:8px;">
+        <button class="btn s-cfg-btn s-solo-limitado" id="sBtnVolverPortal">← Aplicaciones</button>
         <button class="btn s-cfg-btn" id="sBtnCfg" title="Sabrina, descuento y % de Gabriela">⚙ Valores fijos</button>
         <button class="btn s-cfg-btn" id="sBtnExcep" title="Pacientes sin pago a Sabrina y/o Gabriela">⚑ Excepciones</button>
       </div>
@@ -2077,6 +2090,12 @@ function esFede(){
   if(!currentUser || currentUser.rol !== 'admin') return false;
   return /^fede(rico)?\b/i.test((currentUser.nombre||'').trim());
 }
+// Secciones del usuario (documento usuarios/{uid}, campo "secciones")
+function seccionesUsuario(){ return currentUser && Array.isArray(currentUser.secciones) ? currentUser.secciones : []; }
+// Sueros completo, igual que Fede: secciones ["sueros-admin"]
+function esAdminSueros(){ return esFede() || seccionesUsuario().includes('sueros-admin'); }
+// Portal de sueros + Stock e Informes (sin resumen mensual ni valores): secciones ["sueros","sueros-informes"]
+function suerosLimitado(){ return !esAdminSueros() && seccionesUsuario().includes('sueros-informes'); }
 function aplicarRolUI(){
   const esAdmin = currentUser.rol === 'admin';
   document.getElementById('btnCierre').classList.toggle('col-hidden', esAdmin);
@@ -2088,8 +2107,8 @@ function aplicarRolUI(){
   document.getElementById('btnProfesionalesPanel').classList.toggle('col-hidden', !esAdmin);
   document.getElementById('btnConceptosPanel').classList.toggle('col-hidden', !esAdmin);
   document.getElementById('btnProveedoresPanel').classList.toggle('col-hidden', !esAdmin);
-  document.getElementById('btnVistaMovimientos').classList.toggle('col-hidden', !esFede());
-  document.getElementById('btnSueros').classList.toggle('col-hidden', !esFede());
+  document.getElementById('btnVistaMovimientos').classList.toggle('col-hidden', !esAdminSueros());
+  document.getElementById('btnSueros').classList.toggle('col-hidden', !esAdminSueros());
   document.getElementById('btnCremas').classList.toggle('col-hidden', !esFede());
   mostrarVista('movimientos');
 }
@@ -3622,7 +3641,7 @@ function consumosDeIngreso(m){
 }
 
 function mostrarVista(v){
-  if((v==='sueros' || v==='cremas') && !esFede()) return;
+  if((v==='sueros' && !esAdminSueros()) || (v==="cremas" && !esFede())) return;
   vistaActual = v;
   document.getElementById('vistaMovimientos').classList.toggle('col-hidden', v!=='movimientos');
   document.getElementById('vistaSueros').classList.toggle('col-hidden', v!=='sueros');
@@ -3641,7 +3660,7 @@ let suerosExcepciones = {};   // { "APELLIDO, NOMBRE": {sabrina0:true, gabriela0
 let ordenInsumos = [];        // orden personalizado de insumos
 function excepcionDe(nombre){ return suerosExcepciones[mayus(nombre||'')] || {}; }
 function suscribirSueros(){
-  if(unsubSueros || !(esFede() || puedeCargarSueros())) return;
+  if(unsubSueros || !(esAdminSueros() || puedeCargarSueros())) return;
   const unsubMovs = db.collection('sueros').orderBy('fechaISO','asc').onSnapshot(snap=>{
     const ms = ts => ts && ts.toMillis ? ts.toMillis() : Date.now();
     sueros = snap.docs.filter(d=> d.id!=='_config').map(d=> ({id:d.id, ...d.data()}))
@@ -3675,7 +3694,7 @@ document.getElementById('sMesNext').onclick = ()=>{
   renderSueros();
 };
 document.querySelectorAll('.s-tab[data-tab]').forEach(b=>{
-  b.onclick = ()=>{ sTabActual = b.dataset.tab; renderSueros(); };
+  b.onclick = ()=>{ if(suerosLimitado() && b.dataset.tab==='movs') return; sTabActual = b.dataset.tab; renderSueros(); };
 });
 ['sfFecha','sfTercero','sfDetalle','sfTotal','sfInsumos','sfSabrina','sfGabriela','sfUmmana'].forEach(id=>
   document.getElementById(id).addEventListener('input', renderSuerosTabla));
@@ -3733,7 +3752,7 @@ const celdaReparto = v => v==null ? '<span class="pend">—</span>' : fmtPesos(v
 // Cargar el pago directo desde la celda "FALTA" (Enter o al salir del campo)
 async function guardarTotalInline(id, valor){
   const m = sueros.find(x=> x.id===id);
-  if(!m || !esFede() || String(valor).trim()==='') return;
+  if(!m || !esAdminSueros() || String(valor).trim()==='') return;
   const total = parseMonto(valor);
   const insumos = Number(m.insumosTotal)||0, sabrina = Number(m.sabrina)||0;
   const gabriela = m.gabrielaManual ? (Number(m.gabriela)||0) : calcularGabrielaAuto(total, insumos, sabrina);
@@ -3910,7 +3929,7 @@ async function moverInsumo(nombre, dir){
 const overlayInsumo = document.getElementById('overlayInsumo');
 let eiOriginal = null;
 function abrirEdicionInsumo(nombre){
-  if(!esFede()) return;
+  if(!esAdminSueros()) return;
   const actual = insumosStock().find(i=> i.insumo===nombre);
   if(!actual) return;
   eiOriginal = actual;
@@ -3930,7 +3949,7 @@ const cerrarInsumo = ()=> overlayInsumo.classList.remove('show');
 document.getElementById('closeInsumo').onclick = cerrarInsumo;
 document.getElementById('cancelInsumo').onclick = cerrarInsumo;
 document.getElementById('guardarInsumo').onclick = async ()=>{
-  if(!esFede() || !eiOriginal) return;
+  if(!esAdminSueros() || !eiOriginal) return;
   const nuevoNombre = mayus(document.getElementById('eiNombre').value.trim());
   const nuevoValor = parseMonto(document.getElementById('eiValor').value);
   const nuevoStock = parseMonto(document.getElementById('eiStock').value);
@@ -4025,6 +4044,7 @@ document.getElementById('sResTodo').onclick = ()=>{
 function renderResumenSueros(){
   const key = sMesInicio();
   if(sResMesKey !== key || !sResDesde || !sResHasta){ sResMesKey = key; sResAlMes(); }
+  if(suerosLimitado() && sInfTipo==='mensual') sInfTipo = 'paciente';
   if(sResDesde > sResHasta){ const t = sResDesde; sResDesde = sResHasta; sResHasta = t; }
   const esMesCompleto = sResDesde===sMesInicio() && sResHasta===ultimoDiaMesISO();
   document.getElementById('sResDesde').value = sResDesde;
@@ -4078,6 +4098,20 @@ function renderResumenSueros(){
   const vacio = cols => `<tr><td colspan="${cols}" class="empty-state">No hay datos en estas fechas.</td></tr>`;
   const cant = n => Number(n).toLocaleString('es-AR');
 
+  if(sInfTipo==='paciente' && suerosLimitado()){
+    const filas = apps.filter(m=> m.tercero===sel);
+    cont.innerHTML = `
+      <h3>${sel}</h3>
+      <div class="sub">Aplicaciones ${rangoTxt} · ${filas.length} ${filas.length===1?'aplicación':'aplicaciones'}</div>
+      <div class="inf-wrap" style="max-width:900px;"><table class="inf-tabla">
+        <colgroup><col style="width:96px"><col style="width:60px"><col></colgroup>
+        <thead><tr><th>Fecha</th><th>N°</th><th class="left">Insumos aplicados</th></tr></thead>
+        <tbody>${filas.length ? filas.map(m=> `<tr>
+          <td>${fechaLarga(m.fechaISO)}</td><td>${num[m.id]}</td>
+          <td class="left">${insumosHTML(m) || '<span class="pend">—</span>'}</td></tr>`).join('') : vacio(3)}</tbody>
+      </table></div>`;
+    return;
+  }
   if(sInfTipo==='paciente'){
     const filas = apps.filter(m=> m.tercero===sel);
     const t = {total:0, insumos:0, sabrina:0, gabriela:0, ummana:0};
@@ -4155,7 +4189,7 @@ function renderResumenSueros(){
 /* ---- Valores fijos (Sabrina, descuento y % de Gabriela) ---- */
 const overlaySueroCfg = document.getElementById('overlaySueroCfg');
 document.getElementById('sBtnCfg').onclick = ()=>{
-  if(!esFede()) return;
+  if(!esAdminSueros()) return;
   document.getElementById('cfgSabrina').value = Number(suerosCfg.sabrina).toLocaleString('es-AR');
   document.getElementById('cfgFijoGabriela').value = Number(suerosCfg.fijoGabriela).toLocaleString('es-AR');
   document.getElementById('cfgPctGabriela').value = suerosCfg.pctGabriela;
@@ -4169,7 +4203,7 @@ const cerrarCfg = ()=> overlaySueroCfg.classList.remove('show');
 document.getElementById('closeSueroCfg').onclick = cerrarCfg;
 document.getElementById('cancelSueroCfg').onclick = cerrarCfg;
 document.getElementById('guardarSueroCfg').onclick = async ()=>{
-  if(!esFede()) return;
+  if(!esAdminSueros()) return;
   const pct = Number(String(document.getElementById('cfgPctGabriela').value).replace(',','.'));
   if(isNaN(pct) || pct<0 || pct>100){ alert("El porcentaje tiene que estar entre 0 y 100."); return; }
   const datos = {
@@ -4187,7 +4221,7 @@ document.getElementById('guardarSueroCfg').onclick = async ()=>{
 /* ---- Excepciones ---- */
 const overlayExcep = document.getElementById('overlayExcep');
 attachAutocomplete(document.getElementById('exPaciente'), ()=> pacienteRegistry);
-document.getElementById('sBtnExcep').onclick = ()=>{ if(!esFede()) return; renderExcepciones(); overlayExcep.classList.add('show'); };
+document.getElementById('sBtnExcep').onclick = ()=>{ if(!esAdminSueros()) return; renderExcepciones(); overlayExcep.classList.add('show'); };
 const cerrarExcep = ()=> overlayExcep.classList.remove('show');
 document.getElementById('closeExcep').onclick = cerrarExcep;
 document.getElementById('cerrarExcep').onclick = cerrarExcep;
@@ -4400,7 +4434,7 @@ function aplicarExcepcionesFicha(){
   sRecalcular();
 }
 function abrirModalSuero(id){
-  if(!esFede()) return;
+  if(!esAdminSueros()) return;
   const m = id ? sueros.find(x=> x.id===id) : null;
   const esIng = !m || m.tipo!=='egreso';
   sEditId = m ? m.id : null;
@@ -4431,7 +4465,7 @@ document.getElementById('closeSuero').onclick = cerrarModalSuero;
 document.getElementById('sCancelar').onclick = cerrarModalSuero;
 
 document.getElementById('sGuardar').onclick = async ()=>{
-  if(!esFede()) return;
+  if(!esAdminSueros()) return;
   const fechaISO = document.getElementById('sFecha').value;
   const tercero = mayus(sTercero.value.trim());
   if(!fechaISO){ alert("Elegí una fecha."); return; }
@@ -4499,7 +4533,7 @@ document.getElementById('sGuardar').onclick = async ()=>{
 };
 
 document.getElementById('sEliminar').onclick = async ()=>{
-  if(!sEditId || !esFede()) return;
+  if(!sEditId || !esAdminSueros()) return;
   if(!confirm("¿Eliminar este movimiento de sueros? Esta acción no se puede deshacer.")) return;
   try{
     await db.collection('sueros').doc(sEditId).delete();
@@ -4536,7 +4570,7 @@ function esUsuarioCaja(){
 function puedeCargarSueros(){
   if(!currentUser) return false;
   const sec = Array.isArray(currentUser.secciones) ? currentUser.secciones : [];
-  return sec.includes('sueros') || primerNombre()==='SABRINA';
+  return sec.includes('sueros') || sec.includes('sueros-informes') || primerNombre()==='SABRINA';
 }
 
 function mostrarPortal(){
@@ -4547,6 +4581,16 @@ function mostrarPortal(){
   document.getElementById('pHola').textContent = nom ? `Hola, ${nom}` : 'Hola';
   document.getElementById('pIrSueros').classList.toggle('col-hidden', !puedeCargarSueros());
   if(!puedeCargarSueros()){ location.replace('../'); return; }
+  if(suerosLimitado()){
+    // Stock e Informes: se usa la misma vista de sueros, sin lo que es solo de administración
+    document.body.classList.add('sueros-limitado');
+    document.getElementById('pExtra').appendChild(document.getElementById('vistaSueros'));
+    const opMensual = document.querySelector('#infTipo option[value="mensual"]');
+    if(opMensual) opMensual.remove();
+    sInfTipo = 'paciente';
+    document.getElementById('pBtnStock').classList.remove('col-hidden');
+    document.getElementById('pBtnInformes').classList.remove('col-hidden');
+  }
   portalIr('sueros');
   if(puedeCargarSueros()){
     suscribirSueros();
@@ -4566,6 +4610,12 @@ function mostrarPortal(){
 function portalIr(v){
   document.getElementById('pHome').classList.toggle('col-hidden', v!=='home');
   document.getElementById('pSueros').classList.toggle('col-hidden', v!=='sueros');
+  document.getElementById('pExtra').classList.toggle('col-hidden', v!=='extra');
+  if(v==='extra'){
+    vistaActual = 'sueros';
+    document.getElementById('vistaSueros').classList.remove('col-hidden');
+    renderSueros();
+  } else if(suerosLimitado()) vistaActual = 'movimientos';
   if(v==='sueros'){
     if(!document.getElementById('pDesde').value) document.getElementById('pDesde').value = hoyISO();
     if(!document.getElementById('pHasta').value) document.getElementById('pHasta').value = hoyISO();
@@ -4574,6 +4624,9 @@ function portalIr(v){
 }
 document.getElementById('pLogout').onclick = ()=> auth.signOut().then(()=> location.replace('../'));
 document.getElementById('pIrSueros').onclick = ()=>{ if(puedeCargarSueros()) portalIr('sueros'); };
+document.getElementById('pBtnStock').onclick = ()=>{ if(!suerosLimitado()) return; sTabActual = 'stock'; portalIr('extra'); };
+document.getElementById('pBtnInformes').onclick = ()=>{ if(!suerosLimitado()) return; sTabActual = 'resumen'; portalIr('extra'); };
+document.getElementById('sBtnVolverPortal').onclick = ()=> portalIr('sueros');
 document.getElementById('pVolver').onclick = ()=> location.href = '../';
 ['pDesde','pHasta'].forEach(id=> document.getElementById(id).addEventListener('change', renderPortalSueros));
 function rangoPortal(){
