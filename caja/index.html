@@ -1397,7 +1397,7 @@
   <div class="modal" style="max-width:440px;">
     <button class="close-x" id="closeInsumo">✕</button>
     <h2>Editar insumo</h2>
-    <div class="modal-sub">Los cambios de valor y stock quedan registrados como un ajuste con fecha de hoy.</div>
+    <div class="modal-sub" id="eiSub">Los cambios de valor y stock quedan registrados como un ajuste con fecha de hoy.</div>
     <div class="field"><label>Insumo</label><input type="text" id="eiNombre"></div>
     <div class="row2">
       <div class="field"><label>Valor unitario</label><input type="text" id="eiValor" inputmode="numeric"></div>
@@ -3846,6 +3846,9 @@ function abrirEdicionInsumo(nombre){
   document.getElementById('eiNombre').value = actual.insumo;
   document.getElementById('eiValor').value = actual.valorUnit ? actual.valorUnit.toLocaleString('es-AR') : '';
   document.getElementById('eiStock').value = actual.cant.toLocaleString('es-AR');
+  document.getElementById('eiSub').textContent = sEsMesActual()
+    ? 'Los cambios de valor y stock quedan registrados como un ajuste con fecha de hoy.'
+    : 'Estos son los valores de HOY (no los del mes que estás mirando). Los cambios quedan registrados como un ajuste con fecha de hoy.';
   overlayInsumo.classList.add('show');
 }
 ['eiValor','eiStock'].forEach(id=>{
@@ -3896,7 +3899,8 @@ document.getElementById('guardarInsumo').onclick = async ()=>{
         creadoPor: currentUser.nombre, creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
       });
     }
-    cerrarInsumo();
+    mesSueros = { year: hoyRef.getFullYear(), month: hoyRef.getMonth()+1 };   // el ajuste es de hoy: se muestra el stock actual
+    cerrarInsumo(); renderSueros();
   }catch(e){
     alert("No se pudo guardar: " + e.message);
   }
