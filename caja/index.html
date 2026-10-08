@@ -406,6 +406,20 @@
   .tabla-mov tfoot.fila-totales td.neg{color:#a13a3a;}
   .tabla-mov tfoot.fila-totales .tot-cant{font-weight:500;color:var(--muted);font-size:10px;letter-spacing:0;}
   .s-cfg-btn{font-size:11.5px;padding:6px 12px;}
+  .inf-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-bottom:16px;margin-bottom:18px;border-bottom:1px solid var(--border);}
+  .inf-bar select{width:auto;padding:7px 10px;font-size:12.5px;font-weight:600;}
+  .inf-sel{width:280px;}
+  .inf-sel input{padding:7px 10px;font-size:12.5px;}
+  .inf-bar .s-res-rango{margin-left:auto;}
+  .inf-wrap{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-top:14px;}
+  .inf-tabla{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11.5px;}
+  .inf-tabla th{background:#f4eeda;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.3px;padding:8px 10px;text-align:center;}
+  .inf-tabla td{padding:7px 10px;border-top:1px solid var(--border);text-align:center;}
+  .inf-tabla .left{text-align:left;}
+  .inf-tabla td.monto{font-weight:700;white-space:nowrap;}
+  .inf-tabla td.neg{color:#a13a3a;}
+  .inf-tabla tfoot td{background:#f4eeda;font-weight:700;border-top:2px solid var(--border);white-space:nowrap;}
+  .inf-tabla .pend{color:#c4b995;font-weight:500;}
   .s-res-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px;}
   .s-res-head .sub{margin-bottom:0;}
   .s-res-rango{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
@@ -892,7 +906,7 @@
       <div class="s-tabs" role="tablist" aria-label="Sueros">
         <button class="s-tab active" data-tab="movs" role="tab">Movimientos sueros</button>
         <button class="s-tab" data-tab="stock" role="tab">Stock</button>
-        <button class="s-tab" data-tab="resumen" role="tab">Resumen</button>
+        <button class="s-tab" data-tab="resumen" role="tab">Informes</button>
         <button class="s-tab s-tab-nuevo" id="sBtnNuevo">+ Nuevo mov.</button>
       </div>
       <div style="justify-self:end;display:flex;gap:8px;">
@@ -958,7 +972,24 @@
     </div>
 
     <div class="s-panel col-hidden" id="sPanelResumen">
-      <div class="s-resumen" id="sResumen"></div>
+      <div class="s-resumen">
+        <div class="inf-bar">
+          <select id="infTipo">
+            <option value="mensual">Resumen mensual</option>
+            <option value="paciente">Informe por paciente</option>
+            <option value="producto">Informe por producto</option>
+            <option value="proveedor">Informe por proveedor</option>
+          </select>
+          <div class="ac-wrap inf-sel col-hidden" id="infSelWrap"><input type="text" id="infSel" autocomplete="off"></div>
+          <div class="s-res-rango">
+            <label>Desde <input type="date" id="sResDesde"></label>
+            <label>Hasta <input type="date" id="sResHasta"></label>
+            <button type="button" class="btn s-cfg-btn" id="sResMes">Mes completo</button>
+            <button type="button" class="btn s-cfg-btn" id="sResTodo" title="Desde el primer movimiento hasta hoy">Todo</button>
+          </div>
+        </div>
+        <div id="sResumen"></div>
+      </div>
     </div>
    </div><!-- /#vistaSueros -->
 
@@ -3947,60 +3978,178 @@ document.getElementById('guardarInsumo').onclick = async ()=>{
   btn.disabled = false; btn.textContent = "Guardar";
 };
 
-/* ---- Pestaña 3: Resumen mensual ---- */
-// Rango del resumen: por defecto el mes elegido; se puede cambiar con Desde / Hasta
+/* ---- Pestaña 3: Informes (resumen mensual, por paciente, por producto, por proveedor) ---- */
+// Rango: por defecto el mes elegido; se puede cambiar con Desde / Hasta
 let sResDesde = null, sResHasta = null, sResMesKey = null;
+let sInfTipo = 'mensual';
 function ultimoDiaMesISO(){
   const y = mesSueros.year, m = mesSueros.month;
   return `${y}-${String(m).padStart(2,'0')}-${String(new Date(y, m, 0).getDate()).padStart(2,'0')}`;
 }
 function fechaLarga(iso){ const [y,m,d] = iso.split('-'); return `${Number(d)}/${Number(m)}/${y}`; }
 function sResAlMes(){ sResDesde = sMesInicio(); sResHasta = ultimoDiaMesISO(); }
+const INF_PLACEHOLDER = { paciente:'Elegí un paciente…', producto:'Elegí un producto…', proveedor:'Elegí un proveedor…' };
+function opcionesInforme(){
+  const set = new Set();
+  if(sInfTipo==='paciente') aplicacionesSueros().forEach(m=> m.tercero && set.add(m.tercero));
+  if(sInfTipo==='producto'){
+    sueros.forEach(m=> (m.items||[]).forEach(it=> it.insumo && set.add(it.insumo)));
+  }
+  if(sInfTipo==='proveedor') sueros.filter(m=> m.tipo==='egreso').forEach(m=> m.tercero && set.add(m.tercero));
+  return [...set].sort((a,b)=> a.localeCompare(b,'es'));
+}
+function seleccionInforme(){
+  const v = mayus(document.getElementById('infSel').value.trim());
+  return opcionesInforme().find(o=> mayus(o)===v) || null;
+}
+const infTipoSel = document.getElementById('infTipo');
+const infSel = document.getElementById('infSel');
+infTipoSel.onchange = ()=>{
+  sInfTipo = infTipoSel.value;
+  infSel.value = '';
+  renderResumenSueros();
+  if(sInfTipo!=='mensual') infSel.focus();
+};
+attachAutocomplete(infSel, opcionesInforme, ()=> renderResumenSueros());
+infSel.addEventListener('input', ()=>{ if(seleccionInforme() || !infSel.value.trim()) renderResumenSueros(); });
+document.getElementById('sResDesde').onchange = e=>{ if(e.target.value){ sResDesde = e.target.value; renderResumenSueros(); } };
+document.getElementById('sResHasta').onchange = e=>{ if(e.target.value){ sResHasta = e.target.value; renderResumenSueros(); } };
+document.getElementById('sResMes').onclick = ()=>{ sResAlMes(); renderResumenSueros(); };
+document.getElementById('sResTodo').onclick = ()=>{
+  const fechas = sueros.filter(m=> m.tipo!=='ajuste' && m.fechaISO).map(m=> m.fechaISO).sort();
+  sResDesde = fechas[0] || sMesInicio();
+  sResHasta = hoyISO() > (fechas[fechas.length-1]||'') ? hoyISO() : fechas[fechas.length-1];
+  renderResumenSueros();
+};
+
 function renderResumenSueros(){
   const key = sMesInicio();
   if(sResMesKey !== key || !sResDesde || !sResHasta){ sResMesKey = key; sResAlMes(); }
   if(sResDesde > sResHasta){ const t = sResDesde; sResDesde = sResHasta; sResHasta = t; }
   const esMesCompleto = sResDesde===sMesInicio() && sResHasta===ultimoDiaMesISO();
-  const titulo = esMesCompleto ? `Resumen de ${MESES[mesSueros.month-1]} ${mesSueros.year}`
-    : sResDesde===sResHasta ? `Resumen del ${fechaLarga(sResDesde)}`
-    : `Resumen del ${fechaLarga(sResDesde)} al ${fechaLarga(sResHasta)}`;
-  const delMes = sueros.filter(m=> m.tipo!=='ajuste' && m.fechaISO>=sResDesde && m.fechaISO<=sResHasta);
-  const ingresos = delMes.filter(m=> m.tipo!=='egreso');
-  const compras = delMes.filter(m=> m.tipo==='egreso');
-  const suma = campo => {
-    let hay = false, tot = 0;
-    ingresos.forEach(m=>{ const v = calcularRepartoSuero(m)[campo]; if(v!=null){ hay = true; tot += v; } });
-    return hay ? tot : null;
-  };
-  const total = ingresos.reduce((a,m)=> a+(Number(m.total)||0), 0);
-  const kpi = (lbl, v, cls='') => `<div class="s-kpi ${cls}"><div class="lbl">${lbl}</div><div class="val" ${v!=null && v<0 ? 'style="color:#a13a3a;"' : ''}>${v==null ? '<span class="pend">—</span>' : fmtPesos(v)}</div></div>`;
-  document.getElementById('sResumen').innerHTML = `
-    <div class="s-res-head">
-      <div>
-        <h3>${titulo}</h3>
-        <div class="sub">Suma de los ingresos del período.</div>
+  document.getElementById('sResDesde').value = sResDesde;
+  document.getElementById('sResHasta').value = sResHasta;
+  document.getElementById('sResMes').classList.toggle('col-hidden', esMesCompleto);
+  infTipoSel.value = sInfTipo;
+  document.getElementById('infSelWrap').classList.toggle('col-hidden', sInfTipo==='mensual');
+  infSel.placeholder = INF_PLACEHOLDER[sInfTipo] || '';
+  const rangoTxt = sResDesde===sResHasta ? `del ${fechaLarga(sResDesde)}` : `del ${fechaLarga(sResDesde)} al ${fechaLarga(sResHasta)}`;
+  const enRango = m=> m.tipo!=='ajuste' && m.fechaISO>=sResDesde && m.fechaISO<=sResHasta;
+  const cont = document.getElementById('sResumen');
+
+  if(sInfTipo==='mensual'){
+    const titulo = esMesCompleto ? `Resumen de ${MESES[mesSueros.month-1]} ${mesSueros.year}` : `Resumen ${rangoTxt}`;
+    const delMes = sueros.filter(enRango);
+    const ingresos = delMes.filter(m=> m.tipo!=='egreso');
+    const compras = delMes.filter(m=> m.tipo==='egreso');
+    const suma = campo => {
+      let hay = false, tot = 0;
+      ingresos.forEach(m=>{ const v = calcularRepartoSuero(m)[campo]; if(v!=null){ hay = true; tot += v; } });
+      return hay ? tot : null;
+    };
+    const total = ingresos.reduce((a,m)=> a+(Number(m.total)||0), 0);
+    const kpi = (lbl, v, cls='') => `<div class="s-kpi ${cls}"><div class="lbl">${lbl}</div><div class="val" ${v!=null && v<0 ? 'style="color:#a13a3a;"' : ''}>${v==null ? '<span class="pend">—</span>' : fmtPesos(v)}</div></div>`;
+    cont.innerHTML = `
+      <h3>${titulo}</h3>
+      <div class="sub">Suma de los ingresos del período.</div>
+      <div class="s-kpis">
+        ${kpi('Total', total, 'principal')}
+        ${kpi('Insumos', suma('insumos'))}
+        ${kpi('Sabrina', suma('sabrina'))}
+        ${kpi('Gabriela', suma('gabriela'))}
+        ${kpi('Ummana', suma('ummana'))}
       </div>
-      <div class="s-res-rango">
-        <label>Desde <input type="date" id="sResDesde" value="${sResDesde}"></label>
-        <label>Hasta <input type="date" id="sResHasta" value="${sResHasta}"></label>
-        <button type="button" class="btn s-cfg-btn ${esMesCompleto ? 'col-hidden' : ''}" id="sResMes">Mes completo</button>
-      </div>
-    </div>
-    <div class="s-kpis">
-      ${kpi('Total', total, 'principal')}
-      ${kpi('Insumos', suma('insumos'))}
-      ${kpi('Sabrina', suma('sabrina'))}
-      ${kpi('Gabriela', suma('gabriela'))}
-      ${kpi('Ummana', suma('ummana'))}
-    </div>
-    <div class="s-kpis-sec">
-      <div class="s-kpi"><div class="lbl">Aplicaciones</div><div class="val">${ingresos.length}</div></div>
-      <div class="s-kpi"><div class="lbl">Pagos pendientes</div><div class="val" style="${ingresos.some(m=>m.pagoPendiente)?'color:#b26a00;':''}">${ingresos.filter(m=>m.pagoPendiente).length}</div></div>
-      <div class="s-kpi"><div class="lbl">Compras de insumos</div><div class="val" style="color:#a13a3a;">${fmtPesos(compras.reduce((a,m)=> a+(Number(m.total)||0), 0))}</div></div>
-    </div>`;
-  document.getElementById('sResDesde').onchange = e=>{ if(e.target.value){ sResDesde = e.target.value; renderResumenSueros(); } };
-  document.getElementById('sResHasta').onchange = e=>{ if(e.target.value){ sResHasta = e.target.value; renderResumenSueros(); } };
-  document.getElementById('sResMes').onclick = ()=>{ sResAlMes(); renderResumenSueros(); };
+      <div class="s-kpis-sec">
+        <div class="s-kpi"><div class="lbl">Aplicaciones</div><div class="val">${ingresos.length}</div></div>
+        <div class="s-kpi"><div class="lbl">Pagos pendientes</div><div class="val" style="${ingresos.some(m=>m.pagoPendiente)?'color:#b26a00;':''}">${ingresos.filter(m=>m.pagoPendiente).length}</div></div>
+        <div class="s-kpi"><div class="lbl">Compras de insumos</div><div class="val" style="color:#a13a3a;">${fmtPesos(compras.reduce((a,m)=> a+(Number(m.total)||0), 0))}</div></div>
+      </div>`;
+    return;
+  }
+
+  const sel = seleccionInforme();
+  if(!sel){
+    cont.innerHTML = `<div class="empty-state">${INF_PLACEHOLDER[sInfTipo].replace('…','')} para ver el informe.</div>`;
+    return;
+  }
+  const num = numerosDeAplicacion();
+  const apps = aplicacionesSueros().filter(enRango);
+  const neg = v => v<0 ? 'neg' : '';
+  const vacio = cols => `<tr><td colspan="${cols}" class="empty-state">No hay datos en estas fechas.</td></tr>`;
+  const cant = n => Number(n).toLocaleString('es-AR');
+
+  if(sInfTipo==='paciente'){
+    const filas = apps.filter(m=> m.tercero===sel);
+    const t = {total:0, insumos:0, sabrina:0, gabriela:0, ummana:0};
+    filas.forEach(m=>{
+      const r = calcularRepartoSuero(m);
+      if(!m.pagoPendiente) t.total += Number(m.total)||0;
+      ['insumos','sabrina','gabriela','ummana'].forEach(k=>{ if(r[k]!=null) t[k] += Number(r[k])||0; });
+    });
+    const pend = filas.filter(m=> m.pagoPendiente).length;
+    cont.innerHTML = `
+      <h3>${sel}</h3>
+      <div class="sub">Aplicaciones ${rangoTxt} · ${filas.length} ${filas.length===1?'aplicación':'aplicaciones'}${pend ? ` · <span style="color:#b26a00;">${pend} con pago pendiente (no suman)</span>` : ''}</div>
+      <div class="inf-wrap"><table class="inf-tabla">
+        <colgroup><col style="width:86px"><col style="width:52px"><col><col style="width:104px"><col style="width:104px"><col style="width:104px"><col style="width:104px"><col style="width:104px"></colgroup>
+        <thead><tr><th>Fecha</th><th>N°</th><th class="left">Insumos aplicados</th><th>Total</th><th>Insumos</th><th>Sabrina</th><th>Gabriela</th><th>Ummana</th></tr></thead>
+        <tbody>${filas.length ? filas.map(m=>{ const r = calcularRepartoSuero(m); return `<tr>
+          <td>${fechaLarga(m.fechaISO)}</td><td>${num[m.id]}</td>
+          <td class="left">${insumosHTML(m) || '<span class="pend">—</span>'}</td>
+          <td class="monto">${m.pagoPendiente ? '<span style="color:#b26a00;">FALTA</span>' : fmtPesos(Number(m.total)||0)}</td>
+          <td class="monto">${celdaReparto(r.insumos)}</td><td class="monto">${celdaReparto(r.sabrina)}</td>
+          <td class="monto">${celdaReparto(r.gabriela)}</td><td class="monto ${r.ummana!=null ? neg(r.ummana) : ''}">${celdaReparto(r.ummana)}</td>
+        </tr>`; }).join('') : vacio(8)}</tbody>
+        ${filas.length ? `<tfoot><tr><td colspan="3" class="left">TOTALES</td>
+          <td class="monto ${neg(t.total)}">${fmtPesos(t.total)}</td><td class="monto">${fmtPesos(t.insumos)}</td><td class="monto">${fmtPesos(t.sabrina)}</td>
+          <td class="monto">${fmtPesos(t.gabriela)}</td><td class="monto ${neg(t.ummana)}">${fmtPesos(t.ummana)}</td></tr></tfoot>` : ''}
+      </table></div>`;
+    return;
+  }
+
+  if(sInfTipo==='producto'){
+    const filas = apps.map(m=> ({m, cant: (m.items||[]).filter(it=> it.insumo===sel).reduce((a,it)=> a+(Number(it.cant)||0), 0)}))
+      .filter(f=> f.cant>0);
+    const tot = filas.reduce((a,f)=> a+f.cant, 0);
+    cont.innerHTML = `
+      <h3>${sel}</h3>
+      <div class="sub">Aplicaciones ${rangoTxt} · ${filas.length} ${filas.length===1?'aplicación':'aplicaciones'}</div>
+      <div class="inf-wrap" style="max-width:720px;"><table class="inf-tabla">
+        <colgroup><col style="width:96px"><col style="width:60px"><col><col style="width:200px"></colgroup>
+        <thead><tr><th>Fecha</th><th>N°</th><th class="left">Paciente</th><th>Cantidad</th></tr></thead>
+        <tbody>${filas.length ? filas.map(f=> `<tr>
+          <td>${fechaLarga(f.m.fechaISO)}</td><td>${num[f.m.id]}</td><td class="left">${f.m.tercero||''}</td>
+          <td><b>${sel} x${cant(f.cant)}</b></td></tr>`).join('') : vacio(4)}</tbody>
+        ${filas.length ? `<tfoot><tr><td colspan="3" class="left">TOTALES</td><td>${sel} x${cant(tot)}</td></tr></tfoot>` : ''}
+      </table></div>`;
+    return;
+  }
+
+  if(sInfTipo==='proveedor'){
+    // Insumos de este proveedor: los que alguna vez se le compraron
+    const delProv = new Set();
+    sueros.filter(m=> m.tipo==='egreso' && m.tercero===sel).forEach(m=> (m.items||[]).forEach(it=> it.insumo && delProv.add(it.insumo)));
+    const uso = {};
+    apps.forEach(m=> (m.items||[]).forEach(it=>{
+      if(!delProv.has(it.insumo)) return;
+      const c = Number(it.cant)||0;
+      const costo = it.subtotal!=null ? Number(it.subtotal)||0 : c*(Number(it.valorUnit)||0);
+      uso[it.insumo] = uso[it.insumo] || {cant:0, costo:0};
+      uso[it.insumo].cant += c; uso[it.insumo].costo += costo;
+    }));
+    const filas = Object.entries(uso).filter(([,v])=> v.cant>0).sort((a,b)=> a[0].localeCompare(b[0],'es'));
+    const tCant = filas.reduce((a,[,v])=> a+v.cant, 0), tCosto = filas.reduce((a,[,v])=> a+v.costo, 0);
+    cont.innerHTML = `
+      <h3>${sel}</h3>
+      <div class="sub">Insumos de este proveedor usados en las aplicaciones ${rangoTxt}. El costo es el valor de cada insumo al día de la aplicación.</div>
+      <div class="inf-wrap" style="max-width:640px;"><table class="inf-tabla">
+        <colgroup><col><col style="width:120px"><col style="width:150px"></colgroup>
+        <thead><tr><th class="left">Insumo</th><th>Cantidad usada</th><th>Costo total</th></tr></thead>
+        <tbody>${filas.length ? filas.map(([ins,v])=> `<tr>
+          <td class="left">${ins}</td><td>${cant(v.cant)}</td><td class="monto">${fmtPesos(v.costo)}</td></tr>`).join('') : vacio(3)}</tbody>
+        ${filas.length ? `<tfoot><tr><td class="left">TOTALES</td><td>${cant(tCant)}</td><td class="monto">${fmtPesos(tCosto)}</td></tr></tfoot>` : ''}
+      </table></div>`;
+  }
 }
 
 /* ---- Valores fijos (Sabrina, descuento y % de Gabriela) ---- */
