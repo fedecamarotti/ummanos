@@ -3636,9 +3636,46 @@ function calcularRepartoSuero(m){
   if(m.tipo==='egreso' || m.gabriela==null) return { insumos:null, sabrina:null, gabriela:null, ummana:null };
   return { insumos: m.insumosTotal||0, sabrina: m.sabrina||0, gabriela: m.gabriela||0, ummana: m.ummana||0 };
 }
+// El stock se contabiliza desde esta fecha: los meses anteriores se muestran sin valores
+const STOCK_DESDE = '2026-10-01';
+/* ---- "VIAS Y OTROS INSUMOS" es un kit: desde el 1/10/2026 descuenta 1 de cada componente
+   y su valor unitario es la suma de los cuatro ---- */
+const claveInsumo = v => normBusqueda(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9ñ]/g,'');
+const esVias = n => claveInsumo(n).startsWith('viasyotros');
+const KIT_VIAS = [
+  {nombre:'GUIA',                prefijos:['guia']},
+  {nombre:'CATETER',             prefijos:['cateter']},
+  {nombre:'SOL. FISIOLOGICA',    prefijos:['solfisiolog','solucionfisiolog']},
+  {nombre:'OTROS (AGUJAS, ETC)', prefijos:['otros']},
+];
+// Nombres reales de los componentes, tal como se cargaron en las compras
+let cacheComps = {ref:null, len:-1, val:null};
+function componentesVias(){
+  if(cacheComps.ref===sueros && cacheComps.len===sueros.length) return cacheComps.val;
+  const val = calcularComponentesVias();
+  cacheComps = {ref:sueros, len:sueros.length, val};
+  return val;
+}
+function calcularComponentesVias(){
+  const nombres = new Set();
+  sueros.forEach(m=>{ if(m.tipo==='egreso' || m.tipo==='ajuste') (m.items||[]).forEach(it=> it.insumo && nombres.add(it.insumo)); });
+  const lista = [...nombres];
+  return KIT_VIAS.map(k=> lista.find(n=> k.prefijos.some(p=> claveInsumo(n).startsWith(p))) || k.nombre);
+}
+// Expande el kit en sus componentes (solo para aplicaciones desde el 1/10/2026)
+function expandirKit(items, fechaISO){
+  const out = [];
+  const comps = (fechaISO||hoyISO()) >= STOCK_DESDE ? componentesVias() : null;
+  (items||[]).forEach(it=>{
+    const cant = Number(it.cant)||0;
+    if(comps && esVias(it.insumo)) comps.forEach(c=> out.push({insumo:c, cant}));
+    else out.push({insumo: it.insumo, cant});
+  });
+  return out;
+}
 // Insumos que consume cada aplicación (se descuentan del stock)
 function consumosDeIngreso(m){
-  return (m.items||[]).map(it=> ({insumo: it.insumo, cant: Number(it.cant)||0}));
+  return expandirKit(m.items, m.fechaISO);
 }
 
 function mostrarVista(v){
@@ -3854,8 +3891,14 @@ function calcularStock(hastaISO){
       });
     }
   });
+  // Kit: valor unitario = suma de los componentes (si ya tienen precio)
+  const kit = Object.keys(inv).find(esVias);
+  if(kit){
+    const suma = componentesVias().reduce((a,c)=> a + ((inv[c]||{}).valorUnit||0), 0);
+    if(suma > 0) inv[kit].valorUnit = suma;
+  }
   return ordenarPorInsumo(Object.entries(inv)
-    .map(([insumo, v])=> ({insumo, cant:v.cant, valorUnit:v.valorUnit, total:v.cant*v.valorUnit})));
+    .map(([insumo, v])=> ({insumo, cant:v.cant, valorUnit:v.valorUnit, total:v.cant*v.valorUnit, kit: esVias(insumo)})));
 }
 // Orden personalizado (Stock → Ordenar); los que no están en la lista van al final, alfabéticos
 function ordenarPorInsumo(lista){
@@ -3868,8 +3911,6 @@ function ordenarPorInsumo(lista){
     return a.insumo.localeCompare(b.insumo,'es');
   });
 }
-// El stock se contabiliza desde esta fecha: los meses anteriores se muestran sin valores
-const STOCK_DESDE = '2026-10-01';
 function renderStock(){
   const y = mesSueros.year, m = mesSueros.month;
   const ultimoDia = new Date(y, m, 0).getDate();
@@ -3901,7 +3942,14 @@ function renderStock(){
     foot.innerHTML = '';
     return;
   }
-  body.innerHTML = lista.map(i=>`
+  body.innerHTML = lista.map(i=> i.kit ? `
+    <tr>
+      <td class="left" title="Suma de ${componentesVias().join(', ')}">${i.insumo}</td>
+      <td>${i.valorUnit ? fmtPesos(i.valorUnit) : '<span class="pend">—</span>'}</td>
+      <td><span class="pend">—</span></td><td><span class="pend">—</span></td>
+      <td class="editcol">${sOrdenando
+        ? `<span class="s-ord"><button title="Subir" data-sube="${i.insumo.replace(/"/g,'&quot;')}">▲</button><button title="Bajar" data-baja="${i.insumo.replace(/"/g,'&quot;')}">▼</button></span>` : '<button class="editbtn" style="visibility:hidden" tabindex="-1">&#9998;</button>'}</td>
+    </tr>` : `
     <tr>
       <td class="left">${i.insumo}</td>
       <td>${i.valorUnit ? fmtPesos(i.valorUnit) : '<span class="pend">—</span>'}</td>
@@ -3914,8 +3962,8 @@ function renderStock(){
   body.querySelectorAll('.editbtn[data-insumo]').forEach(b=> b.onclick = ()=> abrirEdicionInsumo(b.dataset.insumo));
   body.querySelectorAll('[data-sube]').forEach(b=> b.onclick = ()=> moverInsumo(b.dataset.sube, -1));
   body.querySelectorAll('[data-baja]').forEach(b=> b.onclick = ()=> moverInsumo(b.dataset.baja, 1));
-  const totVal = lista.reduce((a,i)=> a+i.total, 0);
-  const totCant = lista.reduce((a,i)=> a+i.cant, 0);
+  const totVal = lista.filter(i=> !i.kit).reduce((a,i)=> a+i.total, 0);
+  const totCant = lista.filter(i=> !i.kit).reduce((a,i)=> a+i.cant, 0);
   foot.innerHTML = `
     <tr>
       <td class="left">TOTALES</td>
@@ -4157,7 +4205,8 @@ function renderResumenSueros(){
   }
 
   if(sInfTipo==='producto'){
-    const filas = apps.map(m=> ({m, cant: (m.items||[]).filter(it=> it.insumo===sel).reduce((a,it)=> a+(Number(it.cant)||0), 0)}))
+    const fuente = m=> esVias(sel) ? (m.items||[]).map(it=> ({insumo:it.insumo, cant:Number(it.cant)||0})) : consumosDeIngreso(m);
+    const filas = apps.map(m=> ({m, cant: fuente(m).filter(c=> c.insumo===sel).reduce((a,c)=> a+c.cant, 0)}))
       .filter(f=> f.cant>0);
     const tot = filas.reduce((a,f)=> a+f.cant, 0);
     cont.innerHTML = `
@@ -4179,12 +4228,28 @@ function renderResumenSueros(){
     const delProv = new Set();
     sueros.filter(m=> m.tipo==='egreso' && m.tercero===sel).forEach(m=> (m.items||[]).forEach(it=> it.insumo && delProv.add(it.insumo)));
     const uso = {};
+    const preciosDia = {};
+    const precioAl = (insumo, fechaISO)=>{
+      if(!preciosDia[fechaISO]){
+        const d = new Date(fechaISO + 'T12:00:00'); d.setDate(d.getDate()+1);
+        const sig = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+        preciosDia[fechaISO] = {};
+        calcularStock(sig).forEach(i=> preciosDia[fechaISO][i.insumo] = i.valorUnit);
+      }
+      return preciosDia[fechaISO][insumo] || 0;
+    };
+    const sumar = (insumo, c, costo)=>{
+      uso[insumo] = uso[insumo] || {cant:0, costo:0};
+      uso[insumo].cant += c; uso[insumo].costo += costo;
+    };
     apps.forEach(m=> (m.items||[]).forEach(it=>{
-      if(!delProv.has(it.insumo)) return;
       const c = Number(it.cant)||0;
-      const costo = it.subtotal!=null ? Number(it.subtotal)||0 : c*(Number(it.valorUnit)||0);
-      uso[it.insumo] = uso[it.insumo] || {cant:0, costo:0};
-      uso[it.insumo].cant += c; uso[it.insumo].costo += costo;
+      if(esVias(it.insumo) && m.fechaISO >= STOCK_DESDE){
+        componentesVias().forEach(comp=>{ if(delProv.has(comp)) sumar(comp, c, c*precioAl(comp, m.fechaISO)); });
+        return;
+      }
+      if(!delProv.has(it.insumo)) return;
+      sumar(it.insumo, c, it.subtotal!=null ? Number(it.subtotal)||0 : c*(Number(it.valorUnit)||0));
     }));
     const filas = Object.entries(uso).filter(([,v])=> v.cant>0).sort((a,b)=> a[0].localeCompare(b[0],'es'));
     const tCant = filas.reduce((a,[,v])=> a+v.cant, 0), tCosto = filas.reduce((a,[,v])=> a+v.costo, 0);
@@ -4358,9 +4423,9 @@ function insumosSinStock(items, editId){
   const disp = {};
   insumosStock().forEach(i=> disp[i.insumo] = i.cant);
   const prev = editId ? sueros.find(x=> x.id===editId) : null;
-  if(prev && prev.tipo!=='egreso') (prev.items||[]).forEach(it=> disp[it.insumo] = (disp[it.insumo]||0) + (Number(it.cant)||0));
+  if(prev && prev.tipo!=='egreso') consumosDeIngreso(prev).forEach(c=> disp[c.insumo] = (disp[c.insumo]||0) + c.cant);
   const pedido = {};
-  items.forEach(it=> pedido[it.insumo] = (pedido[it.insumo]||0) + (Number(it.cant)||0));
+  expandirKit(items, hoyISO()).forEach(c=> pedido[c.insumo] = (pedido[c.insumo]||0) + c.cant);
   return Object.keys(pedido).filter(k=> pedido[k] > (disp[k]||0)).map(k=> ({insumo:k, quedan: Math.max(0, disp[k]||0)}));
 }
 function avisoSinStock(faltan){
