@@ -4875,13 +4875,14 @@ function renderPortalPacientes(){
 
 /* Ficha */
 // Profesionales derivantes (en este orden)
-const DERIVANTES = ['Dra. María Gabriela Baslini', 'Dra. Victoria Barbieri'];
+const DERIVANTES = ['Dra. María Gabriela Baslini', 'Dra. Victoria Barbieri', 'Dra. Luciana Real'];
 // Reconoce lo que se escribió antes a mano ("GABRIELA", "BARBIERI"…) y lo pasa al nombre de la lista
 function derivanteNormalizado(v){
   const k = claveInsumo(v||'');
   if(!k) return '';
   if(k.includes('gabriela') || k.includes('baslini')) return DERIVANTES[0];
   if(k.includes('victoria') || k.includes('barbieri')) return DERIVANTES[1];
+  if(k.includes('luciana') || /\breal\b/.test(normBusqueda(v))) return DERIVANTES[2];
   const exacto = DERIVANTES.find(d=> claveInsumo(d)===k);
   return exacto || null;   // null: no se reconoce, se deja como está
 }
