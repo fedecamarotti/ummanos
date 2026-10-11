@@ -224,8 +224,8 @@
   .ins-sep{font-weight:800;color:#8a7650;}
   .tabla-sueros td.cortable{white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;}
   .tabla-sueros .pend, .tabla-stock .pend, .s-kpi .pend{color:#c4b995;font-weight:500;}
-  .s-caption{flex:none;width:calc(100% - 56px);max-width:860px;margin:12px auto 0;font-size:11.5px;font-weight:600;color:var(--muted);}
-  #sPanelStock > .sheet-wrap{flex:0 1 auto;width:calc(100% - 56px);max-width:860px;margin:6px auto 20px;}
+  .s-caption{flex:none;width:calc(100% - 56px);max-width:1080px;margin:12px auto 0;font-size:11.5px;font-weight:600;color:var(--muted);}
+  #sPanelStock > .sheet-wrap{flex:0 1 auto;width:calc(100% - 56px);max-width:1080px;margin:6px auto 20px;}
   .tabla-stock{table-layout:fixed;width:100%;}
   .tabla-stock td{padding-top:5px;padding-bottom:5px;}
   .tabla-stock td.left{text-align:left;padding-left:14px;}
@@ -253,6 +253,9 @@
   .tipo-toggle button.active[data-tipo="ingreso"]{background:#2f7a2f;color:#fff;}
   .tipo-toggle button.active[data-tipo="egreso"]{background:#a13a3a;color:#fff;}
   .s-items-head, .s-item{display:grid;grid-template-columns:minmax(0,1fr) 62px 112px 100px 32px;gap:8px;align-items:center;}
+  .s-items-head.compra, .s-item.compra{grid-template-columns:minmax(0,1fr) 62px 132px 104px 96px 32px;}
+  .s-item .si-vence{padding:6px 6px;font-size:11px;min-width:0;}
+  .s-item .si-vu.vu-auto{background:#f4eeda;color:var(--muted);}
   .s-items-head{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:5px;}
   .s-item{margin-bottom:8px;}
   .s-item input{min-width:0;}
@@ -298,6 +301,16 @@
   .s-textarea{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit;color:var(--text);background:#fdfbf2;resize:vertical;}
   .s-textarea:focus{outline:none;border-color:var(--accent);background:#fffcf5;}
   .s-caption-row{display:flex;justify-content:space-between;align-items:center;}
+  .s-calc-info{margin-top:6px;padding:7px 12px;background:#eef5e8;border:1px solid #cfe3c0;border-radius:8px;color:#3d5a2c;font-weight:600;}
+  .tabla-stock tr.s-critico td{background:#fbe3e1 !important;}
+  .tabla-stock tr.s-critico td:first-child{box-shadow:inset 3px 0 0 #c0392b;}
+  .tabla-stock input.s-crit{width:58px;padding:3px 6px;font-size:11px;text-align:center;border:1px solid var(--border);border-radius:6px;background:#fdfbf2;}
+  .tabla-stock input.s-crit:focus{outline:none;border-color:var(--accent);background:#fffcf5;}
+  .tabla-stock td.s-faltan b{color:#2f6b2f;}
+  .tabla-stock td.s-faltan .ok{color:var(--muted);}
+  .venc-chip{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:20px;background:#fff1dc;border:1px solid #f0c98a;color:#9a5b00;font-size:9.5px;font-weight:700;vertical-align:middle;}
+  .venc-chip.vencido{background:#fbe3e1;border-color:#e8a29b;color:#a13a3a;}
+  .venc-alerta{background:#fff1dc !important;border-color:#f0c98a !important;color:#9a5b00 !important;}
   .s-stock-prov{width:auto;max-width:240px;padding:6px 10px;font-size:11.5px;font-weight:600;}
   .s-stock-aviso{margin-left:10px;padding:2px 9px;border-radius:20px;background:#fff1dc;border:1px solid #f0c98a;color:#9a5b00;font-size:10.5px;font-weight:700;}
   .s-ord{display:inline-flex;gap:2px;}
@@ -444,6 +457,39 @@
   .inf-tabla td.neg{color:#a13a3a;}
   .inf-tabla tfoot td{background:#f4eeda;font-weight:700;border-top:2px solid var(--border);white-space:nowrap;}
   .inf-tabla .pend{color:#c4b995;font-weight:500;}
+  .inf-tabla tr.rec-ok td{background:#eef5e8;}
+  .btn-pdf{font-weight:700;}
+  .hc-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-right:34px;}
+  #overlayPDF{z-index:200;}
+  .hc-top h2{margin:0;}
+  .np-grid{display:grid;grid-template-columns:1.3fr 1fr 150px;gap:10px;}
+  .np-ayuda{font-size:11px;color:var(--muted);margin:2px 0 10px;}
+  /* Vista previa PDF */
+  .modal.pdf-modal{max-width:900px;width:100%;padding:18px 20px;}
+  .pdf-hoja .inf-tabla{table-layout:auto;font-size:10.5px;}
+  .pdf-hoja .inf-tabla col{width:auto !important;}
+  .pdf-hoja .inf-tabla th, .pdf-hoja .inf-tabla td{padding:6px 6px;}
+  .pdf-hoja .inf-tabla th{font-size:9px;}
+  .pdf-barra{display:flex;align-items:center;gap:8px;margin:0 30px 12px 0;}
+  .pdf-barra h2{margin:0;}
+  .pdf-fondo{background:#e9e4d6;border-radius:10px;padding:18px;overflow:auto;max-height:72vh;}
+  .pdf-hoja{background:#fff;width:760px;max-width:100%;margin:0 auto;padding:26px 30px;box-shadow:0 4px 18px rgba(0,0,0,.12);color:#2b2b2b;}
+  .pdf-head{display:flex;align-items:center;gap:16px;border-bottom:2px solid #e6dcc3;padding-bottom:12px;margin-bottom:16px;}
+  .pdf-head img{height:30px;}
+  .pdf-titulo{font-size:14px;font-weight:700;}
+  .pdf-fecha{font-size:10px;color:#8a8270;margin-top:2px;}
+  .pdf-sub{font-size:11.5px;color:#6e6757;margin-bottom:12px;}
+  .pdf-resumen{margin:0;padding:0;border:none;background:none;overflow:visible;}
+  .pdf-hoja .inf-wrap{max-width:none !important;}
+  .pdf-hoja .s-kpis{grid-template-columns:repeat(5,1fr);}
+  .pdf-hoja .s-kpi .val{font-size:16px;}
+  .pdf-ficha .hc-cuerpo{padding:12px 14px;}
+  .pdf-fila4{display:grid;grid-template-columns:2fr 1.2fr .6fr 1.2fr;gap:10px;margin-bottom:10px;}
+  .pdf-fila2{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;}
+  .pdf-campo label{display:block;font-size:9.5px;font-weight:700;color:#8a8270;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:3px;}
+  .pdf-txt{font-size:11.5px;line-height:1.45;white-space:pre-wrap;word-break:break-word;border-bottom:1px solid #eee6d2;padding-bottom:5px;min-height:18px;}
+  .pdf-campo.ancho2 .pdf-txt{font-weight:700;}
+  .pdf-hoja .hc-ev{break-inside:avoid;}
   .s-res-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px;}
   .s-res-head .sub{margin-bottom:0;}
   .s-res-rango{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
@@ -665,6 +711,20 @@
   </div>
 </div>
 
+<!-- ============ VISTA PREVIA PDF ============ -->
+<div class="overlay" id="overlayPDF">
+  <div class="modal pdf-modal">
+    <button class="close-x" id="closePDF">✕</button>
+    <div class="pdf-barra">
+      <h2>Vista previa</h2>
+      <span class="p-spacer"></span>
+      <button class="btn" id="pdfCerrar">Cerrar</button>
+      <button class="btn btn-primary" id="pdfDescargar">⬇ Descargar PDF</button>
+    </div>
+    <div class="pdf-fondo"><div class="pdf-hoja" id="pdfHoja"></div></div>
+  </div>
+</div>
+
 <!-- ============ APP ============ -->
 <!-- ============ PORTAL: usuarios que no trabajan en la caja ============ -->
 <div id="portal" class="col-hidden">
@@ -765,10 +825,23 @@
 
     <!-- Lista -->
     <div id="pPacVistaLista">
-      <h2>Pacientes</h2>
+      <div class="hc-top"><h2>Pacientes</h2><button class="btn p-btn-nuevo col-hidden" id="pBtnNuevoPac">+ Nuevo paciente</button></div>
       <div class="modal-sub">Buscá un paciente para ver su ficha y su historial.</div>
       <div class="hc-busca">
         <input type="text" id="pBuscarPac" placeholder="Buscar paciente…" autocomplete="off">
+      </div>
+      <div class="subcard col-hidden" id="pNuevoPacCard">
+        <h3>Nuevo paciente</h3>
+        <div class="np-grid">
+          <div class="field"><label>Apellido</label><div class="ac-wrap"><input type="text" id="pNpApellido" autocomplete="off" data-ac-libre data-ac-sin-enter placeholder="Escribí el apellido…"></div></div>
+          <div class="field"><label>Nombre</label><input type="text" id="pNpNombre" autocomplete="off"></div>
+          <div class="field"><label>Fecha de nacimiento</label><input type="date" id="pNpFnac"></div>
+        </div>
+        <div class="np-ayuda">Si aparece en la lista mientras escribís el apellido, ya existe: elegilo para abrir su ficha.</div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;">
+          <button class="btn" id="pNpCancelar">Cancelar</button>
+          <button class="btn btn-primary" id="pNpGuardar">Crear paciente</button>
+        </div>
       </div>
       <div id="pPacLista" class="hc-lista"></div>
     </div>
@@ -808,6 +881,7 @@
           </div>
           <div class="hc-acciones">
             <button class="btn" id="hcBtnNota">+ Nota</button>
+            <button class="btn btn-pdf" id="hcPDF" title="Vista previa de la ficha en PDF">📄 FICHA PDF</button>
             <span class="hc-estado" id="hcEstado"></span>
             <button class="btn btn-primary" id="hcGuardar">Guardar ficha</button>
           </div>
@@ -950,6 +1024,7 @@
         <button class="s-tab s-tab-nuevo" id="sBtnNuevo">+ Nuevo mov.</button>
       </div>
       <div style="justify-self:end;display:flex;gap:8px;">
+        <button class="btn s-cfg-btn venc-alerta col-hidden" id="sBtnVenc"></button>
         <button class="btn s-cfg-btn s-solo-limitado" id="sBtnVolverPortal">← Aplicaciones</button>
         <button class="btn s-cfg-btn" id="sBtnCfg" title="Sabrina, descuento y % de Gabriela">⚙ Valores fijos</button>
         <button class="btn s-cfg-btn" id="sBtnExcep" title="Pacientes sin pago a Sabrina y/o Gabriela">⚑ Excepciones</button>
@@ -994,18 +1069,23 @@
         <span id="sStockCaption"></span>
         <div style="display:flex;gap:8px;align-items:center;">
           <select id="sStockProv" class="s-stock-prov" title="Ver el stock de un proveedor"></select>
+          <button type="button" class="btn s-cfg-btn" id="sBtnCalcCompra">🧮 Calcular compra</button>
           <button type="button" class="btn s-cfg-btn" id="sBtnOrdenar">↕ Ordenar</button>
         </div>
       </div>
+      <div class="s-caption s-calc-info col-hidden" id="sCalcInfo"></div>
       <div class="sheet-wrap">
         <table class="tabla-stock">
-          <colgroup><col><col style="width:130px"><col style="width:140px"><col style="width:100px"><col style="width:64px"></colgroup>
+          <colgroup id="sStockCols"></colgroup>
           <thead>
             <tr>
               <th><input type="text" class="th-search th-search-left" id="sfInsumoStock" placeholder="Insumo" autocomplete="off" style="padding-left:14px;"></th>
               <th><div class="th-search">Valor unitario</div></th>
               <th><div class="th-search">Total</div></th>
               <th><div class="th-search">Stock</div></th>
+              <th><div class="th-search" title="Si el stock llega a este número o menos, la fila se marca en rojo">Mín. crítico</div></th>
+              <th><div class="th-search" title="Stock ideal: Calcular compra muestra cuánto falta para llegar">Máx. crítico</div></th>
+              <th id="sThFaltan" class="col-hidden"><div class="th-search">Comprar</div></th>
               <th class="editcol"></th>
             </tr>
           </thead>
@@ -1023,6 +1103,7 @@
             <option value="paciente">Informe por paciente</option>
             <option value="producto">Informe por producto</option>
             <option value="proveedor">Informe por proveedor</option>
+            <option value="recupero">Insumos vs ingresos, recuperación</option>
           </select>
           <div class="ac-wrap inf-sel col-hidden" id="infSelWrap"><input type="text" id="infSel" autocomplete="off"></div>
           <div class="s-res-rango">
@@ -1030,6 +1111,7 @@
             <label>Hasta <input type="date" id="sResHasta"></label>
             <button type="button" class="btn s-cfg-btn" id="sResMes">Mes completo</button>
             <button type="button" class="btn s-cfg-btn" id="sResTodo" title="Desde el primer movimiento hasta hoy">Todo</button>
+            <button type="button" class="btn s-cfg-btn btn-pdf" id="infPDF" title="Vista previa en PDF">📄 PDF</button>
           </div>
         </div>
         <div id="sResumen"></div>
@@ -1440,7 +1522,7 @@
       </div>
       <div class="field">
         <label>Insumos comprados</label>
-        <div class="s-items-head"><span>Detalle</span><span>Cant.</span><span>Valor unit.</span><span style="text-align:right;">Total</span><span></span></div>
+        <div class="s-items-head compra"><span>Detalle</span><span>Cant.</span><span>Vence <span class="opt">(opc.)</span></span><span>Valor unit.</span><span style="text-align:right;">Total</span><span></span></div>
         <div id="sItems"></div>
         <button type="button" class="btn s-add-item" id="sAddItem">+ Agregar insumo</button>
       </div>
@@ -1789,6 +1871,7 @@
     </div>
 
     <div class="modal-actions" style="border-top:none;padding-top:0;">
+      <button class="btn btn-pdf" id="btnPDFInforme" title="Vista previa en PDF">📄 PDF</button>
       <button class="btn btn-primary" id="btnGenerarInforme">Generar</button>
     </div>
 
@@ -2305,7 +2388,7 @@ function attachAutocomplete(input, getOptions, onPick, etiqueta){
       if(indiceActivo >= 0){
         e.preventDefault();
         elegir(opcionesActuales[indiceActivo]);
-      } else if(input.value.trim() && opcionesActuales.length){
+      } else if(input.value.trim() && opcionesActuales.length && !input.hasAttribute('data-ac-sin-enter')){
         e.preventDefault();
         elegir(opcionesActuales[0]);
       }
@@ -3749,7 +3832,11 @@ function suscribirSueros(){
     ordenInsumos = (d.exists && d.data().insumos) || [];
     renderSueros(); renderPortalSueros();
   }, ()=>{});
-  unsubSueros = ()=>{ unsubMovs(); unsubCfg(); unsubEx(); unsubOrden(); };
+  const unsubCrit = db.collection('sueros').doc('_criticos').onSnapshot(d=>{
+    suerosCriticos = (d.exists && d.data().lista) || {};
+    if(sTabActual==='stock') renderSueros();
+  }, ()=>{});
+  unsubSueros = ()=>{ unsubMovs(); unsubCfg(); unsubEx(); unsubOrden(); unsubCrit(); };
 }
 
 /* ---- Mes y pestañas ---- */
@@ -3781,6 +3868,11 @@ function renderSueros(){
   document.getElementById('sPanelMovs').classList.toggle('col-hidden', sTabActual!=='movs');
   document.getElementById('sPanelStock').classList.toggle('col-hidden', sTabActual!=='stock');
   document.getElementById('sPanelResumen').classList.toggle('col-hidden', sTabActual!=='resumen');
+  const vv = vencimientosProximos();
+  const bVenc = document.getElementById('sBtnVenc');
+  bVenc.classList.toggle('col-hidden', !vv.length);
+  bVenc.textContent = vv.some(v=> v.dias<0) ? `⚠ Vencidos / por vencer (${vv.length})` : `⚠ Por vencer (${vv.length})`;
+  bVenc.title = vv.map(v=> `${v.insumo}: ${v.cant} u. ${v.dias<0 ? 'vencido el' : 'vence el'} ${fechaLarga(v.vence)}`).join('\n');
   if(sTabActual==='movs') renderSuerosTabla();
   if(sTabActual==='stock') renderStock();
   if(sTabActual==='resumen') renderResumenSueros();
@@ -3927,34 +4019,121 @@ function renderSuerosTabla(){
 /* ---- Pestaña 2: Stock ---- */
 // Stock acumulado hasta el fin del mes elegido: compras suman, aplicaciones restan.
 // Valor unitario = precio de la última compra de ese insumo.
-function calcularStock(hastaISO){
-  const inv = {};
-  sueros.filter(m=> m.fechaISO < hastaISO).forEach(m=>{
-    if(m.tipo==='egreso' || m.tipo==='ajuste'){
-      // compras suman; los ajustes suman o restan la diferencia y pueden fijar un nuevo valor unitario
+/* ---- Stock por lotes: se usan primero las unidades más viejas (FIFO) ----
+   Compras: agregan un lote (cantidad, valor unitario, vencimiento).
+   Aplicaciones: consumen del lote más viejo; si no alcanza, queda en negativo al último precio.
+   Ajustes (editar insumo): suman/restan unidades y, si cambian el valor, revalúan lo que queda. */
+const diaSiguiente = iso=>{
+  const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate()+1);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+};
+let cacheSim = {ref:null, len:-1, map:new Map()};
+function simularLotes(hastaISO, opts){
+  opts = opts || {};
+  const usarCache = !opts.excluirId && !opts.sinCache;
+  if(usarCache){
+    if(cacheSim.ref!==sueros || cacheSim.len!==sueros.length) cacheSim = {ref:sueros, len:sueros.length, map:new Map()};
+    if(cacheSim.map.has(hastaISO)) return cacheSim.map.get(hastaISO);
+  }
+  const inv = {}, costos = {};
+  const get = k=> inv[k] || (inv[k] = {lotes:[], todos:[], deficit:0, ultimo:0});
+  const agregarLote = (k, cant, vu, meta)=>{
+    const s = get(k); let n = cant;
+    if(s.deficit > 0){ const a = Math.min(s.deficit, n); s.deficit -= a; n -= a; }
+    const lote = {cant:n, valorUnit:vu, consumos:[], ...meta};
+    s.todos.push(lote);
+    if(n > 0) s.lotes.push(lote);
+  };
+  const consumir = (k, cant, app)=>{
+    const s = get(k); let rest = cant, costo = 0;
+    while(rest > 0 && s.lotes.length){
+      const l = s.lotes[0], t = Math.min(rest, l.cant);
+      costo += t * l.valorUnit; l.cant -= t; rest -= t;
+      if(app) l.consumos.push({appId: app.id, cant: t, costoUnit: l.valorUnit});
+      if(l.cant <= 0) s.lotes.shift();
+    }
+    if(rest > 0){ s.deficit += rest; costo += rest * s.ultimo; }
+    return costo;
+  };
+  sueros.forEach(m=>{
+    if(!(m.fechaISO < hastaISO) || m.id===opts.excluirId) return;
+    if(m.tipo==='egreso'){
+      (m.items||[]).forEach(it=>{
+        if(!it.insumo) return;
+        const vu = Number(it.valorUnit)||0, n = Number(it.cant)||0;
+        const s = get(it.insumo); if(vu) s.ultimo = vu;
+        agregarLote(it.insumo, n, vu, {fechaISO:m.fechaISO, compraId:m.id, proveedor:m.tercero||'', vence:it.vence||'', cantOriginal:n, inversion:n*vu, esCompra:true});
+      });
+    } else if(m.tipo==='ajuste'){
       (m.items||[]).forEach(it=>{
         const k = it.insumo; if(!k) return;
-        inv[k] = inv[k] || {cant:0, valorUnit:0};
-        inv[k].cant += Number(it.cant)||0;
-        if(Number(it.valorUnit)) inv[k].valorUnit = Number(it.valorUnit);
+        const s = get(k), vu = Number(it.valorUnit)||0, n = Number(it.cant)||0;
+        if(vu){ s.ultimo = vu; s.lotes.forEach(l=> l.valorUnit = vu); }
+        if(n > 0) agregarLote(k, n, vu || s.ultimo, {fechaISO:m.fechaISO, esCompra:false, cantOriginal:n});
+        else if(n < 0) consumir(k, -n, null);
       });
     } else {
-      consumosDeIngreso(m).forEach(c=>{
-        if(!c.insumo) return;
-        inv[c.insumo] = inv[c.insumo] || {cant:0, valorUnit:0};
-        inv[c.insumo].cant -= c.cant;
+      const c = costos[m.id] = {total:0, unidades:0};
+      consumosDeIngreso(m).forEach(x=>{
+        if(!x.insumo || !x.cant) return;
+        c.total += consumir(x.insumo, x.cant, m);
+        c.unidades += x.cant;
       });
     }
   });
-  // Kit: valor unitario = suma de los componentes (si ya tienen precio)
-  const kit = Object.keys(inv).find(esVias);
-  if(kit){
-    const suma = componentesVias().reduce((a,c)=> a + ((inv[c]||{}).valorUnit||0), 0);
-    if(suma > 0) inv[kit].valorUnit = suma;
-  }
-  return ordenarPorInsumo(Object.entries(inv)
-    .map(([insumo, v])=> ({insumo, cant:v.cant, valorUnit:v.valorUnit, total:v.cant*v.valorUnit, kit: esVias(insumo)})));
+  const res = {inv, costos, consumir};
+  if(usarCache) cacheSim.map.set(hastaISO, res);
+  return res;
 }
+// Costo real de una aplicación (lote más viejo primero), ubicándola en su fecha
+function costearFIFO(items, fechaISO, excluirId){
+  const sim = simularLotes(diaSiguiente(fechaISO), {excluirId, sinCache:true});
+  const comps = componentesVias();
+  return items.map(it=>{
+    const cant = Number(it.cant)||0;
+    let costo = 0;
+    if(esVias(it.insumo)) comps.forEach(c=> costo += sim.consumir(c, cant, null));
+    else if(it.insumo) costo = sim.consumir(it.insumo, cant, null);
+    return {...it, valorUnit: cant ? Math.round(costo/cant) : 0, subtotal: Math.round(costo)};
+  });
+}
+function calcularStock(hastaISO){
+  const {inv} = simularLotes(hastaISO);
+  const filas = {};
+  Object.entries(inv).forEach(([k, s])=>{
+    const cant = s.lotes.reduce((a,l)=> a+l.cant, 0) - s.deficit;
+    const valorUnit = s.lotes.length ? s.lotes[0].valorUnit : s.ultimo;
+    const total = s.lotes.reduce((a,l)=> a+l.cant*l.valorUnit, 0) - s.deficit*s.ultimo;
+    filas[k] = {insumo:k, cant, valorUnit, total, ultimo:s.ultimo, kit:esVias(k), lotes:s.lotes};
+  });
+  // Kit: valor unitario = suma de los componentes (si ya tienen precio)
+  const kit = Object.keys(filas).find(esVias);
+  if(kit){
+    const comps = componentesVias();
+    const suma = comps.reduce((a,c)=> a + ((filas[c]||{}).valorUnit||0), 0);
+    const sumaUlt = comps.reduce((a,c)=> a + ((filas[c]||{}).ultimo||0), 0);
+    if(suma > 0) filas[kit].valorUnit = suma;
+    if(sumaUlt > 0) filas[kit].ultimo = sumaUlt;
+  }
+  return ordenarPorInsumo(Object.values(filas));
+}
+// Vencimientos: unidades que quedan de lotes que vencen dentro de 30 días (o ya vencidos)
+function vencimientosProximos(){
+  const hoy = hoyISO();
+  const lim = new Date(hoy + 'T12:00:00'); lim.setDate(lim.getDate()+30);
+  const limISO = lim.getFullYear()+'-'+String(lim.getMonth()+1).padStart(2,'0')+'-'+String(lim.getDate()).padStart(2,'0');
+  const out = [];
+  Object.entries(simularLotes('9999-12-31').inv).forEach(([k, s])=>{
+    s.lotes.forEach(l=>{
+      if(l.vence && l.cant > 0 && l.vence <= limISO){
+        const dias = Math.round((new Date(l.vence+'T12:00:00') - new Date(hoy+'T12:00:00'))/86400000);
+        out.push({insumo:k, vence:l.vence, cant:l.cant, dias});
+      }
+    });
+  });
+  return out.sort((a,b)=> a.vence < b.vence ? -1 : 1);
+}
+
 // Orden personalizado (Stock → Ordenar); los que no están en la lista van al final, alfabéticos
 function ordenarPorInsumo(lista){
   const pos = {}; ordenInsumos.forEach((n,i)=> pos[n] = i);
@@ -3966,6 +4145,9 @@ function ordenarPorInsumo(lista){
     return a.insumo.localeCompare(b.insumo,'es');
   });
 }
+let suerosCriticos = {};   // sueros/_criticos → { "INSUMO": {min, max} }
+let sCalcCompra = false;
+const escAttr = v => String(v).replace(/"/g,'&quot;');
 function renderStock(){
   const y = mesSueros.year, m = mesSueros.month;
   const ultimoDia = new Date(y, m, 0).getDate();
@@ -3979,11 +4161,17 @@ function renderStock(){
   const btnOrd = document.getElementById('sBtnOrdenar');
   btnOrd.textContent = sOrdenando ? '✓ Listo' : '↕ Ordenar';
   btnOrd.classList.toggle('btn-primary', sOrdenando);
+  const btnCalc = document.getElementById('sBtnCalcCompra');
+  btnCalc.textContent = sCalcCompra ? '✓ Calcular compra' : '🧮 Calcular compra';
+  btnCalc.classList.toggle('btn-primary', sCalcCompra);
+  // Columnas (la de "Faltan" solo con Calcular compra)
+  document.getElementById('sStockCols').innerHTML = `<col><col style="width:116px"><col style="width:124px"><col style="width:80px"><col style="width:84px"><col style="width:84px">${sCalcCompra ? '<col style="width:90px">' : ''}<col style="width:56px">`;
+  document.getElementById('sThFaltan').classList.toggle('col-hidden', !sCalcCompra);
   // Filtro por proveedor: los insumos que alguna vez se le compraron (el kit, si le compraste algún componente)
   const selProv = document.getElementById('sStockProv');
   const provs = [...new Set(sueros.filter(x=> x.tipo==='egreso' && x.tercero).map(x=> x.tercero))].sort((a,b)=> a.localeCompare(b,'es'));
   const provActual = provs.includes(selProv.value) ? selProv.value : '';
-  selProv.innerHTML = '<option value="">Todos los proveedores</option>' + provs.map(pv=> `<option value="${pv.replace(/"/g,'&quot;')}">${pv}</option>`).join('');
+  selProv.innerHTML = '<option value="">Todos los proveedores</option>' + provs.map(pv=> `<option value="${escAttr(pv)}">${pv}</option>`).join('');
   selProv.value = provActual;
   let delProv = null;
   if(provActual){
@@ -3994,8 +4182,10 @@ function renderStock(){
   const lista = todos.filter(i=> (!q || contiene(i.insumo, q)) && (!delProv || delProv.has(i.insumo)));
   const body = document.getElementById('sStockBody');
   const foot = document.getElementById('sStockFoot');
+  const nCols = sCalcCompra ? 8 : 7;
+  const guion = '<span class="pend">—</span>';
   if(!lista.length){
-    body.innerHTML = `<tr><td colspan="4" class="empty-state">${todos.length ? 'No hay insumos con ese nombre.' : 'Todavía no hay insumos. Cargá una compra (egreso) para empezar el stock.'}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="${nCols}" class="empty-state">${todos.length ? 'No hay insumos con ese nombre.' : 'Todavía no hay insumos. Cargá una compra (egreso) para empezar el stock.'}</td></tr>`;
     foot.innerHTML = '';
     return;
   }
@@ -4003,43 +4193,91 @@ function renderStock(){
     body.innerHTML = lista.map(i=>`
     <tr>
       <td class="left">${i.insumo}</td>
-      <td><span class="pend">—</span></td><td><span class="pend">—</span></td><td><span class="pend">—</span></td>
+      ${`<td>${guion}</td>`.repeat(nCols-2)}
       <td class="editcol"></td>
     </tr>`).join('');
     foot.innerHTML = '';
     return;
   }
-  body.innerHTML = lista.map(i=> i.kit ? `
+  const venc = {};
+  vencimientosProximos().forEach(v=> (venc[v.insumo] = venc[v.insumo] || []).push(v));
+  const puedeEditar = esAdminSueros();
+  const celdaCrit = (i, campo)=>{
+    const v = (suerosCriticos[i.insumo]||{})[campo];
+    if(puedeEditar) return `<td><input class="s-crit" data-k="${escAttr(i.insumo)}" data-campo="${campo}" inputmode="numeric" value="${v!=null && v!=='' ? v : ''}" placeholder="—"></td>`;
+    return `<td>${v!=null && v!=='' ? Number(v).toLocaleString('es-AR') : guion}</td>`;
+  };
+  const faltanDe = i=>{
+    const max = (suerosCriticos[i.insumo]||{}).max;
+    if(max==null || max==='') return null;
+    return Math.max(0, Number(max) - i.cant);
+  };
+  const ordCell = i=> sOrdenando
+    ? `<span class="s-ord"><button title="Subir" data-sube="${escAttr(i.insumo)}">▲</button><button title="Bajar" data-baja="${escAttr(i.insumo)}">▼</button></span>`
+    : null;
+  body.innerHTML = lista.map(i=>{
+    if(i.kit) return `
     <tr>
       <td class="left" title="Suma de ${componentesVias().join(', ')}">${i.insumo}</td>
-      <td>${i.valorUnit ? fmtPesos(i.valorUnit) : '<span class="pend">—</span>'}</td>
-      <td><span class="pend">—</span></td><td><span class="pend">—</span></td>
-      <td class="editcol">${sOrdenando
-        ? `<span class="s-ord"><button title="Subir" data-sube="${i.insumo.replace(/"/g,'&quot;')}">▲</button><button title="Bajar" data-baja="${i.insumo.replace(/"/g,'&quot;')}">▼</button></span>` : '<button class="editbtn" style="visibility:hidden" tabindex="-1">&#9998;</button>'}</td>
-    </tr>` : `
-    <tr>
-      <td class="left">${i.insumo}</td>
-      <td>${i.valorUnit ? fmtPesos(i.valorUnit) : '<span class="pend">—</span>'}</td>
+      <td>${i.valorUnit ? fmtPesos(i.valorUnit) : guion}</td>
+      <td>${guion}</td><td>${guion}</td><td>${guion}</td><td>${guion}</td>${sCalcCompra ? `<td>${guion}</td>` : ''}
+      <td class="editcol">${ordCell(i) || '<button class="editbtn" style="visibility:hidden" tabindex="-1">&#9998;</button>'}</td>
+    </tr>`;
+    const min = (suerosCriticos[i.insumo]||{}).min;
+    const critico = min!=null && min!=='' && i.cant <= Number(min);
+    const chips = (venc[i.insumo]||[]).map(v=> `<span class="venc-chip ${v.dias<0?'vencido':''}" title="${v.cant} u. de ese lote">${v.dias<0 ? 'Vencido' : 'Vence'} ${fechaLarga(v.vence)}</span>`).join('');
+    const f = sCalcCompra ? faltanDe(i) : null;
+    return `
+    <tr class="${critico ? 's-critico' : ''}">
+      <td class="left">${i.insumo}${chips}</td>
+      <td>${i.valorUnit ? fmtPesos(i.valorUnit) : guion}</td>
       <td class="${i.total<0?'neg':''}">${fmtPesos(i.total)}</td>
       <td class="${i.cant<0?'neg':''}" style="font-weight:700;">${i.cant.toLocaleString('es-AR')}</td>
-      <td class="editcol">${sOrdenando
-        ? `<span class="s-ord"><button title="Subir" data-sube="${i.insumo.replace(/"/g,'&quot;')}">▲</button><button title="Bajar" data-baja="${i.insumo.replace(/"/g,'&quot;')}">▼</button></span>`
-        : `<button class="editbtn" title="Editar insumo" data-insumo="${i.insumo.replace(/"/g,'&quot;')}">&#9998;</button>`}</td>
-    </tr>`).join('');
+      ${celdaCrit(i,'min')}${celdaCrit(i,'max')}
+      ${sCalcCompra ? `<td class="s-faltan">${f==null ? guion : (f>0 ? `<b>Faltan ${f.toLocaleString('es-AR')}</b>` : '<span class="ok">0</span>')}</td>` : ''}
+      <td class="editcol">${ordCell(i) || `<button class="editbtn" title="Editar insumo" data-insumo="${escAttr(i.insumo)}">&#9998;</button>`}</td>
+    </tr>`;
+  }).join('');
   body.querySelectorAll('.editbtn[data-insumo]').forEach(b=> b.onclick = ()=> abrirEdicionInsumo(b.dataset.insumo));
   body.querySelectorAll('[data-sube]').forEach(b=> b.onclick = ()=> moverInsumo(b.dataset.sube, -1));
   body.querySelectorAll('[data-baja]').forEach(b=> b.onclick = ()=> moverInsumo(b.dataset.baja, 1));
-  const totVal = lista.filter(i=> !i.kit).reduce((a,i)=> a+i.total, 0);
-  const totCant = lista.filter(i=> !i.kit).reduce((a,i)=> a+i.cant, 0);
+  body.querySelectorAll('.s-crit').forEach(inp=>{
+    inp.addEventListener('input', ()=> inp.value = inp.value.replace(/\D/g,''));
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } });
+    inp.addEventListener('blur', ()=> guardarCritico(inp.dataset.k, inp.dataset.campo, inp.value));
+  });
+  const sinKit = lista.filter(i=> !i.kit);
+  const totVal = sinKit.reduce((a,i)=> a+i.total, 0);
+  const totCant = sinKit.reduce((a,i)=> a+i.cant, 0);
+  let totFaltan = 0, costoCompra = 0;
+  if(sCalcCompra) sinKit.forEach(i=>{ const f = faltanDe(i); if(f){ totFaltan += f; costoCompra += f * (i.ultimo || i.valorUnit || 0); } });
   foot.innerHTML = `
     <tr>
       <td class="left">TOTALES</td>
       <td></td>
       <td>${fmtPesos(totVal)}</td>
       <td>${totCant.toLocaleString('es-AR')}</td>
+      <td></td><td></td>
+      ${sCalcCompra ? `<td title="Costo estimado al último precio: ${fmtPesos(costoCompra)}">${totFaltan.toLocaleString('es-AR')}</td>` : ''}
       <td></td>
     </tr>`;
+  document.getElementById('sCalcInfo').classList.toggle('col-hidden', !sCalcCompra);
+  document.getElementById('sCalcInfo').innerHTML = sCalcCompra
+    ? `Para llegar al máx. crítico faltan <b>${totFaltan.toLocaleString('es-AR')}</b> unidades · costo estimado (al último precio de compra): <b>${fmtPesos(costoCompra)}</b>` : '';
 }
+async function guardarCritico(insumo, campo, valor){
+  if(!esAdminSueros()) return;
+  const v = valor==='' ? null : Number(valor);
+  const actual = (suerosCriticos[insumo]||{})[campo];
+  if((actual==null || actual==='') && v==null) return;
+  if(actual===v) return;
+  const nuevo = {...suerosCriticos, [insumo]: {...(suerosCriticos[insumo]||{}), [campo]: v}};
+  suerosCriticos = nuevo;
+  renderStock();
+  try{ await db.collection('sueros').doc('_criticos').set({lista: nuevo}); }
+  catch(e){ alert("No se pudo guardar: " + e.message); }
+}
+document.getElementById('sBtnCalcCompra').onclick = ()=>{ sCalcCompra = !sCalcCompra; renderStock(); };
 
 /* ---- Ordenar insumos (se usa en Stock y en todos los desplegables de insumos) ---- */
 let sOrdenando = false;
@@ -4137,7 +4375,7 @@ function ultimoDiaMesISO(){
 }
 function fechaLarga(iso){ const [y,m,d] = iso.split('-'); return `${Number(d)}/${Number(m)}/${y}`; }
 function sResAlMes(){ sResDesde = sMesInicio(); sResHasta = ultimoDiaMesISO(); }
-const INF_PLACEHOLDER = { paciente:'Elegí un paciente…', producto:'Elegí un producto…', proveedor:'Elegí un proveedor…' };
+const INF_PLACEHOLDER = { paciente:'Elegí un paciente…', producto:'Elegí un producto…', proveedor:'Elegí un proveedor…', recupero:'Todos los productos (o elegí uno)…' };
 function opcionesInforme(){
   const set = new Set();
   if(sInfTipo==='paciente') aplicacionesSueros().forEach(m=> m.tercero && set.add(m.tercero));
@@ -4145,6 +4383,7 @@ function opcionesInforme(){
     sueros.forEach(m=> (m.items||[]).forEach(it=> it.insumo && set.add(it.insumo)));
   }
   if(sInfTipo==='proveedor') sueros.filter(m=> m.tipo==='egreso').forEach(m=> m.tercero && set.add(m.tercero));
+  if(sInfTipo==='recupero') sueros.filter(m=> m.tipo==='egreso').forEach(m=> (m.items||[]).forEach(it=> it.insumo && set.add(it.insumo)));
   return [...set].sort((a,b)=> a.localeCompare(b,'es'));
 }
 function seleccionInforme(){
@@ -4217,6 +4456,11 @@ function renderResumenSueros(){
     return;
   }
 
+  if(sInfTipo==='recupero'){
+    if(suerosLimitado()){ sInfTipo = 'paciente'; return renderResumenSueros(); }
+    cont.innerHTML = htmlRecupero(seleccionInforme(), sResDesde, sResHasta, rangoTxt);
+    return;
+  }
   const sel = seleccionInforme();
   if(!sel){
     cont.innerHTML = `<div class="empty-state">${INF_PLACEHOLDER[sInfTipo].replace('…','')} para ver el informe.</div>`;
@@ -4438,9 +4682,11 @@ function hastaFechaFicha(){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 function precioStock(nombre){
+  const f = document.getElementById('sFecha').value || hoyISO();
   const i = calcularStock(hastaFechaFicha()).find(x=> x.insumo===nombre)
          || insumosStock().find(x=> x.insumo===nombre);
-  return i ? i.valorUnit : 0;
+  if(!i) return 0;
+  return f >= STOCK_DESDE ? i.valorUnit : (i.ultimo || i.valorUnit);
 }
 const etiquetaInsumo = nombre => {
   const i = { valorUnit: precioStock(nombre) };
@@ -4455,6 +4701,7 @@ sTotalIngreso.addEventListener('input', ()=>{ formatearInputMonto(sTotalIngreso)
 sSabrina.addEventListener('input', ()=>{ formatearInputMonto(sSabrina); sRecalcular(); });
 sGabriela.addEventListener('input', ()=>{ formatearInputMonto(sGabriela); sGabrielaManual = true; sRecalcular(); });
 document.getElementById('sGabrielaAuto').onclick = ()=>{ sGabrielaManual = false; sRecalcular(); };
+document.getElementById('sFecha').addEventListener('change', ()=> sRecalcular());
 
 function setTipoSuero(t, limpiar){
   sTipo = t;
@@ -4504,10 +4751,12 @@ function avisoSinStock(faltan){
 function insumoVias(){ return insumosConocidos().find(n=> normBusqueda(n).startsWith('vias y otros')) || null; }
 function sAgregarItem(it, contId){
   const row = document.createElement('div');
-  row.className = 's-item';
+  const esCompra = contId==='sItems';
+  row.className = 's-item' + (esCompra ? ' compra' : '');
   row.innerHTML = `
     <div class="ac-wrap"><input type="text" class="si-insumo" placeholder="Insumo…" autocomplete="off"></div>
     <input type="text" class="si-cant" inputmode="numeric" placeholder="0">
+    ${esCompra ? '<input type="date" class="si-vence" title="Vencimiento (opcional)">' : ''}
     <input type="text" class="si-vu" inputmode="numeric" placeholder="$0">
     <div class="s-sub">$0</div>
     <button type="button" class="btn-quitar" title="Quitar">✕</button>`;
@@ -4518,6 +4767,7 @@ function sAgregarItem(it, contId){
     inIns.value = it.insumo||'';
     inCant.value = it.cant ? Number(it.cant).toLocaleString('es-AR') : '';
     inVu.value = it.valorUnit ? Number(it.valorUnit).toLocaleString('es-AR') : '';
+    if(esCompra && it.vence) row.querySelector('.si-vence').value = it.vence;
   }
   attachAutocomplete(inIns, insumosConocidos, (nombre)=>{
     const p = precioStock(nombre);
@@ -4538,7 +4788,10 @@ function sLeerItems(contId){
   return [...document.querySelectorAll(`#${contId} .s-item`)].map(r=>{
     const cant = parseMonto(r.querySelector('.si-cant').value);
     const valorUnit = parseMonto(r.querySelector('.si-vu').value);
-    return { insumo: mayus(r.querySelector('.si-insumo').value.trim()), cant, valorUnit, subtotal: cant*valorUnit };
+    const it = { insumo: mayus(r.querySelector('.si-insumo').value.trim()), cant, valorUnit, subtotal: cant*valorUnit };
+    const ve = r.querySelector('.si-vence');
+    if(ve) it.vence = ve.value || '';
+    return it;
   });
 }
 function sTotalItems(contId){
@@ -4550,7 +4803,19 @@ function sTotalItems(contId){
   });
   return tot;
 }
+function sCosteoAutomatico(){
+  // Aplicaciones desde el 1/10/2026: el valor unitario sale solo (primero las unidades más viejas)
+  const fifo = sTipo==='ingreso' && (document.getElementById('sFecha').value || hoyISO()) >= STOCK_DESDE;
+  const filas = [...document.querySelectorAll('#sItemsIng .s-item')];
+  filas.forEach(r=>{ const vu = r.querySelector('.si-vu'); vu.readOnly = fifo; vu.title = fifo ? 'Costo automático: se usan primero las unidades más viejas' : ''; vu.classList.toggle('vu-auto', fifo); });
+  if(!fifo) return;
+  const conocidos = new Set(insumosConocidos());
+  const items = filas.map(r=> ({insumo: mayus(r.querySelector('.si-insumo').value.trim()), cant: parseMonto(r.querySelector('.si-cant').value)}));
+  const costeados = costearFIFO(items.map(it=> conocidos.has(it.insumo) ? it : {insumo:'', cant:0}), document.getElementById('sFecha').value || hoyISO(), sEditId);
+  filas.forEach((r,i)=>{ const v = costeados[i].valorUnit; r.querySelector('.si-vu').value = v ? v.toLocaleString('es-AR') : ''; });
+}
 function sRecalcular(){
+  sCosteoAutomatico();
   document.getElementById('sTotalEgreso').textContent = fmtPesos(sTotalItems('sItems'));
   // Reparto de la aplicación
   const total = parseMonto(sTotalIngreso.value);
@@ -4630,13 +4895,14 @@ document.getElementById('sGuardar').onclick = async ()=>{
     datos.detalle = '';
     datos.pagoPendiente = sTotalIngreso.value.trim()==='';
     datos.total = datos.pagoPendiente ? null : parseMonto(sTotalIngreso.value);
-    const items = sLeerItems('sItemsIng').filter(it=> it.insumo || it.cant || it.valorUnit);
+    let items = sLeerItems('sItemsIng').filter(it=> it.insumo || it.cant || it.valorUnit);
     const enStock = new Set(insumosConocidos());
     const noExiste = items.find(it=> !enStock.has(it.insumo));
     if(noExiste){ alert(`"${noExiste.insumo || '(vacío)'}" no está en el stock. Elegí un insumo de la lista.`); return; }
     if(items.some(it=> !it.cant)){ alert("Cada insumo necesita una cantidad."); return; }
     const sinStockF = insumosSinStock(items, sEditId, fechaISO);
     if(sinStockF.length){ avisoSinStock(sinStockF); return; }
+    if(fechaISO >= STOCK_DESDE) items = costearFIFO(items.map(it=> ({insumo:it.insumo, cant:it.cant})), fechaISO, sEditId);
     datos.items = items;
     datos.insumosTotal = items.reduce((a,it)=> a+it.subtotal, 0);
     datos.sabrina = parseMonto(sSabrina.value);
@@ -4736,8 +5002,11 @@ function mostrarPortal(){
     document.getElementById('pExtra').appendChild(document.getElementById('vistaSueros'));
     const opMensual = document.querySelector('#infTipo option[value="mensual"]');
     if(opMensual) opMensual.remove();
+    const opRec = document.querySelector('#infTipo option[value="recupero"]');
+    if(opRec) opRec.remove();
     sInfTipo = 'paciente';
     document.getElementById('pBtnStock').classList.remove('col-hidden');
+    document.getElementById('pBtnNuevoPac').classList.remove('col-hidden');
     document.getElementById('pBtnInformes').classList.remove('col-hidden');
   }
   portalIr('sueros');
@@ -4782,6 +5051,7 @@ document.getElementById('pIrSueros').onclick = ()=>{ if(puedeCargarSueros()) por
 document.getElementById('pBtnStock').onclick = ()=>{ if(!suerosLimitado()) return; sTabActual = 'stock'; portalIr('extra'); };
 document.getElementById('pBtnInformes').onclick = ()=>{ if(!suerosLimitado()) return; sTabActual = 'resumen'; portalIr('extra'); };
 document.getElementById('sBtnVolverPortal').onclick = ()=> portalIr('sueros');
+document.getElementById('sBtnVenc').onclick = ()=>{ sTabActual = 'stock'; mesSueros = {year: hoyRef.getFullYear(), month: hoyRef.getMonth()+1}; renderSueros(); };
 document.getElementById('pVolver').onclick = ()=> location.href = '../';
 ['pDesde','pHasta'].forEach(id=> document.getElementById(id).addEventListener('change', renderPortalSueros));
 function rangoPortal(){
@@ -5125,8 +5395,8 @@ function preciosAFecha(fechaISO){
   const d = new Date(fechaISO + 'T12:00:00'); d.setDate(d.getDate()+1);
   const hasta = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   const precios = {};
-  insumosStock().forEach(i=> precios[i.insumo] = i.valorUnit);
-  calcularStock(hasta).forEach(i=>{ if(i.valorUnit) precios[i.insumo] = i.valorUnit; });
+  insumosStock().forEach(i=> precios[i.insumo] = i.ultimo || i.valorUnit);
+  calcularStock(hasta).forEach(i=>{ if(i.ultimo) precios[i.insumo] = i.ultimo; });
   return precios;
 }
 
@@ -5155,8 +5425,12 @@ document.getElementById('aGuardar').onclick = async ()=>{
   }
 
   // Valores (ella no los ve): precios a la fecha, Sabrina/Gabriela según valores fijos y excepciones
-  const precios = preciosAFecha(fechaISO);
-  const items = itemsRaw.map(it=> ({ ...it, valorUnit: precios[it.insumo]||0, subtotal: it.cant*(precios[it.insumo]||0) }));
+  let items;
+  if(fechaISO >= STOCK_DESDE) items = costearFIFO(itemsRaw, fechaISO, aEditId);   // primero las unidades más viejas
+  else {
+    const precios = preciosAFecha(fechaISO);
+    items = itemsRaw.map(it=> ({ ...it, valorUnit: precios[it.insumo]||0, subtotal: it.cant*(precios[it.insumo]||0) }));
+  }
   const insumosTotal = items.reduce((a,it)=> a+it.subtotal, 0);
   const m = aEditId ? sueros.find(x=> x.id===aEditId) : null;
   const mismoPaciente = m && m.tercero===tercero;
@@ -6499,6 +6773,219 @@ document.getElementById('inpImportarConceptos').addEventListener('change', async
   }
   e.target.value = "";
 });
+
+/* ---- Recuperación de la inversión (insumos vs ingresos) ----
+   Cada unidad de una compra recupera: (Total − Sabrina − Gabriela) de la aplicación donde se usó,
+   repartido entre los insumos de esa aplicación según el costo de cada uno. */
+function calcularRecupero(){
+  const sim = simularLotes('9999-12-31');
+  const apps = {};
+  sueros.forEach(m=>{ if(m.tipo==='ingreso') apps[m.id] = m; });
+  const netoApp = id=>{
+    const m = apps[id];
+    if(!m || m.pagoPendiente || m.total==null) return null;
+    const r = calcularRepartoSuero(m);
+    return (Number(m.total)||0) - (Number(r.sabrina)||0) - (Number(r.gabriela)||0);
+  };
+  const lotes = [];
+  Object.entries(sim.inv).forEach(([k, s])=> s.todos.filter(l=> l.esCompra).forEach(l=>{
+    let rec = 0, fechaRec = null, usadas = 0, pendientes = 0;
+    l.consumos.forEach(c=>{
+      usadas += c.cant;
+      const n = netoApp(c.appId);
+      if(n==null){ pendientes += c.cant; return; }
+      const co = sim.costos[c.appId] || {total:0, unidades:0};
+      const peso = co.total > 0 ? (c.costoUnit*c.cant)/co.total : (co.unidades ? c.cant/co.unidades : 0);
+      rec += n * peso;
+      if(fechaRec==null && l.inversion > 0 && rec >= l.inversion - 0.5) fechaRec = apps[c.appId].fechaISO;
+    });
+    lotes.push({insumo:k, fechaISO:l.fechaISO, proveedor:l.proveedor, cant:l.cantOriginal, inversion:l.inversion,
+      usadas, recuperado:rec, fechaRec, pendientes,
+      dias: fechaRec ? Math.round((new Date(fechaRec+'T12:00:00') - new Date(l.fechaISO+'T12:00:00'))/86400000) : null});
+  }));
+  return lotes;
+}
+function htmlRecupero(sel, desde, hasta, rangoTxt){
+  const lotes = calcularRecupero().filter(l=> l.fechaISO>=desde && l.fechaISO<=hasta);
+  const pct = (r, i)=> i > 0 ? Math.round(r/i*100) + '%' : '—';
+  const cant = n => Number(n).toLocaleString('es-AR');
+  const guion = '<span class="pend">—</span>';
+  const explica = `<div class="sub">Compras ${rangoTxt}. Recuperado = lo que deja cada aplicación (total − Sabrina − Gabriela), repartido entre sus insumos según el costo de cada uno. Las aplicaciones con FALTA suman cuando se carga el pago.</div>`;
+  const vacio = cols => `<tr><td colspan="${cols}" class="empty-state">No hay compras en estas fechas.</td></tr>`;
+  if(sel){
+    const filas = lotes.filter(l=> l.insumo===sel).sort((a,b)=> a.fechaISO<b.fechaISO ? -1 : 1);
+    const t = filas.reduce((a,l)=> ({cant:a.cant+l.cant, inv:a.inv+l.inversion, us:a.us+l.usadas, rec:a.rec+l.recuperado}), {cant:0, inv:0, us:0, rec:0});
+    return `<h3>${sel} · recuperación</h3>${explica}
+      <div class="inf-wrap"><table class="inf-tabla">
+        <colgroup><col style="width:92px"><col><col style="width:64px"><col style="width:104px"><col style="width:64px"><col style="width:110px"><col style="width:58px"><col style="width:100px"><col style="width:52px"></colgroup>
+        <thead><tr><th>Compra</th><th class="left">Proveedor</th><th>Cant.</th><th>Inversión</th><th>Usadas</th><th>Recuperado</th><th>%</th><th>Recuperado el</th><th>Días</th></tr></thead>
+        <tbody>${filas.length ? filas.map(l=> `<tr class="${l.fechaRec ? 'rec-ok' : ''}">
+          <td>${fechaLarga(l.fechaISO)}</td><td class="left">${l.proveedor||''}</td><td>${cant(l.cant)}</td>
+          <td class="monto">${fmtPesos(l.inversion)}</td><td>${cant(l.usadas)}${l.pendientes ? ` <span class="pend" title="Aplicaciones con pago pendiente">(${l.pendientes} FALTA)</span>` : ''}</td>
+          <td class="monto">${fmtPesos(l.recuperado)}</td><td><b>${pct(l.recuperado, l.inversion)}</b></td>
+          <td>${l.fechaRec ? fechaLarga(l.fechaRec) : guion}</td><td>${l.dias!=null ? l.dias : guion}</td></tr>`).join('') : vacio(9)}</tbody>
+        ${filas.length ? `<tfoot><tr><td colspan="2" class="left">TOTALES</td><td>${cant(t.cant)}</td><td class="monto">${fmtPesos(t.inv)}</td><td>${cant(t.us)}</td><td class="monto">${fmtPesos(t.rec)}</td><td>${pct(t.rec, t.inv)}</td><td></td><td></td></tr></tfoot>` : ''}
+      </table></div>`;
+  }
+  const porIns = {};
+  lotes.forEach(l=>{
+    const p = porIns[l.insumo] = porIns[l.insumo] || {compras:0, cant:0, inv:0, us:0, rec:0, dias:[]};
+    p.compras++; p.cant += l.cant; p.inv += l.inversion; p.us += l.usadas; p.rec += l.recuperado;
+    if(l.dias!=null) p.dias.push(l.dias);
+  });
+  const filas = Object.entries(porIns).sort((a,b)=> a[0].localeCompare(b[0],'es'));
+  const t = filas.reduce((a,[,p])=> ({cant:a.cant+p.cant, inv:a.inv+p.inv, us:a.us+p.us, rec:a.rec+p.rec}), {cant:0, inv:0, us:0, rec:0});
+  return `<h3>Insumos vs ingresos · recuperación</h3>${explica}
+    <div class="inf-wrap"><table class="inf-tabla">
+      <colgroup><col><col style="width:70px"><col style="width:64px"><col style="width:110px"><col style="width:64px"><col style="width:110px"><col style="width:58px"><col style="width:84px"></colgroup>
+      <thead><tr><th class="left">Insumo</th><th>Compras</th><th>Cant.</th><th>Inversión</th><th>Usadas</th><th>Recuperado</th><th>%</th><th>Días prom.</th></tr></thead>
+      <tbody>${filas.length ? filas.map(([ins,p])=> `<tr class="${p.inv>0 && p.rec>=p.inv ? 'rec-ok' : ''}">
+        <td class="left">${ins}</td><td>${p.compras}</td><td>${cant(p.cant)}</td><td class="monto">${fmtPesos(p.inv)}</td>
+        <td>${cant(p.us)}</td><td class="monto">${fmtPesos(p.rec)}</td><td><b>${pct(p.rec, p.inv)}</b></td>
+        <td>${p.dias.length ? Math.round(p.dias.reduce((a,d)=>a+d,0)/p.dias.length) : guion}</td></tr>`).join('') : vacio(8)}</tbody>
+      ${filas.length ? `<tfoot><tr><td class="left">TOTALES</td><td></td><td>${cant(t.cant)}</td><td class="monto">${fmtPesos(t.inv)}</td><td>${cant(t.us)}</td><td class="monto">${fmtPesos(t.rec)}</td><td>${pct(t.rec, t.inv)}</td><td></td></tr></tfoot>` : ''}
+    </table></div>`;
+}
+
+/* ---- Vista previa en PDF (informes y fichas) ---- */
+let html2pdfCargando = null;
+function cargarHtml2pdf(){
+  if(window.html2pdf) return Promise.resolve();
+  if(!html2pdfCargando) html2pdfCargando = new Promise((ok, mal)=>{
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    s.onload = ok;
+    s.onerror = ()=>{ html2pdfCargando = null; mal(new Error('No se pudo cargar el generador de PDF.')); };
+    document.head.appendChild(s);
+  });
+  return html2pdfCargando;
+}
+const overlayPDF = document.getElementById('overlayPDF');
+let pdfArchivo = 'informe';
+function abrirVistaPDF(titulo, html, archivo){
+  pdfArchivo = (archivo || titulo || 'informe').replace(/[\\/:*?"<>|]+/g,'-').trim();
+  const hoy = new Date();
+  document.getElementById('pdfHoja').innerHTML = `
+    <div class="pdf-head">
+      <img src="images/logo.png" alt="Ummana">
+      <div class="pdf-head-txt"><div class="pdf-titulo">${titulo}</div><div class="pdf-fecha">Generado el ${hoy.toLocaleDateString('es-AR')} ${hoy.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}</div></div>
+    </div>
+    <div class="pdf-cuerpo">${html}</div>`;
+  overlayPDF.classList.add('show');
+  overlayPDF.scrollTop = 0;
+  cargarHtml2pdf().catch(()=>{});   // se va cargando mientras mira la vista previa
+}
+document.getElementById('pdfCerrar').onclick = ()=> overlayPDF.classList.remove('show');
+document.getElementById('closePDF').onclick = ()=> overlayPDF.classList.remove('show');
+document.getElementById('pdfDescargar').onclick = async ()=>{
+  const btn = document.getElementById('pdfDescargar');
+  btn.disabled = true; btn.textContent = 'Generando…';
+  try{
+    await cargarHtml2pdf();
+    await window.html2pdf().set({
+      margin: [8, 8, 10, 8],
+      filename: pdfArchivo + '.pdf',
+      image: {type:'jpeg', quality:0.97},
+      html2canvas: {scale:2, backgroundColor:'#ffffff', useCORS:true},
+      jsPDF: {unit:'mm', format:'a4', orientation:'portrait'},
+      pagebreak: {mode:['css','legacy'], avoid:['tr','.hc-ev','.s-kpi','.pdf-campo']},
+    }).from(document.getElementById('pdfHoja')).save();
+  }catch(e){ alert(e.message || 'No se pudo generar el PDF.'); }
+  btn.disabled = false; btn.textContent = '⬇ Descargar PDF';
+};
+// Informes de sueros: copia de lo que se ve
+document.getElementById('infPDF').onclick = ()=>{
+  const cont = document.getElementById('sResumen');
+  const h3 = cont.querySelector('h3');
+  if(!h3){ alert('Elegí primero qué informe querés ver.'); return; }
+  const titulo = 'Sueroterapia · ' + h3.textContent;
+  abrirVistaPDF(titulo, `<div class="s-resumen pdf-resumen">${cont.innerHTML}</div>`, titulo);
+};
+// Informes de la caja
+document.getElementById('btnPDFInforme').onclick = ()=>{
+  const kpis = document.getElementById('kpiRow');
+  if(!kpis.querySelector('.kpi')){ alert('Generá primero el informe.'); return; }
+  const d = document.getElementById('informeFechaDesde').value, h = document.getElementById('informeFechaHasta').value;
+  const prof = informeProfesional.value.trim() || 'Todos';
+  const rango = d===h ? `del ${fechaLarga(d)}` : `del ${fechaLarga(d)} al ${fechaLarga(h)}`;
+  abrirVistaPDF(`Caja diaria · Informe ${rango}`, `<div class="pdf-sub">Profesional / Área: ${prof}</div><div class="kpi-row">${kpis.innerHTML}</div>`, `Informe caja ${d} a ${h}`);
+};
+// Ficha de sueros (historia clínica) con el historial
+document.getElementById('hcPDF').onclick = ()=>{
+  if(!hcPaciente) return;
+  const val = sel => { const el = document.querySelector(sel); return el ? (el.value||'').trim() : ''; };
+  const txt = v => v ? String(v).replace(/</g,'&lt;') : '<span class="pend">—</span>';
+  const campo = (lbl, v, cls='') => `<div class="pdf-campo ${cls}"><label>${lbl}</label><div class="pdf-txt">${txt(v)}</div></div>`;
+  const fnac = val('#hcFnac');
+  const plan = [val('[data-hc="planTipo"]'), val('[data-hc="sesiones"]') ? `${val('[data-hc="sesiones"]')} sesiones recomendadas` : ''].filter(Boolean).join(' · ');
+  const hist = document.getElementById('hcHistorial').cloneNode(true);
+  hist.querySelectorAll('.quitar').forEach(b=> b.remove());
+  const html = `
+    <div class="hc-ficha pdf-ficha">
+      <div class="hc-banda">RESUMEN DE HISTORIA CLÍNICA + ORDEN DE SUEROTERAPIA<small>(completa profesional derivante)</small></div>
+      <div class="hc-cuerpo">
+        <div class="pdf-fila4">
+          ${campo('Paciente', hcPaciente.nombreCompleto, 'ancho2')}
+          ${campo('Fecha de nacimiento', fnac ? fechaLarga(fnac) : '')}
+          ${campo('Edad', document.getElementById('hcEdad').textContent.replace('—',''))}
+          ${campo('Inicio historia clínica', val('#hcInicio') ? fechaLarga(val('#hcInicio')) : '')}
+        </div>
+        <div class="pdf-fila2">
+          ${campo('Antecedentes personales relevantes', val('[data-hc="antPersonales"]'))}
+          ${campo('Antecedentes familiares (si aportan)', val('[data-hc="antFamiliares"]'))}
+          ${campo('Medicaciones actuales', val('[data-hc="medicaciones"]'))}
+          ${campo('Suplementos actuales', val('[data-hc="suplementos"]'))}
+          ${campo('Motivo de derivación / objetivo terapéutico', val('[data-hc="motivo"]'))}
+          ${campo('Plan propuesto por derivante', val('[data-hc="plan"]'))}
+          ${campo('Profesional derivante', val('#hcDerivante'))}
+          ${campo('Plan', plan)}
+        </div>
+      </div>
+    </div>
+    <div class="hc-hist-titulo">Historial</div>
+    ${hist.innerHTML}`;
+  abrirVistaPDF(`Ficha de sueroterapia · ${hcPaciente.nombreCompleto}`, html, `Ficha ${hcPaciente.nombreCompleto}`);
+};
+
+/* ---- Nuevo paciente (solo quien tiene "sueros-informes") ---- */
+function puedeCrearPacientes(){ return suerosLimitado(); }
+const npApellido = document.getElementById('pNpApellido');
+attachAutocomplete(npApellido, ()=> pacientesFullList.map(p=> p.nombreCompleto).filter(Boolean).sort((a,b)=> a.localeCompare(b,'es')), (valor)=>{
+  const p = pacientesFullList.find(x=> x.nombreCompleto===valor);
+  if(!p) return;
+  document.getElementById('pNuevoPacCard').classList.add('col-hidden');
+  abrirFichaHC(p.id);
+});
+document.getElementById('pBtnNuevoPac').onclick = ()=>{
+  if(!puedeCrearPacientes()) return;
+  const card = document.getElementById('pNuevoPacCard');
+  card.classList.toggle('col-hidden');
+  ['pNpApellido','pNpNombre','pNpFnac'].forEach(id=> document.getElementById(id).value = '');
+  if(!card.classList.contains('col-hidden')) npApellido.focus();
+};
+document.getElementById('pNpCancelar').onclick = ()=> document.getElementById('pNuevoPacCard').classList.add('col-hidden');
+document.getElementById('pNpGuardar').onclick = async ()=>{
+  if(!puedeCrearPacientes()) return;
+  const ape = mayus(npApellido.value.trim().replace(/,.*$/,''));
+  const nom = mayus(document.getElementById('pNpNombre').value.trim());
+  const fnac = document.getElementById('pNpFnac').value || '';
+  if(!ape || !nom){ alert("Completá apellido y nombre."); return; }
+  const nombreCompleto = `${ape}, ${nom}`;
+  const existente = pacientesFullList.find(p=> mayus(p.nombreCompleto||'')===nombreCompleto);
+  if(existente){ alert("Ese paciente ya existe. Se abre su ficha."); document.getElementById('pNuevoPacCard').classList.add('col-hidden'); abrirFichaHC(existente.id); return; }
+  const btn = document.getElementById('pNpGuardar'); btn.disabled = true;
+  try{
+    const datos = { apellido: ape, nombre: nom, nombreCompleto, creadoEn: firebase.firestore.FieldValue.serverTimestamp() };
+    if(fnac) datos.fnac = fnac;
+    const ref = await db.collection('pacientes').add(datos);
+    document.getElementById('pNuevoPacCard').classList.add('col-hidden');
+    if(!pacientesFullList.some(p=> p.id===ref.id)) pacientesFullList.push({id: ref.id, apellido: ape, nombre: nom, nombreCompleto, fnac});
+    pacienteRegistry = pacientesFullList.map(p=> p.nombreCompleto);
+    abrirFichaHC(ref.id);
+  }catch(e){ alert("No se pudo crear el paciente: " + e.message); }
+  btn.disabled = false;
+};
+
 </script>
 </body>
 </html>
