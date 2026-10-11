@@ -6790,10 +6790,8 @@ function calcularRecupero(){
   const lotes = [];
   Object.entries(sim.inv).forEach(([k, s])=> s.todos.filter(l=> l.esCompra).forEach(l=>{
     let rec = 0, fechaRec = null, usadas = 0, pendientes = 0;
-    const usos = [];
     l.consumos.forEach(c=>{
       usadas += c.cant;
-      if(apps[c.appId]) usos.push(apps[c.appId].fechaISO);
       const n = netoApp(c.appId);
       if(n==null){ pendientes += c.cant; return; }
       const co = sim.costos[c.appId] || {total:0, unidades:0};
@@ -6802,33 +6800,31 @@ function calcularRecupero(){
       if(fechaRec==null && l.inversion > 0 && rec >= l.inversion - 0.5) fechaRec = apps[c.appId].fechaISO;
     });
     lotes.push({insumo:k, fechaISO:l.fechaISO, proveedor:l.proveedor, cant:l.cantOriginal, inversion:l.inversion,
-      usadas, recuperado:rec, fechaRec, pendientes, usos, queda: l.cant,
+      usadas, recuperado:rec, fechaRec, pendientes,
       dias: fechaRec ? Math.round((new Date(fechaRec+'T12:00:00') - new Date(l.fechaISO+'T12:00:00'))/86400000) : null});
   }));
   return lotes;
 }
 function htmlRecupero(sel, desde, hasta, rangoTxt){
-  // Compras del período, y también las anteriores cuyas unidades se usaron en el período
-  const lotes = calcularRecupero().filter(l=> (l.fechaISO>=desde && l.fechaISO<=hasta) || l.usos.some(f=> f>=desde && f<=hasta));
+  const lotes = calcularRecupero().filter(l=> l.fechaISO>=desde && l.fechaISO<=hasta);
   const pct = (r, i)=> i > 0 ? Math.round(r/i*100) + '%' : '—';
   const cant = n => Number(n).toLocaleString('es-AR');
   const guion = '<span class="pend">—</span>';
-  const explica = `<div class="sub">Compras ${rangoTxt} y compras anteriores que se usaron en esas fechas (se usan primero las unidades más viejas). Recuperado = lo que deja cada aplicación (total − Sabrina − Gabriela), repartido entre sus insumos según el costo de cada uno. Las aplicaciones con FALTA suman cuando se carga el pago.</div>`;
+  const explica = `<div class="sub">Compras ${rangoTxt}. Recuperado = lo que deja cada aplicación (total − Sabrina − Gabriela), repartido entre sus insumos según el costo de cada uno. Las aplicaciones con FALTA suman cuando se carga el pago.</div>`;
   const vacio = cols => `<tr><td colspan="${cols}" class="empty-state">No hay compras en estas fechas.</td></tr>`;
   if(sel){
     const filas = lotes.filter(l=> l.insumo===sel).sort((a,b)=> a.fechaISO<b.fechaISO ? -1 : 1);
     const t = filas.reduce((a,l)=> ({cant:a.cant+l.cant, inv:a.inv+l.inversion, us:a.us+l.usadas, rec:a.rec+l.recuperado}), {cant:0, inv:0, us:0, rec:0});
     return `<h3>${sel} · recuperación</h3>${explica}
       <div class="inf-wrap"><table class="inf-tabla">
-        <colgroup><col style="width:92px"><col><col style="width:60px"><col style="width:104px"><col style="width:64px"><col style="width:64px"><col style="width:110px"><col style="width:58px"><col style="width:100px"><col style="width:52px"></colgroup>
-        <thead><tr><th>Compra</th><th class="left">Proveedor</th><th>Cant.</th><th>Inversión</th><th>Usadas</th><th>Quedan</th><th>Recuperado</th><th>%</th><th>Recuperado el</th><th>Días</th></tr></thead>
+        <colgroup><col style="width:92px"><col><col style="width:64px"><col style="width:104px"><col style="width:64px"><col style="width:110px"><col style="width:58px"><col style="width:100px"><col style="width:52px"></colgroup>
+        <thead><tr><th>Compra</th><th class="left">Proveedor</th><th>Cant.</th><th>Inversión</th><th>Usadas</th><th>Recuperado</th><th>%</th><th>Recuperado el</th><th>Días</th></tr></thead>
         <tbody>${filas.length ? filas.map(l=> `<tr class="${l.fechaRec ? 'rec-ok' : ''}">
           <td>${fechaLarga(l.fechaISO)}</td><td class="left">${l.proveedor||''}</td><td>${cant(l.cant)}</td>
           <td class="monto">${fmtPesos(l.inversion)}</td><td>${cant(l.usadas)}${l.pendientes ? ` <span class="pend" title="Aplicaciones con pago pendiente">(${l.pendientes} FALTA)</span>` : ''}</td>
-          <td>${cant(Math.max(0, l.queda))}</td>
           <td class="monto">${fmtPesos(l.recuperado)}</td><td><b>${pct(l.recuperado, l.inversion)}</b></td>
-          <td>${l.fechaRec ? fechaLarga(l.fechaRec) : guion}</td><td>${l.dias!=null ? l.dias : guion}</td></tr>`).join('') : vacio(10)}</tbody>
-        ${filas.length ? `<tfoot><tr><td colspan="2" class="left">TOTALES</td><td>${cant(t.cant)}</td><td class="monto">${fmtPesos(t.inv)}</td><td>${cant(t.us)}</td><td>${cant(filas.reduce((a,l)=> a+Math.max(0,l.queda),0))}</td><td class="monto">${fmtPesos(t.rec)}</td><td>${pct(t.rec, t.inv)}</td><td></td><td></td></tr></tfoot>` : ''}
+          <td>${l.fechaRec ? fechaLarga(l.fechaRec) : guion}</td><td>${l.dias!=null ? l.dias : guion}</td></tr>`).join('') : vacio(9)}</tbody>
+        ${filas.length ? `<tfoot><tr><td colspan="2" class="left">TOTALES</td><td>${cant(t.cant)}</td><td class="monto">${fmtPesos(t.inv)}</td><td>${cant(t.us)}</td><td class="monto">${fmtPesos(t.rec)}</td><td>${pct(t.rec, t.inv)}</td><td></td><td></td></tr></tfoot>` : ''}
       </table></div>`;
   }
   const porIns = {};
