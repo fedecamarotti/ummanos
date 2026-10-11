@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Simulación de recuperación</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+  :root{--bg:#f5f1e6;--card:#fffcf5;--border:#e6dcc3;--text:#2f2a20;--muted:#8a8270;--accent:#c9b183;--celeste:#6cb7e0;--verde:#4caf6a;}
+  *{box-sizing:border-box;font-family:'Montserrat',sans-serif;}
+  body{margin:0;background:var(--bg);color:var(--text);padding:24px 16px 40px;}
+  .wrap{max-width:1000px;margin:0 auto;}
+  .top{display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap;}
+  .top img{height:28px;}
+  .tag{font-size:10.5px;font-weight:700;background:#fff1dc;border:1px solid #f0c98a;color:#9a5b00;border-radius:20px;padding:3px 10px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px 24px;}
+  h1{font-size:17px;margin:0 0 4px;}
+  .sub{font-size:11.5px;color:var(--muted);margin-bottom:16px;line-height:1.5;}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+  .kpi{background:#f6f0de;border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+  .kpi .l{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
+  .kpi .v{font-size:19px;font-weight:700;margin-top:4px;}
+  .kpi.principal{background:#c9b183;border-color:#c9b183;}
+  .general{margin:6px 0 22px;}
+  .general .lbl{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;}
+  .barra{position:relative;height:16px;background:#efe8d6;border-radius:20px;overflow:hidden;}
+  .general .barra{height:22px;}
+  .barra .cel{position:absolute;left:0;top:0;bottom:0;background:var(--celeste);}
+  .barra .ver{position:absolute;top:0;bottom:0;background:var(--verde);}
+  .barra .meta{position:absolute;top:-2px;bottom:-2px;width:2px;background:#2f2a20;opacity:.55;}
+  .barra .txt{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#2f2a20;}
+  table{width:100%;border-collapse:collapse;font-size:11.5px;}
+  th{background:#f4eeda;font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;padding:8px 8px;text-align:center;}
+  td{padding:8px 8px;border-top:1px solid var(--border);text-align:center;}
+  td.l, th.l{text-align:left;}
+  td.m{font-weight:700;white-space:nowrap;}
+  td.bar{width:260px;}
+  .pct{font-weight:700;}
+  .pct.ok{color:#2f7a2f;}
+  tfoot td{background:#f4eeda;font-weight:700;border-top:2px solid var(--border);}
+  .tabla{border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .leyenda{display:flex;gap:16px;font-size:11px;color:var(--muted);margin:10px 0 0;flex-wrap:wrap;}
+  .leyenda i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px;}
+  .opc{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;margin-bottom:14px;}
+  .aviso{font-size:11px;color:#9a5b00;background:#fff1dc;border:1px solid #f0c98a;border-radius:8px;padding:8px 12px;margin-bottom:14px;line-height:1.5;}
+  .pend{color:#c4b995;white-space:nowrap;}
+  .msg{padding:40px;text-align:center;color:var(--muted);font-size:13px;}
+  .nota{font-size:10px;color:var(--muted);}
+  @media (max-width:760px){ .kpis{grid-template-columns:repeat(2,1fr);} td.bar{width:120px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><img src="images/logo.png" alt="Ummana"><span class="tag">SIMULACIÓN · no guarda nada</span></div>
+  <div class="card" id="app"><div class="msg">Cargando datos…</div></div>
+</div>
+<script>
+/* Compra del 24/8/2026 (no cargada en el sistema) */
+const COMPRA = { id:'SIM', fechaISO:'2026-08-24', tercero:'BIOHELPER', items: [
+  ['BERBERIS',20,9900],['COENZYME',20,9900],['ENGYSTOL',10,9900],['GALIUM',20,9900],['GRAPHITES',20,9900],
+  ['LYMPHOMYOSOT',20,9900],['NUX VOMICA',20,9900],['TRAUMEEL',20,9900],['UBICHINON',20,9900],
+  ['CUTIS',10,10900],['MOMORDICA',10,10900],['ZELL T',10,10900],
+  ['CEREBRUM',10,12900],['FUNICULUS',10,12900],['GLANDULA THYREODEA',10,12900],['HEPAR',10,12900],['MUCOSA',20,12900],['MUSCULUS',10,12900],
+]};
+const ALIAS = { 'UBICHINON':['UBIQUINON','UBICHINON'], 'GLANDULA THYREODEA':['GLANDULA TIROIDEA','GLANDULA THYREODEA','GLANDULA'] };
+const STOCK_DESDE = '2026-10-01';
+
+const clave = v => (v||'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9ñ]/g,'');
+const esVias = n => clave(n).startsWith('viasyotros');
+const fmt = v => (v<0?'-':'') + '$' + Math.abs(Math.round(v)).toLocaleString('es-AR');
+const fecha = iso => { const [y,m,d] = iso.split('-'); return `${Number(d)}/${Number(m)}/${y}`; };
+const KIT = [['guia'],['cateter'],['solfisiolog','solucionfisiolog'],['otros']];
+
+function correr(sueros, ignorarAnterior){
+  // Nombres reales del sistema para los insumos de la compra
+  const nombres = new Set();
+  sueros.forEach(m=> (m.items||[]).forEach(it=> it.insumo && nombres.add(it.insumo)));
+  const lista = [...nombres];
+  const resolver = n=>{
+    const cands = ALIAS[n] || [n];
+    for(const c of cands){ const f = lista.find(x=> clave(x)===clave(c)); if(f) return f; }
+    for(const c of cands){ const f = lista.find(x=> clave(x).startsWith(clave(c).slice(0,6))); if(f) return f; }
+    return n;
+  };
+  const compra = {...COMPRA, items: COMPRA.items.map(([n,c,v])=> ({insumo: resolver(n), original:n, cant:c, valorUnit:v}))};
+  const comps = KIT.map(pref=> lista.find(n=> pref.some(p=> clave(n).startsWith(p))) || null).filter(Boolean);
+  const consumos = m=>{
+    const out = [];
+    (m.items||[]).forEach(it=>{
+      const cant = Number(it.cant)||0;
+      if(m.fechaISO >= STOCK_DESDE && esVias(it.insumo)) comps.forEach(c=> out.push({insumo:c, cant}));
+      else out.push({insumo:it.insumo, cant});
+    });
+    return out;
+  };
+  // Movimientos ordenados, con la compra simulada al principio del 24/8
+  const movs = sueros.filter(m=> m.tipo!=='ajuste' || true).slice();
+  let idx = movs.findIndex(m=> m.fechaISO >= COMPRA.fechaISO);
+  if(idx < 0) idx = movs.length;
+  movs.splice(idx, 0, compra);
+  const inv = {}, costos = {};
+  const get = k=> inv[k] || (inv[k] = {lotes:[], deficit:0, ultimo:0});
+  const agregar = (k, n, vu, meta)=>{
+    const s = get(k);
+    if(s.deficit > 0){ const a = Math.min(s.deficit, n); s.deficit -= a; n -= a; }
+    const l = {cant:n, valorUnit:vu, consumos:[], ...meta};
+    if(n > 0) s.lotes.push(l);
+    return l;
+  };
+  const consumir = (k, cant, app)=>{
+    const s = get(k); let rest = cant, costo = 0;
+    while(rest > 0 && s.lotes.length){
+      const l = s.lotes[0], t = Math.min(rest, l.cant);
+      costo += t*l.valorUnit; l.cant -= t; rest -= t;
+      if(app) l.consumos.push({appId:app.id, cant:t, costoUnit:l.valorUnit});
+      if(l.cant <= 0) s.lotes.shift();
+    }
+    if(rest > 0){ s.deficit += rest; costo += rest*s.ultimo; }
+    return costo;
+  };
+  const lotesSim = {}, previo = {};
+  movs.forEach(m=>{
+    if(m.id==='SIM'){
+      m.items.forEach(it=>{
+        const s = get(it.insumo);
+        if(ignorarAnterior){ s.lotes = []; s.deficit = 0; }
+        previo[it.insumo] = s.lotes.reduce((a,l)=> a+l.cant, 0) - s.deficit;
+        s.ultimo = it.valorUnit;
+        lotesSim[it.insumo] = {it, lote: agregar(it.insumo, it.cant, it.valorUnit, {sim:true}), absorbido: 0};
+        lotesSim[it.insumo].absorbido = it.cant - lotesSim[it.insumo].lote.cant;
+      });
+      return;
+    }
+    if(m.tipo==='egreso'){
+      (m.items||[]).forEach(it=>{ if(!it.insumo) return; const vu = Number(it.valorUnit)||0; const s = get(it.insumo); if(vu) s.ultimo = vu; agregar(it.insumo, Number(it.cant)||0, vu, {}); });
+    } else if(m.tipo==='ajuste'){
+      (m.items||[]).forEach(it=>{ const k = it.insumo; if(!k) return; const s = get(k), vu = Number(it.valorUnit)||0, n = Number(it.cant)||0;
+        if(vu){ s.ultimo = vu; s.lotes.forEach(l=> l.valorUnit = vu); }
+        if(n > 0) agregar(k, n, vu || s.ultimo, {}); else if(n < 0) consumir(k, -n, null); });
+    } else if(m.tipo==='ingreso'){
+      const c = costos[m.id] = {total:0, unidades:0};
+      consumos(m).forEach(x=>{ if(!x.insumo || !x.cant) return; c.total += consumir(x.insumo, x.cant, m); c.unidades += x.cant; });
+    }
+  });
+  const apps = {}; sueros.forEach(m=>{ if(m.tipo==='ingreso') apps[m.id] = m; });
+  const neto = id=>{
+    const m = apps[id];
+    if(!m || m.pagoPendiente || m.total==null || m.gabriela==null) return null;
+    return (Number(m.total)||0) - (Number(m.sabrina)||0) - (Number(m.gabriela)||0);
+  };
+  const filas = compra.items.map(it=>{
+    const {lote, absorbido} = lotesSim[it.insumo];
+    let usadas = 0, rec = 0, pend = 0, fechaRec = null;
+    const inversion = it.cant * it.valorUnit;
+    lote.consumos.forEach(c=>{
+      usadas += c.cant;
+      const n = neto(c.appId);
+      if(n==null){ pend += c.cant; return; }
+      const co = costos[c.appId] || {total:0, unidades:0};
+      const peso = co.total > 0 ? (c.costoUnit*c.cant)/co.total : (co.unidades ? c.cant/co.unidades : 0);
+      rec += n*peso;
+      if(!fechaRec && rec >= inversion) fechaRec = apps[c.appId].fechaISO;
+    });
+    return {nombre: it.insumo, original: it.original, cant: it.cant, vu: it.valorUnit, inversion, usadas, rec, pend, fechaRec, previo: previo[it.insumo], absorbido};
+  });
+  return filas;
+}
+
+function barra(pct, escala){
+  const cel = Math.min(pct, 100) / escala * 100;
+  const ver = pct > 100 ? (pct - 100) / escala * 100 : 0;
+  return `<div class="barra"><div class="cel" style="width:${cel}%"></div>${ver ? `<div class="ver" style="left:${100/escala*100}%;width:${ver}%"></div>` : ''}<div class="meta" style="left:${100/escala*100}%"></div><span class="txt">${Math.round(pct)}%</span></div>`;
+}
+
+let datos = [], ignorar = false;
+function render(){
+  const filas = correr(datos, ignorar);
+  const inv = filas.reduce((a,f)=> a+f.inversion, 0), rec = filas.reduce((a,f)=> a+f.rec, 0);
+  const cant = filas.reduce((a,f)=> a+f.cant, 0), us = filas.reduce((a,f)=> a+f.usadas, 0), pend = filas.reduce((a,f)=> a+f.pend, 0);
+  const pctTot = inv ? rec/inv*100 : 0;
+  const maxPct = Math.max(100, pctTot, ...filas.map(f=> f.inversion ? f.rec/f.inversion*100 : 0));
+  const escala = Math.min(Math.max(maxPct, 120), 400);
+  const conPrevio = filas.filter(f=> f.previo > 0);
+  document.getElementById('app').innerHTML = `
+    <h1>Compra del 24/8/2026 · BIOHELPER</h1>
+    <div class="sub">Simulación con las aplicaciones reales cargadas en el sistema. Recuperado = lo que deja cada aplicación (total − Sabrina − Gabriela), repartido entre sus insumos según el costo de cada uno. Las aplicaciones con FALTA cuentan como usadas pero no suman hasta cargar el pago.</div>
+    <label class="opc"><input type="checkbox" id="chkIgn" ${ignorar?'checked':''}> Ignorar el stock que había antes del 24/8 (que las aplicaciones salgan directo de esta compra)</label>
+    ${!ignorar && conPrevio.length ? `<div class="aviso">Al 24/8 el sistema todavía tenía stock anterior de ${conPrevio.length} de estos insumos (${conPrevio.slice(0,6).map(f=> `${f.nombre}: ${f.previo}`).join(', ')}${conPrevio.length>6?'…':''}). Como se usan primero las unidades más viejas, esas salen antes que las de esta compra.</div>` : ''}
+    <div class="kpis">
+      <div class="kpi principal"><div class="l">Inversión</div><div class="v">${fmt(inv)}</div></div>
+      <div class="kpi"><div class="l">Recuperado</div><div class="v">${fmt(rec)}</div></div>
+      <div class="kpi"><div class="l">Usadas</div><div class="v">${us} / ${cant}</div></div>
+      <div class="kpi"><div class="l">${rec>=inv ? 'Ganancia' : 'Falta recuperar'}</div><div class="v" style="color:${rec>=inv?'#2f7a2f':'#a13a3a'}">${fmt(Math.abs(rec-inv))}</div></div>
+    </div>
+    <div class="general"><div class="lbl"><span>Recuperación de la compra</span><span>${pend ? `${pend} u. con FALTA` : ''}</span></div>${barra(pctTot, escala)}</div>
+    <div class="tabla"><table>
+      <thead><tr><th class="l">Insumo</th><th>Compradas</th><th>Usadas</th><th>Inversión</th><th>Recuperado</th><th>Recuperación</th><th>Recuperado el</th></tr></thead>
+      <tbody>${filas.map(f=>{ const p = f.inversion ? f.rec/f.inversion*100 : 0; return `<tr>
+        <td class="l">${f.nombre}${f.nombre!==f.original ? ` <span class="nota">(${f.original})</span>` : ''}</td>
+        <td>${f.cant}</td><td>${f.usadas}${f.pend ? ` <span class="pend">(${f.pend} FALTA)</span>` : ''}</td>
+        <td class="m">${fmt(f.inversion)}</td><td class="m">${fmt(f.rec)}</td>
+        <td class="bar">${barra(p, escala)}</td>
+        <td>${f.fechaRec ? fecha(f.fechaRec) : '<span class="pend">—</span>'}</td></tr>`; }).join('')}</tbody>
+      <tfoot><tr><td class="l">TOTALES</td><td>${cant}</td><td>${us}</td><td class="m">${fmt(inv)}</td><td class="m">${fmt(rec)}</td><td class="bar">${barra(pctTot, escala)}</td><td></td></tr></tfoot>
+    </table></div>
+    <div class="leyenda"><span><i style="background:var(--celeste)"></i>Recuperando la inversión (hasta 100%)</span><span><i style="background:var(--verde)"></i>Ganancia (más del 100%)</span><span>La línea marca el 100%</span></div>`;
+  document.getElementById('chkIgn').onchange = e=>{ ignorar = e.target.checked; render(); };
+}
+
+if(window.DEMO){ datos = window.DEMO; render(); }
+else {
+  firebase.initializeApp({
+    apiKey: "AIzaSyAql_waJ1I2gIeV6V3MCwVx0OhncgxCsko",
+    authDomain: "ummanasistema.firebaseapp.com",
+    projectId: "ummanasistema",
+    storageBucket: "ummanasistema.firebasestorage.app",
+    messagingSenderId: "370814125756",
+    appId: "1:370814125756:web:0a42e08ba90376fab032b9"
+  });
+  firebase.auth().onAuthStateChanged(async user=>{
+    const app = document.getElementById('app');
+    if(!user){ app.innerHTML = '<div class="msg">Primero ingresá a <a href="./">la caja</a> con tu usuario y después volvé a abrir esta página.</div>'; return; }
+    try{
+      const snap = await firebase.firestore().collection('sueros').orderBy('fechaISO','asc').get();
+      const ms = ts => ts && ts.toMillis ? ts.toMillis() : 0;
+      datos = snap.docs.filter(d=> !d.id.startsWith('_')).map(d=> ({id:d.id, ...d.data()}))
+        .sort((a,b)=> a.fechaISO===b.fechaISO ? ms(a.creadoEn)-ms(b.creadoEn) : (a.fechaISO<b.fechaISO?-1:1));
+      render();
+    }catch(e){ app.innerHTML = `<div class="msg">No se pudieron leer los datos: ${e.message}</div>`; }
+  });
+}
+</script>
+</body>
+</html>
