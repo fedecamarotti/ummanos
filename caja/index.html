@@ -4057,15 +4057,6 @@ function simularLotes(hastaISO, opts){
   };
   sueros.forEach(m=>{
     if(!(m.fechaISO < hastaISO) || m.id===opts.excluirId) return;
-    // El stock real arranca el 1/10/2026: de antes solo se toma el último precio (para editar aplicaciones viejas)
-    if(m.fechaISO < STOCK_DESDE){
-      (m.items||[]).forEach(it=>{
-        if(!it.insumo) return;
-        const s = get(it.insumo), vu = Number(it.valorUnit)||0;
-        if((m.tipo==='egreso' || m.tipo==='ajuste') && vu) s.ultimo = vu;
-      });
-      return;
-    }
     if(m.tipo==='egreso'){
       (m.items||[]).forEach(it=>{
         if(!it.insumo) return;
@@ -6817,11 +6808,12 @@ function calcularRecupero(){
   return lotes;
 }
 function htmlRecupero(sel, desde, hasta, rangoTxt){
-  const lotes = calcularRecupero().filter(l=> l.fechaISO>=desde && l.fechaISO<=hasta);
+  // Compras del período, y también las anteriores cuyas unidades se usaron en el período
+  const lotes = calcularRecupero().filter(l=> (l.fechaISO>=desde && l.fechaISO<=hasta) || l.usos.some(f=> f>=desde && f<=hasta));
   const pct = (r, i)=> i > 0 ? Math.round(r/i*100) + '%' : '—';
   const cant = n => Number(n).toLocaleString('es-AR');
   const guion = '<span class="pend">—</span>';
-  const explica = `<div class="sub">Compras ${rangoTxt} (se analizan desde el 1/10/2026). Recuperado = lo que deja cada aplicación (total − Sabrina − Gabriela), repartido entre sus insumos según el costo de cada uno. Las aplicaciones con FALTA suman cuando se carga el pago.</div>`;
+  const explica = `<div class="sub">Compras ${rangoTxt} y compras anteriores que se usaron en esas fechas (se usan primero las unidades más viejas). Recuperado = lo que deja cada aplicación (total − Sabrina − Gabriela), repartido entre sus insumos según el costo de cada uno. Las aplicaciones con FALTA suman cuando se carga el pago.</div>`;
   const vacio = cols => `<tr><td colspan="${cols}" class="empty-state">No hay compras en estas fechas.</td></tr>`;
   if(sel){
     const filas = lotes.filter(l=> l.insumo===sel).sort((a,b)=> a.fechaISO<b.fechaISO ? -1 : 1);
