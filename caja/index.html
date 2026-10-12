@@ -5046,9 +5046,9 @@ document.getElementById('sGuardar').onclick = async ()=>{
     datos.gabrielaManual = sGabrielaManual;
     datos.ummana = calcularUmmana(datos.total||0, datos.insumosTotal, datos.sabrina, datos.gabriela);
   } else {
-    const items = sLeerItems('sItems').filter(it=> it.insumo || it.cant || it.valorUnit);
+    const items = sLeerItems('sItems').filter(it=> it.insumo || it.cant || it.sinCargo || it.valorUnit);
     if(!items.length){ alert("Agregá al menos un insumo."); return; }
-    if(items.some(it=> !it.insumo || !it.cant || !it.valorUnit)){ alert("Cada insumo necesita detalle, cantidad y valor unitario."); return; }
+    if(items.some(it=> !it.insumo || !(it.cant || it.sinCargo) || !it.valorUnit)){ alert("Cada insumo necesita detalle, cantidad (o unidades sin cargo) y valor unitario."); return; }
     if(!proveedoresRegistry.some(p=> mayus(p)===tercero)){
       if(!confirm(`"${tercero}" no está en Proveedores. ¿Agregarlo?`)) return;
       try{ await db.collection('proveedores').add({nombre: tercero}); }
@@ -6941,7 +6941,14 @@ function calcularCompras(){
       if(fechaRec==null && l.inversion > 0 && rec >= l.inversion - 0.5) fechaRec = apps[c.appId].fechaISO;
     });
     const c = compras[l.compraId] = compras[l.compraId] || {id:l.compraId, fechaISO:l.fechaISO, proveedor:l.proveedor, items:[]};
-    c.items.push({insumo:k, cant:l.cantOriginal, sinCargo:l.sinCargo||0, inversion:l.inversion, usadas, rec, pend, fechaRec, aportes});
+    const ya = c.items.find(i=> i.insumo===k);
+    if(ya){
+      ya.cant += l.cantOriginal; ya.sinCargo += l.sinCargo||0; ya.inversion += l.inversion; ya.usadas += usadas; ya.rec += rec; ya.pend += pend;
+      ya.aportes = ya.aportes.concat(aportes);
+      ya.fechaRec = null; let acc = 0;
+      ya.aportes.slice().sort((a,b)=> a.fecha < b.fecha ? -1 : (a.fecha > b.fecha ? 1 : 0)).some(a=>{ acc += a.monto; if(ya.inversion > 0 && acc >= ya.inversion - 0.5){ ya.fechaRec = a.fecha; return true; } return false; });
+    }
+    else c.items.push({insumo:k, cant:l.cantOriginal, sinCargo:l.sinCargo||0, inversion:l.inversion, usadas, rec, pend, fechaRec, aportes});
   }));
   const ej = compraEjemplo(apps, netoApp);
   if(ej) compras[ej.id] = ej;
