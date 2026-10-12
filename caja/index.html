@@ -475,6 +475,7 @@
   .tabla-stock td.k-link{cursor:pointer;}
   .tabla-stock td.k-link:hover{text-decoration:underline;}
   .inf-tabla tr.k-ajuste td{background:#fff1dc;}
+  .inf-tabla tr.k-viejo td{color:#a89f8a;}
   .aviso-kardex{font-size:11px;color:#9a5b00;background:#fff1dc;border:1px solid #f0c98a;border-radius:8px;padding:8px 12px;margin-bottom:10px;}
   .rec-fila:hover td{background:#f6f0de;}
   .sini-head, .sini-fila{display:grid;grid-template-columns:minmax(0,1fr) 90px 110px;gap:10px;align-items:center;}
@@ -759,7 +760,7 @@
     <button class="close-x" id="closeKardex">✕</button>
     <h2 id="kardexTitulo"></h2>
     <div class="modal-sub">Movimientos desde el 1/10/2026: stock inicial + compras − aplicaciones ± ajustes.</div>
-    <div class="aviso-kardex col-hidden" id="kardexAviso">Hay ajustes hechos con el lápiz (editar insumo). Si se hicieron para corregir el stock antes de cargar el stock inicial, ahora pueden estar sumando o restando de más.</div>
+    <div class="aviso-kardex col-hidden" id="kardexAviso">Hay ajustes hechos con el lápiz (editar insumo) después de cargar el stock inicial: esos sí se cuentan.</div>
     <div class="inf-wrap" style="max-height:56vh;overflow:auto;"><table class="inf-tabla">
       <colgroup><col style="width:92px"><col style="width:150px"><col><col style="width:70px"><col style="width:70px"><col style="width:70px"></colgroup>
       <thead><tr><th>Fecha</th><th class="left">Movimiento</th><th class="left">Detalle</th><th>Entra</th><th>Sale</th><th>Saldo</th></tr></thead>
@@ -4093,6 +4094,14 @@ const diaSiguiente = iso=>{
 };
 let cacheSim = {ref:null, len:-1, map:new Map()};
 let suerosStockInicial = null;   // sueros/_stockInicial → {fecha, items:{INSUMO:{cant, valorUnit}}}
+// Ajustes (lápiz) hechos antes de guardar el stock inicial: el conteo ya los reemplaza, no se cuentan
+function ajusteSuperado(m){
+  const ini = suerosStockInicial;
+  if(!ini || !ini.items || m.tipo!=='ajuste') return false;
+  const iniMs = ini.actualizadoEn && ini.actualizadoEn.toMillis ? ini.actualizadoEn.toMillis() : Date.now();
+  const mMs = m.creadoEn && m.creadoEn.toMillis ? m.creadoEn.toMillis() : Infinity;
+  return mMs < iniMs;
+}
 function simularLotes(hastaISO, opts){
   opts = opts || {};
   const usarCache = !opts.excluirId && !opts.sinCache;
@@ -4140,6 +4149,7 @@ function simularLotes(hastaISO, opts){
       return;
     }
     if(ini) aplicarIni();
+    if(ini && ajusteSuperado(m)) return;
     if(m.tipo==='egreso'){
       (m.items||[]).forEach(it=>{
         if(!it.insumo) return;
@@ -7188,6 +7198,10 @@ function abrirKardex(insumo){
       (m.items||[]).forEach(it=>{
         if(it.insumo!==insumo) return;
         const n = Number(it.cant)||0;
+        if(ini && ajusteSuperado(m)){
+          filas.push({fecha:m.fechaISO, tipo:'Ajuste anterior al stock inicial', det:'No se cuenta: el conteo del 1/10 ya lo reemplaza', entra:0, sale:0, saldo, viejo:true, n});
+          return;
+        }
         saldo += n;
         filas.push({fecha:m.fechaISO, tipo: m.tipo==='egreso' ? 'Compra' : 'Ajuste (editar insumo)', det: m.tipo==='egreso' ? (m.tercero||'') : (m.detalle||''), entra: n>0?n:0, sale: n<0?-n:0, saldo, id:m.id});
       });
@@ -7204,12 +7218,12 @@ function abrirKardex(insumo){
   const fila = calcularStock('9999-12-31').find(x=> x.insumo===insumo);
   const tE = filas.slice(1).reduce((a,f)=> a+f.entra, 0), tS = filas.reduce((a,f)=> a+f.sale, 0);
   document.getElementById('kardexTitulo').textContent = insumo;
-  document.getElementById('kardexBody').innerHTML = filas.map(f=> `<tr class="${f.tipo.startsWith('Ajuste') ? 'k-ajuste' : ''}">
+  document.getElementById('kardexBody').innerHTML = filas.map(f=> `<tr class="${f.viejo ? 'k-viejo' : (f.tipo.startsWith('Ajuste') ? 'k-ajuste' : '')}">
     <td>${fechaLarga(f.fecha)}</td><td class="left">${f.tipo}</td><td class="left">${f.det}</td>
-    <td>${f.entra ? '+' + f.entra.toLocaleString('es-AR') : ''}</td><td>${f.sale ? '−' + f.sale.toLocaleString('es-AR') : ''}</td>
+    <td>${f.viejo ? (f.n>0 ? `<s>+${f.n}</s>` : '') : (f.entra ? '+' + f.entra.toLocaleString('es-AR') : '')}</td><td>${f.viejo ? (f.n<0 ? `<s>−${-f.n}</s>` : '') : (f.sale ? '−' + f.sale.toLocaleString('es-AR') : '')}</td>
     <td><b>${f.saldo.toLocaleString('es-AR')}</b></td></tr>`).join('');
   document.getElementById('kardexFoot').innerHTML = `<tr><td colspan="3" class="left">Stock actual</td><td>${tE ? '+' + tE.toLocaleString('es-AR') : ''}</td><td>${tS ? '−' + tS.toLocaleString('es-AR') : ''}</td><td><b>${(fila ? fila.cant : saldo).toLocaleString('es-AR')}</b></td></tr>`;
-  const hayAjustes = filas.some(f=> f.tipo.startsWith('Ajuste'));
+  const hayAjustes = filas.some(f=> f.tipo==='Ajuste (editar insumo)');
   document.getElementById('kardexAviso').classList.toggle('col-hidden', !hayAjustes);
   overlayKardex.classList.add('show');
 }
