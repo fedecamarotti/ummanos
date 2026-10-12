@@ -6982,15 +6982,32 @@ function compraEjemplo(apps, netoApp){
   sueros.forEach(m=> (m.items||[]).forEach(it=> it.insumo && nombres.add(it.insumo)));
   const lista = [...nombres];
   const ALIAS = {'UBICHINON':'UBIQUINON'};
+  // Distancia entre dos palabras (letras distintas): sirve para "ZELL T" ↔ "ZEEL T"
+  const dist = (a, b)=>{
+    const d = Array.from({length:a.length+1}, (_,i)=> [i, ...Array(b.length).fill(0)]);
+    for(let j=1; j<=b.length; j++) d[0][j] = j;
+    for(let i=1; i<=a.length; i++) for(let j=1; j<=b.length; j++)
+      d[i][j] = Math.min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1] + (a[i-1]===b[j-1] ? 0 : 1));
+    return d[a.length][b.length];
+  };
   const resolver = n=>{
     const k = claveInsumo(ALIAS[n] || n);
-    return lista.find(x=> claveInsumo(x)===k)
+    const exacto = lista.find(x=> claveInsumo(x)===k)
         || lista.find(x=> k.startsWith(claveInsumo(x)) && claveInsumo(x).length >= 5)
-        || lista.find(x=> claveInsumo(x).startsWith(k.slice(0,6)))
-        || n;
+        || lista.find(x=> claveInsumo(x).startsWith(k.slice(0,6)));
+    if(exacto) return exacto;
+    // parecido: se compara con el comienzo del nombre del sistema
+    let mejor = null, md = Infinity;
+    lista.forEach(x=>{
+      const kx = claveInsumo(x);
+      const d1 = dist(k, kx), d2 = dist(k.slice(0, kx.length), kx), d3 = dist(k, kx.slice(0, k.length));
+      const dd = Math.min(d1, d2, d3);
+      if(dd < md){ md = dd; mejor = x; }
+    });
+    return md <= 2 ? mejor : null;
   };
   const factorEj = 1 - (COMPRA_EJEMPLO.descuentoPct||0)/100;
-  const items = COMPRA_EJEMPLO.items.map(([n, cant, vu])=> ({insumo: resolver(n), cant, inversion: cant*vu*factorEj, usadas:0, rec:0, pend:0, fechaRec:null, aportes:[], quedan: cant}));
+  const items = COMPRA_EJEMPLO.items.map(([n, cant, vu])=> ({insumo: resolver(n) || n, original: n, noEncontrado: !resolver(n), cant, inversion: cant*vu*factorEj, usadas:0, rec:0, pend:0, fechaRec:null, aportes:[], quedan: cant}));
   const porNombre = {}; items.forEach(i=> porNombre[i.insumo] = i);
   Object.values(apps).filter(m=> m.fechaISO >= COMPRA_EJEMPLO.fechaISO)
     .sort((a,b)=> a.fechaISO < b.fechaISO ? -1 : (a.fechaISO > b.fechaISO ? 1 : 0))
@@ -7052,7 +7069,7 @@ function htmlRecupero(selEtiqueta, desde, hasta, rangoTxt){
         <colgroup><col><col style="width:84px"><col style="width:96px"><col style="width:104px"><col style="width:104px"><col style="width:220px"><col style="width:100px"></colgroup>
         <thead><tr><th class="left">Insumo</th><th>Compradas</th><th>Usadas</th><th>Inversión</th><th>Recuperado</th><th>Recuperación</th><th>Recuperado el</th></tr></thead>
         <tbody>${c.items.map(i=> `<tr>
-          <td class="left">${i.insumo}</td><td>${i.cant.toLocaleString('es-AR')}${i.sinCargo ? ` <span class="pend" title="Incluye unidades sin cargo">(${i.sinCargo} s/c)</span>` : ''}</td>
+          <td class="left">${i.insumo}${i.original && claveInsumo(i.original)!==claveInsumo(i.insumo) ? ` <span class="pend">(factura: ${i.original})</span>` : ''}${i.noEncontrado ? ' <span class="venc-chip vencido">no está en el sistema</span>' : ''}</td><td>${i.cant.toLocaleString('es-AR')}${i.sinCargo ? ` <span class="pend" title="Incluye unidades sin cargo">(${i.sinCargo} s/c)</span>` : ''}</td>
           <td>${i.usadas.toLocaleString('es-AR')}${i.pend ? ` <span class="pend">(${i.pend} FALTA)</span>` : ''}</td>
           <td class="monto">${fmtPesos(i.inversion)}</td><td class="monto">${fmtPesos(i.rec)}</td>
           <td>${barraRec(i.inversion ? i.rec/i.inversion*100 : 0, escala)}</td>
