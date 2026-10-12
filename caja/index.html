@@ -328,6 +328,7 @@
   body.sueros-limitado #sBtnNuevo, body.sueros-limitado #sBtnCfg,
   body.sueros-limitado #sBtnExcep, body.sueros-limitado #sBtnOrdenar{display:none !important;}
   body.sueros-limitado .tabla-stock .editcol{visibility:hidden;}
+  body.sueros-limitado .s-solo-admin{display:none !important;}
   #pExtra{padding-top:16px;}
   #pExtra #vistaSueros .sheet-wrap{max-height:calc(100vh - 190px);}
   #portal{min-height:100vh;}
@@ -458,6 +459,26 @@
   .inf-tabla tfoot td{background:#f4eeda;font-weight:700;border-top:2px solid var(--border);white-space:nowrap;}
   .inf-tabla .pend{color:#c4b995;font-weight:500;}
   .inf-tabla tr.rec-ok td{background:#eef5e8;}
+  :root{--rec-celeste:#6cb7e0;--rec-verde:#4caf6a;}
+  .rec-barra{position:relative;height:15px;background:#efe8d6;border-radius:20px;overflow:hidden;}
+  .rec-barra .cel{position:absolute;left:0;top:0;bottom:0;background:var(--rec-celeste);}
+  .rec-barra .ver{position:absolute;top:0;bottom:0;background:var(--rec-verde);}
+  .rec-barra .meta{position:absolute;top:0;bottom:0;width:2px;background:#2f2a20;opacity:.5;}
+  .rec-barra .txt{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:9.5px;font-weight:700;color:#2f2a20;}
+  .rec-general{margin:4px 0 16px;}
+  .rec-general .lbl{display:flex;justify-content:space-between;font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:6px;}
+  .rec-general .rec-barra{height:22px;}
+  .rec-kpis{grid-template-columns:repeat(4,minmax(140px,1fr));margin-bottom:14px;}
+  .rec-leyenda{display:flex;gap:16px;flex-wrap:wrap;font-size:10.5px;color:var(--muted);margin-top:10px;}
+  .rec-leyenda i{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:5px;}
+  .rec-fila{cursor:pointer;}
+  .rec-fila:hover td{background:#f6f0de;}
+  .sini-head, .sini-fila{display:grid;grid-template-columns:minmax(0,1fr) 90px 110px;gap:10px;align-items:center;}
+  .sini-head{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;padding:0 12px 5px;}
+  .sini-lista{max-height:52vh;overflow:auto;border:1px solid var(--border);border-radius:10px;}
+  .sini-fila{padding:6px 12px;border-bottom:1px solid var(--border);font-size:12px;}
+  .sini-fila:last-child{border-bottom:none;}
+  .sini-fila input{padding:5px 8px;text-align:right;font-weight:700;}
   .btn-pdf{font-weight:700;}
   .hc-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-right:34px;}
   #overlayPDF{z-index:200;}
@@ -708,6 +729,23 @@
       <input type="password" id="loginPassword" autocomplete="current-password">
     </div>
     <button class="btn btn-primary" id="btnLogin">Ingresar</button>
+  </div>
+</div>
+
+<!-- ============ MODAL: STOCK INICIAL SUEROS (1/10/2026) ============ -->
+<div class="overlay" id="overlaySIni">
+  <div class="modal wide">
+    <button class="close-x" id="closeSIni">✕</button>
+    <h2>Stock inicial al 1/10/2026</h2>
+    <div class="modal-sub" id="siniEstado"></div>
+    <div class="modal-sub">Es el conteo real de ese día. Reemplaza todo lo anterior: las aplicaciones desde el 1/10 usan primero estas unidades y después las compras, en orden de fecha.</div>
+    <input type="text" id="siniBuscar" placeholder="Buscar insumo…" autocomplete="off" style="margin-bottom:10px;">
+    <div class="sini-head"><span>Insumo</span><span>Cantidad</span><span>Valor unit.</span></div>
+    <div class="sini-lista" id="siniLista"></div>
+    <div class="modal-actions">
+      <button class="btn" id="siniCancelar">Cancelar</button>
+      <button class="btn btn-primary" id="siniGuardar">Guardar stock inicial</button>
+    </div>
   </div>
 </div>
 
@@ -1069,6 +1107,7 @@
         <span id="sStockCaption"></span>
         <div style="display:flex;gap:8px;align-items:center;">
           <select id="sStockProv" class="s-stock-prov" title="Ver el stock de un proveedor"></select>
+          <button type="button" class="btn s-cfg-btn s-solo-admin" id="sBtnStockIni" title="Conteo real al 1/10/2026">📦 Stock inicial 1/10</button>
           <button type="button" class="btn s-cfg-btn" id="sBtnCalcCompra">🧮 Calcular compra</button>
           <button type="button" class="btn s-cfg-btn" id="sBtnOrdenar">↕ Ordenar</button>
         </div>
@@ -1103,7 +1142,7 @@
             <option value="paciente">Informe por paciente</option>
             <option value="producto">Informe por producto</option>
             <option value="proveedor">Informe por proveedor</option>
-            <option value="recupero">Insumos vs ingresos, recuperación</option>
+            <option value="recupero">Recuperación de compras</option>
           </select>
           <div class="ac-wrap inf-sel col-hidden" id="infSelWrap"><input type="text" id="infSel" autocomplete="off"></div>
           <div class="s-res-rango">
@@ -3832,11 +3871,15 @@ function suscribirSueros(){
     ordenInsumos = (d.exists && d.data().insumos) || [];
     renderSueros(); renderPortalSueros();
   }, ()=>{});
+  const unsubIni = db.collection('sueros').doc('_stockInicial').onSnapshot(d=>{
+    suerosStockInicial = d.exists ? d.data() : null;
+    renderSueros(); renderPortalSueros();
+  }, ()=>{});
   const unsubCrit = db.collection('sueros').doc('_criticos').onSnapshot(d=>{
     suerosCriticos = (d.exists && d.data().lista) || {};
     if(sTabActual==='stock') renderSueros();
   }, ()=>{});
-  unsubSueros = ()=>{ unsubMovs(); unsubCfg(); unsubEx(); unsubOrden(); unsubCrit(); };
+  unsubSueros = ()=>{ unsubMovs(); unsubCfg(); unsubEx(); unsubOrden(); unsubCrit(); unsubIni(); };
 }
 
 /* ---- Mes y pestañas ---- */
@@ -4028,11 +4071,12 @@ const diaSiguiente = iso=>{
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 };
 let cacheSim = {ref:null, len:-1, map:new Map()};
+let suerosStockInicial = null;   // sueros/_stockInicial → {fecha, items:{INSUMO:{cant, valorUnit}}}
 function simularLotes(hastaISO, opts){
   opts = opts || {};
   const usarCache = !opts.excluirId && !opts.sinCache;
   if(usarCache){
-    if(cacheSim.ref!==sueros || cacheSim.len!==sueros.length) cacheSim = {ref:sueros, len:sueros.length, map:new Map()};
+    if(cacheSim.ref!==sueros || cacheSim.len!==sueros.length || cacheSim.ini!==suerosStockInicial) cacheSim = {ref:sueros, len:sueros.length, ini:suerosStockInicial, map:new Map()};
     if(cacheSim.map.has(hastaISO)) return cacheSim.map.get(hastaISO);
   }
   const inv = {}, costos = {};
@@ -4055,8 +4099,26 @@ function simularLotes(hastaISO, opts){
     if(rest > 0){ s.deficit += rest; costo += rest * s.ultimo; }
     return costo;
   };
+  // Stock inicial (conteo al 1/10): reemplaza lo anterior; de antes solo se toma el último precio
+  const ini = suerosStockInicial && suerosStockInicial.items && Object.keys(suerosStockInicial.items).length ? suerosStockInicial : null;
+  const fIni = ini ? (ini.fecha || STOCK_DESDE) : null;
+  let iniHecho = false;
+  const aplicarIni = ()=>{
+    if(iniHecho || !ini) return; iniHecho = true;
+    Object.entries(ini.items).forEach(([k, v])=>{
+      const st = get(k), vu = Number(v.valorUnit)||0, n = Number(v.cant)||0;
+      if(vu) st.ultimo = vu;
+      if(n > 0) agregarLote(k, n, vu || st.ultimo, {fechaISO:fIni, esCompra:false, inicial:true, cantOriginal:n});
+    });
+  };
   sueros.forEach(m=>{
     if(!(m.fechaISO < hastaISO) || m.id===opts.excluirId) return;
+    if(ini && m.fechaISO < fIni){
+      if(m.tipo==='egreso' || m.tipo==='ajuste') (m.items||[]).forEach(it=>{ if(it.insumo){ const st = get(it.insumo); if(Number(it.valorUnit)) st.ultimo = Number(it.valorUnit); } });
+      else (m.items||[]).forEach(it=> it.insumo && get(it.insumo));
+      return;
+    }
+    if(ini) aplicarIni();
     if(m.tipo==='egreso'){
       (m.items||[]).forEach(it=>{
         if(!it.insumo) return;
@@ -4081,6 +4143,7 @@ function simularLotes(hastaISO, opts){
       });
     }
   });
+  if(ini && hastaISO > fIni) aplicarIni();
   const res = {inv, costos, consumir};
   if(usarCache) cacheSim.map.set(hastaISO, res);
   return res;
@@ -4375,7 +4438,7 @@ function ultimoDiaMesISO(){
 }
 function fechaLarga(iso){ const [y,m,d] = iso.split('-'); return `${Number(d)}/${Number(m)}/${y}`; }
 function sResAlMes(){ sResDesde = sMesInicio(); sResHasta = ultimoDiaMesISO(); }
-const INF_PLACEHOLDER = { paciente:'Elegí un paciente…', producto:'Elegí un producto…', proveedor:'Elegí un proveedor…', recupero:'Todos los productos (o elegí uno)…' };
+const INF_PLACEHOLDER = { paciente:'Elegí un paciente…', producto:'Elegí un producto…', proveedor:'Elegí un proveedor…', recupero:'Todas las compras (o elegí una)…' };
 function opcionesInforme(){
   const set = new Set();
   if(sInfTipo==='paciente') aplicacionesSueros().forEach(m=> m.tercero && set.add(m.tercero));
@@ -4383,7 +4446,7 @@ function opcionesInforme(){
     sueros.forEach(m=> (m.items||[]).forEach(it=> it.insumo && set.add(it.insumo)));
   }
   if(sInfTipo==='proveedor') sueros.filter(m=> m.tipo==='egreso').forEach(m=> m.tercero && set.add(m.tercero));
-  if(sInfTipo==='recupero') sueros.filter(m=> m.tipo==='egreso').forEach(m=> (m.items||[]).forEach(it=> it.insumo && set.add(it.insumo)));
+  if(sInfTipo==='recupero') return etiquetasCompras().map(c=> c.etiqueta);
   return [...set].sort((a,b)=> a.localeCompare(b,'es'));
 }
 function seleccionInforme(){
@@ -6774,10 +6837,10 @@ document.getElementById('inpImportarConceptos').addEventListener('change', async
   e.target.value = "";
 });
 
-/* ---- Recuperación de la inversión (insumos vs ingresos) ----
+/* ---- Recuperación por compra (desde el 1/10/2026) ----
    Cada unidad de una compra recupera: (Total − Sabrina − Gabriela) de la aplicación donde se usó,
    repartido entre los insumos de esa aplicación según el costo de cada uno. */
-function calcularRecupero(){
+function calcularCompras(){
   const sim = simularLotes('9999-12-31');
   const apps = {};
   sueros.forEach(m=>{ if(m.tipo==='ingreso') apps[m.id] = m; });
@@ -6787,65 +6850,162 @@ function calcularRecupero(){
     const r = calcularRepartoSuero(m);
     return (Number(m.total)||0) - (Number(r.sabrina)||0) - (Number(r.gabriela)||0);
   };
-  const lotes = [];
-  Object.entries(sim.inv).forEach(([k, s])=> s.todos.filter(l=> l.esCompra).forEach(l=>{
-    let rec = 0, fechaRec = null, usadas = 0, pendientes = 0;
+  const compras = {};
+  Object.entries(sim.inv).forEach(([k, s])=> s.todos.filter(l=> l.esCompra && l.fechaISO >= STOCK_DESDE).forEach(l=>{
+    let rec = 0, fechaRec = null, usadas = 0, pend = 0;
     l.consumos.forEach(c=>{
       usadas += c.cant;
       const n = netoApp(c.appId);
-      if(n==null){ pendientes += c.cant; return; }
+      if(n==null){ pend += c.cant; return; }
       const co = sim.costos[c.appId] || {total:0, unidades:0};
       const peso = co.total > 0 ? (c.costoUnit*c.cant)/co.total : (co.unidades ? c.cant/co.unidades : 0);
       rec += n * peso;
       if(fechaRec==null && l.inversion > 0 && rec >= l.inversion - 0.5) fechaRec = apps[c.appId].fechaISO;
     });
-    lotes.push({insumo:k, fechaISO:l.fechaISO, proveedor:l.proveedor, cant:l.cantOriginal, inversion:l.inversion,
-      usadas, recuperado:rec, fechaRec, pendientes,
-      dias: fechaRec ? Math.round((new Date(fechaRec+'T12:00:00') - new Date(l.fechaISO+'T12:00:00'))/86400000) : null});
+    const c = compras[l.compraId] = compras[l.compraId] || {id:l.compraId, fechaISO:l.fechaISO, proveedor:l.proveedor, items:[]};
+    c.items.push({insumo:k, cant:l.cantOriginal, inversion:l.inversion, usadas, rec, pend, fechaRec});
   }));
-  return lotes;
+  return Object.values(compras).map(c=>{
+    c.items.sort((a,b)=> a.insumo.localeCompare(b.insumo,'es'));
+    c.inversion = c.items.reduce((a,i)=> a+i.inversion, 0);
+    c.rec = c.items.reduce((a,i)=> a+i.rec, 0);
+    c.cant = c.items.reduce((a,i)=> a+i.cant, 0);
+    c.usadas = c.items.reduce((a,i)=> a+i.usadas, 0);
+    c.pend = c.items.reduce((a,i)=> a+i.pend, 0);
+    // fecha en que la compra completa llegó al 100%: no se puede saber por insumo, se toma la última de sus insumos si todos llegaron
+    c.fechaRec = c.rec >= c.inversion - 0.5 && c.items.every(i=> i.fechaRec || i.inversion===0) ? c.items.reduce((a,i)=> i.fechaRec && i.fechaRec > a ? i.fechaRec : a, '') : null;
+    c.etiqueta = `${fechaLarga(c.fechaISO)} · ${c.proveedor || 'SIN PROVEEDOR'} · ${fmtPesos(c.inversion)}`;
+    return c;
+  }).sort((a,b)=> a.fechaISO < b.fechaISO ? 1 : -1);
 }
-function htmlRecupero(sel, desde, hasta, rangoTxt){
-  const lotes = calcularRecupero().filter(l=> l.fechaISO>=desde && l.fechaISO<=hasta);
-  const pct = (r, i)=> i > 0 ? Math.round(r/i*100) + '%' : '—';
-  const cant = n => Number(n).toLocaleString('es-AR');
-  const guion = '<span class="pend">—</span>';
-  const explica = `<div class="sub">Compras ${rangoTxt}. Recuperado = lo que deja cada aplicación (total − Sabrina − Gabriela), repartido entre sus insumos según el costo de cada uno. Las aplicaciones con FALTA suman cuando se carga el pago.</div>`;
-  const vacio = cols => `<tr><td colspan="${cols}" class="empty-state">No hay compras en estas fechas.</td></tr>`;
-  if(sel){
-    const filas = lotes.filter(l=> l.insumo===sel).sort((a,b)=> a.fechaISO<b.fechaISO ? -1 : 1);
-    const t = filas.reduce((a,l)=> ({cant:a.cant+l.cant, inv:a.inv+l.inversion, us:a.us+l.usadas, rec:a.rec+l.recuperado}), {cant:0, inv:0, us:0, rec:0});
-    return `<h3>${sel} · recuperación</h3>${explica}
-      <div class="inf-wrap"><table class="inf-tabla">
-        <colgroup><col style="width:92px"><col><col style="width:64px"><col style="width:104px"><col style="width:64px"><col style="width:110px"><col style="width:58px"><col style="width:100px"><col style="width:52px"></colgroup>
-        <thead><tr><th>Compra</th><th class="left">Proveedor</th><th>Cant.</th><th>Inversión</th><th>Usadas</th><th>Recuperado</th><th>%</th><th>Recuperado el</th><th>Días</th></tr></thead>
-        <tbody>${filas.length ? filas.map(l=> `<tr class="${l.fechaRec ? 'rec-ok' : ''}">
-          <td>${fechaLarga(l.fechaISO)}</td><td class="left">${l.proveedor||''}</td><td>${cant(l.cant)}</td>
-          <td class="monto">${fmtPesos(l.inversion)}</td><td>${cant(l.usadas)}${l.pendientes ? ` <span class="pend" title="Aplicaciones con pago pendiente">(${l.pendientes} FALTA)</span>` : ''}</td>
-          <td class="monto">${fmtPesos(l.recuperado)}</td><td><b>${pct(l.recuperado, l.inversion)}</b></td>
-          <td>${l.fechaRec ? fechaLarga(l.fechaRec) : guion}</td><td>${l.dias!=null ? l.dias : guion}</td></tr>`).join('') : vacio(9)}</tbody>
-        ${filas.length ? `<tfoot><tr><td colspan="2" class="left">TOTALES</td><td>${cant(t.cant)}</td><td class="monto">${fmtPesos(t.inv)}</td><td>${cant(t.us)}</td><td class="monto">${fmtPesos(t.rec)}</td><td>${pct(t.rec, t.inv)}</td><td></td><td></td></tr></tfoot>` : ''}
-      </table></div>`;
-  }
-  const porIns = {};
-  lotes.forEach(l=>{
-    const p = porIns[l.insumo] = porIns[l.insumo] || {compras:0, cant:0, inv:0, us:0, rec:0, dias:[]};
-    p.compras++; p.cant += l.cant; p.inv += l.inversion; p.us += l.usadas; p.rec += l.recuperado;
-    if(l.dias!=null) p.dias.push(l.dias);
+function etiquetasCompras(){
+  const vistas = {};
+  return calcularCompras().map(c=>{
+    vistas[c.etiqueta] = (vistas[c.etiqueta]||0) + 1;
+    if(vistas[c.etiqueta] > 1) c.etiqueta += ` (${vistas[c.etiqueta]})`;
+    return c;
   });
-  const filas = Object.entries(porIns).sort((a,b)=> a[0].localeCompare(b[0],'es'));
-  const t = filas.reduce((a,[,p])=> ({cant:a.cant+p.cant, inv:a.inv+p.inv, us:a.us+p.us, rec:a.rec+p.rec}), {cant:0, inv:0, us:0, rec:0});
-  return `<h3>Insumos vs ingresos · recuperación</h3>${explica}
-    <div class="inf-wrap"><table class="inf-tabla">
-      <colgroup><col><col style="width:70px"><col style="width:64px"><col style="width:110px"><col style="width:64px"><col style="width:110px"><col style="width:58px"><col style="width:84px"></colgroup>
-      <thead><tr><th class="left">Insumo</th><th>Compras</th><th>Cant.</th><th>Inversión</th><th>Usadas</th><th>Recuperado</th><th>%</th><th>Días prom.</th></tr></thead>
-      <tbody>${filas.length ? filas.map(([ins,p])=> `<tr class="${p.inv>0 && p.rec>=p.inv ? 'rec-ok' : ''}">
-        <td class="left">${ins}</td><td>${p.compras}</td><td>${cant(p.cant)}</td><td class="monto">${fmtPesos(p.inv)}</td>
-        <td>${cant(p.us)}</td><td class="monto">${fmtPesos(p.rec)}</td><td><b>${pct(p.rec, p.inv)}</b></td>
-        <td>${p.dias.length ? Math.round(p.dias.reduce((a,d)=>a+d,0)/p.dias.length) : guion}</td></tr>`).join('') : vacio(8)}</tbody>
-      ${filas.length ? `<tfoot><tr><td class="left">TOTALES</td><td></td><td>${cant(t.cant)}</td><td class="monto">${fmtPesos(t.inv)}</td><td>${cant(t.us)}</td><td class="monto">${fmtPesos(t.rec)}</td><td>${pct(t.rec, t.inv)}</td><td></td></tr></tfoot>` : ''}
-    </table></div>`;
 }
+function barraRec(pct, escala){
+  const p = Math.max(0, pct);
+  const cel = Math.min(p, 100) / escala * 100;
+  const ver = p > 100 ? (p - 100) / escala * 100 : 0;
+  const meta = 100 / escala * 100;
+  return `<div class="rec-barra"><div class="cel" style="width:${cel}%"></div>${ver ? `<div class="ver" style="left:${meta}%;width:${ver}%"></div>` : ''}<div class="meta" style="left:${meta}%"></div><span class="txt">${Math.round(p)}%</span></div>`;
+}
+function htmlRecupero(selEtiqueta, desde, hasta, rangoTxt){
+  const todas = etiquetasCompras();
+  const guion = '<span class="pend">—</span>';
+  const explica = `<div class="sub">Recuperado = lo que deja cada aplicación (total − Sabrina − Gabriela), repartido entre sus insumos según el costo de cada uno. Primero se usa el stock inicial del 1/10 y después cada compra, en orden de fecha. Las aplicaciones con FALTA cuentan como usadas pero suman cuando se carga el pago.</div>`;
+  const leyenda = `<div class="rec-leyenda"><span><i style="background:var(--rec-celeste)"></i>Recuperando la inversión (hasta 100%)</span><span><i style="background:var(--rec-verde)"></i>Ganancia (más del 100%)</span><span>La línea marca el 100%</span></div>`;
+  const c = selEtiqueta ? todas.find(x=> mayus(x.etiqueta)===mayus(selEtiqueta)) : null;
+  if(c){
+    const pctTot = c.inversion ? c.rec/c.inversion*100 : 0;
+    const escala = Math.min(Math.max(120, pctTot, ...c.items.map(i=> i.inversion ? i.rec/i.inversion*100 : 0)), 400);
+    return `<h3>Compra del ${fechaLarga(c.fechaISO)} · ${c.proveedor||''}</h3>${explica}
+      <div class="s-kpis rec-kpis">
+        <div class="s-kpi principal"><div class="lbl">Inversión</div><div class="val">${fmtPesos(c.inversion)}</div></div>
+        <div class="s-kpi"><div class="lbl">Recuperado</div><div class="val">${fmtPesos(c.rec)}</div></div>
+        <div class="s-kpi"><div class="lbl">Usadas</div><div class="val">${c.usadas.toLocaleString('es-AR')} / ${c.cant.toLocaleString('es-AR')}</div></div>
+        <div class="s-kpi"><div class="lbl">${c.rec >= c.inversion ? 'Ganancia' : 'Falta recuperar'}</div><div class="val" style="color:${c.rec >= c.inversion ? '#2f7a2f' : '#a13a3a'}">${fmtPesos(Math.abs(c.rec - c.inversion))}</div></div>
+      </div>
+      <div class="rec-general"><div class="lbl"><span>Recuperación de la compra</span><span>${c.pend ? `${c.pend} u. con FALTA` : ''}</span></div>${barraRec(pctTot, escala)}</div>
+      <div class="inf-wrap"><table class="inf-tabla">
+        <colgroup><col><col style="width:84px"><col style="width:96px"><col style="width:104px"><col style="width:104px"><col style="width:220px"><col style="width:100px"></colgroup>
+        <thead><tr><th class="left">Insumo</th><th>Compradas</th><th>Usadas</th><th>Inversión</th><th>Recuperado</th><th>Recuperación</th><th>Recuperado el</th></tr></thead>
+        <tbody>${c.items.map(i=> `<tr>
+          <td class="left">${i.insumo}</td><td>${i.cant.toLocaleString('es-AR')}</td>
+          <td>${i.usadas.toLocaleString('es-AR')}${i.pend ? ` <span class="pend">(${i.pend} FALTA)</span>` : ''}</td>
+          <td class="monto">${fmtPesos(i.inversion)}</td><td class="monto">${fmtPesos(i.rec)}</td>
+          <td>${barraRec(i.inversion ? i.rec/i.inversion*100 : 0, escala)}</td>
+          <td>${i.fechaRec ? fechaLarga(i.fechaRec) : guion}</td></tr>`).join('')}</tbody>
+        <tfoot><tr><td class="left">TOTALES</td><td>${c.cant.toLocaleString('es-AR')}</td><td>${c.usadas.toLocaleString('es-AR')}</td><td class="monto">${fmtPesos(c.inversion)}</td><td class="monto">${fmtPesos(c.rec)}</td><td>${barraRec(pctTot, escala)}</td><td>${c.fechaRec ? fechaLarga(c.fechaRec) : ''}</td></tr></tfoot>
+      </table></div>${leyenda}`;
+  }
+  const lista = todas.filter(x=> x.fechaISO>=desde && x.fechaISO<=hasta);
+  const escala = Math.min(Math.max(120, ...lista.map(x=> x.inversion ? x.rec/x.inversion*100 : 0)), 400);
+  return `<h3>Recuperación de compras</h3>
+    <div class="sub">Compras ${rangoTxt} (se analizan desde el 1/10/2026). Tocá una compra para ver el detalle por insumo.</div>
+    <div class="inf-wrap"><table class="inf-tabla">
+      <colgroup><col style="width:96px"><col><col style="width:110px"><col style="width:96px"><col style="width:110px"><col style="width:220px"><col style="width:100px"></colgroup>
+      <thead><tr><th>Compra</th><th class="left">Proveedor</th><th>Inversión</th><th>Usadas</th><th>Recuperado</th><th>Recuperación</th><th>Recuperado el</th></tr></thead>
+      <tbody>${lista.length ? lista.map(x=> `<tr class="rec-fila" data-etq="${escAttr(x.etiqueta)}">
+        <td>${fechaLarga(x.fechaISO)}</td><td class="left">${x.proveedor||''}</td><td class="monto">${fmtPesos(x.inversion)}</td>
+        <td>${x.usadas.toLocaleString('es-AR')} / ${x.cant.toLocaleString('es-AR')}</td><td class="monto">${fmtPesos(x.rec)}</td>
+        <td>${barraRec(x.inversion ? x.rec/x.inversion*100 : 0, escala)}</td><td>${x.fechaRec ? fechaLarga(x.fechaRec) : guion}</td></tr>`).join('')
+        : '<tr><td colspan="7" class="empty-state">No hay compras desde el 1/10/2026 en estas fechas.</td></tr>'}</tbody>
+    </table></div>${lista.length ? leyenda : ''}`;
+}
+document.getElementById('sResumen').addEventListener('click', e=>{
+  const tr = e.target.closest('.rec-fila');
+  if(!tr || sInfTipo!=='recupero') return;
+  infSel.value = tr.dataset.etq;
+  renderResumenSueros();
+});
+
+/* ---- Stock inicial al 1/10/2026 (reemplaza toda la historia anterior) ---- */
+const overlaySIni = document.getElementById('overlaySIni');
+document.getElementById('sBtnStockIni').onclick = ()=>{
+  if(!esAdminSueros()) return;
+  const guardado = (suerosStockInicial && suerosStockInicial.items) || null;
+  // Sugerencia: lo que calculaba el sistema al 30/9 (sin stock inicial) y el último precio
+  const base = {};
+  const prev = suerosStockInicial; suerosStockInicial = null; cacheSim = {ref:null, len:-1, map:new Map()};
+  calcularStock(STOCK_DESDE).forEach(i=> base[i.insumo] = i);
+  const nombres = insumosStock().map(i=> i.insumo);
+  suerosStockInicial = prev; cacheSim = {ref:null, len:-1, map:new Map()};
+  const fijos = {};
+  componentesVias().forEach(c=>{
+    const k = claveInsumo(c);
+    if(k.startsWith('solfisiolog') || k.startsWith('solucionfisiolog')) fijos[c] = 4000;
+    if(k.startsWith('otros')) fijos[c] = 800;
+  });
+  const filas = nombres.filter(n=> !esVias(n)).map(n=>{
+    const g = guardado && guardado[n];
+    const b = base[n] || {cant:0, ultimo:0};
+    const cant = g ? g.cant : Math.max(0, Math.round(b.cant||0));
+    const vu = g ? g.valorUnit : (fijos[n] || b.ultimo || b.valorUnit || 0);
+    return `<div class="sini-fila" data-texto="${escAttr(n)}">
+      <span class="nom">${n}</span>
+      <input type="text" inputmode="numeric" class="sini-cant" data-k="${escAttr(n)}" value="${cant ? Number(cant).toLocaleString('es-AR') : (g ? '0' : '')}" placeholder="0">
+      <input type="text" inputmode="numeric" class="sini-vu" data-k="${escAttr(n)}" value="${vu ? Number(vu).toLocaleString('es-AR') : ''}" placeholder="$0">
+    </div>`;
+  }).join('');
+  document.getElementById('siniLista').innerHTML = filas || '<div class="empty-state">No hay insumos.</div>';
+  document.getElementById('siniLista').querySelectorAll('input').forEach(inp=> inp.addEventListener('input', ()=> formatearInputMonto(inp)));
+  document.getElementById('siniBuscar').value = '';
+  document.getElementById('siniEstado').textContent = guardado
+    ? `Guardado${suerosStockInicial.actualizadoPor ? ' por ' + suerosStockInicial.actualizadoPor : ''}. Podés corregirlo cuando quieras.`
+    : 'Viene precargado con lo que calculaba el sistema al 30/9. Corregí lo que no coincida con el conteo real.';
+  overlaySIni.classList.add('show');
+};
+document.getElementById('siniBuscar').addEventListener('input', e=>{
+  const q = e.target.value;
+  document.querySelectorAll('#siniLista .sini-fila').forEach(f=> f.style.display = !q || contiene(f.dataset.texto, q) ? '' : 'none');
+});
+const cerrarSIni = ()=> overlaySIni.classList.remove('show');
+document.getElementById('closeSIni').onclick = cerrarSIni;
+document.getElementById('siniCancelar').onclick = cerrarSIni;
+document.getElementById('siniGuardar').onclick = async ()=>{
+  if(!esAdminSueros()) return;
+  const items = {};
+  document.querySelectorAll('#siniLista .sini-fila').forEach(f=>{
+    const k = f.querySelector('.sini-cant').dataset.k;
+    const cant = parseMonto(f.querySelector('.sini-cant').value);
+    const valorUnit = parseMonto(f.querySelector('.sini-vu').value);
+    items[k] = {cant, valorUnit};
+  });
+  const btn = document.getElementById('siniGuardar'); btn.disabled = true;
+  try{
+    const datos = {fecha: STOCK_DESDE, items, actualizadoPor: currentUser.nombre, actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()};
+    await db.collection('sueros').doc('_stockInicial').set(datos);
+    suerosStockInicial = {...datos};
+    cacheSim = {ref:null, len:-1, map:new Map()};
+    cerrarSIni();
+    renderSueros();
+  }catch(e){ alert("No se pudo guardar: " + e.message); }
+  btn.disabled = false;
+};
 
 /* ---- Vista previa en PDF (informes y fichas) ---- */
 let html2pdfCargando = null;
