@@ -472,6 +472,8 @@
   .rec-leyenda{display:flex;gap:16px;flex-wrap:wrap;font-size:10.5px;color:var(--muted);margin-top:10px;}
   .rec-leyenda i{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:5px;}
   .rec-fila{cursor:pointer;}
+  .inf-tabla tr.rec-ejemplo td{background:#f3f7fb;font-style:italic;}
+  .rec-aviso-ej{font-size:11px;color:#2c5d7a;background:#eaf4fb;border:1px solid #bcdcef;border-radius:8px;padding:7px 12px;margin:6px 0 8px;}
   .tabla-stock td.k-link{cursor:pointer;}
   .tabla-stock td.k-link:hover{text-decoration:underline;}
   .inf-tabla tr.k-ajuste td{background:#fff1dc;}
@@ -1167,6 +1169,7 @@
             <option value="recupero">Recuperación de compras</option>
           </select>
           <div class="ac-wrap inf-sel col-hidden" id="infSelWrap"><input type="text" id="infSel" autocomplete="off"></div>
+          <button type="button" class="btn s-cfg-btn col-hidden" id="infVolver">← Volver</button>
           <div class="s-res-rango">
             <label>Desde <input type="date" id="sResDesde"></label>
             <label>Hasta <input type="date" id="sResHasta"></label>
@@ -4515,6 +4518,7 @@ function renderResumenSueros(){
   document.getElementById('sResMes').classList.toggle('col-hidden', esMesCompleto);
   infTipoSel.value = sInfTipo;
   document.getElementById('infSelWrap').classList.toggle('col-hidden', sInfTipo==='mensual');
+  document.getElementById('infVolver').classList.toggle('col-hidden', !(sInfTipo==='recupero' && infSel.value.trim()));
   infSel.placeholder = INF_PLACEHOLDER[sInfTipo] || '';
   const rangoTxt = sResDesde===sResHasta ? `del ${fechaLarga(sResDesde)}` : `del ${fechaLarga(sResDesde)} al ${fechaLarga(sResHasta)}`;
   const enRango = m=> m.tipo!=='ajuste' && m.fechaISO>=sResDesde && m.fechaISO<=sResHasta;
@@ -6884,6 +6888,7 @@ function calcularCompras(){
   const compras = {};
   Object.entries(sim.inv).forEach(([k, s])=> s.todos.filter(l=> l.esCompra && l.fechaISO >= STOCK_DESDE).forEach(l=>{
     let rec = 0, fechaRec = null, usadas = 0, pend = 0;
+    const aportes = [];
     l.consumos.forEach(c=>{
       usadas += c.cant;
       const n = netoApp(c.appId);
@@ -6891,11 +6896,14 @@ function calcularCompras(){
       const co = sim.costos[c.appId] || {total:0, unidades:0};
       const peso = co.total > 0 ? (c.costoUnit*c.cant)/co.total : (co.unidades ? c.cant/co.unidades : 0);
       rec += n * peso;
+      aportes.push({fecha: apps[c.appId].fechaISO, monto: n*peso});
       if(fechaRec==null && l.inversion > 0 && rec >= l.inversion - 0.5) fechaRec = apps[c.appId].fechaISO;
     });
     const c = compras[l.compraId] = compras[l.compraId] || {id:l.compraId, fechaISO:l.fechaISO, proveedor:l.proveedor, items:[]};
-    c.items.push({insumo:k, cant:l.cantOriginal, inversion:l.inversion, usadas, rec, pend, fechaRec});
+    c.items.push({insumo:k, cant:l.cantOriginal, inversion:l.inversion, usadas, rec, pend, fechaRec, aportes});
   }));
+  const ej = compraEjemplo(apps, netoApp);
+  if(ej) compras[ej.id] = ej;
   return Object.values(compras).map(c=>{
     c.items.sort((a,b)=> a.insumo.localeCompare(b.insumo,'es'));
     c.inversion = c.items.reduce((a,i)=> a+i.inversion, 0);
@@ -6903,11 +6911,67 @@ function calcularCompras(){
     c.cant = c.items.reduce((a,i)=> a+i.cant, 0);
     c.usadas = c.items.reduce((a,i)=> a+i.usadas, 0);
     c.pend = c.items.reduce((a,i)=> a+i.pend, 0);
-    // fecha en que la compra completa llegó al 100%: no se puede saber por insumo, se toma la última de sus insumos si todos llegaron
-    c.fechaRec = c.rec >= c.inversion - 0.5 && c.items.every(i=> i.fechaRec || i.inversion===0) ? c.items.reduce((a,i)=> i.fechaRec && i.fechaRec > a ? i.fechaRec : a, '') : null;
+    // fecha en que la compra completa llegó al 100% (sumando lo que aportó cada insumo, en orden de fecha)
+    c.fechaRec = null;
+    let acum = 0;
+    c.items.flatMap(i=> i.aportes||[]).sort((a,b)=> a.fecha < b.fecha ? -1 : (a.fecha > b.fecha ? 1 : 0)).some(a=>{
+      acum += a.monto;
+      if(c.inversion > 0 && acum >= c.inversion - 0.5){ c.fechaRec = a.fecha; return true; }
+      return false;
+    });
     c.etiqueta = `${fechaLarga(c.fechaISO)} · ${c.proveedor || 'SIN PROVEEDOR'} · ${fmtPesos(c.inversion)}`;
     return c;
   }).sort((a,b)=> a.fechaISO < b.fechaISO ? 1 : -1);
+}
+/* Compra de EJEMPLO (no está cargada: no toca stock ni movimientos).
+   Consume directamente de las aplicaciones desde su fecha, sin mirar el resto del stock. */
+const COMPRA_EJEMPLO = {
+  id: 'EJEMPLO', fechaISO: '2026-08-24', proveedor: 'FARMACIA BIOHELPER (COMPRA EJEMPLO, NO CARGADA)',
+  items: [   // [nombre en la factura, cantidad, costo unitario (lista con 20% de descuento)]
+    ['BERBERIS',20,7920], ['CEREBRUM COMPOSITUM',10,10320], ['COENZYME',20,7920], ['CUTIS',10,8720],
+    ['FUNICULUS',10,10320], ['ENGYSTOL',10,7920], ['GALIUM',20,7920], ['GRAPHITES HOMACCORD',20,7920],
+    ['HEPAR',10,10320], ['LYMPHOMYOSOT',20,7920], ['MOMORDICA',10,8720], ['MUCOSA',20,10320],
+    ['MUSCULUS SUIS - INJEL',10,10320], ['NUX VOMICA',20,7920], ['TRAUMEEL',20,7920], ['UBICHINON',20,7920],
+    ['ZELL T',10,8720], ['GLANDULA TIROIDEA',10,10320],
+  ],
+};
+function compraEjemplo(apps, netoApp){
+  const nombres = new Set();
+  sueros.forEach(m=> (m.items||[]).forEach(it=> it.insumo && nombres.add(it.insumo)));
+  const lista = [...nombres];
+  const ALIAS = {'UBICHINON':'UBIQUINON'};
+  const resolver = n=>{
+    const k = claveInsumo(ALIAS[n] || n);
+    return lista.find(x=> claveInsumo(x)===k)
+        || lista.find(x=> k.startsWith(claveInsumo(x)) && claveInsumo(x).length >= 5)
+        || lista.find(x=> claveInsumo(x).startsWith(k.slice(0,6)))
+        || n;
+  };
+  const items = COMPRA_EJEMPLO.items.map(([n, cant, vu])=> ({insumo: resolver(n), cant, inversion: cant*vu, usadas:0, rec:0, pend:0, fechaRec:null, aportes:[], quedan: cant}));
+  const porNombre = {}; items.forEach(i=> porNombre[i.insumo] = i);
+  Object.values(apps).filter(m=> m.fechaISO >= COMPRA_EJEMPLO.fechaISO)
+    .sort((a,b)=> a.fechaISO < b.fechaISO ? -1 : (a.fechaISO > b.fechaISO ? 1 : 0))
+    .forEach(m=>{
+      const its = m.items || [];
+      const totalCosto = its.reduce((a,it)=> a + (Number(it.subtotal)||0), 0);
+      const unidades = its.reduce((a,it)=> a + (Number(it.cant)||0), 0);
+      const n = netoApp(m.id);
+      its.forEach(it=>{
+        const item = porNombre[it.insumo];
+        if(!item || item.quedan <= 0) return;
+        const t = Math.min(item.quedan, Number(it.cant)||0);
+        if(!t) return;
+        item.quedan -= t; item.usadas += t;
+        if(n==null){ item.pend += t; return; }
+        const cant = Number(it.cant)||0;
+        const peso = totalCosto > 0 ? (Number(it.subtotal)||0) * (t/cant) / totalCosto : (unidades ? t/unidades : 0);
+        const monto = n * peso;
+        item.rec += monto;
+        item.aportes.push({fecha: m.fechaISO, monto});
+        if(!item.fechaRec && item.rec >= item.inversion - 0.5) item.fechaRec = m.fechaISO;
+      });
+    });
+  return {id: COMPRA_EJEMPLO.id, fechaISO: COMPRA_EJEMPLO.fechaISO, proveedor: COMPRA_EJEMPLO.proveedor, ejemplo: true, items};
 }
 function etiquetasCompras(){
   const vistas = {};
@@ -6933,7 +6997,7 @@ function htmlRecupero(selEtiqueta, desde, hasta, rangoTxt){
   if(c){
     const pctTot = c.inversion ? c.rec/c.inversion*100 : 0;
     const escala = Math.min(Math.max(120, pctTot, ...c.items.map(i=> i.inversion ? i.rec/i.inversion*100 : 0)), 400);
-    return `<h3>Compra del ${fechaLarga(c.fechaISO)} · ${c.proveedor||''}</h3>${explica}
+    return `<h3>Compra del ${fechaLarga(c.fechaISO)} · ${c.proveedor||''}</h3>${c.ejemplo ? '<div class="rec-aviso-ej">Compra de ejemplo: no está cargada, no descuenta stock ni aparece en movimientos. Toma todas las aplicaciones desde el 24/8 y descuenta directamente de esta compra.</div>' : ''}${explica}
       <div class="s-kpis rec-kpis">
         <div class="s-kpi principal"><div class="lbl">Inversión</div><div class="val">${fmtPesos(c.inversion)}</div></div>
         <div class="s-kpi"><div class="lbl">Recuperado</div><div class="val">${fmtPesos(c.rec)}</div></div>
@@ -6953,14 +7017,14 @@ function htmlRecupero(selEtiqueta, desde, hasta, rangoTxt){
         <tfoot><tr><td class="left">TOTALES</td><td>${c.cant.toLocaleString('es-AR')}</td><td>${c.usadas.toLocaleString('es-AR')}</td><td class="monto">${fmtPesos(c.inversion)}</td><td class="monto">${fmtPesos(c.rec)}</td><td>${barraRec(pctTot, escala)}</td><td>${c.fechaRec ? fechaLarga(c.fechaRec) : ''}</td></tr></tfoot>
       </table></div>${leyenda}`;
   }
-  const lista = todas.filter(x=> x.fechaISO>=desde && x.fechaISO<=hasta);
+  const lista = todas.filter(x=> x.ejemplo || (x.fechaISO>=desde && x.fechaISO<=hasta));
   const escala = Math.min(Math.max(120, ...lista.map(x=> x.inversion ? x.rec/x.inversion*100 : 0)), 400);
   return `<h3>Recuperación de compras</h3>
-    <div class="sub">Compras ${rangoTxt} (se analizan desde el 1/10/2026). Tocá una compra para ver el detalle por insumo.</div>
+    <div class="sub">Compras ${rangoTxt} (se analizan desde el 1/10/2026), más la compra de ejemplo del 24/8. Tocá una compra para ver el detalle por insumo.</div>
     <div class="inf-wrap"><table class="inf-tabla">
       <colgroup><col style="width:96px"><col><col style="width:110px"><col style="width:96px"><col style="width:110px"><col style="width:220px"><col style="width:100px"></colgroup>
       <thead><tr><th>Compra</th><th class="left">Proveedor</th><th>Inversión</th><th>Usadas</th><th>Recuperado</th><th>Recuperación</th><th>Recuperado el</th></tr></thead>
-      <tbody>${lista.length ? lista.map(x=> `<tr class="rec-fila" data-etq="${escAttr(x.etiqueta)}">
+      <tbody>${lista.length ? lista.map(x=> `<tr class="rec-fila ${x.ejemplo ? 'rec-ejemplo' : ''}" data-etq="${escAttr(x.etiqueta)}">
         <td>${fechaLarga(x.fechaISO)}</td><td class="left">${x.proveedor||''}</td><td class="monto">${fmtPesos(x.inversion)}</td>
         <td>${x.usadas.toLocaleString('es-AR')} / ${x.cant.toLocaleString('es-AR')}</td><td class="monto">${fmtPesos(x.rec)}</td>
         <td>${barraRec(x.inversion ? x.rec/x.inversion*100 : 0, escala)}</td><td>${x.fechaRec ? fechaLarga(x.fechaRec) : guion}</td></tr>`).join('')
@@ -7234,6 +7298,8 @@ document.getElementById('sStockBody').addEventListener('click', e=>{
   if(td) abrirKardex(td.dataset.k);
 });
 
+
+document.getElementById('infVolver').onclick = ()=>{ infSel.value = ''; renderResumenSueros(); };
 </script>
 </body>
 </html>
