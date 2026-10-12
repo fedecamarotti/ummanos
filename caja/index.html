@@ -472,6 +472,10 @@
   .rec-leyenda{display:flex;gap:16px;flex-wrap:wrap;font-size:10.5px;color:var(--muted);margin-top:10px;}
   .rec-leyenda i{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:5px;}
   .rec-fila{cursor:pointer;}
+  .tabla-stock td.k-link{cursor:pointer;}
+  .tabla-stock td.k-link:hover{text-decoration:underline;}
+  .inf-tabla tr.k-ajuste td{background:#fff1dc;}
+  .aviso-kardex{font-size:11px;color:#9a5b00;background:#fff1dc;border:1px solid #f0c98a;border-radius:8px;padding:8px 12px;margin-bottom:10px;}
   .rec-fila:hover td{background:#f6f0de;}
   .sini-head, .sini-fila{display:grid;grid-template-columns:minmax(0,1fr) 90px 110px;gap:10px;align-items:center;}
   .sini-head{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;padding:0 12px 5px;}
@@ -746,6 +750,23 @@
       <button class="btn" id="siniCancelar">Cancelar</button>
       <button class="btn btn-primary" id="siniGuardar">Guardar stock inicial</button>
     </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: MOVIMIENTOS DE UN INSUMO ============ -->
+<div class="overlay" id="overlayKardex">
+  <div class="modal wide" style="max-width:760px;">
+    <button class="close-x" id="closeKardex">✕</button>
+    <h2 id="kardexTitulo"></h2>
+    <div class="modal-sub">Movimientos desde el 1/10/2026: stock inicial + compras − aplicaciones ± ajustes.</div>
+    <div class="aviso-kardex col-hidden" id="kardexAviso">Hay ajustes hechos con el lápiz (editar insumo). Si se hicieron para corregir el stock antes de cargar el stock inicial, ahora pueden estar sumando o restando de más.</div>
+    <div class="inf-wrap" style="max-height:56vh;overflow:auto;"><table class="inf-tabla">
+      <colgroup><col style="width:92px"><col style="width:150px"><col><col style="width:70px"><col style="width:70px"><col style="width:70px"></colgroup>
+      <thead><tr><th>Fecha</th><th class="left">Movimiento</th><th class="left">Detalle</th><th>Entra</th><th>Sale</th><th>Saldo</th></tr></thead>
+      <tbody id="kardexBody"></tbody>
+      <tfoot id="kardexFoot"></tfoot>
+    </table></div>
+    <div class="modal-actions"><button class="btn" id="kardexCerrar">Cerrar</button></div>
   </div>
 </div>
 
@@ -4292,7 +4313,7 @@ function renderStock(){
     const f = sCalcCompra ? faltanDe(i) : null;
     return `
     <tr class="${critico ? 's-critico' : ''}">
-      <td class="left">${i.insumo}${chips}</td>
+      <td class="left k-link" data-k="${escAttr(i.insumo)}" title="Ver movimientos desde el 1/10">${i.insumo}${chips}</td>
       <td>${i.valorUnit ? fmtPesos(i.valorUnit) : guion}</td>
       <td class="${i.total<0?'neg':''}">${fmtPesos(i.total)}</td>
       <td class="${i.cant<0?'neg':''}" style="font-weight:700;">${i.cant.toLocaleString('es-AR')}</td>
@@ -7145,6 +7166,59 @@ document.getElementById('pNpGuardar').onclick = async ()=>{
   }catch(e){ alert("No se pudo crear el paciente: " + e.message); }
   btn.disabled = false;
 };
+
+
+/* ---- Movimientos de un insumo desde el 1/10 (para controlar el stock) ---- */
+const overlayKardex = document.getElementById('overlayKardex');
+function abrirKardex(insumo){
+  const ini = suerosStockInicial && suerosStockInicial.items && Object.keys(suerosStockInicial.items).length ? suerosStockInicial : null;
+  const desde = ini ? (ini.fecha || STOCK_DESDE) : STOCK_DESDE;
+  const filas = [];
+  let saldo;
+  if(ini){
+    saldo = Number((ini.items[insumo]||{}).cant)||0;
+    filas.push({fecha:desde, tipo:'Stock inicial', det:'Conteo cargado', entra:saldo, sale:0, saldo});
+  } else {
+    const prev = calcularStock(desde).find(x=> x.insumo===insumo);
+    saldo = prev ? prev.cant : 0;
+    filas.push({fecha:desde, tipo:'Saldo anterior', det:'Calculado (no hay stock inicial cargado)', entra:0, sale:0, saldo});
+  }
+  sueros.filter(m=> m.fechaISO >= desde).forEach(m=>{
+    if(m.tipo==='egreso' || m.tipo==='ajuste'){
+      (m.items||[]).forEach(it=>{
+        if(it.insumo!==insumo) return;
+        const n = Number(it.cant)||0;
+        saldo += n;
+        filas.push({fecha:m.fechaISO, tipo: m.tipo==='egreso' ? 'Compra' : 'Ajuste (editar insumo)', det: m.tipo==='egreso' ? (m.tercero||'') : (m.detalle||''), entra: n>0?n:0, sale: n<0?-n:0, saldo, id:m.id});
+      });
+    } else if(m.tipo==='ingreso'){
+      let cant = 0, viaKit = 0;
+      (m.items||[]).forEach(it=>{
+        expandirKit([it], m.fechaISO).forEach(c=>{ if(c.insumo===insumo){ cant += c.cant; if(esVias(it.insumo) && !esVias(insumo)) viaKit += c.cant; } });
+      });
+      if(!cant) return;
+      saldo -= cant;
+      filas.push({fecha:m.fechaISO, tipo:'Aplicación', det:(m.tercero||'') + (viaKit ? ` (${viaKit} por VIAS Y OTROS INSUMOS)` : ''), entra:0, sale:cant, saldo});
+    }
+  });
+  const fila = calcularStock('9999-12-31').find(x=> x.insumo===insumo);
+  const tE = filas.slice(1).reduce((a,f)=> a+f.entra, 0), tS = filas.reduce((a,f)=> a+f.sale, 0);
+  document.getElementById('kardexTitulo').textContent = insumo;
+  document.getElementById('kardexBody').innerHTML = filas.map(f=> `<tr class="${f.tipo.startsWith('Ajuste') ? 'k-ajuste' : ''}">
+    <td>${fechaLarga(f.fecha)}</td><td class="left">${f.tipo}</td><td class="left">${f.det}</td>
+    <td>${f.entra ? '+' + f.entra.toLocaleString('es-AR') : ''}</td><td>${f.sale ? '−' + f.sale.toLocaleString('es-AR') : ''}</td>
+    <td><b>${f.saldo.toLocaleString('es-AR')}</b></td></tr>`).join('');
+  document.getElementById('kardexFoot').innerHTML = `<tr><td colspan="3" class="left">Stock actual</td><td>${tE ? '+' + tE.toLocaleString('es-AR') : ''}</td><td>${tS ? '−' + tS.toLocaleString('es-AR') : ''}</td><td><b>${(fila ? fila.cant : saldo).toLocaleString('es-AR')}</b></td></tr>`;
+  const hayAjustes = filas.some(f=> f.tipo.startsWith('Ajuste'));
+  document.getElementById('kardexAviso').classList.toggle('col-hidden', !hayAjustes);
+  overlayKardex.classList.add('show');
+}
+document.getElementById('closeKardex').onclick = ()=> overlayKardex.classList.remove('show');
+document.getElementById('kardexCerrar').onclick = ()=> overlayKardex.classList.remove('show');
+document.getElementById('sStockBody').addEventListener('click', e=>{
+  const td = e.target.closest('.k-link');
+  if(td) abrirKardex(td.dataset.k);
+});
 
 </script>
 </body>
