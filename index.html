@@ -1494,7 +1494,9 @@
  return ((u && u.nombre) || '').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[\s,]+/)[0];
  }
  function esCaja(u) { return !!u && (u.rol === 'admin' || USUARIOS_CAJA.includes(primerNombre(u))); }
- function cargaSueros(u) { return !!u && ((Array.isArray(u.secciones) && u.secciones.includes('sueros')) || primerNombre(u) === 'SABRINA'); }
+ // Por ahora sin Sueroterapia (solo Glosario), aunque tengan la sección cargada
+ const SIN_SUEROS = ['VICTORIA','LUCIANA'];
+ function cargaSueros(u) { if (!u || SIN_SUEROS.includes(primerNombre(u))) return false; return (Array.isArray(u.secciones) && (u.secciones.includes('sueros') || u.secciones.includes('sueros-informes'))) || primerNombre(u) === 'SABRINA'; }
  // Mantener sesión activa entre recargas
  onAuthStateChanged(auth, async (user) => {
  if (user) {

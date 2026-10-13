@@ -5145,8 +5145,10 @@ function esUsuarioCaja(){
   return USUARIOS_CAJA.includes(primerNombre());
 }
 // Quién carga aplicaciones de sueros: usuarios con secciones: ["sueros"] (o Sabrina)
+const SIN_SUEROS = ['VICTORIA','LUCIANA'];   // por ahora sin Sueroterapia (solo Glosario)
 function puedeCargarSueros(){
   if(!currentUser) return false;
+  if(SIN_SUEROS.includes(primerNombre())) return false;
   const sec = Array.isArray(currentUser.secciones) ? currentUser.secciones : [];
   return sec.includes('sueros') || sec.includes('sueros-informes') || primerNombre()==='SABRINA';
 }
