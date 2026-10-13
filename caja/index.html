@@ -298,6 +298,9 @@
   .csi-fila .codigo{color:var(--muted);font-size:11px;}
   .csi-fila input{padding:5px 8px;text-align:right;font-weight:700;}
   .tabla-stock td.neg{color:#a13a3a;}
+  .cc-det-lbl{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;}
+  .cc-det-lbl input{width:auto;accent-color:var(--accent);}
+  .deuda-ayuda{font-size:11px;color:var(--muted);margin-bottom:6px;}
   .c-quitar{border:none;background:none;color:#c62828;font-size:12px;cursor:pointer;opacity:.45;padding:4px 6px;}
   .c-quitar:hover{opacity:1;}
   .tabla-stock input.c-precio{width:100%;padding:4px 8px;font-size:11.5px;border-radius:6px;text-align:right;font-weight:700;}
@@ -1009,7 +1012,7 @@
           <button class="btn col-hidden" id="btnProveedoresPanel"><span class="side-icon">👨🏻‍💼</span> Proveedores</button>
           <button class="btn btn-deudores" id="btnDeudores"><span class="side-icon">🕵🏻‍♂️</span> Deudores <span class="badge-count col-hidden" id="deudoresCount">0</span></button>
           <button class="btn col-hidden" id="btnSueros"><span class="side-icon">💉</span> Sueros</button>
-          <button class="btn col-hidden" id="btnCremas"><span class="side-icon">🧴</span> Cremas/Colágenos</button>
+          <button class="btn col-hidden" id="btnCremas"><span class="side-icon">🧴</span> Cremas/Colágenos/Geles</button>
           <button class="btn col-hidden" id="btnInformes"><span class="side-icon">📊</span> Informes</button>
           <button class="btn" id="btnReporteDiario"><span class="side-icon">🧾</span> Reporte diario</button>
           <button class="btn" id="btnPagoProfesional"><span class="side-icon">🧮</span> Calcular pago profesional</button>
@@ -1203,8 +1206,10 @@
         <button id="cMesNext" title="Mes siguiente">▶</button>
       </div>
       <div class="s-tabs" role="tablist" aria-label="Cremas y colágenos">
-        <button class="s-tab c-tab active" data-ctab="movs" role="tab">Movimientos cremas/colágenos</button>
-        <button class="s-tab c-tab" data-ctab="stock" role="tab">Stock</button>
+        <button class="s-tab c-tab active" data-ctab="stock" role="tab">Stock</button>
+        <button class="s-tab c-tab" data-ctab="crema" role="tab">Cremas</button>
+        <button class="s-tab c-tab" data-ctab="colageno" role="tab">Colágenos</button>
+        <button class="s-tab c-tab" data-ctab="gel" role="tab">Geles</button>
       </div>
       <div style="justify-self:end;"><button class="btn s-cfg-btn" id="cBtnStockIni" title="Cargar el conteo inicial de cada producto">📦 Stock inicial</button></div>
     </div>
@@ -2347,7 +2352,7 @@ function iniciarListeners(){
     snap.docs.forEach(d=>{
       const c = d.data();
       if(!CONCEPTOS[c.profesional]) CONCEPTOS[c.profesional] = [];
-      CONCEPTOS[c.profesional].push({concepto: c.concepto, codigo: c.codigo||"", tipo: c.tipo||"ingreso"});
+      CONCEPTOS[c.profesional].push({concepto: c.concepto, codigo: c.codigo||"", tipo: c.tipo||"ingreso", detObligatorio: !!c.detObligatorio});
       CODIGO_POR_CONCEPTO[c.profesional+"||"+c.concepto] = c.codigo||"";
       TIPO_POR_CONCEPTO[c.profesional+"||"+c.concepto] = c.tipo||"ingreso";
     });
@@ -3104,18 +3109,20 @@ btnEliminar.onclick = async ()=>{
       const ref = db.collection('movimientos').doc(editingId);
       const snap = await ref.get();
       const datos = snap.exists ? snap.data() : null;
-      if(datos && datos.saldaDeuda){
-        // este movimiento había saldado una deuda de otro registro: la revertimos a "Debe"
-        const { movId, idx } = datos.saldaDeuda;
-        const refDeuda = db.collection('movimientos').doc(movId);
-        const snapDeuda = await refDeuda.get();
-        if(snapDeuda.exists){
-          const md = snapDeuda.data();
-          const pagosDeuda = pagosDe(md).slice();
-          if(pagosDeuda[idx]){
-            pagosDeuda[idx] = {...pagosDeuda[idx], saldada:false, fechaSaldadoISO:null, fechaSaldadoDisplay:null, saldadoPorMovId:null};
-            await refDeuda.update({ pagos: pagosDeuda, tieneDeudaPendiente: tieneDeudaPendiente(pagosDeuda) });
-          }
+      if(datos && (datos.saldaDeuda || (datos.saldaDeudas||[]).length)){
+        // este movimiento había saldado deudas de otros registros: las revertimos a "Debe"
+        const lista = (datos.saldaDeudas && datos.saldaDeudas.length) ? datos.saldaDeudas : [datos.saldaDeuda];
+        const porMov = {};
+        lista.forEach(d=> (porMov[d.movId] = porMov[d.movId] || []).push(d.idx));
+        for(const movId of Object.keys(porMov)){
+          const refDeuda = db.collection('movimientos').doc(movId);
+          const snapDeuda = await refDeuda.get();
+          if(!snapDeuda.exists) continue;
+          const pagosDeuda = pagosDe(snapDeuda.data()).slice();
+          porMov[movId].forEach(idx=>{
+            if(pagosDeuda[idx]) pagosDeuda[idx] = {...pagosDeuda[idx], saldada:false, fechaSaldadoISO:null, fechaSaldadoDisplay:null, saldadoPorMovId:null};
+          });
+          await refDeuda.update({ pagos: pagosDeuda, tieneDeudaPendiente: tieneDeudaPendiente(pagosDeuda) });
         }
       }
       await ref.delete();
@@ -3157,9 +3164,9 @@ function refreshDeudasPaciente(){
     box.classList.add('col-hidden'); lista.innerHTML=""; return;
   }
   box.classList.remove('col-hidden');
-  lista.innerHTML = pendientes.map(d=>`
+  lista.innerHTML = (pendientes.length > 1 ? '<div class="deuda-ayuda">Podés marcar varias. El total puede quedar en 0 si se saldaron de otra forma (explicalo en el detalle).</div>' : '') + pendientes.map(d=>`
     <div class="deuda-mini">
-      <label><input type="radio" name="saldarDeuda" value="${d.movId}::${d.idx}"> Saldar "${d.concepto}" del ${d.fechaDisplay} — ${fmtMonto(d.valor, d.moneda)}</label>
+      <label><input type="checkbox" name="saldarDeuda" value="${d.movId}::${d.idx}"> Saldar "${d.concepto}" del ${d.fechaDisplay} — ${fmtMonto(d.valor, d.moneda)}</label>
       ${d.notas ? `<div class="det">${d.notas}</div>` : ""}
     </div>
   `).join('');
@@ -3167,13 +3174,16 @@ function refreshDeudasPaciente(){
 
 document.getElementById('deudasPacienteLista').addEventListener('change', (e)=>{
   if(!e.target.matches('input[name="saldarDeuda"]')) return;
-  const [movId, idxStr] = e.target.value.split('::');
-  const deuda = movimientosDeuda.find(d=> d.movId===movId && d.idx===Number(idxStr));
-  if(!deuda) return;
-  selProfesional.value = deuda.prof;
+  const elegidas = [...document.querySelectorAll('input[name="saldarDeuda"]:checked')].map(inp=>{
+    const [movId, idxStr] = inp.value.split('::');
+    return movimientosDeuda.find(d=> d.movId===movId && d.idx===Number(idxStr));
+  }).filter(Boolean);
+  if(!elegidas.length) return;
+  selProfesional.value = elegidas[0].prof;
   actualizarSoloConceptos();
   selConcepto.disabled = false;
-  selConcepto.value = `Salda deuda del ${deuda.fechaDisplay}`;
+  const fechas = [...new Set(elegidas.map(d=> d.fechaDisplay))];
+  selConcepto.value = elegidas.length===1 ? `Salda deuda del ${elegidas[0].fechaDisplay}` : `Salda deudas del ${fechas.join(', ')}`;
 });
 
 document.querySelectorAll('.currency-toggle button').forEach(btn=>{
@@ -3206,6 +3216,12 @@ btnGuardarMov.onclick = async ()=>{
   if(!pacValor){ alert(egreso ? "Ingresá a quién se le paga." : "Elegí un paciente/alumno."); return; }
   if(!selProfesional.value){ alert("Elegí un profesional/área."); return; }
   if(!selConcepto.value){ alert("Elegí un concepto."); return; }
+  const conceptoCat = (CONCEPTOS[selProfesional.value]||[]).find(c=> c.concepto===selConcepto.value);
+  if(conceptoCat && conceptoCat.detObligatorio && !document.getElementById('inpNotas').value.trim()){
+    alert("Detalle obligatorio en este concepto.");
+    document.getElementById('inpNotas').focus();
+    return;
+  }
   const valorNum = Number(inpValor.value.replace(/\D/g,""));
   if(inpValor.value.trim() === "" || isNaN(valorNum)){ alert("Ingresá un total (puede ser 0)."); return; }
 
@@ -3226,7 +3242,10 @@ btnGuardarMov.onclick = async ()=>{
     return;
   }
 
-  const radioSaldar = document.querySelector('input[name="saldarDeuda"]:checked');
+  const deudasASaldar = [...document.querySelectorAll('input[name="saldarDeuda"]:checked')].map(inp=>{
+    const [movId, idxStr] = inp.value.split('::');
+    return {movId, idx: Number(idxStr)};
+  });
   const fechaISO = document.getElementById('inpFechaMovimiento').value || hoyISO();
   if(!document.getElementById('inpFechaMovimiento').value){ alert("Elegí una fecha."); return; }
   const fechaDisplay = isoToDisplay(fechaISO);
@@ -3263,25 +3282,25 @@ btnGuardarMov.onclick = async ()=>{
     nuevoMovId = nuevoRef.id;
   }
 
-  if(radioSaldar){
-    const [movId, idxStr] = radioSaldar.value.split('::');
-    const idx = Number(idxStr);
-    const ref = db.collection('movimientos').doc(movId);
-    const snap = await ref.get();
-    if(snap.exists){
-      const md = snap.data();
-      const pagosDeuda = pagosDe(md).slice();
-      if(pagosDeuda[idx]){
+  if(deudasASaldar.length){
+    // se agrupan por movimiento (un mismo registro puede tener varias partes en "Debe")
+    const porMov = {};
+    deudasASaldar.forEach(d=> (porMov[d.movId] = porMov[d.movId] || []).push(d.idx));
+    const saldadas = [];
+    for(const movId of Object.keys(porMov)){
+      const ref = db.collection('movimientos').doc(movId);
+      const snap = await ref.get();
+      if(!snap.exists) continue;
+      const pagosDeuda = pagosDe(snap.data()).slice();
+      porMov[movId].forEach(idx=>{
+        if(!pagosDeuda[idx]) return;
         pagosDeuda[idx] = {...pagosDeuda[idx], saldada:true, fechaSaldadoISO:fechaISO, fechaSaldadoDisplay:fechaDisplay, saldadoPorMovId:nuevoMovId};
-        await ref.update({
-          pagos: pagosDeuda, tieneDeudaPendiente: tieneDeudaPendiente(pagosDeuda),
-        });
-        // guardamos en el movimiento nuevo qué deuda saldó, para poder revertirla si este movimiento se borra
-        await db.collection('movimientos').doc(nuevoMovId).update({
-          saldaDeuda: {movId, idx},
-        });
-      }
+        saldadas.push({movId, idx});
+      });
+      await ref.update({ pagos: pagosDeuda, tieneDeudaPendiente: tieneDeudaPendiente(pagosDeuda) });
     }
+    // guardamos en el movimiento nuevo qué deudas saldó, para poder revertirlas si este movimiento se borra
+    if(saldadas.length) await db.collection('movimientos').doc(nuevoMovId).update({ saldaDeuda: saldadas[0], saldaDeudas: saldadas });
   }
 
   cerrarModal();
@@ -5623,7 +5642,7 @@ document.getElementById('aEliminar').onclick = async ()=>{
      cremas/{idMovimiento} → { indica, cot }
      cremas/_stock         → { productos: { CODIGO: { venta, costo } } }   (USD)
    ===================================================================== */
-let cTab = 'movs';
+let cTab = 'stock';
 let mesCremas = { year: hoyRef.getFullYear(), month: hoyRef.getMonth()+1 };
 let cremasMovsMes = [];          // movimientos diarios del mes elegido (si no es el mes de la tabla principal)
 let cremasMesCargado = null;
@@ -5636,8 +5655,13 @@ const PARTICULAR = 'PARTICULAR';
 const fmtUsd = v => 'US$ ' + Number(v).toLocaleString('es-AR', {maximumFractionDigits: 2});
 const parseDecimal = v => { const n = Number(String(v||'').replace(/\./g,'').replace(',','.')); return isNaN(n) ? 0 : n; };
 
-function esColageno(prof){ return normBusqueda(prof).includes('colag'); }
-function esProfCremas(prof){ const n = normBusqueda(prof); return n.includes('crema') || n.includes('colag'); }
+// Tipo de producto según el área: crema (USD), colágeno o gel (costo en pesos)
+function esGel(prof){ return /(^|[^a-z])gel(es)?([^a-z]|$)/.test(normBusqueda(prof)); }
+function tipoProductoCrema(prof){ const n = normBusqueda(prof); return n.includes('colag') ? 'colageno' : (esGel(prof) ? 'gel' : 'crema'); }
+function esColageno(prof){ return normBusqueda(prof).includes('colag') || esGel(prof); }   // "en pesos": colágenos y geles
+function esProfCremas(prof){ const n = normBusqueda(prof); return n.includes('crema') || n.includes('colag') || esGel(prof); }
+// Lo que no es una venta: saldar deudas (marcadas o con concepto "SALDA DEUDA")
+const esSaldaDeudaCrema = m => !!m.saldaDeuda || (m.saldaDeudas||[]).length > 0 || normBusqueda(m.concepto||'').includes('salda deuda');
 function cMesInicio(){ return `${mesCremas.year}-${String(mesCremas.month).padStart(2,'0')}-01`; }
 function cMesFin(){ let y = mesCremas.year, m = mesCremas.month+1; if(m>12){ m=1; y++; } return `${y}-${String(m).padStart(2,'0')}-01`; }
 function cEsMesTabla(){ return mesCremas.year===mesActual.year && mesCremas.month===mesActual.month; }
@@ -5674,7 +5698,7 @@ async function cargarMovsCremas(){
 function movimientosCremas(){
   const base = cEsMesTabla() ? movimientos : cremasMovsMes;
   return base
-    .filter(m=> esProfCremas(m.prof) && !m.saldaDeuda && !esEgreso(m.prof, m.concepto))
+    .filter(m=> esProfCremas(m.prof) && !esSaldaDeudaCrema(m) && !esEgreso(m.prof, m.concepto) && tipoProductoCrema(m.prof)===cTab)
     .sort((a,b)=> a.fechaISO===b.fechaISO ? 0 : (a.fechaISO < b.fechaISO ? -1 : 1));
 }
 // Cuentas de cada fila
@@ -5706,9 +5730,9 @@ function renderCremas(){
   document.getElementById('cMesLabel').textContent = `${MESES[mesCremas.month-1]} ${mesCremas.year}`;
   document.getElementById('cMesNext').disabled = mesCremas.year===hoyRef.getFullYear() && mesCremas.month===(hoyRef.getMonth()+1);
   document.querySelectorAll('.c-tab[data-ctab]').forEach(b=> b.classList.toggle('active', b.dataset.ctab===cTab));
-  document.getElementById('cPanelMovs').classList.toggle('col-hidden', cTab!=='movs');
+  document.getElementById('cPanelMovs').classList.toggle('col-hidden', cTab==='stock');
   document.getElementById('cPanelStock').classList.toggle('col-hidden', cTab!=='stock');
-  if(cTab==='movs') renderCremasMovs(); else { if(cremasVentas==null) cargarVentasCremas(); renderCremasStock(); }
+  if(cTab!=='stock') renderCremasMovs(); else { if(cremasVentas==null) cargarVentasCremas(); renderCremasStock(); }
 }
 
 /* ---- Pestaña: movimientos cremas/colágenos ---- */
@@ -5726,7 +5750,7 @@ function renderCremasMovs(){
       && (!f('cfIndica') || contiene(c.indica, f('cfIndica')));
   });
   if(!filas.length){
-    tb.innerHTML = `<tr><td colspan="13" class="empty-state">No hay movimientos de cremas o colágenos en este mes.</td></tr>`;
+    tb.innerHTML = `<tr><td colspan="13" class="empty-state">No hay ventas de ${({crema:'cremas', colageno:'colágenos', gel:'geles'})[cTab]} en este mes.</td></tr>`;
     tf.innerHTML = ''; return;
   }
   const profs = [PARTICULAR, ...todosLosNombresDeProfesionales().filter(n=> !esProfCremas(n))];
@@ -5798,7 +5822,7 @@ function stockProducto(clave){
   const c = cremasInicial.cantidades || {};
   if(c[clave]==null || c[clave]==='') return null;
   const desde = cremasInicial.fecha || '0000-00-00';
-  const vendidos = (cremasVentas||[]).filter(m=> claveProducto(m)===clave && m.fechaISO>=desde && !m.saldaDeuda && !esEgreso(m.prof, m.concepto)).length;
+  const vendidos = (cremasVentas||[]).filter(m=> claveProducto(m)===clave && m.fechaISO>=desde && !esSaldaDeudaCrema(m) && !esEgreso(m.prof, m.concepto)).length;
   return Number(c[clave]) - vendidos;
 }
 function stockTxt(clave){
@@ -5874,7 +5898,7 @@ function renderCremasStock(){
   if(document.activeElement && tb.contains(document.activeElement)) return;
   const q = document.getElementById('cfStock').value;
   const lista = productosCremas().filter(p=> !q || contiene(p.codigo+' '+p.nombre, q));
-  if(!lista.length){ tb.innerHTML = `<tr><td colspan="7" class="empty-state">No hay productos de cremas o colágenos en Conceptos.</td></tr>`; return; }
+  if(!lista.length){ tb.innerHTML = `<tr><td colspan="7" class="empty-state">No hay productos de cremas, colágenos o geles en Conceptos.</td></tr>`; return; }
   tb.innerHTML = lista.map(p=>{
     const s = cremasStock[p.clave] || {};
     return `<tr>
@@ -6793,7 +6817,7 @@ buscarConceptoInput.addEventListener('input', renderConceptosBusqueda);
 function todosLosConceptos(){
   const lista = [];
   Object.keys(CONCEPTOS).forEach(prof=>{
-    CONCEPTOS[prof].forEach(c=> lista.push({profesional: prof, concepto: c.concepto, codigo: c.codigo, tipo: c.tipo||"ingreso"}));
+    CONCEPTOS[prof].forEach(c=> lista.push({profesional: prof, concepto: c.concepto, codigo: c.codigo, tipo: c.tipo||"ingreso", detObligatorio: !!c.detObligatorio}));
   });
   return lista.sort((a,b)=> a.profesional.localeCompare(b.profesional,'es') || (a.codigo||"").localeCompare(b.codigo||"",'es',{numeric:true}));
 }
@@ -6811,6 +6835,7 @@ function filaConceptoHTML(c, esNueva){
         <option value="ingreso" ${c.tipo!=='egreso'?'selected':''}>Ingreso</option>
         <option value="egreso" ${c.tipo==='egreso'?'selected':''}>Egreso</option>
       </select>
+      <label class="cc-det-lbl" title="Si está marcado, no se puede guardar un movimiento de este concepto sin detalle"><input type="checkbox" class="cc-det" ${c.detObligatorio?'checked':''}> Det.</label>
       <button class="btn-guardar-fila" onclick="${esNueva ? 'crearConceptoFila(this)' : 'guardarConceptoFila(this)'}">${esNueva ? "Crear" : "Guardar"}</button>
       ${esNueva ? "" : `<button class="btn-eliminar-fila" onclick="eliminarConceptoFila(this)" title="Eliminar">✕</button>`}
     </div>
@@ -6834,11 +6859,12 @@ async function crearConceptoFila(btn){
   const concepto = fila.querySelector('.cc-concepto').value.trim();
   const codigo = fila.querySelector('.cc-codigo').value.trim();
   const tipo = fila.querySelector('.cc-tipo').value;
+  const detObligatorio = fila.querySelector('.cc-det').checked;
   if(!profesional){ alert("Elegí un profesional/área (creá uno primero en Profesionales/Áreas si no existe)."); return; }
   if(!concepto){ alert("El concepto no puede quedar vacío."); return; }
   btn.disabled = true; btn.textContent = "Creando…";
   try{
-    await db.collection('conceptos').add({profesional, concepto, codigo, tipo});
+    await db.collection('conceptos').add({profesional, concepto, codigo, tipo, detObligatorio});
     mostrarNuevoConcepto = false;
   }catch(e){
     alert("No se pudo crear: " + e.message);
@@ -6855,6 +6881,7 @@ async function guardarConceptoFila(btn){
   const concepto = fila.querySelector('.cc-concepto').value.trim();
   const codigo = fila.querySelector('.cc-codigo').value.trim();
   const tipo = fila.querySelector('.cc-tipo').value;
+  const detObligatorio = fila.querySelector('.cc-det').checked;
   if(!concepto){ alert("El concepto no puede quedar vacío."); return; }
   const txtOriginal = btn.textContent;
   btn.disabled = true; btn.textContent = "Guardando…";
@@ -6864,7 +6891,7 @@ async function guardarConceptoFila(btn){
       .where('concepto','==', conceptoOriginal)
       .limit(1).get();
     if(snap.empty){ throw new Error("No encontré el concepto original en la base."); }
-    await snap.docs[0].ref.update({profesional, concepto, codigo, tipo});
+    await snap.docs[0].ref.update({profesional, concepto, codigo, tipo, detObligatorio});
     fila.dataset.profesionalOriginal = profesional;
     fila.dataset.conceptoOriginal = concepto;
     btn.textContent = "¡Guardado!";
