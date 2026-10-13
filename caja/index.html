@@ -300,6 +300,7 @@
   .tabla-stock td.neg{color:#a13a3a;}
   .cc-det-lbl{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;}
   .cc-det-lbl input{width:auto;accent-color:var(--accent);}
+  .p-cuenta{font-weight:700;color:var(--muted);}
   .deuda-ayuda{font-size:11px;color:var(--muted);margin-bottom:6px;}
   .c-quitar{border:none;background:none;color:#c62828;font-size:12px;cursor:pointer;opacity:.45;padding:4px 6px;}
   .c-quitar:hover{opacity:1;}
@@ -844,10 +845,11 @@
     </div>
     <div class="sheet-wrap">
       <table class="tabla-mov" style="min-width:720px;">
-        <colgroup><col style="width:34px"><col style="width:82px"><col style="width:64px"><col style="width:26%"><col><col style="width:24%"></colgroup>
+        <colgroup><col style="width:34px"><col style="width:40px"><col style="width:82px"><col style="width:64px"><col style="width:26%"><col><col style="width:24%"></colgroup>
         <thead>
           <tr>
             <th class="editcol"></th>
+            <th title="Cantidad de aplicaciones en la vista"><div class="th-search">#</div></th>
             <th><div class="th-search">Fecha</div></th>
             <th><div class="th-search">N°</div></th>
             <th><div class="th-search th-search-left">Paciente</div></th>
@@ -5240,18 +5242,19 @@ function renderPortalSueros(){
   const num = numerosDeAplicacion();
   const delDia = aplicacionesSueros().filter(m=> m.fechaISO>=desde && m.fechaISO<=hasta);
   if(!delDia.length){
-    tb.innerHTML = `<tr><td colspan="6" class="empty-state">${desde===hasta ? 'No hay aplicaciones cargadas este día.' : 'No hay aplicaciones cargadas en estas fechas.'}</td></tr>`;
+    tb.innerHTML = `<tr><td colspan="7" class="empty-state">${desde===hasta ? 'No hay aplicaciones cargadas este día.' : 'No hay aplicaciones cargadas en estas fechas.'}</td></tr>`;
   } else {
-    tb.innerHTML = delDia.map(m=>`
+    tb.innerHTML = delDia.map((m, i)=>`
       <tr>
         <td class="editcol"><button class="editbtn" title="Editar" onclick="abrirAplic('${m.id}')">&#9998;</button></td>
+        <td class="p-cuenta">${i+1}</td>
         <td>${fechaLarga(m.fechaISO)}</td>
         <td><span class="p-num">${num[m.id]}</span></td>
         <td class="left">${m.tercero||''}</td>
         <td class="concepto">${insumosHTML(m) || '<span class="pend">—</span>'}</td>
         <td class="notas">${m.notas||''}</td>
       </tr>`).join('');
-    ajustarColumna(document.querySelector('#pSueros col:nth-child(4)'), delDia.map(m=> m.tercero), '500 10.5px Montserrat, sans-serif', 26);
+    ajustarColumna(document.querySelector('#pSueros col:nth-child(5)'), delDia.map(m=> m.tercero), '500 10.5px Montserrat, sans-serif', 26);
   }
   if(document.getElementById('overlayPPacientes').classList.contains('show')) renderPortalPacientes();
 }
