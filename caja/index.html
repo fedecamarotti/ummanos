@@ -5841,12 +5841,10 @@ function renderCremasMovs(){
     tb.innerHTML = `<tr><td colspan="15" class="empty-state">No hay ventas de ${nombreTipo} desde el 20/8/2026.</td></tr>`;
     tf.innerHTML = ''; return;
   }
-  // Grupos: cada línea de pago agrupa sus ventas; lo que no está en ninguna queda abajo, pendiente
-  const lineas = cremasPagos.filter(l=> l.tipo===cTab);
-  const asignada = {};
-  lineas.forEach(l=> (l.ids||[]).forEach(id=> asignada[id] = l.id));
-  const grupos = lineas.map(l=> ({linea:l, ventas: delTipo.filter(m=> asignada[m.id]===l.id)}));
-  const pendientes = delTipo.filter(m=> !asignada[m.id]);
+  // Grupos por fecha: cada línea de pago toma las ventas desde la línea anterior hasta su fecha de pago (inclusive)
+  const grupos = gruposDePago(delTipo, cTab);
+  const ultima = grupos.length ? grupos[grupos.length-1].linea.fechaPago : '';
+  const pendientes = delTipo.filter(m=> m.fechaISO > ultima);
   const profs = [PARTICULAR, ...todosLosNombresDeProfesionales().filter(n=> !esProfCremas(n))];
   const sumas = vs=> vs.reduce((a,m)=>{ const c = calcularCrema(m); a.pago += c.pago; a.pagar += c.aPagar||0; a.prof += c.prof||0; a.umm += c.ummana||0; return a; }, {pago:0, pagar:0, prof:0, umm:0});
   const filaVenta = m=>{
@@ -5920,26 +5918,45 @@ function renderCremasMovs(){
 }
 
 /* ---- Línea de pago ---- */
+// Agrupa por fecha: cada línea toma las ventas con fecha posterior a la línea anterior y hasta su fecha de pago
+function gruposDePago(ventas, tipo, lineas){
+  lineas = (lineas || cremasPagos).filter(l=> l.tipo===tipo).slice().sort((a,b)=> a.fechaPago < b.fechaPago ? -1 : (a.fechaPago > b.fechaPago ? 1 : 0));
+  let prev = '';
+  return lineas.map(l=>{
+    const g = {linea:l, ventas: ventas.filter(m=> m.fechaISO > prev && m.fechaISO <= l.fechaPago)};
+    prev = l.fechaPago;
+    return g;
+  });
+}
 const overlayCLinea = document.getElementById('overlayCLinea');
 let cLineaEdit = null;
-function pendientesDelTipo(){
-  const asignadas = new Set();
-  cremasPagos.filter(l=> l.tipo===cTab).forEach(l=> (l.ids||[]).forEach(id=> asignadas.add(id)));
-  return ventasCremasTodas().filter(m=> tipoProductoCrema(m.prof)===cTab && !asignadas.has(m.id));
+function lineasConFecha(fecha){
+  return cLineaEdit ? cremasPagos.map(l=> l.id===cLineaEdit ? {...l, fechaPago: fecha} : l)
+                    : [...cremasPagos, {id:'__nueva', tipo:cTab, fechaPago: fecha}];
+}
+function resumenLineaPago(){
+  const fecha = document.getElementById('clFecha').value;
+  const cont = document.getElementById('clResumen');
+  if(!fecha){ cont.textContent = 'Elegí la fecha de pago.'; return; }
+  const ventas = ventasCremasTodas().filter(m=> tipoProductoCrema(m.prof)===cTab);
+  const g = gruposDePago(ventas, cTab, lineasConFecha(fecha)).find(x=> x.linea.id===(cLineaEdit || '__nueva'));
+  const vs = g ? g.ventas : [];
+  const aPagar = vs.reduce((a,m)=> a + (calcularCrema(m).aPagar||0), 0);
+  const renta = vs.reduce((a,m)=> a + (calcularCrema(m).ummana||0), 0);
+  cont.innerHTML = vs.length
+    ? `Toma las <b>${vs.length}</b> ${vs.length===1?'venta':'ventas'} de ${({crema:'cremas', colageno:'colágenos', gel:'geles'})[cTab]} hasta el ${fechaLarga(fecha)} (desde la línea de pago anterior). A pagar: <b>${fmtPesos(aPagar)}</b> · Renta Ummana: <b>${fmtPesos(renta)}</b>.`
+    : `No hay ventas entre la línea de pago anterior y el ${fechaLarga(fecha)}.`;
 }
 function abrirLineaPago(idEditar){
   if(!esFede()) return;
   cLineaEdit = idEditar || null;
   const l = idEditar ? cremasPagos.find(x=> x.id===idEditar) : null;
-  const vs = l ? ventasCremasTodas().filter(m=> (l.ids||[]).includes(m.id)) : pendientesDelTipo();
-  if(!l && !vs.length){ alert("No hay ventas pendientes desde la última línea de pago."); return; }
-  const aPagar = vs.reduce((a,m)=> a + (calcularCrema(m).aPagar||0), 0);
-  const renta = vs.reduce((a,m)=> a + (calcularCrema(m).ummana||0), 0);
   document.getElementById('clTitulo').textContent = l ? 'Editar línea de pago' : 'Nueva línea de pago';
-  document.getElementById('clResumen').innerHTML = `${l ? 'Esta línea agrupa' : 'Agrupa las'} <b>${vs.length}</b> ${vs.length===1?'venta':'ventas'} de ${({crema:'cremas', colageno:'colágenos', gel:'geles'})[cTab]}${l ? '' : ' cargadas desde el último pago'}. A pagar: <b>${fmtPesos(aPagar)}</b> · Renta Ummana: <b>${fmtPesos(renta)}</b>.`;
   document.getElementById('clFecha').value = l ? l.fechaPago : hoyISO();
+  resumenLineaPago();
   overlayCLinea.classList.add('show');
 }
+document.getElementById('clFecha').addEventListener('change', resumenLineaPago);
 document.getElementById('cBtnLinea').onclick = ()=> abrirLineaPago(null);
 const cerrarCLinea = ()=> overlayCLinea.classList.remove('show');
 document.getElementById('closeCLinea').onclick = cerrarCLinea;
@@ -5948,13 +5965,10 @@ document.getElementById('clGuardar').onclick = async ()=>{
   if(!esFede()) return;
   const fechaPago = document.getElementById('clFecha').value;
   if(!fechaPago){ alert("Elegí la fecha de pago."); return; }
-  let nuevas;
-  if(cLineaEdit) nuevas = cremasPagos.map(l=> l.id===cLineaEdit ? {...l, fechaPago} : l);
-  else {
-    const ids = pendientesDelTipo().map(m=> m.id);
-    if(!ids.length){ alert("No hay ventas pendientes."); return; }
-    nuevas = [...cremasPagos, {id: Date.now().toString(36), tipo: cTab, fechaPago, ids}];
-  }
+  if(cremasPagos.some(l=> l.tipo===cTab && l.fechaPago===fechaPago && l.id!==cLineaEdit)){ alert("Ya hay una línea de pago en esa fecha."); return; }
+  const nuevas = cLineaEdit
+    ? cremasPagos.map(l=> l.id===cLineaEdit ? {id:l.id, tipo:l.tipo, fechaPago} : l)
+    : [...cremasPagos, {id: Date.now().toString(36), tipo: cTab, fechaPago}];
   try{
     await db.collection('cremas').doc('_pagos').set({lineas: nuevas});
     cremasPagos = nuevas;
