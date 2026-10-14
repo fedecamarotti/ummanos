@@ -1262,18 +1262,18 @@
     </div>
 
     <div class="s-panel col-hidden" id="cPanelStock">
-      <div class="s-caption">Cremas: venta y costo en dólares. Colágenos: costo en pesos.</div>
+      <div class="s-caption">Cremas: venta y costo en dólares. Colágenos y geles: costo en pesos.</div>
       <div class="sheet-wrap" style="flex:0 1 auto;width:calc(100% - 56px);max-width:900px;margin:6px auto 20px;">
         <table class="tabla-stock">
           <colgroup><col style="width:90px"><col><col style="width:120px"><col style="width:120px"><col style="width:120px"><col style="width:80px"><col style="width:44px"></colgroup>
           <thead>
             <tr>
-              <th><div class="th-search">Código</div></th>
+              <th><input type="text" class="th-search" id="cfsCodigo" placeholder="Código" autocomplete="off"></th>
               <th><input type="text" class="th-search th-search-left" id="cfStock" placeholder="Producto" autocomplete="off" style="padding-left:14px;"></th>
-              <th><div class="th-search">Área</div></th>
-              <th><div class="th-search">Venta USD</div></th>
-              <th><div class="th-search">Costo</div></th>
-              <th><div class="th-search">Stock</div></th>
+              <th><input type="text" class="th-search" id="cfsArea" placeholder="Área" autocomplete="off"></th>
+              <th><input type="text" class="th-search" id="cfsVenta" placeholder="Venta USD" autocomplete="off"></th>
+              <th><input type="text" class="th-search" id="cfsCosto" placeholder="Costo" autocomplete="off"></th>
+              <th><input type="text" class="th-search" id="cfsStock" placeholder="Stock" autocomplete="off"></th>
               <th class="editcol"></th>
             </tr>
           </thead>
@@ -5745,7 +5745,7 @@ document.getElementById('cMesPrev').onclick = ()=>{ mesCremas.month--; if(mesCre
 document.getElementById('cMesNext').onclick = ()=>{ mesCremas.month++; if(mesCremas.month>12){ mesCremas.month=1; mesCremas.year++; } cargarMovsCremas(); renderCremas(); };
 document.querySelectorAll('.c-tab[data-ctab]').forEach(b=> b.onclick = ()=>{ cTab = b.dataset.ctab; renderCremas(); });
 ['cfFecha','cfPaciente','cfCodigo','cfConcepto','cfIndica'].forEach(id=> document.getElementById(id).addEventListener('input', renderCremas));
-document.getElementById('cfStock').addEventListener('input', renderCremasStock);
+['cfStock','cfsCodigo','cfsArea','cfsVenta','cfsCosto','cfsStock'].forEach(id=> document.getElementById(id).addEventListener('input', renderCremasStock));
 
 function renderCremas(){
   if(vistaActual!=='cremas') return;
@@ -5919,7 +5919,18 @@ function renderCremasStock(){
   const tb = document.getElementById('cStockBody');
   if(document.activeElement && tb.contains(document.activeElement)) return;
   const q = document.getElementById('cfStock').value;
-  const lista = productosCremas().filter(p=> !q || contiene(p.codigo+' '+p.nombre, q));
+  const fv = id => document.getElementById(id).value;
+  const lista = productosCremas().filter(p=>{
+    const s = cremasStock[p.clave] || {};
+    const pesos = esColageno(p.prof);
+    const stockPlano = (stockTxt(p.clave).txt || '').replace(/<[^>]*>/g,'');
+    return (!q || contiene(p.codigo+' '+p.nombre, q))
+      && (!fv('cfsCodigo') || contiene(p.codigo, fv('cfsCodigo')))
+      && (!fv('cfsArea') || contiene(p.prof, fv('cfsArea')))
+      && (!fv('cfsVenta') || contiene(pesos ? '' : precioTxt(s.venta,'usd'), fv('cfsVenta')))
+      && (!fv('cfsCosto') || contiene(precioTxt(s.costo, pesos ? 'ars' : 'usd'), fv('cfsCosto')))
+      && (!fv('cfsStock') || contiene(stockPlano, fv('cfsStock')));
+  });
   if(!lista.length){ tb.innerHTML = `<tr><td colspan="7" class="empty-state">No hay productos de cremas, colágenos o geles en Conceptos.</td></tr>`; return; }
   tb.innerHTML = lista.map(p=>{
     const s = cremasStock[p.clave] || {};
