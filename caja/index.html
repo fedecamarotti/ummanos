@@ -216,6 +216,10 @@
   .s-tab-nuevo{background:#c9b183;color:#3a2f1c;font-weight:700;}
   .s-tab-nuevo:hover{background:#bfa473;color:#3a2f1c;}
   .s-tab:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  .fede-nav{display:flex;justify-content:center;margin:14px 28px 0;flex:none;}
+  body.fede-nav-on #vistaSueros > .sueros-bar, body.fede-nav-on #vistaCremas > .sueros-bar{margin-top:8px;}
+  body.fede-nav-on #vistaSueros .sueros-bar .s-tab, body.fede-nav-on #vistaCremas .sueros-bar .s-tab{padding:5px 12px;font-size:11px;}
+  body.fede-nav-on #vistaSueros .sueros-bar .s-tabs, body.fede-nav-on #vistaCremas .sueros-bar .s-tabs{padding:2px;border-radius:9px;}
   .s-panel{flex:1;min-height:0;display:flex;flex-direction:column;}
   .s-panel > .sheet-wrap{flex:1;min-height:0;overflow:auto;margin-bottom:20px;overscroll-behavior:contain;}
   .s-panel > .sheet-wrap thead th{z-index:3;}
@@ -1165,6 +1169,7 @@
 
    <!-- ============ VISTA: SUEROS (solo Fede) ============ -->
    <div class="vista col-hidden" id="vistaSueros">
+    <div class="fede-nav col-hidden"></div>
     <div class="sueros-bar">
       <div class="mes-selector">
         <button id="sMesPrev" title="Mes anterior">◀</button>
@@ -1277,6 +1282,7 @@
 
    <!-- ============ VISTA: CREMAS / COLÁGENOS (solo Fede) ============ -->
    <div class="vista col-hidden" id="vistaCremas">
+    <div class="fede-nav col-hidden"></div>
     <div class="sueros-bar">
       <div class="mes-selector" style="visibility:hidden;">
         <button id="cMesPrev" title="Mes anterior">◀</button>
@@ -3989,6 +3995,16 @@ function mostrarVista(v){
   document.getElementById('btnVistaMovimientos').classList.toggle('activo', v==='movimientos');
   document.getElementById('btnSueros').classList.toggle('activo', v==='sueros');
   document.getElementById('btnCremas').classList.toggle('activo', v==='cremas');
+  // Fede: la fila de secciones queda siempre arriba; en Sueros y Cremas sus botones van debajo, más chicos
+  if(esFede()){
+    const tabs = document.getElementById('fedeTabs');
+    const destino = v==='movimientos' ? document.querySelector('#movBar > div:last-child')
+                  : document.querySelector(`#${v==='sueros' ? 'vistaSueros' : 'vistaCremas'} > .fede-nav`);
+    if(v==='movimientos') document.getElementById('movBar').insertBefore(tabs, destino);
+    else { destino.classList.remove('col-hidden'); destino.appendChild(tabs); }
+    tabs.querySelectorAll('[data-ir]').forEach(b=> b.classList.toggle('active', b.dataset.ir===v));
+    document.body.classList.add('fede-nav-on');
+  }
   if(v==='sueros'){ suscribirSueros(); renderSueros(); }
   if(v==='cremas'){ suscribirCremas(); cremasVentas = null; renderCremas(); }
 }
@@ -7839,7 +7855,7 @@ document.getElementById('infVolver').onclick = ()=>{ infSel.value = ''; renderRe
 
 document.querySelectorAll('#fedeTabs [data-ir]').forEach(b=> b.onclick = ()=>{
   const ir = b.dataset.ir;
-  if(ir==='sueros' || ir==='cremas') mostrarVista(ir);
+  if(ir==='sueros' || ir==='cremas' || ir==='movimientos') mostrarVista(ir);
   else if(ir==='informes') document.getElementById('btnInformes').click();
   else if(ir==='nuevo') document.getElementById('btnNuevo').click();
 });
