@@ -289,6 +289,16 @@
   .tabla-cremas input.c-pagopx:focus{outline:none;border-color:var(--accent);background:#fffcf5;color:var(--text);}
   .tabla-cremas input.c-pagopx.editado{background:#eef5e8;border-color:#cfe3c0;}
   .tabla-cremas input.c-pagopx.usd{color:#2f86b3;}
+  .tabla-cremas.c-pesos .c-solo-usd{display:none;}
+  .tabla-cremas tr.c-ocultos td{background:#f4eeda;padding:6px 10px;text-align:center;}
+  .c-ver-pagados{border:none;background:none;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;}
+  .c-ver-pagados:hover{color:var(--text);text-decoration:underline;}
+  .tabla-cremas.c-pesos{min-width:1180px;}
+  .tabla-cremas tr.c-ajuste td{background:#fbf6ea;font-style:italic;}
+  .tabla-cremas tr.c-ajuste.ret td{color:#c0392b;}
+  .tabla-cremas tr.c-ajuste.ing td{color:#2f7a2f;}
+  #caTipo button.active[data-tipo="ingreso"]{background:#2f7a2f;color:#fff;}
+  #caTipo button.active[data-tipo="retiro"]{background:#a13a3a;color:#fff;}
   .tabla-cremas td.c-cant{color:#a13a3a;font-weight:600;}
   .tabla-cremas select.c-pag{width:100%;padding:2px 2px;font-size:9.5px;font-weight:700;border-radius:20px;text-align:center;text-align-last:center;cursor:pointer;-webkit-appearance:none;appearance:none;}
   .tabla-cremas select.c-pag-no{background:#fbdada;color:#c62828;border:1px solid #f3c1c1;}
@@ -806,6 +816,30 @@
   </div>
 </div>
 
+<!-- ============ MODAL: INGRESO / RETIRO DE STOCK (CREMAS / COLÁGENOS / GELES) ============ -->
+<div class="overlay" id="overlayCAjuste">
+  <div class="modal">
+    <button class="close-x" id="closeCAjuste">✕</button>
+    <h2>Ingreso / retiro de stock</h2>
+    <div class="modal-sub">Lo que trae o se lleva el proveedor. Suma o resta del stock y aparece en la planilla.</div>
+    <div class="row2">
+      <div class="field"><label>Fecha</label><input type="date" id="caFecha"></div>
+      <div class="field"><label>Tipo</label>
+        <div class="tipo-toggle" id="caTipo"><button type="button" data-tipo="ingreso" class="active">Ingreso</button><button type="button" data-tipo="retiro">Retiro</button></div>
+      </div>
+    </div>
+    <div class="field"><label>Producto</label><select id="caProducto"></select></div>
+    <div class="row2">
+      <div class="field"><label>Cantidad</label><input type="text" id="caCant" inputmode="numeric"></div>
+      <div class="field"><label>Detalle <span class="opt">(opcional)</span></label><input type="text" id="caDetalle" placeholder="Ej: RETIRÓ FLAVIA"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="caCancelar">Cancelar</button>
+      <button class="btn btn-primary" id="caGuardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ MODAL: LÍNEA DE PAGO (CREMAS / COLÁGENOS / GELES) ============ -->
 <div class="overlay" id="overlayCLinea">
   <div class="modal">
@@ -1256,6 +1290,8 @@
         <button class="s-tab c-tab" data-ctab="gel" role="tab">Geles</button>
       </div>
       <div style="justify-self:end;display:flex;gap:8px;">
+        <button class="btn s-cfg-btn col-hidden" id="cBtnPagados" title="Mostrar u ocultar lo que ya está pagado"></button>
+        <button class="btn s-cfg-btn" id="cBtnAjuste" title="Stock que trae o se lleva el proveedor">⇅ Ingreso/retiro</button>
         <button class="btn s-cfg-btn col-hidden" id="cBtnLinea" title="Cierra las ventas pendientes con una fecha de pago">＋ Línea de pago</button>
         <button class="btn s-cfg-btn" id="cBtnStockIni" title="Cargar el conteo inicial de cada producto">📦 Stock inicial</button>
       </div>
@@ -1264,11 +1300,7 @@
     <div class="s-panel" id="cPanelMovs">
       <div class="sheet-wrap">
         <table class="tabla-mov tabla-cremas">
-          <colgroup>
-            <col style="width:58px"><col style="width:15%"><col style="width:74px"><col><col style="width:44px"><col style="width:56px">
-            <col style="width:84px"><col style="width:100px"><col style="width:150px"><col style="width:84px">
-            <col style="width:84px"><col style="width:100px"><col style="width:56px"><col style="width:100px"><col style="width:100px">
-          </colgroup>
+          <colgroup id="cCols"></colgroup>
           <thead>
             <tr>
               <th><input type="text" class="th-search" id="cfFecha" placeholder="Fecha" autocomplete="off"></th>
@@ -1277,12 +1309,12 @@
               <th><input type="text" class="th-search" id="cfConcepto" placeholder="Concepto" autocomplete="off"></th>
               <th><div class="th-search">Cant.</div></th>
               <th><div class="th-search">Stock</div></th>
-              <th><div class="th-search">Valor USD</div></th>
+              <th class="c-solo-usd"><div class="th-search">Valor USD</div></th>
               <th><div class="th-search">Pago px</div></th>
               <th><input type="text" class="th-search" id="cfIndica" placeholder="Indica" autocomplete="off"></th>
-              <th><div class="th-search">Costo</div></th>
-              <th><div class="th-search">Cot.</div></th>
-              <th><div class="th-search">A pagar</div></th>
+              <th><div class="th-search" id="cThCosto">Costo</div></th>
+              <th class="c-solo-usd"><div class="th-search">Cot.</div></th>
+              <th class="c-solo-usd"><div class="th-search">A pagar</div></th>
               <th><div class="th-search">Pag.</div></th>
               <th><div class="th-search">50% prof</div></th>
               <th><div class="th-search">Ummana</div></th>
@@ -5731,6 +5763,7 @@ function suscribirCremas(){
       if(d.id==='_stock'){ cremasStock = d.data().productos || {}; cremasOcultos = d.data().ocultos || []; }
       else if(d.id==='_stockInicial') cremasInicial = {fecha:'', cantidades:{}, ...d.data()};
       else if(d.id==='_pagos') cremasPagos = d.data().lineas || [];
+      else if(d.id==='_ajustes') cremasAjustes = d.data().items || [];
       else cremasExtra[d.id] = d.data();
     });
     renderCremas();
@@ -5793,6 +5826,7 @@ function renderCremas(){
   document.getElementById('cPanelMovs').classList.toggle('col-hidden', cTab==='stock');
   document.getElementById('cPanelStock').classList.toggle('col-hidden', cTab!=='stock');
   document.getElementById('cBtnLinea').classList.toggle('col-hidden', cTab==='stock');
+  if(cTab==='stock') document.getElementById('cBtnPagados').classList.add('col-hidden');
   if(cremasVentas==null) cargarVentasCremas();
   if(cTab!=='stock') renderCremasMovs(); else { if(cremasVentas==null) cargarVentasCremas(); renderCremasStock(); }
 }
@@ -5811,30 +5845,47 @@ function ventasCremasTodas(){
     .filter(m=> m.fechaISO >= CREMAS_DESDE && esProfCremas(m.prof) && !esSaldaDeudaCrema(m) && !esEgreso(m.prof, m.concepto))
     .sort((a,b)=> a.fechaISO===b.fechaISO ? msCreado(a)-msCreado(b) : (a.fechaISO < b.fechaISO ? -1 : 1));
 }
-// Stock de cada producto después de cada venta (a partir del stock inicial)
+/* ---- Ingresos / retiros de stock (los trae o se los lleva el proveedor) ---- */
+let cremasAjustes = [];   // cremas/_ajustes → items: [{id, fechaISO, clave, tipo:'ingreso'|'retiro', cant, detalle, creadoMs}]
+function ajustesCremas(){ return (cremasAjustes||[]).filter(a=> a.fechaISO >= CREMAS_DESDE); }
+// Stock de cada producto después de cada venta / ingreso / retiro (a partir del stock inicial)
 function stockDespuesDeVenta(ventas){
   const ini = cremasInicial.cantidades || {}, fIni = cremasInicial.fecha || '0000-00-00';
   const res = {};
-  const porClave = {};
-  ventas.forEach(m=> (porClave[claveProducto(m)] = porClave[claveProducto(m)] || []).push(m));
-  Object.entries(porClave).forEach(([k, lista])=>{
+  const eventos = {};
+  ventas.forEach(m=> (eventos[claveProducto(m)] = eventos[claveProducto(m)] || []).push({id:m.id, fecha:m.fechaISO, orden:msCreado(m), delta:-1}));
+  ajustesCremas().forEach(a=> (eventos[a.clave] = eventos[a.clave] || []).push({id:a.id, fecha:a.fechaISO, orden:a.creadoMs||0, delta: a.tipo==='retiro' ? -Number(a.cant) : Number(a.cant)}));
+  Object.entries(eventos).forEach(([k, lista])=>{
     if(ini[k]==null || ini[k]==='') return;
+    lista.sort((a,b)=> a.fecha===b.fecha ? a.orden-b.orden : (a.fecha < b.fecha ? -1 : 1));
     const base = Number(ini[k]);
-    const antes = lista.filter(m=> m.fechaISO < fIni), desde = lista.filter(m=> m.fechaISO >= fIni);
-    desde.forEach((m, i)=> res[m.id] = base - (i+1));
+    let acum = base;
+    lista.filter(e=> e.fecha >= fIni).forEach(e=>{ acum += e.delta; res[e.id] = acum; });
     // antes del conteo: se reconstruye hacia atrás
-    antes.forEach((m, i)=> res[m.id] = base + (antes.length - 1 - i));
+    const antes = lista.filter(e=> e.fecha < fIni);
+    let atras = base;
+    for(let i = antes.length - 1; i >= 0; i--){ res[antes[i].id] = atras; atras -= antes[i].delta; }
   });
   return res;
 }
 function renderCremasMovs(){
   const tb = document.getElementById('cTbody'), tf = document.getElementById('cTfoot');
   if(document.activeElement && tb.contains(document.activeElement) && (document.activeElement.classList.contains('c-cot') || document.activeElement.classList.contains('c-pagopx'))) return; // no pisar lo que se está escribiendo
-  if(cremasVentas==null){ tb.innerHTML = `<tr><td colspan="15" class="empty-state">Cargando ventas…</td></tr>`; tf.innerHTML = ''; return; }
+  const usd = cTab==='crema';   // colágenos y geles: sin dólares ni cotización
+  const tabla = tb.closest('table');
+  tabla.classList.toggle('c-pesos', !usd);
+  document.getElementById('cCols').innerHTML = usd
+    ? '<col style="width:58px"><col style="width:15%"><col style="width:74px"><col><col style="width:44px"><col style="width:56px"><col style="width:84px"><col style="width:100px"><col style="width:150px"><col style="width:84px"><col style="width:84px"><col style="width:100px"><col style="width:56px"><col style="width:100px"><col style="width:110px">'
+    : '<col style="width:64px"><col style="width:18%"><col style="width:74px"><col><col style="width:44px"><col style="width:56px"><col style="width:110px"><col style="width:170px"><col style="width:110px"><col style="width:70px"><col style="width:100px"><col style="width:120px">';
+  document.getElementById('cThCosto').textContent = usd ? 'Costo' : 'Costo';
+  const nCols = usd ? 15 : 12;
+  if(cremasVentas==null){ tb.innerHTML = `<tr><td colspan="${nCols}" class="empty-state">Cargando ventas…</td></tr>`; tf.innerHTML = ''; return; }
   const f = id => document.getElementById(id).value;
   const todas = ventasCremasTodas();
   const stockTras = stockDespuesDeVenta(todas);
   const delTipo = todas.filter(m=> tipoProductoCrema(m.prof)===cTab);
+  const prods = {}; productosCremas().forEach(p=> prods[p.clave] = p);
+  const ajTipo = ajustesCremas().filter(a=> prods[a.clave] ? tipoProductoCrema(prods[a.clave].prof)===cTab : false);
   const pasa = m=>{
     const c = calcularCrema(m);
     return (!f('cfFecha') || contiene(isoToDisplay(m.fechaISO), f('cfFecha')))
@@ -5843,72 +5894,116 @@ function renderCremasMovs(){
       && (!f('cfConcepto') || contiene(m.concepto, f('cfConcepto')))
       && (!f('cfIndica') || contiene(c.indica, f('cfIndica')));
   };
+  const pasaAj = a=>{
+    const p = prods[a.clave] || {};
+    return (!f('cfFecha') || contiene(isoToDisplay(a.fechaISO), f('cfFecha')))
+      && (!f('cfPaciente') || contiene((a.tipo==='retiro' ? 'RETIRO ' : 'INGRESO ') + (a.detalle||''), f('cfPaciente')))
+      && (!f('cfCodigo') || contiene(p.codigo||a.clave, f('cfCodigo')))
+      && (!f('cfConcepto') || contiene(p.nombre||'', f('cfConcepto')))
+      && !f('cfIndica');
+  };
   const nombreTipo = ({crema:'cremas', colageno:'colágenos', gel:'geles'})[cTab];
-  if(!delTipo.length){
-    tb.innerHTML = `<tr><td colspan="15" class="empty-state">No hay ventas de ${nombreTipo} desde el 20/8/2026.</td></tr>`;
+  if(!delTipo.length && !ajTipo.length){
+    tb.innerHTML = `<tr><td colspan="${nCols}" class="empty-state">No hay ventas de ${nombreTipo} desde el 20/8/2026.</td></tr>`;
     tf.innerHTML = ''; return;
   }
-  // Grupos por fecha: cada línea de pago toma las ventas desde la línea anterior hasta su fecha de pago (inclusive)
   const grupos = gruposDePago(delTipo, cTab);
   const ultima = grupos.length ? grupos[grupos.length-1].linea.fechaPago : '';
   const pendientes = delTipo.filter(m=> m.fechaISO > ultima);
   const profs = [PARTICULAR, ...todosLosNombresDeProfesionales().filter(n=> !esProfCremas(n))];
   const sumas = vs=> vs.reduce((a,m)=>{ const c = calcularCrema(m); a.pago += c.pago; a.pagar += c.aPagar||0; a.prof += c.prof||0; a.umm += c.ummana||0; return a; }, {pago:0, pagar:0, prof:0, umm:0});
+  const celdaStock = id=>{ const st = stockTras[id]; return `<td class="${st!=null && st<0 ? 'neg' : ''}" style="font-weight:700;">${st==null ? '<span class="pend">—</span>' : st}</td>`; };
   const filaVenta = m=>{
     const c = calcularCrema(m);
     const opts = profs.map(n=> `<option ${n===c.indica?'selected':''}>${n}</option>`).join('');
     const sinStock = c.colageno ? c.costo==null : (c.venta==null && c.costo==null);
-    const st = stockTras[m.id];
+    const pagoCelda = `<td><input class="c-pagopx ${c.pagoEditado ? 'editado' : ''} ${!c.pagoEditado && m.moneda==='USD' ? 'usd' : ''}" data-id="${m.id}" inputmode="numeric"
+        value="${c.pagoEditado ? fmtPesos(c.pago) : (m.moneda==='USD' ? 'US$ ' : '$') + Number(m.valor||0).toLocaleString('es-AR')}"
+        title="${c.pagoEditado ? `Editado acá. En la caja: ${m.moneda==='USD' ? 'US$ ' : '$'}${Number(m.valor||0).toLocaleString('es-AR')}. Borralo para volver a ese valor.` : 'Podés poner el valor en pesos (por ejemplo, si pagó en dólares)'}"></td>`;
+    const pagSel = `<td><select class="c-pag c-pag-${c.pagado}" data-id="${m.id}">
+        <option value="no" ${c.pagado==='no'?'selected':''}>NO</option>
+        <option value="si" ${c.pagado==='si'?'selected':''}>SI</option>
+        <option value="bon" ${c.pagado==='bon'?'selected':''}>BON</option>
+      </select></td>`;
     return `<tr>
       <td>${isoToDisplay(m.fechaISO)}</td>
       <td class="left">${m.pac||''}</td>
       <td class="codigo">${m.codigo||''}</td>
       <td class="concepto">${m.concepto||''}${sinStock ? ' <span class="c-aviso" title="Este producto no tiene precios en Stock">sin precio</span>' : ''}</td>
       <td class="c-cant">-1</td>
-      <td class="${st!=null && st<0 ? 'neg' : ''}" style="font-weight:700;">${st==null ? '<span class="pend">—</span>' : st}</td>
-      <td class="monto">${c.colageno || c.venta==null ? '<span class="pend">—</span>' : fmtUsd(c.venta)}</td>
-      <td><input class="c-pagopx ${c.pagoEditado ? 'editado' : ''} ${!c.pagoEditado && m.moneda==='USD' ? 'usd' : ''}" data-id="${m.id}" inputmode="numeric"
-        value="${c.pagoEditado ? fmtPesos(c.pago) : (m.moneda==='USD' ? 'US$ ' : '$') + Number(m.valor||0).toLocaleString('es-AR')}"
-        title="${c.pagoEditado ? `Editado acá. En la caja: ${m.moneda==='USD' ? 'US$ ' : '$'}${Number(m.valor||0).toLocaleString('es-AR')}. Borralo para volver a ese valor.` : 'Podés poner el valor en pesos (por ejemplo, si pagó en dólares)'}"></td>
+      ${celdaStock(m.id)}
+      ${usd ? `<td class="monto">${c.venta==null ? '<span class="pend">—</span>' : fmtUsd(c.venta)}</td>` : ''}
+      ${pagoCelda}
       <td><select class="c-indica" data-id="${m.id}">${opts}</select></td>
       <td class="monto">${c.costo==null ? '<span class="pend">—</span>' : (c.colageno ? fmtPesos(c.costo) : fmtUsd(c.costo))}</td>
-      <td>${c.colageno ? '<span class="pend">—</span>' : `<input class="c-cot" data-id="${m.id}" inputmode="numeric" value="${c.cot ? c.cot.toLocaleString('es-AR') : ''}" placeholder="—">`}</td>
-      <td class="monto">${celdaMonto(c.aPagar)}</td>
-      <td><select class="c-pag c-pag-${c.pagado}" data-id="${m.id}">
-        <option value="no" ${c.pagado==='no'?'selected':''}>NO</option>
-        <option value="si" ${c.pagado==='si'?'selected':''}>SI</option>
-        <option value="bon" ${c.pagado==='bon'?'selected':''}>BON</option>
-      </select></td>
+      ${usd ? `<td><input class="c-cot" data-id="${m.id}" inputmode="numeric" value="${c.cot ? c.cot.toLocaleString('es-AR') : ''}" placeholder="—"></td>
+      <td class="monto">${celdaMonto(c.aPagar)}</td>` : ''}
+      ${pagSel}
       <td class="monto">${celdaMonto(c.prof)}</td>
       <td class="monto ${c.ummana!=null && c.ummana<0 ? 'neg' : ''}">${celdaMonto(c.ummana)}</td>
     </tr>`;
   };
-  const filaSuma = (s, linea, n)=> `<tr class="${linea ? 'c-linea' : 'c-linea c-linea-pend'}">
-      <td colspan="7" class="left">${linea
-        ? `<span class="c-linea-tit">PAGO</span> <span class="c-linea-n">${n} ${n===1?'venta':'ventas'}</span>`
-        : `<span class="c-linea-tit">PENDIENTE DE PAGO</span> <span class="c-linea-n">${n} ${n===1?'venta':'ventas'} desde el último pago</span>`}</td>
-      <td class="monto">${fmtPesos(s.pago)}</td><td></td><td></td><td></td>
-      <td class="monto">${fmtPesos(s.pagar)}</td>
-      <td>${linea ? `<button class="c-linea-fecha" data-linea="${linea.id}" title="Cambiar la fecha de pago">${isoToDisplay(linea.fechaPago)}</button>` : ''}</td>
-      <td class="monto">${fmtPesos(s.prof)}</td>
-      <td class="monto ${s.umm<0?'neg':''}">${fmtPesos(s.umm)}${linea ? ` <button class="c-linea-quitar" data-quitar-linea="${linea.id}" title="Eliminar la línea de pago">✕</button>` : ''}</td>
+  const filaAjuste = a=>{
+    const p = prods[a.clave] || {};
+    const ing = a.tipo!=='retiro';
+    return `<tr class="c-ajuste ${ing ? 'ing' : 'ret'}">
+      <td>${isoToDisplay(a.fechaISO)}</td>
+      <td class="left">${ing ? 'INGRESO' : 'RETIRO'}${a.detalle ? ' · ' + a.detalle : ''}</td>
+      <td class="codigo">${p.codigo || a.clave}</td>
+      <td class="concepto">${p.nombre || ''}</td>
+      <td class="c-cant">${ing ? '+' : '-'}${Number(a.cant).toLocaleString('es-AR')}</td>
+      ${celdaStock(a.id)}
+      <td colspan="${nCols-7}"></td>
+      <td><button class="c-linea-quitar" data-quitar-ajuste="${a.id}" title="Eliminar este ${ing ? 'ingreso' : 'retiro'}">✕</button></td>
     </tr>`;
-  let html = '';
+  };
+  const filaSuma = (s, linea, n)=>{
+    const titulo = linea
+      ? `<span class="c-linea-tit">PAGO</span> <span class="c-linea-n">${n} ${n===1?'venta':'ventas'}</span>`
+      : `<span class="c-linea-tit">PENDIENTE DE PAGO</span> <span class="c-linea-n">${n} ${n===1?'venta':'ventas'} desde el último pago</span>`;
+    const fecha = linea ? `<button class="c-linea-fecha" data-linea="${linea.id}" title="Cambiar la fecha de pago">${isoToDisplay(linea.fechaPago)}</button>` : '';
+    const quitar = linea ? ` <button class="c-linea-quitar" data-quitar-linea="${linea.id}" title="Eliminar la línea de pago">✕</button>` : '';
+    return `<tr class="${linea ? 'c-linea' : 'c-linea c-linea-pend'}">
+      <td colspan="${usd ? 7 : 6}" class="left">${titulo}</td>
+      <td class="monto">${fmtPesos(s.pago)}</td><td></td>
+      ${usd ? `<td></td><td></td><td class="monto">${fmtPesos(s.pagar)}</td>` : `<td class="monto">${fmtPesos(s.pagar)}</td>`}
+      <td>${fecha}</td>
+      <td class="monto">${fmtPesos(s.prof)}</td>
+      <td class="monto ${s.umm<0?'neg':''}">${fmtPesos(s.umm)}${quitar}</td>
+    </tr>`;
+  };
+  // filas de ventas e ingresos/retiros en orden de fecha
+  const filas = (ventas, desde, hasta)=>{
+    const items = [
+      ...ventas.filter(pasa).map(m=> ({f:m.fechaISO, o:msCreado(m), html:()=> filaVenta(m)})),
+      ...ajTipo.filter(a=> a.fechaISO > desde && (hasta==null || a.fechaISO <= hasta)).filter(pasaAj).map(a=> ({f:a.fechaISO, o:a.creadoMs||0, html:()=> filaAjuste(a)})),
+    ].sort((a,b)=> a.f===b.f ? a.o-b.o : (a.f < b.f ? -1 : 1));
+    return items.map(x=> x.html()).join('');
+  };
+  // Lo ya pagado queda oculto; se despliega con "Ver pagados"
+  let html = '', prev = '';
+  const btnPag = document.getElementById('cBtnPagados');
+  btnPag.classList.toggle('col-hidden', !grupos.length);
+  btnPag.textContent = cVerPagados ? `▴ Ocultar pagados` : `▾ Ver pagados (${grupos.length})`;
+  btnPag.classList.toggle('btn-primary', cVerPagados);
   grupos.forEach(g=>{
-    const vis = g.ventas.filter(pasa);
-    html += vis.map(filaVenta).join('');
-    html += filaSuma(sumas(g.ventas), g.linea, g.ventas.length);
+    if(cVerPagados){
+      html += filas(g.ventas, prev, g.linea.fechaPago);
+      html += filaSuma(sumas(g.ventas), g.linea, g.ventas.length);
+    }
+    prev = g.linea.fechaPago;
   });
-  const pendVis = pendientes.filter(pasa);
-  html += pendVis.map(filaVenta).join('');
+  if(!cVerPagados && grupos.length){
+    const ult = grupos[grupos.length-1].linea;
+    html += `<tr class="c-ocultos"><td colspan="${nCols}"><button class="c-ver-pagados" type="button">▾ ${grupos.length} ${grupos.length===1?'pago anterior oculto':'pagos anteriores ocultos'} (último: ${isoToDisplay(ult.fechaPago)}) — tocá para verlos</button></td></tr>`;
+  }
+  html += filas(pendientes, prev, null);
   if(pendientes.length) html += filaSuma(sumas(pendientes), null, pendientes.length);
+  if(!html) html = `<tr><td colspan="${nCols}" class="empty-state">No hay ventas pendientes de pago.</td></tr>`;
   tb.innerHTML = html;
-  const tot = sumas(delTipo.filter(pasa));
-  tf.innerHTML = `<tr>
-    <td colspan="7" class="left">TOTALES</td>
-    <td class="monto">${fmtPesos(tot.pago)}</td><td></td><td></td><td></td>
-    <td class="monto">${fmtPesos(tot.pagar)}</td><td></td><td class="monto">${fmtPesos(tot.prof)}</td>
-    <td class="monto ${tot.umm<0?'neg':''}">${fmtPesos(tot.umm)}</td></tr>`;
+  tf.innerHTML = '';
+  const verBtn = tb.querySelector('.c-ver-pagados');
+  if(verBtn) verBtn.onclick = ()=>{ cVerPagados = true; renderCremasMovs(); };
   tb.querySelectorAll('.c-indica').forEach(sel=> sel.onchange = ()=> guardarExtraCrema(sel.dataset.id, {indica: sel.value}));
   tb.querySelectorAll('.c-pag').forEach(sel=> sel.onchange = ()=> guardarExtraCrema(sel.dataset.id, {pagado: sel.value}));
   tb.querySelectorAll('.c-pagopx').forEach(inp=>{
@@ -5937,10 +6032,65 @@ function renderCremasMovs(){
   });
   tb.querySelectorAll('[data-linea]').forEach(b=> b.onclick = ()=> abrirLineaPago(b.dataset.linea));
   tb.querySelectorAll('[data-quitar-linea]').forEach(b=> b.onclick = ()=> quitarLineaPago(b.dataset.quitarLinea));
+  tb.querySelectorAll('[data-quitar-ajuste]').forEach(b=> b.onclick = ()=> quitarAjusteCrema(b.dataset.quitarAjuste));
   // al entrar, se ve el final (lo más nuevo)
   const wrap = tb.closest('.sheet-wrap');
   if(wrap && renderCremasMovs._tab !== cTab){ renderCremasMovs._tab = cTab; wrap.scrollTop = wrap.scrollHeight; }
 }
+
+let cVerPagados = false;
+document.getElementById('cBtnPagados').onclick = ()=>{ cVerPagados = !cVerPagados; renderCremasMovs(); };
+
+/* ---- Modal ingreso / retiro ---- */
+const overlayCAjuste = document.getElementById('overlayCAjuste');
+let caTipo = 'ingreso';
+function setCaTipo(t){
+  caTipo = t;
+  document.querySelectorAll('#caTipo button').forEach(b=> b.classList.toggle('active', b.dataset.tipo===t));
+}
+document.querySelectorAll('#caTipo button').forEach(b=> b.onclick = ()=> setCaTipo(b.dataset.tipo));
+function productosParaAjuste(){
+  return productosCremas().filter(p=> cTab==='stock' || tipoProductoCrema(p.prof)===cTab);
+}
+document.getElementById('cBtnAjuste').onclick = ()=>{
+  if(!esFede()) return;
+  setCaTipo('ingreso');
+  document.getElementById('caFecha').value = hoyISO();
+  document.getElementById('caCant').value = '1';
+  document.getElementById('caDetalle').value = '';
+  const sel = document.getElementById('caProducto');
+  sel.innerHTML = '<option value="">Elegí el producto…</option>' + productosParaAjuste().map(p=> `<option value="${escAttr(p.clave)}">${p.codigo ? p.codigo + ' · ' : ''}${p.nombre || p.clave}</option>`).join('');
+  overlayCAjuste.classList.add('show');
+};
+const cerrarCAjuste = ()=> overlayCAjuste.classList.remove('show');
+document.getElementById('closeCAjuste').onclick = cerrarCAjuste;
+document.getElementById('caCancelar').onclick = cerrarCAjuste;
+document.getElementById('caCant').addEventListener('input', e=> e.target.value = e.target.value.replace(/\D/g,''));
+document.getElementById('caGuardar').onclick = async ()=>{
+  if(!esFede()) return;
+  const fechaISO = document.getElementById('caFecha').value;
+  const clave = document.getElementById('caProducto').value;
+  const cant = Number(document.getElementById('caCant').value)||0;
+  const detalle = mayus(document.getElementById('caDetalle').value.trim());
+  if(!fechaISO){ alert("Elegí la fecha."); return; }
+  if(!clave){ alert("Elegí el producto."); return; }
+  if(!cant){ alert("Poné la cantidad."); return; }
+  const nuevos = [...cremasAjustes, {id: 'aj' + Date.now().toString(36), fechaISO, clave, tipo: caTipo, cant, detalle, creadoMs: Date.now()}];
+  try{
+    await db.collection('cremas').doc('_ajustes').set({items: nuevos});
+    cremasAjustes = nuevos;
+    cerrarCAjuste(); renderCremas();
+  }catch(e){ alert("No se pudo guardar: " + e.message); }
+};
+async function quitarAjusteCrema(id){
+  if(!esFede()) return;
+  const a = cremasAjustes.find(x=> x.id===id);
+  if(!a || !confirm(`¿Eliminar este ${a.tipo==='retiro' ? 'retiro' : 'ingreso'} de ${a.cant}?`)) return;
+  const nuevos = cremasAjustes.filter(x=> x.id!==id);
+  try{ await db.collection('cremas').doc('_ajustes').set({items: nuevos}); cremasAjustes = nuevos; renderCremas(); }
+  catch(e){ alert("No se pudo eliminar: " + e.message); }
+}
+
 
 /* ---- Línea de pago ---- */
 // Agrupa por fecha: cada línea toma las ventas con fecha posterior a la línea anterior y hasta su fecha de pago
@@ -6039,7 +6189,8 @@ function stockProducto(clave){
   if(c[clave]==null || c[clave]==='') return null;
   const desde = cremasInicial.fecha || '0000-00-00';
   const vendidos = (cremasVentas||[]).filter(m=> claveProducto(m)===clave && m.fechaISO>=desde && !esSaldaDeudaCrema(m) && !esEgreso(m.prof, m.concepto)).length;
-  return Number(c[clave]) - vendidos;
+  const ajuste = (cremasAjustes||[]).filter(a=> a.clave===clave && a.fechaISO>=desde).reduce((t,a)=> t + (a.tipo==='retiro' ? -Number(a.cant) : Number(a.cant)), 0);
+  return Number(c[clave]) - vendidos + ajuste;
 }
 function stockTxt(clave){
   const n = stockProducto(clave);
