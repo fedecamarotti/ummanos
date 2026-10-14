@@ -284,6 +284,11 @@
   .tabla-cremas .c-linea-fecha{border:1px solid #c5e6b9;background:#dff3d8;color:#2f7a2f;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;cursor:pointer;}
   .tabla-cremas .c-linea-quitar{border:none;background:none;color:#c62828;opacity:.45;cursor:pointer;font-size:11px;padding:0 2px;}
   .tabla-cremas .c-linea-quitar:hover{opacity:1;}
+  .tabla-cremas input.c-pagopx{width:100%;padding:3px 6px;font-size:11px;font-weight:700;text-align:right;color:#2f7a2f;border:1px solid transparent;background:transparent;border-radius:6px;}
+  .tabla-cremas input.c-pagopx:hover{border-color:var(--border);background:#fdfbf2;}
+  .tabla-cremas input.c-pagopx:focus{outline:none;border-color:var(--accent);background:#fffcf5;color:var(--text);}
+  .tabla-cremas input.c-pagopx.editado{background:#eef5e8;border-color:#cfe3c0;}
+  .tabla-cremas input.c-pagopx.usd{color:#2f86b3;}
   .tabla-cremas td.c-cant{color:#a13a3a;font-weight:600;}
   .tabla-cremas select.c-pag{width:100%;padding:2px 2px;font-size:9.5px;font-weight:700;border-radius:20px;text-align:center;text-align-last:center;cursor:pointer;-webkit-appearance:none;appearance:none;}
   .tabla-cremas select.c-pag-no{background:#fbdada;color:#c62828;border:1px solid #f3c1c1;}
@@ -5757,7 +5762,9 @@ function movimientosCremas(){
 function calcularCrema(m){
   const ex = cremasExtra[m.id] || {};
   const prod = cremasStock[claveProducto(m)] || {};
-  const pago = Number(m.valor)||0;
+  // Pago px: lo cargado en la caja, salvo que en esta planilla se haya puesto el valor en pesos (pagos en dólares, por ejemplo)
+  const pagoEditado = ex.pagoPx!=null && ex.pagoPx!=='';
+  const pago = pagoEditado ? Number(ex.pagoPx) : (Number(m.valor)||0);
   const indica = ex.indica || PARTICULAR;
   const cot = Number(ex.cot)||0;
   const costo = prod.costo!=null && prod.costo!=='' ? Number(prod.costo) : null;
@@ -5767,7 +5774,7 @@ function calcularCrema(m){
   const aPagar = bon ? 0 : (colageno ? (costo!=null ? Math.round(costo) : null) : (cot && costo!=null ? Math.round(costo * cot) : null));
   const prof = aPagar==null ? null : (bon || indica===PARTICULAR ? 0 : Math.round((pago - aPagar) / 2));
   const ummana = aPagar==null ? null : pago - aPagar - prof;
-  return { pago, indica, cot, colageno, pagado: ['si','bon'].includes(ex.pagado) ? ex.pagado : 'no', venta: !colageno && prod.venta!=null && prod.venta!=='' ? Number(prod.venta) : null, costo, aPagar, prof, ummana };
+  return { pago, pagoEditado, indica, cot, colageno, pagado: ['si','bon'].includes(ex.pagado) ? ex.pagado : 'no', venta: !colageno && prod.venta!=null && prod.venta!=='' ? Number(prod.venta) : null, costo, aPagar, prof, ummana };
 }
 
 /* ---- Vista, mes y pestañas ---- */
@@ -5822,7 +5829,7 @@ function stockDespuesDeVenta(ventas){
 }
 function renderCremasMovs(){
   const tb = document.getElementById('cTbody'), tf = document.getElementById('cTfoot');
-  if(document.activeElement && tb.contains(document.activeElement) && document.activeElement.classList.contains('c-cot')) return; // no pisar lo que se está escribiendo
+  if(document.activeElement && tb.contains(document.activeElement) && (document.activeElement.classList.contains('c-cot') || document.activeElement.classList.contains('c-pagopx'))) return; // no pisar lo que se está escribiendo
   if(cremasVentas==null){ tb.innerHTML = `<tr><td colspan="15" class="empty-state">Cargando ventas…</td></tr>`; tf.innerHTML = ''; return; }
   const f = id => document.getElementById(id).value;
   const todas = ventasCremasTodas();
@@ -5860,7 +5867,9 @@ function renderCremasMovs(){
       <td class="c-cant">-1</td>
       <td class="${st!=null && st<0 ? 'neg' : ''}" style="font-weight:700;">${st==null ? '<span class="pend">—</span>' : st}</td>
       <td class="monto">${c.colageno || c.venta==null ? '<span class="pend">—</span>' : fmtUsd(c.venta)}</td>
-      <td class="monto total ingreso">${m.moneda==='USD' ? 'US$ ' : '$'}${Number(c.pago).toLocaleString('es-AR')}</td>
+      <td><input class="c-pagopx ${c.pagoEditado ? 'editado' : ''} ${!c.pagoEditado && m.moneda==='USD' ? 'usd' : ''}" data-id="${m.id}" inputmode="numeric"
+        value="${c.pagoEditado ? fmtPesos(c.pago) : (m.moneda==='USD' ? 'US$ ' : '$') + Number(m.valor||0).toLocaleString('es-AR')}"
+        title="${c.pagoEditado ? `Editado acá. En la caja: ${m.moneda==='USD' ? 'US$ ' : '$'}${Number(m.valor||0).toLocaleString('es-AR')}. Borralo para volver a ese valor.` : 'Podés poner el valor en pesos (por ejemplo, si pagó en dólares)'}"></td>
       <td><select class="c-indica" data-id="${m.id}">${opts}</select></td>
       <td class="monto">${c.costo==null ? '<span class="pend">—</span>' : (c.colageno ? fmtPesos(c.costo) : fmtUsd(c.costo))}</td>
       <td>${c.colageno ? '<span class="pend">—</span>' : `<input class="c-cot" data-id="${m.id}" inputmode="numeric" value="${c.cot ? c.cot.toLocaleString('es-AR') : ''}" placeholder="—">`}</td>
@@ -5902,6 +5911,22 @@ function renderCremasMovs(){
     <td class="monto ${tot.umm<0?'neg':''}">${fmtPesos(tot.umm)}</td></tr>`;
   tb.querySelectorAll('.c-indica').forEach(sel=> sel.onchange = ()=> guardarExtraCrema(sel.dataset.id, {indica: sel.value}));
   tb.querySelectorAll('.c-pag').forEach(sel=> sel.onchange = ()=> guardarExtraCrema(sel.dataset.id, {pagado: sel.value}));
+  tb.querySelectorAll('.c-pagopx').forEach(inp=>{
+    inp.addEventListener('focus', ()=>{
+      const ex = cremasExtra[inp.dataset.id] || {};
+      inp.value = ex.pagoPx!=null && ex.pagoPx!=='' ? Number(ex.pagoPx).toLocaleString('es-AR') : '';
+      inp.placeholder = 'pesos';
+    });
+    inp.addEventListener('input', ()=> formatearInputMonto(inp));
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } if(e.key==='Escape'){ inp.dataset.cancelar='1'; inp.blur(); } });
+    inp.addEventListener('blur', ()=>{
+      const id = inp.dataset.id, ex = cremasExtra[id] || {};
+      const antes = ex.pagoPx!=null && ex.pagoPx!=='' ? Number(ex.pagoPx) : null;
+      const v = inp.value.trim()==='' ? null : parseMonto(inp.value);
+      if(inp.dataset.cancelar || v===antes){ delete inp.dataset.cancelar; renderCremasMovs(); return; }
+      guardarExtraCrema(id, {pagoPx: v});
+    });
+  });
   tb.querySelectorAll('.c-cot').forEach(inp=>{
     inp.addEventListener('input', ()=> formatearInputMonto(inp));
     inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } });
