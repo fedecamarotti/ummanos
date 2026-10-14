@@ -302,6 +302,7 @@
   .cc-det-lbl input{width:auto;accent-color:var(--accent);}
   .p-cuenta{font-weight:700;color:var(--muted);}
   .deuda-ayuda{font-size:11px;color:var(--muted);margin-bottom:6px;}
+  .tabla-stock tfoot .tot-cant{font-weight:500;color:var(--muted);font-size:10px;}
   .c-quitar{border:none;background:none;color:#c62828;font-size:12px;cursor:pointer;opacity:.45;padding:4px 6px;}
   .c-quitar:hover{opacity:1;}
   .tabla-stock input.c-precio{width:100%;padding:4px 8px;font-size:11.5px;border-radius:6px;text-align:right;font-weight:700;}
@@ -1278,6 +1279,7 @@
             </tr>
           </thead>
           <tbody id="cStockBody"></tbody>
+          <tfoot id="cStockFoot"></tfoot>
         </table>
       </div>
     </div>
@@ -5931,7 +5933,7 @@ function renderCremasStock(){
       && (!fv('cfsCosto') || contiene(precioTxt(s.costo, pesos ? 'ars' : 'usd'), fv('cfsCosto')))
       && (!fv('cfsStock') || contiene(stockPlano, fv('cfsStock')));
   });
-  if(!lista.length){ tb.innerHTML = `<tr><td colspan="7" class="empty-state">No hay productos de cremas, colágenos o geles en Conceptos.</td></tr>`; return; }
+  if(!lista.length){ tb.innerHTML = `<tr><td colspan="7" class="empty-state">No hay productos de cremas, colágenos o geles en Conceptos.</td></tr>`; document.getElementById('cStockFoot').innerHTML = ''; return; }
   tb.innerHTML = lista.map(p=>{
     const s = cremasStock[p.clave] || {};
     return `<tr>
@@ -5944,6 +5946,26 @@ function renderCremasStock(){
       <td class="editcol"><button class="c-quitar" title="Eliminar producto" data-quitar="${p.clave.replace(/"/g,'&quot;')}">✕</button></td>
     </tr>`;
   }).join('');
+  // Totales de lo que está a la vista: unidades, y valor del stock (venta y costo) en dólares y en pesos
+  let tUnid = 0, tVentaUsd = 0, tCostoUsd = 0, tCostoArs = 0;
+  lista.forEach(p=>{
+    const n = stockProducto(p.clave);
+    if(n==null || cremasVentas==null) return;
+    tUnid += n;
+    const st = cremasStock[p.clave] || {}, u = Math.max(0, n);   // el valor se calcula sobre lo que hay (sin negativos)
+    if(esColageno(p.prof)){ if(st.costo!=null && st.costo!=='') tCostoArs += u * Number(st.costo); }
+    else {
+      if(st.venta!=null && st.venta!=='') tVentaUsd += u * Number(st.venta);
+      if(st.costo!=null && st.costo!=='') tCostoUsd += u * Number(st.costo);
+    }
+  });
+  const usd = v => 'USD ' + Math.round(v).toLocaleString('es-AR');
+  document.getElementById('cStockFoot').innerHTML = `<tr>
+    <td colspan="3" class="left">TOTALES <span class="tot-cant">(${lista.length} ${lista.length===1?'producto':'productos'})</span></td>
+    <td>${tVentaUsd ? usd(tVentaUsd) : '<span class="pend">—</span>'}</td>
+    <td>${[tCostoUsd ? usd(tCostoUsd) : '', tCostoArs ? fmtPesos(tCostoArs) : ''].filter(Boolean).join('<br>') || '<span class="pend">—</span>'}</td>
+    <td class="${tUnid<0?'neg':''}">${tUnid.toLocaleString('es-AR')}</td>
+    <td></td></tr>`;
   tb.querySelectorAll('[data-quitar]').forEach(b=> b.onclick = ()=> eliminarProductoCrema(b.dataset.quitar));
   tb.querySelectorAll('.c-precio').forEach(inp=>{
     inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } });
