@@ -3023,7 +3023,7 @@ selProfesional.addEventListener('input', actualizarConceptosDesdeProfesional);
 
 document.getElementById('btnNuevo').onclick = ()=>{
   if(soloLectura()){ alert("Para cargar movimientos hay que abrir caja."); return; }
-  if(!cajaActual){ alert("La caja se encuentra cerrada, no se pueden cargar movimientos."); return; }
+  if(!cajaActual && !esFede()){ alert("La caja se encuentra cerrada, no se pueden cargar movimientos."); return; }
   modo = 'nuevo'; editingId = null;
   modalTitle.textContent = "Nuevo movimiento";
   btnGuardarMov.textContent = "Guardar movimiento";
@@ -3283,8 +3283,8 @@ btnGuardarMov.onclick = async ()=>{
     await db.collection('movimientos').doc(editingId).update(cambios);
     nuevoMovId = editingId;
   } else {
-    if(!cajaActual){ alert("La caja se encuentra cerrada, no se pueden cargar movimientos."); return; }
-    if(fechaISO !== cajaActual.fechaISO){
+    if(!cajaActual && !esFede()){ alert("La caja se encuentra cerrada, no se pueden cargar movimientos."); return; }
+    if(cajaActual && fechaISO !== cajaActual.fechaISO){
       try{
         const snapDia = await db.collection('cajaSesiones').where('fechaISO','==', fechaISO).get();
         const tieneCajaCerrada = snapDia.docs.some(d=> d.id !== cajaActual.id && d.data().cerradaEn);
@@ -3296,7 +3296,7 @@ btnGuardarMov.onclick = async ()=>{
       concepto: selConcepto.value, codigo, notas: document.getElementById('inpNotas').value,
       moneda: monedaSel, valor: valorNum, pagos, tieneDeudaPendiente: pendienteDeuda,
       creadoPor: currentUser.nombre, creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
-      cajaId: cajaActual ? cajaActual.id : null,
+      cajaId: cajaActual ? cajaActual.id : 'SIN_CAJA',
     });
     nuevoMovId = nuevoRef.id;
   }
