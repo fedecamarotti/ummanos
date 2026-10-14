@@ -5792,9 +5792,18 @@ function movimientosCremas(){
     .sort((a,b)=> a.fechaISO===b.fechaISO ? 0 : (a.fechaISO < b.fechaISO ? -1 : 1));
 }
 // Cuentas de cada fila
+// Precio (venta y costo) vigente a una fecha: cada cambio de precio rige desde el día en que se hizo
+function precioCremaAl(clave, fechaISO){
+  const p = cremasStock[clave] || {};
+  const hist = Array.isArray(p.hist) ? p.hist : [];
+  if(!hist.length) return p;
+  let vig = hist[0];
+  hist.forEach(h=>{ if(h.desde <= fechaISO) vig = h; });
+  return vig;
+}
 function calcularCrema(m){
   const ex = cremasExtra[m.id] || {};
-  const prod = cremasStock[claveProducto(m)] || {};
+  const prod = precioCremaAl(claveProducto(m), m.fechaISO);
   // Pago px: lo cargado en la caja, salvo que en esta planilla se haya puesto el valor en pesos (pagos en dólares, por ejemplo)
   const pagoEditado = ex.pagoPx!=null && ex.pagoPx!=='';
   const pago = pagoEditado ? Number(ex.pagoPx) : (Number(m.valor)||0);
@@ -6323,8 +6332,17 @@ function renderCremasStock(){
       const v = limpio==='' ? '' : parseDecimal(limpio);
       inp.value = precioTxt(v, inp.dataset.mon);
       if(String((cremasStock[k]||{})[campo] ?? '') === String(v)) return;
-      cremasStock[k] = {...(cremasStock[k]||{}), [campo]: v};
-      try{ await db.collection('cremas').doc('_stock').set({productos: {[k]: {[campo]: v}}}, {merge:true}); }
+      // historial: lo vendido antes de hoy mantiene el precio que tenía
+      const prev = cremasStock[k] || {};
+      const hoy = hoyISO();
+      let hist = Array.isArray(prev.hist) ? prev.hist.slice() : [];
+      if(!hist.length && (prev.venta!=null || prev.costo!=null)) hist.push({desde:'0000-00-00', venta: prev.venta ?? '', costo: prev.costo ?? ''});
+      const nuevo = {...prev, [campo]: v};
+      if(hist.length && hist[hist.length-1].desde===hoy) hist[hist.length-1] = {desde: hoy, venta: nuevo.venta ?? '', costo: nuevo.costo ?? ''};
+      else hist.push({desde: hist.length ? hoy : '0000-00-00', venta: nuevo.venta ?? '', costo: nuevo.costo ?? ''});
+      nuevo.hist = hist;
+      cremasStock[k] = nuevo;
+      try{ await db.collection('cremas').doc('_stock').set({productos: {[k]: {[campo]: v, hist}}}, {merge:true}); }
       catch(e){ alert("No se pudo guardar el precio: " + e.message); }
     });
   });
