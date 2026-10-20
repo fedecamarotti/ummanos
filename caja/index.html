@@ -764,6 +764,59 @@
   .caja-row .cr-montos div{text-align:center;}
   .caja-row .cr-montos .lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.3px;}
   .badge-abierta{background:#f3ead3;color:#6b5530;}
+  /* ---------- Celular ---------- */
+  @media (max-width:700px){
+    .topbar{padding:10px 12px;}
+    .topbar-logo{height:28px;}
+    /* barras: márgenes chicos y nada se sale de la pantalla */
+    .mov-bar, .sueros-bar, .fede-nav, .mes-selector{margin-left:10px;margin-right:10px;}
+    .mov-bar{flex-wrap:wrap;gap:8px;}
+    .mov-bar.con-tabs > *, .sueros-bar > *{min-width:0;max-width:100%;}
+    .sueros-bar{gap:8px;margin-top:10px;}
+    .fede-nav{justify-content:flex-start;margin-top:10px;}
+    .mes-selector span{min-width:120px;}
+    #vistaCremas .sueros-bar > .mes-selector{display:none;}
+    /* pestañas: se deslizan de costado en vez de cortarse */
+    .s-tabs{max-width:100%;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+    .s-tabs::-webkit-scrollbar{display:none;}
+    .s-tab{flex:none;padding:6px 11px;font-size:11.5px;}
+    body.fede-nav-on #vistaSueros .sueros-bar .s-tab, body.fede-nav-on #vistaCremas .sueros-bar .s-tab{padding:5px 10px;font-size:10.5px;}
+    /* botones de cada sección: bajan de renglón */
+    .sueros-bar > div:last-child{justify-self:start !important;flex-wrap:wrap;gap:6px !important;}
+    .s-cfg-btn{font-size:10.5px;padding:5px 9px;white-space:nowrap;}
+    .s-caption, #sPanelStock > .sheet-wrap, #cPanelStock > .sheet-wrap{width:calc(100% - 20px) !important;margin-left:10px !important;margin-right:10px !important;}
+    .s-caption-row{flex-wrap:wrap;gap:8px;}
+    .s-caption-row > div{flex-wrap:wrap;}
+    .s-stock-prov{max-width:100%;}
+    /* tablas: se deslizan de costado dentro de su recuadro, con encabezado fijo */
+    .sheet-wrap, #panelContent > .sheet-wrap, .s-panel > .sheet-wrap{margin:8px 10px 12px;-webkit-overflow-scrolling:touch;}
+    .tabla-stock{min-width:720px;}
+    #cPanelStock .tabla-stock{min-width:780px;}
+    .tabla-mov.tabla-cremas{min-width:1500px;}
+    .tabla-mov.tabla-cremas.c-pesos{min-width:1250px;}
+    .tabla-stock td{overflow:hidden;text-overflow:ellipsis;}
+    /* el nombre del insumo/producto queda fijo a la izquierda al deslizar */
+    #sPanelStock .tabla-stock td:first-child, #sPanelStock .tabla-stock th:first-child,
+    #cPanelStock .tabla-stock td:nth-child(2), #cPanelStock .tabla-stock th:nth-child(2){position:sticky;left:0;z-index:1;background:#fffcf5;box-shadow:inset -1px 0 0 var(--border);}
+    #sPanelStock .tabla-stock th:first-child, #cPanelStock .tabla-stock th:nth-child(2){z-index:4;background:#f4eeda;}
+    #sPanelStock .tabla-stock tfoot td:first-child, #cPanelStock .tabla-stock tfoot td:nth-child(2){background:#f4eeda;z-index:3;}
+    #sPanelStock .tabla-stock tr.s-critico td:first-child{background:#fbe3e1;}
+    /* modal de sueros: cada insumo en dos/tres renglones */
+    .s-items-head, .s-item{grid-template-columns:56px minmax(0,1fr) minmax(0,1fr) 32px;gap:6px;}
+    .s-items-head.compra, .s-item.compra{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 32px;}
+    .s-items-head > :first-child, .s-item > :first-child{grid-column:1 / -1;}
+    .s-items-head.compra > :nth-child(4), .s-item.compra > :nth-child(4),
+    .s-items-head.compra > :nth-child(5), .s-item.compra > :nth-child(5){grid-column:span 2;}
+    .s-item{padding-bottom:8px;border-bottom:1px dashed var(--border);}
+    .overlay{padding:16px 8px;}
+    .modal{padding:20px 16px 18px;}
+    /* informes */
+    .s-resumen{margin:10px 10px 14px;padding:14px 12px;}
+    .s-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+    .s-kpi{padding:10px 12px;}
+    .s-kpi .val{font-size:16px;}
+    .hint{padding:0 10px;}
+  }
 </style>
 </head>
 <body>
