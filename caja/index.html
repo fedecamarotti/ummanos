@@ -1242,6 +1242,7 @@
       <div style="justify-self:end;display:flex;gap:8px;">
         <button class="btn s-cfg-btn venc-alerta col-hidden" id="sBtnVenc"></button>
         <button class="btn s-cfg-btn s-solo-limitado" id="sBtnVolverPortal">← Aplicaciones</button>
+        <button class="btn s-cfg-btn col-hidden" id="sBtnPacientes" title="Fichas de los pacientes">👤 Pacientes</button>
         <button class="btn s-cfg-btn" id="sBtnCfg" title="Sabrina, descuento y % de Gabriela">⚙ Valores fijos</button>
         <button class="btn s-cfg-btn" id="sBtnExcep" title="Pacientes sin pago a Sabrina y/o Gabriela">⚑ Excepciones</button>
       </div>
@@ -2458,6 +2459,7 @@ function aplicarRolUI(){
   document.getElementById('btnVistaMovimientos').classList.toggle('col-hidden', !esAdminSueros());
   document.getElementById('btnSueros').classList.toggle('col-hidden', !esAdminSueros());
   document.getElementById('btnCremas').classList.toggle('col-hidden', !esFede());
+  document.getElementById('sBtnPacientes').classList.toggle('col-hidden', !esFede());
   // Fede: secciones como pestañas al lado del mes (y "+ Nuevo mov." ahí en lugar de arriba)
   document.getElementById('fedeTabs').classList.toggle('col-hidden', !esFede());
   document.getElementById('movBar').classList.toggle('con-tabs', esFede());
@@ -5327,9 +5329,9 @@ function mostrarPortal(){
     if(opRec) opRec.remove();
     sInfTipo = 'paciente';
     document.getElementById('pBtnStock').classList.remove('col-hidden');
-    document.getElementById('pBtnNuevoPac').classList.remove('col-hidden');
     document.getElementById('pBtnInformes').classList.remove('col-hidden');
   }
+  if(puedeCrearPacientes()) document.getElementById('pBtnNuevoPac').classList.remove('col-hidden');
   portalIr('sueros');
   if(puedeCargarSueros()){
     suscribirSueros();
@@ -5455,7 +5457,7 @@ function renderPortalPacientes(){
   if(!q) lista = lista.filter(p=> cuenta[p.nombreCompleto]);   // sin búsqueda: solo los que ya tienen sueros
   const cont = document.getElementById('pPacLista');
   if(!lista.length){
-    cont.innerHTML = `<div class="empty-state">${q ? 'No hay pacientes con ese nombre. Los pacientes nuevos se cargan desde la caja diaria.' : 'Escribí un nombre para buscar.'}</div>`;
+    cont.innerHTML = `<div class="empty-state">${q ? (puedeCrearPacientes() ? 'No hay pacientes con ese nombre. Si es nuevo, tocá "+ Nuevo paciente".' : 'No hay pacientes con ese nombre. Los pacientes nuevos se cargan desde la caja diaria.') : 'Escribí un nombre para buscar.'}</div>`;
     return;
   }
   cont.innerHTML = lista.slice(0,80).map(p=>{
@@ -7808,8 +7810,23 @@ document.getElementById('hcPDF').onclick = ()=>{
   abrirVistaPDF(`Ficha de sueroterapia · ${hcPaciente.nombreCompleto}`, html, `Ficha ${hcPaciente.nombreCompleto}`);
 };
 
-/* ---- Nuevo paciente (solo quien tiene "sueros-informes") ---- */
-function puedeCrearPacientes(){ return suerosLimitado(); }
+/* ---- Nuevo paciente (Gabriela con "sueros-informes", Sabrina y Fede) ---- */
+function puedeCrearPacientes(){ return suerosLimitado() || esFede() || primerNombre()==='SABRINA'; }
+// Fede: fichas de pacientes desde la vista de sueros
+document.getElementById('sBtnPacientes').onclick = ()=>{
+  if(!esFede()) return;
+  if(!unsubFichasSueros){
+    unsubFichasSueros = db.collection('historiasSueros').onSnapshot(snap=>{
+      fichasSuerosIds = new Set(snap.docs.map(d=> d.id));
+    }, ()=>{});
+  }
+  document.getElementById('pBtnNuevoPac').classList.remove('col-hidden');
+  document.getElementById('pNuevoPacCard').classList.add('col-hidden');
+  document.getElementById('pBuscarPac').value = '';
+  pacVista('lista');
+  overlayPPac.classList.add('show');
+  document.getElementById('pBuscarPac').focus();
+};
 const npApellido = document.getElementById('pNpApellido');
 attachAutocomplete(npApellido, ()=> pacientesFullList.map(p=> p.nombreCompleto).filter(Boolean).sort((a,b)=> a.localeCompare(b,'es')), (valor)=>{
   const p = pacientesFullList.find(x=> x.nombreCompleto===valor);
