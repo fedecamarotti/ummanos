@@ -780,6 +780,16 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .tabla-vc td.left{text-align:left;white-space:normal;}
   .tabla-vc td.ing{color:#2f7a2f;font-weight:700;text-align:right;padding-right:16px;}
   .tabla-vc td.egr{color:#a13a3a;font-weight:700;text-align:right;padding-right:16px;}
+  .tabla-vc td.deb{color:#b26a00;font-weight:700;text-align:right;padding-right:16px;}
+  .tabla-vc td.medio{color:#6e6757;}
+  .vc-medio{display:inline-block;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;}
+  .vc-medio.efectivo{background:#dff3d8;color:#2f7a2f;}
+  .vc-medio.transferencia{background:#dde3fb;color:#3d4ec2;}
+  .vc-medio.debe{background:#fbdada;color:#c62828;}
+  #vcMedio{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;width:fit-content;}
+  #vcMedio button{border:none;background:#fdfbf2;padding:8px 14px;font-size:12px;font-weight:600;}
+  #vcMedio button.active{background:#e6d8b6;color:#3a2f1c;}
+  #vcMedio button.active[data-medio="debe"]{background:#c62828;color:#fff;}
   .tabla-vc tr.vc-sep td{background:#f6f0de;font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:left;padding-left:14px;}
   .tabla-vc tfoot td{position:sticky;bottom:0;background:#f4eeda;font-weight:700;border-top:2px solid var(--border);}
   .vc-extra{font-style:italic;color:#6e6757;}
@@ -796,7 +806,10 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .bal-tabla th{background:#f4eeda;font-size:9px;font-weight:700;color:#9c9179;text-transform:uppercase;letter-spacing:.3px;padding:7px 8px;text-align:right;}
   .bal-tabla th:nth-child(1){text-align:center;width:52px;}
   .bal-tabla th:nth-child(2){text-align:left;}
-  .bal-tabla th:nth-child(3), .bal-tabla th:nth-child(4){width:110px;}
+  .bal-tabla th:nth-child(3), .bal-tabla th:nth-child(4), .bal-tabla th:nth-child(5){width:84px;}
+  .bal-tabla th:nth-child(6){width:92px;text-align:center;}
+  .bal-tabla td.medio{text-align:center;color:#6e6757;font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;}
+  .bal-tabla td.deb{color:#b26a00;font-weight:600;}
   .bal-tabla td{padding:6px 8px;border-top:1px solid #e6dbc2;text-align:right;white-space:nowrap;}
   .bal-tabla td:first-child{text-align:center;color:#6e6757;}
   .bal-tabla td.left{text-align:left;white-space:normal;}
@@ -810,6 +823,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .bal-cierre .v.neg{color:#a13a3a;}
   .bal-cierre .v small{display:block;font-size:11px;margin-top:2px;}
   .bal-cierre .v small.neg{color:#a13a3a;}
+  .bal-cierre .v .debe{display:block;font-size:10.5px;color:#b26a00;font-weight:600;margin-top:4px;}
   .bal-pie{margin-top:22px;padding-top:8px;border-top:1px solid #eee6d2;font-size:9px;color:#9c9179;display:flex;justify-content:space-between;}
 
   /* ---------- Celular ---------- */
@@ -839,7 +853,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     /* tablas: se deslizan de costado dentro de su recuadro, con encabezado fijo */
     .sheet-wrap, #panelContent > .sheet-wrap, .s-panel > .sheet-wrap{margin:8px 10px 12px;-webkit-overflow-scrolling:touch;}
     .tabla-stock{min-width:720px;}
-    .tabla-vc{min-width:560px;}
+    .tabla-vc{min-width:640px;}
     #cPanelStock .tabla-stock{min-width:780px;}
     .tabla-mov.tabla-cremas{min-width:1500px;}
     .tabla-mov.tabla-cremas.c-pesos{min-width:1250px;}
@@ -941,6 +955,9 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <div class="currency-toggle" id="vcMoneda"><button type="button" data-cur="$" class="active">$</button><button type="button" data-cur="USD">USD</button></div>
       </div>
       <div class="field"><label>Total</label><input type="text" id="vcValor" inputmode="numeric" placeholder="0"></div>
+    </div>
+    <div class="field"><label>Medio de pago</label>
+      <div id="vcMedio"><button type="button" data-medio="efectivo">Efectivo</button><button type="button" data-medio="transferencia">Transferencia</button><button type="button" data-medio="debe" title="No pagó todavía">Debe</button></div>
     </div>
     <div class="modal-actions between">
       <button class="btn btn-eliminar col-hidden" id="vcEliminar">Eliminar</button>
@@ -1507,7 +1524,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <div class="s-panel">
       <div class="sheet-wrap">
         <table class="tabla-vc">
-          <colgroup><col style="width:34px"><col style="width:70px"><col><col style="width:140px"><col style="width:140px"></colgroup>
+          <colgroup><col style="width:34px"><col style="width:66px"><col><col style="width:108px"><col style="width:108px"><col style="width:108px"><col style="width:118px"></colgroup>
           <thead>
             <tr>
               <th class="editcol"></th>
@@ -1515,6 +1532,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
               <th><div class="th-search th-search-left">Detalle</div></th>
               <th><div class="th-search" style="text-align:right;padding-right:16px;">Ingresos</div></th>
               <th><div class="th-search" style="text-align:right;padding-right:16px;">Egresos</div></th>
+              <th><div class="th-search" style="text-align:right;padding-right:16px;">Debe</div></th>
+              <th><div class="th-search">Medio de pago</div></th>
             </tr>
           </thead>
           <tbody id="vcTbody"></tbody>
@@ -8072,7 +8091,9 @@ const VC_DETALLES = {
 let mesConta = { year: hoyRef.getFullYear(), month: hoyRef.getMonth()+1 };
 let contaMovs = [];
 let unsubConta = null, contaMesSuscripto = null;
-let vcEditId = null, vcTipo = 'ingreso', vcMoneda = '$';
+let vcEditId = null, vcTipo = 'ingreso', vcMoneda = '$', vcMedio = '';
+const VC_MEDIOS = {efectivo:'Efectivo', transferencia:'Transferencia', debe:'Debe'};
+const vcEsDebe = m => m.medio==='debe';
 const vcMesIni = ()=> `${mesConta.year}-${String(mesConta.month).padStart(2,'0')}-01`;
 const vcMesFin = ()=>{ let y = mesConta.year, m = mesConta.month+1; if(m>12){ m=1; y++; } return `${y}-${String(m).padStart(2,'0')}-01`; };
 const vcEsc = t => String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -8095,36 +8116,39 @@ function suscribirConta(){
       renderConta();
     }, err=>{
       contaMovs = [];
-      document.getElementById('vcTbody').innerHTML = `<tr><td colspan="5" class="empty-state" style="color:#a13a3a;">No se pudieron leer los movimientos: ${vcEsc(err.message)}<br>Revisá que en las reglas de Firebase esté la colección <b>contaVictoria</b>.</td></tr>`;
+      document.getElementById('vcTbody').innerHTML = `<tr><td colspan="7" class="empty-state" style="color:#a13a3a;">No se pudieron leer los movimientos: ${vcEsc(err.message)}<br>Revisá que en las reglas de Firebase esté la colección <b>contaVictoria</b>.</td></tr>`;
     });
 }
 function vcTotales(lista){
-  const t = {'$':{ing:0, egr:0, n:0}, 'USD':{ing:0, egr:0, n:0}};
-  lista.forEach(m=>{ const k = m.moneda==='USD' ? 'USD' : '$'; t[k][m.tipo==='egreso' ? 'egr' : 'ing'] += Number(m.valor)||0; t[k].n++; });
+  const t = {'$':{ing:0, egr:0, deb:0, n:0}, 'USD':{ing:0, egr:0, deb:0, n:0}};
+  // lo que está en "Debe" no entra en ingresos/egresos (todavía no se cobró/pagó)
+  lista.forEach(m=>{ const k = m.moneda==='USD' ? 'USD' : '$'; t[k][vcEsDebe(m) ? 'deb' : (m.tipo==='egreso' ? 'egr' : 'ing')] += Number(m.valor)||0; t[k].n++; });
   return t;
 }
 function renderConta(){
   if(vistaActual!=='conta') return;
   document.getElementById('vcMesLabel').textContent = `${MESES[mesConta.month-1]} ${mesConta.year}`;
   const tb = document.getElementById('vcTbody'), tf = document.getElementById('vcTfoot');
-  if(contaMovs==null){ tb.innerHTML = '<tr><td colspan="5" class="empty-state">Cargando…</td></tr>'; tf.innerHTML = ''; return; }
-  if(!contaMovs.length){ tb.innerHTML = '<tr><td colspan="5" class="empty-state">No hay movimientos en este mes. Cargalos con "+ Nuevo movimiento".</td></tr>'; tf.innerHTML = ''; return; }
+  if(contaMovs==null){ tb.innerHTML = '<tr><td colspan="7" class="empty-state">Cargando…</td></tr>'; tf.innerHTML = ''; return; }
+  if(!contaMovs.length){ tb.innerHTML = '<tr><td colspan="7" class="empty-state">No hay movimientos en este mes. Cargalos con "+ Nuevo movimiento".</td></tr>'; tf.innerHTML = ''; return; }
   const hayUsd = contaMovs.some(m=> m.moneda==='USD');
   const fila = m => `<tr>
       <td class="editcol"><button class="editbtn" title="Editar" onclick="abrirConta('${m.id}')">&#9998;</button></td>
       <td>${vcFecha(m.fechaISO)}</td>
       <td class="left">${vcDetalleHTML(m)}</td>
-      <td class="ing">${m.tipo!=='egreso' ? vcMonto(m.valor, m.moneda) : ''}</td>
-      <td class="egr">${m.tipo==='egreso' ? vcMonto(m.valor, m.moneda) : ''}</td>
+      <td class="ing">${!vcEsDebe(m) && m.tipo!=='egreso' ? vcMonto(m.valor, m.moneda) : ''}</td>
+      <td class="egr">${!vcEsDebe(m) && m.tipo==='egreso' ? vcMonto(m.valor, m.moneda) : ''}</td>
+      <td class="deb">${vcEsDebe(m) ? vcMonto(m.valor, m.moneda) : ''}</td>
+      <td class="medio">${m.medio ? `<span class="vc-medio ${m.medio}">${VC_MEDIOS[m.medio]||m.medio}</span>` : '<span class="pend">—</span>'}</td>
     </tr>`;
   const pesos = contaMovs.filter(m=> m.moneda!=='USD'), usd = contaMovs.filter(m=> m.moneda==='USD');
   tb.innerHTML = hayUsd
-    ? (pesos.length ? `<tr class="vc-sep"><td colspan="5">Pesos</td></tr>` + pesos.map(fila).join('') : '')
-      + `<tr class="vc-sep"><td colspan="5">Dólares</td></tr>` + usd.map(fila).join('')
+    ? (pesos.length ? `<tr class="vc-sep"><td colspan="7">Pesos</td></tr>` + pesos.map(fila).join('') : '')
+      + `<tr class="vc-sep"><td colspan="7">Dólares</td></tr>` + usd.map(fila).join('')
     : contaMovs.map(fila).join('');
   const t = vcTotales(contaMovs);
-  const totFila = (k, lbl) => `<tr><td class="editcol"></td><td></td><td class="left">${lbl}</td><td class="ing">${vcMonto(t[k].ing, k)}</td><td class="egr">${vcMonto(t[k].egr, k)}</td></tr>`;
-  const balFila = (k) => { const b = t[k].ing - t[k].egr; return `<tr><td class="editcol"></td><td></td><td class="left">BALANCE ${k==='USD'?'USD':'$'}</td><td colspan="2" class="${b<0?'egr':'ing'}">${b<0?'−':'+'}${vcMonto(b, k)}</td></tr>`; };
+  const totFila = (k, lbl) => `<tr><td class="editcol"></td><td></td><td class="left">${lbl}</td><td class="ing">${vcMonto(t[k].ing, k)}</td><td class="egr">${vcMonto(t[k].egr, k)}</td><td class="deb">${t[k].deb ? vcMonto(t[k].deb, k) : ''}</td><td></td></tr>`;
+  const balFila = (k) => { const b = t[k].ing - t[k].egr; return `<tr><td class="editcol"></td><td></td><td class="left">BALANCE ${k==='USD'?'USD':'$'}</td><td colspan="2" class="${b<0?'egr':'ing'}">${b<0?'−':'+'}${vcMonto(b, k)}</td><td></td><td></td></tr>`; };
   tf.innerHTML = (t['$'].n ? totFila('$', `TOTALES${hayUsd?' $':''} <span class="tot-cant">(${t['$'].n} ${t['$'].n===1?'movimiento':'movimientos'})</span>`) + balFila('$') : '')
                + (t['USD'].n ? totFila('USD', `TOTALES USD <span class="tot-cant">(${t['USD'].n})</span>`) + balFila('USD') : '');
 }
@@ -8142,6 +8166,11 @@ function vcSetTipo(t, detalle){
   document.getElementById('vcDetalle').innerHTML = '<option value="">Elegí…</option>' + ops.map(o=> `<option>${vcEsc(o)}</option>`).join('');
   document.getElementById('vcDetalle').value = detalle || '';
 }
+function vcSetMedio(md){
+  vcMedio = md || '';
+  document.querySelectorAll('#vcMedio button').forEach(b=> b.classList.toggle('active', b.dataset.medio===vcMedio));
+}
+document.querySelectorAll('#vcMedio button').forEach(b=> b.onclick = ()=> vcSetMedio(b.dataset.medio));
 function vcSetMoneda(c){
   vcMoneda = c;
   document.querySelectorAll('#vcMoneda button').forEach(b=> b.classList.toggle('active', b.dataset.cur===c));
@@ -8160,6 +8189,7 @@ function abrirConta(id){
   vcSetTipo(m ? (m.tipo==='egreso'?'egreso':'ingreso') : 'ingreso', m ? m.detalle : '');
   document.getElementById('vcExtra').value = m ? (m.extra||'') : '';
   vcSetMoneda(m && m.moneda==='USD' ? 'USD' : '$');
+  vcSetMedio(m ? (m.medio||'') : '');
   document.getElementById('vcValor').value = m ? Number(m.valor||0).toLocaleString('es-AR') : '';
   document.getElementById('vcEliminar').classList.toggle('col-hidden', !m);
   overlayConta.classList.add('show');
@@ -8179,7 +8209,8 @@ document.getElementById('vcGuardar').onclick = async ()=>{
   if(!fechaISO){ alert('Elegí una fecha.'); return; }
   if(!detalle){ alert('Elegí un detalle.'); return; }
   if(!valorTxt || !valor){ alert('Ingresá el total.'); return; }
-  const datos = { fechaISO, tipo: vcTipo, detalle, extra, moneda: vcMoneda, valor,
+  if(!vcMedio){ alert('Elegí el medio de pago.'); return; }
+  const datos = { fechaISO, tipo: vcTipo, detalle, extra, moneda: vcMoneda, valor, medio: vcMedio,
                   actualizadoEn: firebase.firestore.FieldValue.serverTimestamp() };
   const btn = document.getElementById('vcGuardar'); btn.disabled = true;
   try{
@@ -8209,10 +8240,11 @@ document.getElementById('vcBtnPDF').onclick = ()=>{
     const movs = lista.filter(m=> (m.moneda==='USD' ? 'USD' : '$')===k);
     if(!movs.length) return '';
     return `<div class="bal-h4">${titulo}<span>${movs.length} ${movs.length===1?'movimiento':'movimientos'}</span></div>
-      <table class="bal-tabla"><thead><tr><th>Fecha</th><th>Detalle</th><th>Ingresos</th><th>Egresos</th></tr></thead>
+      <table class="bal-tabla"><thead><tr><th>Fecha</th><th>Detalle</th><th>Ingresos</th><th>Egresos</th><th>Debe</th><th>Medio de pago</th></tr></thead>
       <tbody>${movs.map(m=> `<tr><td>${vcFecha(m.fechaISO)}</td><td class="left">${vcDetalleHTML(m)}</td>
-        <td class="ing">${m.tipo!=='egreso' ? vcMonto(m.valor, k) : ''}</td><td class="egr">${m.tipo==='egreso' ? vcMonto(m.valor, k) : ''}</td></tr>`).join('')}</tbody>
-      <tfoot><tr><td></td><td class="left">TOTALES</td><td class="ing">${vcMonto(t[k].ing, k)}</td><td class="egr">${vcMonto(t[k].egr, k)}</td></tr></tfoot></table>`;
+        <td class="ing">${!vcEsDebe(m) && m.tipo!=='egreso' ? vcMonto(m.valor, k) : ''}</td><td class="egr">${!vcEsDebe(m) && m.tipo==='egreso' ? vcMonto(m.valor, k) : ''}</td>
+        <td class="deb">${vcEsDebe(m) ? vcMonto(m.valor, k) : ''}</td><td class="medio">${vcEsDebe(m) ? '—' : (VC_MEDIOS[m.medio]||'—')}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td></td><td class="left">TOTALES</td><td class="ing">${vcMonto(t[k].ing, k)}</td><td class="egr">${vcMonto(t[k].egr, k)}</td><td class="deb">${t[k].deb ? vcMonto(t[k].deb, k) : ''}</td><td></td></tr></tfoot></table>`;
   };
   const bal = k => t[k].ing - t[k].egr;
   const balTxt = k => (bal(k)<0 ? '−' : '+') + vcMonto(bal(k), k);
@@ -8222,7 +8254,8 @@ document.getElementById('vcBtnPDF').onclick = ()=>{
     ${tabla('$', 'Movimientos en pesos')}
     ${tabla('USD', 'Movimientos en dólares')}
     <div class="bal-cierre"><div><div class="t">Balance de ${mesTxt}</div><div class="d">Total de ingresos − total de egresos del mes</div></div>
-      <div class="v ${bal(principal)<0?'neg':''}">${balTxt(principal)}${secundario ? `<small class="${bal(secundario)<0?'neg':''}">${balTxt(secundario)}</small>` : ''}</div></div>
+      <div class="v ${bal(principal)<0?'neg':''}">${balTxt(principal)}${secundario ? `<small class="${bal(secundario)<0?'neg':''}">${balTxt(secundario)}</small>` : ''}${
+        ['$','USD'].filter(k=> t[k].deb).map(k=> `<span class="debe">Debe (sin cobrar, no incluido): ${vcMonto(t[k].deb, k)}</span>`).join('')}</div></div>
     <div class="bal-pie"><span>Ummana · Victoria contabilidad</span><span>${mesTxt}</span></div>`;
   abrirVistaPDF('Balance contable · Victoria', html, `Balance contable Victoria - ${mesTxt}`, {
     clase: 'pdf-balance',
