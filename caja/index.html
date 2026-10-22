@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>/* iPhone: evita el zoom automático al tocar un campo (que deja menús y botones fuera de pantalla); se puede seguir haciendo zoom con los dedos */
+if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1)){
+  var vp=document.querySelector('meta[name=viewport]'); if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0');
+}</script>
 <link rel="manifest" href="/manifest.webmanifest?v=2">
 <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=2">
@@ -402,7 +406,7 @@
   .an-wrap{position:relative;display:flex;justify-content:flex-end;margin-top:6px;}
   .an-chip{border:1px solid #f0c98a;background:#fff1dc;color:#9a5b00;border-radius:20px;padding:3px 10px;font-size:10.5px;font-weight:700;cursor:pointer;}
   .an-chip:hover{background:#ffe7c2;}
-  .an-pop{position:absolute;top:calc(100% + 6px);right:0;width:min(360px, 90vw);max-height:260px;overflow:auto;z-index:90;
+  .an-pop{position:absolute;top:calc(100% + 6px);right:0;width:min(360px, 90vw);max-width:calc(100vw - 32px);max-height:260px;overflow:auto;z-index:90;
     background:#fffcf5;border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 30px rgba(58,47,28,.18);}
   .an-head{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#f6f0de;}
   .an-head span{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.3px;}
@@ -2280,7 +2284,21 @@ document.getElementById('btnLogout').onclick = ()=> auth.signOut().then(()=> loc
 /* ---------- Menú desplegable ---------- */
 const btnMenu = document.getElementById('btnMenu');
 const menuDropdown = document.getElementById('menuDropdown');
+// El menú se ubica siempre dentro de la pantalla (celular vertical/horizontal, cualquier ancho)
+function ubicarMenu(){
+  const r = btnMenu.getBoundingClientRect();
+  const vw = document.documentElement.clientWidth, vh = window.innerHeight, m = 8;
+  const ancho = Math.min(270, vw - m*2);
+  let left = r.right - ancho;                       // alineado al borde derecho del botón
+  if(left < m) left = Math.min(r.left, vw - ancho - m);   // si no entra, alineado al borde izquierdo
+  left = Math.max(m, Math.min(left, vw - ancho - m));
+  const top = r.bottom + 10;
+  Object.assign(menuDropdown.style, {position:'fixed', left:left+'px', right:'auto', top:top+'px', width:ancho+'px',
+    maxHeight:Math.max(160, vh - top - m)+'px', overflowY:'auto', overscrollBehavior:'contain'});
+}
+window.addEventListener('resize', ()=>{ if(menuDropdown.classList.contains('open')) ubicarMenu(); });
 function abrirMenu(){
+  ubicarMenu();
   menuDropdown.classList.add('open');
   btnMenu.setAttribute('aria-expanded','true');
   // índice para la animación escalonada (solo ítems visibles)
