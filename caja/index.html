@@ -238,6 +238,9 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   body.fede-nav-on #vistaSueros > .sueros-bar, body.fede-nav-on #vistaCremas > .sueros-bar, body.fede-nav-on #vistaMovimientos > .mov-bar{margin-top:8px;}
   body.fede-nav-on #vistaSueros .sueros-bar .s-tab, body.fede-nav-on #vistaCremas .sueros-bar .s-tab, body.fede-nav-on #movSubTabs .s-tab{padding:5px 12px;font-size:11px;}
   body.fede-nav-on #vistaSueros .sueros-bar .s-tabs, body.fede-nav-on #vistaCremas .sueros-bar .s-tabs, body.fede-nav-on #movSubTabs{padding:2px;border-radius:9px;}
+  .t-corto{display:none;}
+  .pdf-escala{margin:0 auto;}
+  .pdf-escala .pdf-hoja{max-width:none;}
   .s-tab-badge{position:relative;}
   .s-tab-badge .badge-count{top:-7px;right:-7px;}
   .s-tab-inactivo, .s-tab-inactivo:hover{opacity:.45;cursor:default;background:transparent;}
@@ -920,6 +923,54 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     .s-kpi{padding:10px 12px;}
     .s-kpi .val{font-size:16px;}
     .hint{padding:0 10px;}
+
+    /* ---- pulido general del celular ---- */
+    .topbar{padding:10px 12px 8px;gap:8px;}
+    .topbar .btn{padding:7px 11px;font-size:12px;}
+    .actions{gap:6px;}
+    body:not(.en-vista-previa) #btnVistaPrevia{display:none;}   /* el cartel de apertura ya tiene "Vista previa" */
+    .bienvenida{font-size:16px;}
+    .topbar-centro{gap:8px;padding-top:2px;}
+    /* textos cortos en las pestañas */
+    .t-largo{display:none;} .t-corto{display:inline;}
+    /* pestañas a todo el ancho, repartidas */
+    .fede-nav .s-tabs, .sueros-bar > .s-tabs, #movSubTabs{width:100%;}
+    .fede-nav .s-tabs .s-tab, .sueros-bar > .s-tabs .s-tab, #movSubTabs .s-tab{flex:1 0 auto;text-align:center;}
+    #fedeTabs .s-tab{padding:7px 9px;font-size:11.5px;}
+    #fedeTabs.una-sola{display:none !important;}   /* recepción: una sola sección, no hace falta la fila */
+    body.fede-nav-on #vistaSueros .sueros-bar .s-tab, body.fede-nav-on #vistaCremas .sueros-bar .s-tab, body.fede-nav-on #movSubTabs .s-tab{padding:6px 8px;font-size:11px;}
+    .mov-bar, .sueros-bar{margin-top:10px;}
+    .mov-bar.con-tabs{gap:10px;}
+    .mes-selector{justify-content:space-between;width:100%;}
+    .mes-selector span{flex:1;min-width:0;}
+    /* tablas: el recuadro mide lo que su contenido (sin espacio vacío abajo) */
+    #panelContent > .sheet-wrap, .s-panel > .sheet-wrap{flex:0 1 auto;margin-bottom:14px;}
+    .tabla-vc{min-width:720px;}
+    /* modales */
+    .modal-actions{flex-wrap:wrap;}
+    .hc-acciones{flex-wrap:wrap;}
+    .hc-acciones .btn{white-space:nowrap;flex:1 1 auto;}
+    .hc-acciones .hc-estado, .hc-acciones .p-spacer{flex-basis:100%;order:5;}
+    /* portal: título, botones, fechas y "+ Nuevo suero" en renglones ordenados */
+    #pVolver{order:1;}
+    #pBtnPacientes, #pBtnStock, #pBtnInformes{order:2;flex:1 1 auto;}
+    #pDesde, #pHasta{order:3;flex:1 1 0;min-width:0;}
+    .p-bar .p-a{order:3;}
+    .p-bar .p-spacer{display:none;}
+    #pBtnNuevo{order:4;flex-basis:100%;}
+    .pdf-barra{flex-wrap:wrap;margin-right:26px;}
+    .pdf-barra .btn{padding:7px 11px;font-size:12px;}
+    .pdf-fondo{padding:12px;max-height:68vh;}
+    /* portal (aplicaciones) */
+    .p-bar{margin:12px 10px 0;gap:8px;}
+    .p-bar h2{width:100%;order:-1;margin:0 0 2px;}
+  }
+  /* celular acostado (poca altura): la pantalla se desplaza entera en vez de quedar fija */
+  @media (max-height:520px) and (max-width:950px){
+    #app:not(.col-hidden){height:auto;min-height:100dvh;overflow:visible;}
+    #app > .layout, #app .main-area, #app .main-area > .vista, #panelContainer, #panelContent, .s-panel{display:block;}
+    #panelContent > .sheet-wrap, .s-panel > .sheet-wrap{max-height:85vh;}
+    .topbar{position:static;}
   }
 </style>
 </head>
@@ -1073,7 +1124,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <button class="btn" id="pdfCerrar">Cerrar</button>
       <button class="btn btn-primary" id="pdfDescargar">⬇ Descargar PDF</button>
     </div>
-    <div class="pdf-fondo"><div class="pdf-hoja" id="pdfHoja"></div></div>
+    <div class="pdf-fondo"><div class="pdf-escala" id="pdfEscala"><div class="pdf-hoja" id="pdfHoja"></div></div></div>
   </div>
 </div>
 
@@ -1319,11 +1370,11 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <button id="mesNext" title="Mes siguiente">▶</button>
       </div>
       <div class="s-tabs col-hidden" id="movSubTabs" role="tablist" aria-label="Movimientos">
-        <button class="s-tab active" data-msub="diarios" role="tab">Movimientos diarios</button>
+        <button class="s-tab active" data-msub="diarios" role="tab"><span class="t-largo">Movimientos diarios</span><span class="t-corto">Diarios</span></button>
         <button class="s-tab" data-msub="cajas" id="mSubCajas">Cajas</button>
         <button class="s-tab" data-msub="pacientes">Pacientes</button>
         <button class="s-tab s-tab-badge" data-msub="deudores">Deudores <span class="badge-count col-hidden" id="mSubDeudoresN">0</span></button>
-        <button class="s-tab s-tab-nuevo" data-msub="nuevo">+ Nuevo mov.</button>
+        <button class="s-tab s-tab-nuevo" data-msub="nuevo"><span class="t-largo">+ Nuevo mov.</span><span class="t-corto">+ Nuevo</span></button>
       </div>
       <div></div>
     </div>
@@ -1331,9 +1382,9 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <div class="s-tabs col-hidden" id="fedeTabs" role="tablist" aria-label="Secciones">
       <button class="s-tab active" data-ir="movimientos" role="tab">Movimientos</button>
       <button class="s-tab" data-ir="sueros" role="tab">Sueros</button>
-      <button class="s-tab" data-ir="cremas" role="tab">Cremas/Col./Geles</button>
+      <button class="s-tab" data-ir="cremas" role="tab"><span class="t-largo">Cremas/Col./Geles</span><span class="t-corto">Cremas</span></button>
       <button class="s-tab s-tab-inactivo" data-ir="informes" role="tab" title="Próximamente">Informes</button>
-      <button class="s-tab" data-ir="conta" role="tab">Victoria contabilidad</button>
+      <button class="s-tab" data-ir="conta" role="tab"><span class="t-largo">Victoria contabilidad</span><span class="t-corto">Victoria</span></button>
     </div>
 
     <div class="panel-container" id="panelContainer">
@@ -1395,11 +1446,11 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <button id="sMesNext" title="Mes siguiente">▶</button>
       </div>
       <div class="s-tabs" role="tablist" aria-label="Sueros">
-        <button class="s-tab active" data-tab="movs" role="tab">Movimientos sueros</button>
-        <button class="s-tab col-hidden" id="sBtnPacientes" title="Fichas de los pacientes">Pacientes sueros</button>
+        <button class="s-tab active" data-tab="movs" role="tab"><span class="t-largo">Movimientos sueros</span><span class="t-corto">Movimientos</span></button>
+        <button class="s-tab col-hidden" id="sBtnPacientes" title="Fichas de los pacientes"><span class="t-largo">Pacientes sueros</span><span class="t-corto">Pacientes</span></button>
         <button class="s-tab" data-tab="stock" role="tab">Stock</button>
         <button class="s-tab" data-tab="resumen" role="tab">Informes</button>
-        <button class="s-tab s-tab-nuevo" id="sBtnNuevo">+ Nuevo mov.</button>
+        <button class="s-tab s-tab-nuevo" id="sBtnNuevo"><span class="t-largo">+ Nuevo mov.</span><span class="t-corto">+ Nuevo</span></button>
       </div>
       <div style="justify-self:end;display:flex;gap:8px;">
         <button class="btn s-cfg-btn venc-alerta col-hidden" id="sBtnVenc"></button>
@@ -2693,6 +2744,7 @@ function aplicarRolUI(){
   const tabs = document.getElementById('fedeTabs');
   const verTab = {movimientos:true, sueros:esAdminSueros(), cremas:esFede(), informes:esAdmin, conta:esFede()};
   tabs.querySelectorAll('[data-ir]').forEach(b=> b.classList.toggle('col-hidden', !verTab[b.dataset.ir]));
+  tabs.classList.toggle('una-sola', Object.values(verTab).filter(Boolean).length===1);
   tabs.classList.remove('col-hidden');
   document.getElementById('movSubTabs').classList.remove('col-hidden');
   document.getElementById('mSubCajas').classList.toggle('col-hidden', !esAdmin);
@@ -3078,6 +3130,7 @@ function actualizarEstadoCaja(){
     btnNuevo.disabled = false; // se muestra activo; al tocarlo avisa que hay que abrir caja
     btnPrev.classList.remove('col-hidden');
     btnPrev.textContent = vistaPrevia ? "Salir de vista previa" : "Vista previa";
+    document.body.classList.toggle('en-vista-previa', vistaPrevia);
     document.body.classList.add('modo-lectura');
     if(vistaPrevia){
       hint.textContent = "";
@@ -7945,6 +7998,18 @@ function cargarHtml2pdf(){
   return html2pdfCargando;
 }
 const overlayPDF = document.getElementById('overlayPDF');
+// En el celular la hoja (760px) se achica para verse entera; al descargar se genera siempre en tamaño real
+function escalarHojaPDF(){
+  const hoja = document.getElementById('pdfHoja'), env = document.getElementById('pdfEscala'), fondo = env.parentElement;
+  hoja.style.transform = ''; env.style.width = ''; env.style.height = '';
+  const disp = fondo.clientWidth - 24;
+  const k = Math.min(1, disp / 760);
+  if(k < 1){
+    hoja.style.transformOrigin = 'top left'; hoja.style.transform = `scale(${k})`;
+    env.style.width = (760*k) + 'px'; env.style.height = (hoja.offsetHeight*k) + 'px';
+  }
+}
+window.addEventListener('resize', ()=>{ if(overlayPDF.classList.contains('show')) escalarHojaPDF(); });
 let pdfArchivo = 'informe';
 function abrirVistaPDF(titulo, html, archivo, opts){
   opts = opts || {};
@@ -7960,6 +8025,7 @@ function abrirVistaPDF(titulo, html, archivo, opts){
     <div class="pdf-cuerpo">${html}</div>`;
   overlayPDF.classList.add('show');
   overlayPDF.scrollTop = 0;
+  escalarHojaPDF();
   cargarHtml2pdf().catch(()=>{});   // se va cargando mientras mira la vista previa
 }
 document.getElementById('pdfCerrar').onclick = ()=> overlayPDF.classList.remove('show');
@@ -7969,6 +8035,7 @@ document.getElementById('pdfDescargar').onclick = async ()=>{
   btn.disabled = true; btn.textContent = 'Generando…';
   try{
     await cargarHtml2pdf();
+    const hojaPdf = document.getElementById('pdfHoja'); const escPrev = hojaPdf.style.transform; hojaPdf.style.transform = '';
     await window.html2pdf().set({
       margin: [8, 8, 10, 8],
       filename: pdfArchivo + '.pdf',
@@ -7977,6 +8044,7 @@ document.getElementById('pdfDescargar').onclick = async ()=>{
       jsPDF: {unit:'mm', format:'a4', orientation:'portrait'},
       pagebreak: {mode:['css','legacy'], avoid:['tr','.hc-ev','.s-kpi','.pdf-campo','.bal-cierre']},
     }).from(document.getElementById('pdfHoja')).save();
+    escalarHojaPDF();
   }catch(e){ alert(e.message || 'No se pudo generar el PDF.'); }
   btn.disabled = false; btn.textContent = '⬇ Descargar PDF';
 };
