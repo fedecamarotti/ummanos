@@ -71,6 +71,16 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
   }
   .topbar h1{font-size:16px;margin:0;font-weight:700;letter-spacing:0.2px;}
+  #app > .topbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;}
+  #app > .topbar > .actions{justify-self:end;}
+  .topbar-centro{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;}
+  .bienvenida{font-size:17px;font-weight:700;color:var(--text);letter-spacing:.2px;white-space:nowrap;}
+  .bienvenida:empty{display:none;}
+  .topbar-centro .caja-status{font-size:11px;padding:4px 11px;}
+  @media (max-width:900px){
+    #app > .topbar{grid-template-columns:auto 1fr;}
+    #app > .topbar > .topbar-centro{grid-column:1 / -1;grid-row:2;}
+  }
   .topbar-logo{height:34px;display:block;}
   .topbar .sub{font-size:11.5px;color:var(--muted);margin-top:2px;font-weight:500;}
   .caja-status{
@@ -1251,9 +1261,12 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   <div>
     <img src="images/logo.png" alt="Ummana" class="topbar-logo">
   </div>
-  <div class="caja-status col-hidden" id="cajaStatus">
-    <div class="dot"></div>
-    <span></span>
+  <div class="topbar-centro">
+    <div class="bienvenida" id="bienvenida"></div>
+    <div class="caja-status col-hidden" id="cajaStatus">
+      <div class="dot"></div>
+      <span></span>
+    </div>
   </div>
   <div class="actions">
     <button class="btn col-hidden" id="btnCierre">Cerrar caja</button>
@@ -2659,6 +2672,10 @@ function aplicarRolUI(){
   const esAdmin = currentUser.rol === 'admin';
   document.getElementById('btnCierre').classList.toggle('col-hidden', esAdmin);
   document.getElementById('cajaStatus').classList.toggle('col-hidden', esAdmin);
+  // Saludo centrado arriba: "Bienvenido Fede!" / "Bienvenida Tiara!"
+  const pn = primerNombre();
+  const nombreLindo = pn ? pn.charAt(0) + pn.slice(1).toLowerCase() : '';
+  document.getElementById('bienvenida').textContent = nombreLindo ? `${NOMBRES_FEMENINOS.includes(pn) ? 'Bienvenida' : 'Bienvenido'} ${nombreLindo}!` : '';
   document.getElementById('cajaHint').classList.toggle('col-hidden', esAdmin);
   document.getElementById('btnInformes').classList.toggle('col-hidden', !esAdmin);
   document.getElementById('btnImportar').classList.toggle('col-hidden', !esFede());
@@ -3038,7 +3055,8 @@ function actualizarEstadoCaja(){
   if(cajaActual){
     const esQuienAbrio = cajaActual.recepcionista === currentUser.nombre;
     el.classList.remove('closed');
-    el.querySelector('span').innerHTML = `Caja abierta — Recepción: <strong>${cajaActual.recepcionista}</strong> · Apertura: $${cajaActual.aperturaMonto.toLocaleString('es-AR')}`;
+    el.querySelector('span').innerHTML = `Caja abierta · Apertura $${cajaActual.aperturaMonto.toLocaleString('es-AR')}`;
+    el.title = `Abrió la caja: ${cajaActual.recepcionista}`;
     btn.textContent = "Cerrar caja";
     btn.disabled = !esQuienAbrio;
     hint.textContent = esQuienAbrio ? "" : `La caja la abrió ${cajaActual.recepcionista} — solo ella puede cerrarla desde su usuario.`;
@@ -3052,8 +3070,8 @@ function actualizarEstadoCaja(){
   } else {
     el.classList.add('closed');
     el.querySelector('span').innerHTML = ultimoCierre!==null
-      ? `Caja cerrada — último cierre: $${ultimoCierre.toLocaleString('es-AR')}`
-      : "Caja cerrada — todavía no hay ningún cierre registrado";
+      ? `Caja cerrada · Último cierre $${ultimoCierre.toLocaleString('es-AR')}`
+      : "Caja cerrada · Todavía no hay ningún cierre";
     btn.textContent = "Abrir caja";
     btn.disabled = false;
     btnNuevo.disabled = false; // se muestra activo; al tocarlo avisa que hay que abrir caja
@@ -5565,6 +5583,7 @@ function pacientesSueros(){
     .map(p=> p.nombreCompleto)
     .sort((a,b)=> a.localeCompare(b,'es'));
 }
+const NOMBRES_FEMENINOS = ['ORIANA','TIARA','STEPHANIE','GABRIELA','SABRINA','VICTORIA','LUCIANA','EUGENIA','CECILIA'];
 const USUARIOS_CAJA = ['FEDE','FEDERICO','PEDRO','ORIANA','TIARA','STEPHANIE'];
 function primerNombre(){ return mayus(((currentUser && currentUser.nombre) || '').trim()).split(/[\s,]+/)[0]; }
 function esUsuarioCaja(){
