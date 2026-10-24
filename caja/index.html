@@ -804,6 +804,10 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .tabla-vc tr.vc-sep td{background:#f6f0de;font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:left;padding-left:14px;}
   .tabla-vc tfoot td{position:sticky;bottom:0;background:#f4eeda;font-weight:700;border-top:2px solid var(--border);}
   .vc-extra{font-style:italic;color:#6e6757;}
+  .tabla-vc tr.vc-auto td{background:#f7f3e6;}
+  .vc-auto-ico{font-size:11px;opacity:.7;cursor:help;}
+  .vc-medio.mp{background:#d8eefa;color:#1c7fa8;}
+  .vc-medio.tarjeta{background:#ece2fb;color:#7a3fc9;}
   .vcd-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
   .vcd-tit{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;}
   .vcd-tit.ing{color:#2f7a2f;} .vcd-tit.egr{color:#a13a3a;}
@@ -2579,6 +2583,7 @@ auth.onAuthStateChanged(async (user)=>{
     if(typeof unsubCremas!=='undefined' && unsubCremas){ unsubCremas(); unsubCremas = null; }
     if(typeof unsubConta!=='undefined' && unsubConta){ unsubConta(); unsubConta = null; }
     if(typeof unsubVcCfg!=='undefined' && unsubVcCfg){ unsubVcCfg(); unsubVcCfg = null; }
+    if(typeof unsubContaCaja!=='undefined' && unsubContaCaja){ unsubContaCaja(); unsubContaCaja = null; }
     if(unsubPortalPac){ unsubPortalPac(); unsubPortalPac = null; }
     if(unsubFichasSueros){ unsubFichasSueros(); unsubFichasSueros = null; }
     document.getElementById('portal').classList.add('col-hidden');
@@ -8191,7 +8196,43 @@ let mesConta = { year: hoyRef.getFullYear(), month: hoyRef.getMonth()+1 };
 let contaMovs = [];
 let unsubConta = null, contaMesSuscripto = null;
 let vcEditId = null, vcTipo = 'ingreso', vcMoneda = '$', vcMedio = '';
-const VC_MEDIOS = {efectivo:'Efectivo', transferencia:'Transferencia', debe:'Debe'};
+const VC_MEDIOS = {efectivo:'Efectivo', transferencia:'Transferencia', debe:'Debe', mp:'Mercado Pago', tarjeta:'Tarjeta'};
+/* Ingresos automáticos desde Movimientos (no se guardan acá; se calculan cada vez):
+   1) Paciente/alumno = BARBIERI, VICTORIA y concepto RETIRO HONORARIOS MEDICOS
+   2) Profesional = BARBIERI, VICTORIA y el cobro lo hizo "profesional" (con o sin jornada) */
+let contaAuto = null, unsubContaCaja = null;
+const vcClave = v => normBusqueda(v||'').replace(/[^a-z]/g,'');
+const vcEsVictoria = v => { const k = vcClave(v); return k.includes('barbieri') && k.includes('victoria'); };
+function vcCalcularAuto(movs){
+  const out = [];
+  movs.forEach(m=>{
+    const pagos = pagosDe(m);
+    if(vcEsVictoria(m.pac) && vcClave(m.concepto).startsWith('retirohonorariosmedicos')){
+      const ps = pagos.filter(p=> p.medio!=='debe');
+      (ps.length ? ps : [{medio:'', valor:m.valor}]).forEach((p, i)=> out.push({
+        id:`auto_r_${m.id}_${i}`, auto:true, fechaISO:m.fechaISO, tipo:'ingreso', detalle:'Retiro honorarios médicos',
+        extra: m.notas || '', moneda: m.moneda==='USD' ? 'USD' : '$', valor: Number(p.valor)||0, medio: p.medio||'', creadoEn: m.creadoEn,
+      }));
+    }
+    if(vcEsVictoria(m.prof)){
+      pagos.forEach((p, i)=>{
+        if(p.cobradoPor!=='profesional' || p.medio==='debe') return;
+        out.push({
+          id:`auto_c_${m.id}_${i}`, auto:true, fechaISO:m.fechaISO, tipo:'ingreso', detalle:'Cobrado por Victoria',
+          extra: [m.pac, m.concepto].filter(Boolean).join(' · ') + (m.jornada ? ' (jornada)' : ''),
+          moneda: m.moneda==='USD' ? 'USD' : '$', valor: Number(p.valor)||0, medio: p.medio||'', creadoEn: m.creadoEn,
+        });
+      });
+    }
+  });
+  return out.filter(x=> x.valor > 0);
+}
+// Todo lo del mes: lo cargado a mano + lo automático, por fecha
+function vcListaCompleta(){
+  if(contaMovs==null || contaAuto==null) return null;
+  const ms = ts => ts && ts.toMillis ? ts.toMillis() : 0;
+  return [...contaMovs, ...contaAuto].sort((a,b)=> a.fechaISO===b.fechaISO ? ms(a.creadoEn)-ms(b.creadoEn) : (a.fechaISO<b.fechaISO?-1:1));
+}
 const vcEsDebe = m => m.medio==='debe';
 const vcMesIni = ()=> `${mesConta.year}-${String(mesConta.month).padStart(2,'0')}-01`;
 const vcMesFin = ()=>{ let y = mesConta.year, m = mesConta.month+1; if(m>12){ m=1; y++; } return `${y}-${String(m).padStart(2,'0')}-01`; };
@@ -8211,8 +8252,12 @@ function suscribirConta(){
   const clave = vcMesIni();
   if(unsubConta && contaMesSuscripto===clave) return;
   if(unsubConta) unsubConta();
+  if(unsubContaCaja) unsubContaCaja();
   contaMesSuscripto = clave;
-  contaMovs = null;
+  contaMovs = null; contaAuto = null;
+  unsubContaCaja = db.collection('movimientos').where('fechaISO','>=', vcMesIni()).where('fechaISO','<', vcMesFin())
+    .onSnapshot(snap=>{ contaAuto = vcCalcularAuto(snap.docs.map(d=> ({id:d.id, ...d.data()}))); renderConta(); },
+      err=>{ contaAuto = []; console.warn('No se pudieron leer los movimientos de la caja', err); renderConta(); });
   unsubConta = db.collection('contaVictoria').where('fechaISO','>=', vcMesIni()).where('fechaISO','<', vcMesFin())
     .onSnapshot(snap=>{
       const ms = ts => ts && ts.toMillis ? ts.toMillis() : Date.now();
@@ -8234,11 +8279,12 @@ function renderConta(){
   if(vistaActual!=='conta') return;
   document.getElementById('vcMesLabel').textContent = `${MESES[mesConta.month-1]} ${mesConta.year}`;
   const tb = document.getElementById('vcTbody'), tf = document.getElementById('vcTfoot');
-  if(contaMovs==null){ tb.innerHTML = '<tr><td colspan="7" class="empty-state">Cargando…</td></tr>'; tf.innerHTML = ''; return; }
-  if(!contaMovs.length){ tb.innerHTML = '<tr><td colspan="7" class="empty-state">No hay movimientos en este mes. Cargalos con "+ Nuevo movimiento".</td></tr>'; tf.innerHTML = ''; return; }
-  const hayUsd = contaMovs.some(m=> m.moneda==='USD');
-  const fila = m => `<tr>
-      <td class="editcol"><button class="editbtn" title="Editar" onclick="abrirConta('${m.id}')">&#9998;</button></td>
+  const lista = vcListaCompleta();
+  if(lista==null){ tb.innerHTML = '<tr><td colspan="7" class="empty-state">Cargando…</td></tr>'; tf.innerHTML = ''; return; }
+  if(!lista.length){ tb.innerHTML = '<tr><td colspan="7" class="empty-state">No hay movimientos en este mes. Cargalos con "+ Nuevo movimiento".</td></tr>'; tf.innerHTML = ''; return; }
+  const hayUsd = lista.some(m=> m.moneda==='USD');
+  const fila = m => `<tr class="${m.auto ? 'vc-auto' : ''}">
+      <td class="editcol">${m.auto ? '<span class="vc-auto-ico" title="Viene automático de Movimientos (caja diaria). Se modifica allá.">🔗</span>' : `<button class="editbtn" title="Editar" onclick="abrirConta('${m.id}')">&#9998;</button>`}</td>
       <td>${vcFecha(m.fechaISO)}</td>
       <td class="left">${vcDetalleHTML(m)}</td>
       <td class="ing">${!vcEsDebe(m) && m.tipo!=='egreso' ? vcMonto(m.valor, m.moneda) : ''}</td>
@@ -8246,12 +8292,12 @@ function renderConta(){
       <td class="deb">${vcEsDebe(m) ? vcMonto(m.valor, m.moneda) : ''}</td>
       <td class="medio">${m.medio ? `<span class="vc-medio ${m.medio}">${VC_MEDIOS[m.medio]||m.medio}</span>` : '<span class="pend">—</span>'}</td>
     </tr>`;
-  const pesos = contaMovs.filter(m=> m.moneda!=='USD'), usd = contaMovs.filter(m=> m.moneda==='USD');
+  const pesos = lista.filter(m=> m.moneda!=='USD'), usd = lista.filter(m=> m.moneda==='USD');
   tb.innerHTML = hayUsd
     ? (pesos.length ? `<tr class="vc-sep"><td colspan="7">Pesos</td></tr>` + pesos.map(fila).join('') : '')
       + `<tr class="vc-sep"><td colspan="7">Dólares</td></tr>` + usd.map(fila).join('')
-    : contaMovs.map(fila).join('');
-  const t = vcTotales(contaMovs);
+    : lista.map(fila).join('');
+  const t = vcTotales(lista);
   const totFila = (k, lbl) => `<tr><td class="editcol"></td><td></td><td class="left">${lbl}</td><td class="ing">${vcMonto(t[k].ing, k)}</td><td class="egr">${vcMonto(t[k].egr, k)}</td><td class="deb">${t[k].deb ? vcMonto(t[k].deb, k) : ''}</td><td></td></tr>`;
   const balFila = (k) => { const b = t[k].ing - t[k].egr; return `<tr><td class="editcol"></td><td></td><td class="left">BALANCE ${k==='USD'?'USD':'$'}</td><td colspan="2" class="${b<0?'egr':'ing'}">${b<0?'−':'+'}${vcMonto(b, k)}</td><td></td><td></td></tr>`; };
   tf.innerHTML = (t['$'].n ? totFila('$', `TOTALES${hayUsd?' $':''} <span class="tot-cant">(${t['$'].n} ${t['$'].n===1?'movimiento':'movimientos'})</span>`) + balFila('$') : '')
@@ -8388,7 +8434,7 @@ document.getElementById('vcdGuardar').onclick = async ()=>{
 
 /* ---- PDF: Exportar balance contable ---- */
 document.getElementById('vcBtnPDF').onclick = ()=>{
-  const lista = contaMovs || [];
+  const lista = vcListaCompleta() || [];
   const mesTxt = `${MESES[mesConta.month-1]} ${mesConta.year}`;
   if(!lista.length){ alert(`No hay movimientos en ${mesTxt}.`); return; }
   const ultimo = new Date(mesConta.year, mesConta.month, 0).getDate();
