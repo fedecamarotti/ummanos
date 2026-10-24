@@ -7788,10 +7788,12 @@ function etiquetasCompras(){
     return c;
   });
 }
+// Escala fija para todas las barras (vista general y detalle): la línea del 100% siempre en el medio, barra llena = 200% o más
+const REC_ESCALA = 200;
 function barraRec(pct, escala){
   const p = Math.max(0, pct);
   const cel = Math.min(p, 100) / escala * 100;
-  const ver = p > 100 ? (p - 100) / escala * 100 : 0;
+  const ver = p > 100 ? Math.min(p - 100, escala - 100) / escala * 100 : 0;   // pasado el tope, la barra queda llena (el % se lee en el número)
   const meta = 100 / escala * 100;
   return `<div class="rec-barra"><div class="cel" style="width:${cel}%"></div>${ver ? `<div class="ver" style="left:${meta}%;width:${ver}%"></div>` : ''}<div class="meta" style="left:${meta}%"></div><span class="txt">${Math.round(p)}%</span></div>`;
 }
@@ -7803,7 +7805,7 @@ function htmlRecupero(selEtiqueta, desde, hasta, rangoTxt){
   const c = selEtiqueta ? todas.find(x=> mayus(x.etiqueta)===mayus(selEtiqueta)) : null;
   if(c){
     const pctTot = c.inversion ? c.rec/c.inversion*100 : 0;
-    const escala = Math.min(Math.max(120, pctTot, ...c.items.map(i=> i.inversion ? i.rec/i.inversion*100 : 0)), 400);
+    const escala = REC_ESCALA;
     return `<h3>Compra del ${fechaLarga(c.fechaISO)} · ${c.proveedor||''}</h3>${c.ejemplo ? '<div class="rec-aviso-ej">Compra de ejemplo: no está cargada, no descuenta stock ni aparece en movimientos. Toma todas las aplicaciones desde el 24/8 y descuenta directamente de esta compra.</div>' : ''}${explica}
       <div class="s-kpis rec-kpis">
         <div class="s-kpi principal"><div class="lbl">Inversión</div><div class="val">${fmtPesos(c.inversion)}</div></div>
@@ -7825,7 +7827,7 @@ function htmlRecupero(selEtiqueta, desde, hasta, rangoTxt){
       </table></div>${leyenda}`;
   }
   const lista = todas.filter(x=> x.fechaISO>=desde && x.fechaISO<=hasta);
-  const escala = Math.min(Math.max(120, ...lista.map(x=> x.inversion ? x.rec/x.inversion*100 : 0)), 400);
+  const escala = REC_ESCALA;
   return `<h3>Recuperación de compras</h3>
     <div class="sub">Compras ${rangoTxt} (se analizan desde el 1/10/2026). Tocá una compra para ver el detalle por insumo.</div>
     <div class="inf-wrap"><table class="inf-tabla">
