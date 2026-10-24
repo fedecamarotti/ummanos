@@ -772,6 +772,17 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .caja-row .cr-montos div{text-align:center;}
   .caja-row .cr-montos .lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.3px;}
   .badge-abierta{background:#f3ead3;color:#6b5530;}
+  /* ---------- Jornada (al lado de Concepto) ---------- */
+  .concepto-row{display:flex;gap:10px;align-items:flex-end;}
+  .concepto-col{flex:1;min-width:0;}
+  .jornada-col{flex:none;display:flex;flex-direction:column;align-items:center;}
+  .sw-jornada{width:62px;height:36px;border:none;border-radius:20px;background:#e08b87;position:relative;cursor:pointer;padding:0;box-shadow:inset 0 1px 2px rgba(0,0,0,.12);transition:background .2s ease;}
+  .sw-jornada i{position:absolute;top:4px;left:30px;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .2s ease;}
+  .sw-jornada.on{background:#86c793;}
+  .sw-jornada.on i{left:4px;}
+  .sw-jornada:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .tag-jornada{font-style:italic;font-weight:600;}
+
   /* ---------- Victoria contabilidad (solo Fede) ---------- */
   body.fede-nav-on #vistaConta > .sueros-bar{margin-top:8px;}
   #vistaConta .s-panel > .sheet-wrap{flex:0 1 auto;width:calc(100% - 56px);max-width:960px;margin:12px auto 20px;}
@@ -1681,9 +1692,17 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     </div>
 
     <div class="field">
-      <label>Concepto</label>
-      <div class="ac-wrap">
-        <input type="text" id="selConcepto" placeholder="Elegí primero un profesional/área…" autocomplete="off" disabled>
+      <div class="concepto-row">
+        <div class="concepto-col">
+          <label>Concepto</label>
+          <div class="ac-wrap">
+            <input type="text" id="selConcepto" placeholder="Elegí primero un profesional/área…" autocomplete="off" disabled>
+          </div>
+        </div>
+        <div class="jornada-col col-hidden" id="jornadaWrap">
+          <label>Jornada</label>
+          <button type="button" class="sw-jornada" id="btnJornada" aria-pressed="false" title="Activalo si es de jornada: no entra en el pago del día del profesional (se liquida a fin de mes)"><i></i></button>
+        </div>
       </div>
     </div>
 
@@ -2810,7 +2829,7 @@ function pasaFiltros(m){
   if(filtroProfesional.value && !contiene(m.prof, filtroProfesional.value)) return false;
   if(filtroCodigo.value && !contiene(m.codigo, filtroCodigo.value)) return false;
   if(filtroConcepto.value && !contiene(m.concepto, filtroConcepto.value)) return false;
-  if(filtroNotas.value && !contiene(m.notas, filtroNotas.value)) return false;
+  if(filtroNotas.value && !contiene((m.notas||'') + (m.jornada ? ' (JORNADA)' : ''), filtroNotas.value)) return false;
   if(filtroTotal.value && !contiene(fmtTotal(m), filtroTotal.value)) return false;
   if(filtroMedio.value && !contiene(medioDisplayText(m), filtroMedio.value)) return false;
   if(filtroCobro.value && !contiene(cobroTextoPlano(m), filtroCobro.value)) return false;
@@ -2830,7 +2849,7 @@ function renderTabla(){
       <td>${m.prof}</td>
       <td class="codigo">${m.codigo||""}</td>
       <td class="concepto">${m.concepto}</td>
-      <td class="notas" title="${(m.notas||"").replace(/"/g,'&quot;')}">${m.notas||""}</td>
+      <td class="notas" title="${(m.notas||"").replace(/"/g,'&quot;')}${m.jornada?' (JORNADA)':''}">${m.notas||""}${m.jornada ? `${m.notas ? ' ' : ''}<i class="tag-jornada">(JORNADA)</i>` : ''}</td>
       <td class="total ${m.valor==0 ? '' : (esGasto?'egreso':'ingreso')}">${fmtTotal(m)}</td>
       <td class="badges-cell">${medioBadgesHTML(m)}</td>
       <td class="concepto">${cobroBadgesHTML(m)}</td>
@@ -3262,7 +3281,22 @@ function actualizarConceptosDesdeProfesional(){
 }
 attachAutocomplete(selConcepto, ()=> conceptosDisponiblesActual.map(c=>c.concepto));
 
+// Jornada: solo ingresos de profesionales con nombre propio ("APELLIDO, NOMBRE")
+let movJornada = false;
+function setJornada(v){
+  movJornada = !!v;
+  const b = document.getElementById('btnJornada');
+  b.classList.toggle('on', movJornada);
+  b.setAttribute('aria-pressed', movJornada ? 'true' : 'false');
+}
+document.getElementById('btnJornada').onclick = ()=> setJornada(!movJornada);
+function actualizarJornadaVisible(){
+  const ok = movTipo==='ingreso' && /,/.test(selProfesional.value||'');
+  document.getElementById('jornadaWrap').classList.toggle('col-hidden', !ok);
+  if(!ok) setJornada(false);
+}
 function actualizarCampoPacienteSegunTipo(){
+  actualizarJornadaVisible();
   const egreso = movTipo==='egreso';
   document.getElementById('campoPacienteIngreso').classList.toggle('col-hidden', egreso);
   document.getElementById('campoPacienteEgreso').classList.toggle('col-hidden', !egreso);
@@ -3340,6 +3374,7 @@ function abrirEdicion(id){
   montoAutoSync = pagosIniciales.length===1 ? String(pagosIniciales[0].valor) : null;
 
   inpValor.value = Number(m.valor).toLocaleString('es-AR');
+  setJornada(!!m.jornada && !document.getElementById('jornadaWrap').classList.contains('col-hidden'));
   overlay.classList.add('show');
 }
 window.abrirEdicion = abrirEdicion;
@@ -3368,6 +3403,8 @@ function bloquearFechaMovimiento(bloquear){
 })();
 function resetModal(){
   montoAutoSync = null;
+  setJornada(false);
+  document.getElementById('jornadaWrap').classList.add('col-hidden');
   bloquearFechaMovimiento(false);
   document.getElementById('inpFechaMovimiento').value = hoyISO();
   selPaciente.value = "";
@@ -3542,6 +3579,17 @@ btnGuardarMov.onclick = async ()=>{
     const [movId, idxStr] = inp.value.split('::');
     return {movId, idx: Number(idxStr)};
   });
+  // Pago parcial de deuda: si se paga menos de lo que se debe, la diferencia puede quedar como deuda
+  let restoDeuda = false;
+  if(deudasASaldar.length && valorNum > 0){
+    const info = deudasASaldar.map(d=> movimientosDeuda.find(x=> x.movId===d.movId && x.idx===d.idx)).filter(Boolean);
+    const mismaMoneda = info.length===deudasASaldar.length && info.every(x=> (x.moneda||'$')===monedaSel);
+    const suma = info.reduce((a,x)=> a + (Number(x.valor)||0), 0);
+    if(mismaMoneda && valorNum < suma){
+      restoDeuda = confirm(`La deuda es de ${fmtMonto(suma, monedaSel)} y se pagan ${fmtMonto(valorNum, monedaSel)}.\n\n¿Queda debiendo ${fmtMonto(suma - valorNum, monedaSel)}?\n\nAceptar: la diferencia sigue como deuda.\nCancelar: se salda la deuda completa.`);
+      if(restoDeuda) deudasASaldar.forEach(d=>{ const x = info.find(y=> y.movId===d.movId && y.idx===d.idx); d.valor = Number(x.valor)||0; });
+    }
+  }
   const fechaISO = document.getElementById('inpFechaMovimiento').value || hoyISO();
   if(!document.getElementById('inpFechaMovimiento').value){ alert("Elegí una fecha."); return; }
   const fechaDisplay = isoToDisplay(fechaISO);
@@ -3554,7 +3602,7 @@ btnGuardarMov.onclick = async ()=>{
     const cambios = {
       pac: pacValor, prof: selProfesional.value, concepto: selConcepto.value, codigo,
       notas: document.getElementById('inpNotas').value, moneda: monedaSel, valor: valorNum,
-      pagos, tieneDeudaPendiente: pendienteDeuda,
+      pagos, tieneDeudaPendiente: pendienteDeuda, jornada: movJornada,
       actualizadoEn: firebase.firestore.FieldValue.serverTimestamp(),
     };
     await db.collection('movimientos').doc(editingId).update(cambios);
@@ -3571,7 +3619,7 @@ btnGuardarMov.onclick = async ()=>{
     const nuevoRef = await db.collection('movimientos').add({
       fechaISO, fechaDisplay, pac: pacValor, prof: selProfesional.value,
       concepto: selConcepto.value, codigo, notas: document.getElementById('inpNotas').value,
-      moneda: monedaSel, valor: valorNum, pagos, tieneDeudaPendiente: pendienteDeuda,
+      moneda: monedaSel, valor: valorNum, pagos, tieneDeudaPendiente: pendienteDeuda, jornada: movJornada,
       creadoPor: currentUser.nombre, creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
       cajaId: cajaActual ? cajaActual.id : 'SIN_CAJA',
     });
@@ -3580,6 +3628,16 @@ btnGuardarMov.onclick = async ()=>{
 
   if(deudasASaldar.length){
     // se agrupan por movimiento (un mismo registro puede tener varias partes en "Debe")
+    // con pago parcial: lo pagado cubre las deudas en orden; la que queda a medias se divide (parte saldada + resto en "Debe")
+    let disponible = valorNum;
+    const parte = {};   // "movId::idx" → monto saldado (si es menos que la deuda)
+    if(restoDeuda){
+      deudasASaldar.forEach(d=>{
+        const k = d.movId + '::' + d.idx;
+        if(disponible >= d.valor){ disponible -= d.valor; }
+        else { parte[k] = disponible; disponible = 0; }
+      });
+    }
     const porMov = {};
     deudasASaldar.forEach(d=> (porMov[d.movId] = porMov[d.movId] || []).push(d.idx));
     const saldadas = [];
@@ -3590,6 +3648,13 @@ btnGuardarMov.onclick = async ()=>{
       const pagosDeuda = pagosDe(snap.data()).slice();
       porMov[movId].forEach(idx=>{
         if(!pagosDeuda[idx]) return;
+        const k = movId + '::' + idx;
+        if(k in parte){
+          const pagado = parte[k], resto = (Number(pagosDeuda[idx].valor)||0) - pagado;
+          if(pagado <= 0) return;   // no le llegó nada del pago: sigue igual
+          pagosDeuda.push({medio:'debe', valor: resto, cobradoPor: pagosDeuda[idx].cobradoPor || 'ummana', saldada:false, fechaSaldadoISO:null, fechaSaldadoDisplay:null});
+          pagosDeuda[idx] = {...pagosDeuda[idx], valor: pagado};
+        }
         pagosDeuda[idx] = {...pagosDeuda[idx], saldada:true, fechaSaldadoISO:fechaISO, fechaSaldadoDisplay:fechaDisplay, saldadoPorMovId:nuevoMovId};
         saldadas.push({movId, idx});
       });
@@ -4002,6 +4067,7 @@ const overlayPago = document.getElementById('overlayPago');
 const selProfesionalPago = document.getElementById('selProfesionalPago');
 const inpFechaPago = document.getElementById('inpFechaPago');
 let pagoMovsActuales = [];
+let pagoJornadaExcluidos = 0;
 attachAutocomplete(selProfesionalPago, ()=> todosLosNombresDeProfesionales());
 
 document.getElementById('btnPagoProfesional').onclick = ()=>{
@@ -4024,14 +4090,16 @@ async function refreshPagoPreview(){
   preview.innerHTML = '<div class="empty-state">Buscando…</div>';
   try{
     const snap = await db.collection('movimientos').where('fechaISO','==', fechaISO).where('prof','==', prof).orderBy('creadoEn','asc').get();
-    pagoMovsActuales = snap.docs.map(d=> d.data());
+    const todos = snap.docs.map(d=> d.data());
+    pagoJornadaExcluidos = todos.filter(m=> m.jornada).length;
+    pagoMovsActuales = todos.filter(m=> !m.jornada);   // lo de jornada se liquida aparte a fin de mes
   }catch(e){
     preview.innerHTML = `<div class="empty-state">Error al buscar: ${e.message}</div>`;
     btnExp.disabled = true; return;
   }
 
   if(!pagoMovsActuales.length){
-    preview.innerHTML = '<div class="empty-state">Sin movimientos de este profesional en esa fecha.</div>';
+    preview.innerHTML = `<div class="empty-state">Sin movimientos de este profesional en esa fecha.${pagoJornadaExcluidos ? `<br>(${pagoJornadaExcluidos} de jornada, que se liquidan aparte)` : ''}</div>`;
     btnExp.disabled = true; return;
   }
   let totalPesos=0, totalUsd=0, profPesos=0, profUsd=0, ummPesos=0, ummUsd=0;
@@ -4046,6 +4114,7 @@ async function refreshPagoPreview(){
     });
   });
   preview.innerHTML = `
+    ${pagoJornadaExcluidos ? `<div class="hint" style="padding:0 0 10px;">No se incluyen ${pagoJornadaExcluidos} ${pagoJornadaExcluidos===1?'movimiento':'movimientos'} de jornada (se liquidan a fin de mes).</div>` : ''}
     <div class="deudores-summary">
       ${totalPesos>0 ? `<div class="chip" style="background:#f3ead3;border-color:#e3d3ad;color:#6b5530;">Total del día $ : $${totalPesos.toLocaleString('es-AR')}</div>` : ""}
       ${totalUsd>0 ? `<div class="chip" style="background:#f3ead3;border-color:#e3d3ad;color:#6b5530;">Total del día USD : US$ ${totalUsd.toLocaleString('es-AR')}</div>` : ""}
