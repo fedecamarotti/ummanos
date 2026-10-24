@@ -7761,8 +7761,6 @@ function calcularCompras(){
     }
     else c.items.push({insumo:k, cant:l.cantOriginal, sinCargo:l.sinCargo||0, inversion:l.inversion, usadas, rec, pend, fechaRec, aportes});
   }));
-  const ej = compraEjemplo(apps, netoApp);
-  if(ej) compras[ej.id] = ej;
   return Object.values(compras).map(c=>{
     c.items.sort((a,b)=> a.insumo.localeCompare(b.insumo,'es'));
     c.inversion = c.items.reduce((a,i)=> a+i.inversion, 0);
@@ -7781,75 +7779,6 @@ function calcularCompras(){
     c.etiqueta = `${fechaLarga(c.fechaISO)} · ${c.proveedor || 'SIN PROVEEDOR'} · ${fmtPesos(c.inversion)}`;
     return c;
   }).sort((a,b)=> a.fechaISO < b.fechaISO ? 1 : -1);
-}
-/* Compra de EJEMPLO (no está cargada: no toca stock ni movimientos).
-   Consume directamente de las aplicaciones desde su fecha, sin mirar el resto del stock. */
-const COMPRA_EJEMPLO = {
-  id: 'EJEMPLO', fechaISO: '2026-08-24', proveedor: 'FARMACIA BIOHELPER (COMPRA EJEMPLO, NO CARGADA)',
-  descuentoPct: 20,   // descuento sobre el total: el valor de la ampolla sigue siendo el de lista
-  items: [   // [nombre en la factura, cantidad, valor de la ampolla]
-    ['BERBERIS',20,9900], ['CEREBRUM COMPOSITUM',10,12900], ['COENZYME',20,9900], ['CUTIS',10,10900],
-    ['FUNICULUS',10,12900], ['ENGYSTOL',10,9900], ['GALIUM',20,9900], ['GRAPHITES HOMACCORD',20,9900],
-    ['HEPAR',10,12900], ['LYMPHOMYOSOT',20,9900], ['MOMORDICA',10,10900], ['MUCOSA',20,12900],
-    ['MUSCULUS SUIS - INJEL',10,12900], ['NUX VOMICA',20,9900], ['TRAUMEEL',20,9900], ['UBICHINON',20,9900],
-    ['ZELL T',10,10900], ['GLANDULA TIROIDEA',10,12900],
-  ],
-};
-function compraEjemplo(apps, netoApp){
-  const nombres = new Set();
-  sueros.forEach(m=> (m.items||[]).forEach(it=> it.insumo && nombres.add(it.insumo)));
-  const lista = [...nombres];
-  const ALIAS = {'UBICHINON':'UBIQUINON'};
-  // Distancia entre dos palabras (letras distintas): sirve para "ZELL T" ↔ "ZEEL T"
-  const dist = (a, b)=>{
-    const d = Array.from({length:a.length+1}, (_,i)=> [i, ...Array(b.length).fill(0)]);
-    for(let j=1; j<=b.length; j++) d[0][j] = j;
-    for(let i=1; i<=a.length; i++) for(let j=1; j<=b.length; j++)
-      d[i][j] = Math.min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1] + (a[i-1]===b[j-1] ? 0 : 1));
-    return d[a.length][b.length];
-  };
-  const resolver = n=>{
-    const k = claveInsumo(ALIAS[n] || n);
-    const exacto = lista.find(x=> claveInsumo(x)===k)
-        || lista.find(x=> k.startsWith(claveInsumo(x)) && claveInsumo(x).length >= 5)
-        || lista.find(x=> claveInsumo(x).startsWith(k.slice(0,6)));
-    if(exacto) return exacto;
-    // parecido: se compara con el comienzo del nombre del sistema
-    let mejor = null, md = Infinity;
-    lista.forEach(x=>{
-      const kx = claveInsumo(x);
-      const d1 = dist(k, kx), d2 = dist(k.slice(0, kx.length), kx), d3 = dist(k, kx.slice(0, k.length));
-      const dd = Math.min(d1, d2, d3);
-      if(dd < md){ md = dd; mejor = x; }
-    });
-    return md <= 2 ? mejor : null;
-  };
-  const factorEj = 1 - (COMPRA_EJEMPLO.descuentoPct||0)/100;
-  const items = COMPRA_EJEMPLO.items.map(([n, cant, vu])=> ({insumo: resolver(n) || n, original: n, noEncontrado: !resolver(n), cant, inversion: cant*vu*factorEj, usadas:0, rec:0, pend:0, fechaRec:null, aportes:[], quedan: cant}));
-  const porNombre = {}; items.forEach(i=> porNombre[i.insumo] = i);
-  Object.values(apps).filter(m=> m.fechaISO >= COMPRA_EJEMPLO.fechaISO)
-    .sort((a,b)=> a.fechaISO < b.fechaISO ? -1 : (a.fechaISO > b.fechaISO ? 1 : 0))
-    .forEach(m=>{
-      const its = m.items || [];
-      const totalCosto = its.reduce((a,it)=> a + (Number(it.subtotal)||0), 0);
-      const unidades = its.reduce((a,it)=> a + (Number(it.cant)||0), 0);
-      const n = netoApp(m.id);
-      its.forEach(it=>{
-        const item = porNombre[it.insumo];
-        if(!item || item.quedan <= 0) return;
-        const t = Math.min(item.quedan, Number(it.cant)||0);
-        if(!t) return;
-        item.quedan -= t; item.usadas += t;
-        if(n==null){ item.pend += t; return; }
-        const cant = Number(it.cant)||0;
-        const peso = totalCosto > 0 ? (Number(it.subtotal)||0) * (t/cant) / totalCosto : (unidades ? t/unidades : 0);
-        const monto = n * peso;
-        item.rec += monto;
-        item.aportes.push({fecha: m.fechaISO, monto});
-        if(!item.fechaRec && item.rec >= item.inversion - 0.5) item.fechaRec = m.fechaISO;
-      });
-    });
-  return {id: COMPRA_EJEMPLO.id, fechaISO: COMPRA_EJEMPLO.fechaISO, proveedor: COMPRA_EJEMPLO.proveedor, ejemplo: true, items};
 }
 function etiquetasCompras(){
   const vistas = {};
@@ -7895,10 +7824,10 @@ function htmlRecupero(selEtiqueta, desde, hasta, rangoTxt){
         <tfoot><tr><td class="left">TOTALES</td><td>${c.cant.toLocaleString('es-AR')}</td><td>${c.usadas.toLocaleString('es-AR')}</td><td class="monto">${fmtPesos(c.inversion)}</td><td class="monto">${fmtPesos(c.rec)}</td><td>${barraRec(pctTot, escala)}</td><td>${c.fechaRec ? fechaLarga(c.fechaRec) : ''}</td></tr></tfoot>
       </table></div>${leyenda}`;
   }
-  const lista = todas.filter(x=> x.ejemplo || (x.fechaISO>=desde && x.fechaISO<=hasta));
+  const lista = todas.filter(x=> x.fechaISO>=desde && x.fechaISO<=hasta);
   const escala = Math.min(Math.max(120, ...lista.map(x=> x.inversion ? x.rec/x.inversion*100 : 0)), 400);
   return `<h3>Recuperación de compras</h3>
-    <div class="sub">Compras ${rangoTxt} (se analizan desde el 1/10/2026), más la compra de ejemplo del 24/8. Tocá una compra para ver el detalle por insumo.</div>
+    <div class="sub">Compras ${rangoTxt} (se analizan desde el 1/10/2026). Tocá una compra para ver el detalle por insumo.</div>
     <div class="inf-wrap"><table class="inf-tabla">
       <colgroup><col style="width:96px"><col><col style="width:110px"><col style="width:96px"><col style="width:110px"><col style="width:220px"><col style="width:100px"></colgroup>
       <thead><tr><th>Compra</th><th class="left">Proveedor</th><th>Inversión</th><th>Usadas</th><th>Recuperado</th><th>Recuperación</th><th>Recuperado el</th></tr></thead>
