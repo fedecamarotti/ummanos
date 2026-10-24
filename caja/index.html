@@ -804,6 +804,16 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .tabla-vc tr.vc-sep td{background:#f6f0de;font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:left;padding-left:14px;}
   .tabla-vc tfoot td{position:sticky;bottom:0;background:#f4eeda;font-weight:700;border-top:2px solid var(--border);}
   .vc-extra{font-style:italic;color:#6e6757;}
+  .vcd-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .vcd-tit{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;}
+  .vcd-tit.ing{color:#2f7a2f;} .vcd-tit.egr{color:#a13a3a;}
+  .vcd-lista{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
+  .vcd-fila{display:flex;gap:4px;align-items:center;}
+  .vcd-fila input{flex:1;min-width:0;padding:7px 9px;font-size:12px;}
+  .vcd-fila button{flex:none;width:28px;height:30px;border:1px solid var(--border);background:#fffcf5;border-radius:7px;font-size:11px;color:var(--muted);padding:0;}
+  .vcd-fila button.q{color:#c62828;}
+  .vcd-fila button:disabled{opacity:.3;cursor:default;}
+  @media (max-width:640px){ .vcd-grid{grid-template-columns:1fr;} }
   #overlayConta .tipo-toggle button.active[data-tipo="ingreso"]{background:#2f7a2f;color:#fff;}
   #overlayConta .tipo-toggle button.active[data-tipo="egreso"]{background:#a13a3a;color:#fff;}
   /* PDF del balance */
@@ -948,6 +958,22 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
 </div>
 
 <!-- ============ MODAL: INGRESO / RETIRO DE STOCK (CREMAS / COLÁGENOS / GELES) ============ -->
+<div class="overlay" id="overlayVcDetalles">
+  <div class="modal wide">
+    <button class="close-x" id="closeVcDet">✕</button>
+    <h2>Modificar detalles</h2>
+    <div class="modal-sub">Las opciones del desplegable "Detalle" de Victoria contabilidad. Cambiar o borrar una opción no modifica los movimientos ya cargados.</div>
+    <div class="vcd-grid">
+      <div><div class="vcd-tit ing">Ingresos</div><div id="vcdIngreso" class="vcd-lista"></div><button type="button" class="btn s-add-item" data-vcd-add="ingreso">+ Agregar</button></div>
+      <div><div class="vcd-tit egr">Egresos</div><div id="vcdEgreso" class="vcd-lista"></div><button type="button" class="btn s-add-item" data-vcd-add="egreso">+ Agregar</button></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="vcdCancelar">Cancelar</button>
+      <button class="btn btn-primary" id="vcdGuardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="overlayConta">
   <div class="modal">
     <button class="close-x" id="closeConta">✕</button>
@@ -1528,8 +1554,9 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       </div>
       <div></div>
       <div style="justify-self:end;display:flex;gap:8px;">
-        <button class="btn s-cfg-btn" id="vcBtnPDF">📄 Exportar balance contable</button>
         <button class="btn btn-primary s-cfg-btn" id="vcBtnNuevo">+ Nuevo movimiento</button>
+        <button class="btn s-cfg-btn" id="vcBtnDetalles">✏️ Modificar detalles</button>
+        <button class="btn s-cfg-btn" id="vcBtnPDF">📄 Exportar balance contable</button>
       </div>
     </div>
     <div class="s-panel">
@@ -2551,6 +2578,7 @@ auth.onAuthStateChanged(async (user)=>{
     if(unsubSueros){ unsubSueros(); unsubSueros = null; }
     if(typeof unsubCremas!=='undefined' && unsubCremas){ unsubCremas(); unsubCremas = null; }
     if(typeof unsubConta!=='undefined' && unsubConta){ unsubConta(); unsubConta = null; }
+    if(typeof unsubVcCfg!=='undefined' && unsubVcCfg){ unsubVcCfg(); unsubVcCfg = null; }
     if(unsubPortalPac){ unsubPortalPac(); unsubPortalPac = null; }
     if(unsubFichasSueros){ unsubFichasSueros(); unsubFichasSueros = null; }
     document.getElementById('portal').classList.add('col-hidden');
@@ -8153,10 +8181,12 @@ document.getElementById('infVolver').onclick = ()=>{ infSel.value = ''; renderRe
    VICTORIA CONTABILIDAD — solo Fede. Colección propia "contaVictoria":
    no toca caja, sueros, cremas ni nada más.
    ===================================================================== */
-const VC_DETALLES = {
+const VC_DETALLES_DEFAULT = {
   ingreso: ['Tratamientos del día', '% Jornada', 'Otros'],
   egreso:  ['Alquiler consultorio', 'Horas extra', 'Aplicación sueroterapia (solo insumos)', 'Compra insumos', 'Otros'],
 };
+let VC_DETALLES = JSON.parse(JSON.stringify(VC_DETALLES_DEFAULT));   // se reemplaza con contaVictoria/_config
+let unsubVcCfg = null;
 let mesConta = { year: hoyRef.getFullYear(), month: hoyRef.getMonth()+1 };
 let contaMovs = [];
 let unsubConta = null, contaMesSuscripto = null;
@@ -8172,6 +8202,12 @@ const vcDetalleHTML = m => vcEsc(m.detalle) + (m.extra ? ` <span class="vc-extra
 
 function suscribirConta(){
   if(!esFede()) return;
+  if(!unsubVcCfg){
+    unsubVcCfg = db.collection('contaVictoria').doc('_config').onSnapshot(d=>{
+      const det = d.exists && d.data().detalles;
+      if(det && Array.isArray(det.ingreso) && Array.isArray(det.egreso)) VC_DETALLES = {ingreso: det.ingreso, egreso: det.egreso};
+    }, ()=>{});
+  }
   const clave = vcMesIni();
   if(unsubConta && contaMesSuscripto===clave) return;
   if(unsubConta) unsubConta();
@@ -8296,6 +8332,58 @@ document.getElementById('vcEliminar').onclick = async ()=>{
   if(!vcEditId || !confirm('¿Eliminar este movimiento?')) return;
   try{ await db.collection('contaVictoria').doc(vcEditId).delete(); cerrarConta(); }
   catch(e){ alert('No se pudo eliminar: ' + e.message); }
+};
+
+/* ---- Modificar detalles (opciones del desplegable) ---- */
+const overlayVcDet = document.getElementById('overlayVcDetalles');
+let vcdBorrador = null;
+function vcdRender(){
+  ['ingreso','egreso'].forEach(t=>{
+    const cont = document.getElementById(t==='ingreso' ? 'vcdIngreso' : 'vcdEgreso');
+    const lista = vcdBorrador[t];
+    cont.innerHTML = lista.map((v,i)=> `<div class="vcd-fila">
+        <input type="text" data-no-mayus value="${vcEsc(v).replace(/"/g,'&quot;')}" data-t="${t}" data-i="${i}">
+        <button type="button" title="Subir" data-mov="-1" data-t="${t}" data-i="${i}" ${i===0?'disabled':''}>▲</button>
+        <button type="button" title="Bajar" data-mov="1" data-t="${t}" data-i="${i}" ${i===lista.length-1?'disabled':''}>▼</button>
+        <button type="button" class="q" title="Quitar" data-quitar data-t="${t}" data-i="${i}">✕</button>
+      </div>`).join('') || '<div class="hint" style="padding:0;">Sin opciones.</div>';
+  });
+}
+overlayVcDet.addEventListener('input', e=>{
+  const inp = e.target.closest('.vcd-fila input'); if(!inp) return;
+  vcdBorrador[inp.dataset.t][Number(inp.dataset.i)] = inp.value;
+});
+overlayVcDet.addEventListener('click', e=>{
+  const add = e.target.closest('[data-vcd-add]');
+  if(add){ vcdBorrador[add.dataset.vcdAdd].push(''); vcdRender();
+    const cont = document.getElementById(add.dataset.vcdAdd==='ingreso' ? 'vcdIngreso' : 'vcdEgreso');
+    const ult = cont.querySelector('.vcd-fila:last-child input'); if(ult) ult.focus(); return; }
+  const b = e.target.closest('.vcd-fila button'); if(!b) return;
+  const l = vcdBorrador[b.dataset.t], i = Number(b.dataset.i);
+  if(b.hasAttribute('data-quitar')) l.splice(i, 1);
+  else { const j = i + Number(b.dataset.mov); if(j<0 || j>=l.length) return; [l[i], l[j]] = [l[j], l[i]]; }
+  vcdRender();
+});
+document.getElementById('vcBtnDetalles').onclick = ()=>{
+  if(!esFede()) return;
+  vcdBorrador = {ingreso: [...VC_DETALLES.ingreso], egreso: [...VC_DETALLES.egreso]};
+  vcdRender();
+  overlayVcDet.classList.add('show');
+};
+const cerrarVcDet = ()=> overlayVcDet.classList.remove('show');
+document.getElementById('closeVcDet').onclick = cerrarVcDet;
+document.getElementById('vcdCancelar').onclick = cerrarVcDet;
+document.getElementById('vcdGuardar').onclick = async ()=>{
+  const limpio = l => [...new Set(l.map(v=> v.trim()).filter(Boolean))];
+  const det = {ingreso: limpio(vcdBorrador.ingreso), egreso: limpio(vcdBorrador.egreso)};
+  if(!det.ingreso.length || !det.egreso.length){ alert('Dejá al menos una opción en ingresos y una en egresos.'); return; }
+  const btn = document.getElementById('vcdGuardar'); btn.disabled = true;
+  try{
+    await db.collection('contaVictoria').doc('_config').set({detalles: det, actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+    VC_DETALLES = det;
+    cerrarVcDet();
+  }catch(e){ alert('No se pudo guardar: ' + e.message); }
+  btn.disabled = false;
 };
 
 /* ---- PDF: Exportar balance contable ---- */
