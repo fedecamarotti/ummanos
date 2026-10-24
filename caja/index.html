@@ -225,9 +225,12 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .s-tab-nuevo:hover{background:#bfa473;color:#3a2f1c;}
   .s-tab:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
   .fede-nav{display:flex;justify-content:center;margin:14px 28px 0;flex:none;}
-  body.fede-nav-on #vistaSueros > .sueros-bar, body.fede-nav-on #vistaCremas > .sueros-bar{margin-top:8px;}
-  body.fede-nav-on #vistaSueros .sueros-bar .s-tab, body.fede-nav-on #vistaCremas .sueros-bar .s-tab{padding:5px 12px;font-size:11px;}
-  body.fede-nav-on #vistaSueros .sueros-bar .s-tabs, body.fede-nav-on #vistaCremas .sueros-bar .s-tabs{padding:2px;border-radius:9px;}
+  body.fede-nav-on #vistaSueros > .sueros-bar, body.fede-nav-on #vistaCremas > .sueros-bar, body.fede-nav-on #vistaMovimientos > .mov-bar{margin-top:8px;}
+  body.fede-nav-on #vistaSueros .sueros-bar .s-tab, body.fede-nav-on #vistaCremas .sueros-bar .s-tab, body.fede-nav-on #movSubTabs .s-tab{padding:5px 12px;font-size:11px;}
+  body.fede-nav-on #vistaSueros .sueros-bar .s-tabs, body.fede-nav-on #vistaCremas .sueros-bar .s-tabs, body.fede-nav-on #movSubTabs{padding:2px;border-radius:9px;}
+  .s-tab-badge{position:relative;}
+  .s-tab-badge .badge-count{top:-7px;right:-7px;}
+  .s-tab-inactivo, .s-tab-inactivo:hover{opacity:.45;cursor:default;background:transparent;}
   .s-panel{flex:1;min-height:0;display:flex;flex-direction:column;}
   .s-panel > .sheet-wrap{flex:1;min-height:0;overflow:auto;margin-bottom:20px;overscroll-behavior:contain;}
   .s-panel > .sheet-wrap thead th{z-index:3;}
@@ -867,7 +870,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     .s-tabs{max-width:100%;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
     .s-tabs::-webkit-scrollbar{display:none;}
     .s-tab{flex:none;padding:6px 11px;font-size:11.5px;}
-    body.fede-nav-on #vistaSueros .sueros-bar .s-tab, body.fede-nav-on #vistaCremas .sueros-bar .s-tab{padding:5px 10px;font-size:10.5px;}
+    body.fede-nav-on #vistaSueros .sueros-bar .s-tab, body.fede-nav-on #vistaCremas .sueros-bar .s-tab, body.fede-nav-on #movSubTabs .s-tab{padding:5px 10px;font-size:10.5px;}
     /* botones de cada sección: bajan de renglón */
     .sueros-bar > div:last-child{justify-self:start !important;flex-wrap:wrap;gap:6px !important;}
     .s-cfg-btn{font-size:10.5px;padding:5px 9px;white-space:nowrap;}
@@ -1290,6 +1293,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
 <div class="layout">
   <div class="main-area">
    <div class="vista" id="vistaMovimientos">
+    <div class="fede-nav col-hidden"></div>
     <div class="hint" id="cajaHint"></div>
     <div class="preview-banner col-hidden" id="previewBanner">👁 Vista previa: solo lectura</div>
     <div class="mov-bar" id="movBar">
@@ -1298,15 +1302,22 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <span id="mesLabel"></span>
         <button id="mesNext" title="Mes siguiente">▶</button>
       </div>
-      <div class="s-tabs col-hidden" id="fedeTabs" role="tablist" aria-label="Secciones">
-        <button class="s-tab active" data-ir="movimientos" role="tab">Movimientos</button>
-        <button class="s-tab" data-ir="sueros" role="tab">Sueros</button>
-        <button class="s-tab" data-ir="cremas" role="tab">Cremas/Col./Geles</button>
-        <button class="s-tab" data-ir="informes" role="tab">Informes</button>
-        <button class="s-tab" data-ir="conta" role="tab">Victoria contabilidad</button>
-        <button class="s-tab s-tab-nuevo" data-ir="nuevo">+ Nuevo mov.</button>
+      <div class="s-tabs col-hidden" id="movSubTabs" role="tablist" aria-label="Movimientos">
+        <button class="s-tab active" data-msub="diarios" role="tab">Movimientos diarios</button>
+        <button class="s-tab" data-msub="cajas" id="mSubCajas">Cajas</button>
+        <button class="s-tab" data-msub="pacientes">Pacientes</button>
+        <button class="s-tab s-tab-badge" data-msub="deudores">Deudores <span class="badge-count col-hidden" id="mSubDeudoresN">0</span></button>
+        <button class="s-tab s-tab-nuevo" data-msub="nuevo">+ Nuevo mov.</button>
       </div>
       <div></div>
+    </div>
+    <!-- fila de secciones (se ubica arriba de la vista que se esté mirando) -->
+    <div class="s-tabs col-hidden" id="fedeTabs" role="tablist" aria-label="Secciones">
+      <button class="s-tab active" data-ir="movimientos" role="tab">Movimientos</button>
+      <button class="s-tab" data-ir="sueros" role="tab">Sueros</button>
+      <button class="s-tab" data-ir="cremas" role="tab">Cremas/Col./Geles</button>
+      <button class="s-tab s-tab-inactivo" data-ir="informes" role="tab" title="Próximamente">Informes</button>
+      <button class="s-tab" data-ir="conta" role="tab">Victoria contabilidad</button>
     </div>
 
     <div class="panel-container" id="panelContainer">
@@ -1369,6 +1380,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       </div>
       <div class="s-tabs" role="tablist" aria-label="Sueros">
         <button class="s-tab active" data-tab="movs" role="tab">Movimientos sueros</button>
+        <button class="s-tab col-hidden" id="sBtnPacientes" title="Fichas de los pacientes">Pacientes sueros</button>
         <button class="s-tab" data-tab="stock" role="tab">Stock</button>
         <button class="s-tab" data-tab="resumen" role="tab">Informes</button>
         <button class="s-tab s-tab-nuevo" id="sBtnNuevo">+ Nuevo mov.</button>
@@ -1376,7 +1388,6 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <div style="justify-self:end;display:flex;gap:8px;">
         <button class="btn s-cfg-btn venc-alerta col-hidden" id="sBtnVenc"></button>
         <button class="btn s-cfg-btn s-solo-limitado" id="sBtnVolverPortal">← Aplicaciones</button>
-        <button class="btn s-cfg-btn col-hidden" id="sBtnPacientes" title="Fichas de los pacientes">👤 Pacientes</button>
         <button class="btn s-cfg-btn" id="sBtnCfg" title="Sabrina, descuento y % de Gabriela">⚙ Valores fijos</button>
         <button class="btn s-cfg-btn" id="sBtnExcep" title="Pacientes sin pago a Sabrina y/o Gabriela">⚑ Excepciones</button>
       </div>
@@ -2657,10 +2668,16 @@ function aplicarRolUI(){
   document.getElementById('btnSueros').classList.toggle('col-hidden', !esAdminSueros());
   document.getElementById('btnCremas').classList.toggle('col-hidden', !esFede());
   document.getElementById('btnConta').classList.toggle('col-hidden', !esFede());
-  document.getElementById('sBtnPacientes').classList.toggle('col-hidden', !esFede());
-  // Fede: secciones como pestañas al lado del mes (y "+ Nuevo mov." ahí en lugar de arriba)
-  document.getElementById('fedeTabs').classList.toggle('col-hidden', !esFede());
-  document.getElementById('movBar').classList.toggle('con-tabs', esFede());
+  document.getElementById('sBtnPacientes').classList.toggle('col-hidden', !esAdminSueros());
+  // Fila de secciones arriba y los botones de cada sección debajo (cada uno ve solo lo que tiene acceso)
+  const tabs = document.getElementById('fedeTabs');
+  const verTab = {movimientos:true, sueros:esAdminSueros(), cremas:esFede(), informes:esAdmin, conta:esFede()};
+  tabs.querySelectorAll('[data-ir]').forEach(b=> b.classList.toggle('col-hidden', !verTab[b.dataset.ir]));
+  tabs.classList.remove('col-hidden');
+  document.getElementById('movSubTabs').classList.remove('col-hidden');
+  document.getElementById('mSubCajas').classList.toggle('col-hidden', !esAdmin);
+  document.getElementById('movBar').classList.add('con-tabs');
+  document.getElementById('btnNuevo').classList.add('col-hidden');   // "+ Nuevo mov." ahora está debajo de Movimientos
   mostrarVista('movimientos');
 }
 
@@ -3713,6 +3730,8 @@ function renderDeudoresCount(){
   const badge = document.getElementById('deudoresCount');
   if(pendientes.length){ badge.textContent = pendientes.length; badge.classList.remove('col-hidden'); }
   else badge.classList.add('col-hidden');
+  const b2 = document.getElementById('mSubDeudoresN');
+  if(b2){ b2.textContent = pendientes.length; b2.classList.toggle('col-hidden', !pendientes.length); }
   document.getElementById('menuDot').classList.toggle('col-hidden', !pendientes.length);
 }
 function renderDeudores(){
@@ -4299,18 +4318,16 @@ function mostrarVista(v){
   document.getElementById('vistaSueros').classList.toggle('col-hidden', v!=='sueros');
   document.getElementById('vistaCremas').classList.toggle('col-hidden', v!=='cremas');
   document.getElementById('vistaConta').classList.toggle('col-hidden', v!=='conta');
-  document.getElementById('btnNuevo').classList.toggle('col-hidden', v!=='movimientos' || esFede());
+  document.getElementById('btnNuevo').classList.add('col-hidden');
   document.getElementById('btnVistaMovimientos').classList.toggle('activo', v==='movimientos');
   document.getElementById('btnSueros').classList.toggle('activo', v==='sueros');
   document.getElementById('btnCremas').classList.toggle('activo', v==='cremas');
   document.getElementById('btnConta').classList.toggle('activo', v==='conta');
-  // Fede: la fila de secciones queda siempre arriba; en Sueros y Cremas sus botones van debajo, más chicos
-  if(esFede()){
+  // La fila de secciones queda siempre arriba; los botones de cada sección van debajo, más chicos
+  if(esUsuarioCaja()){
     const tabs = document.getElementById('fedeTabs');
-    const destino = v==='movimientos' ? document.querySelector('#movBar > div:last-child')
-                  : document.querySelector(`#${({sueros:'vistaSueros', cremas:'vistaCremas', conta:'vistaConta'})[v]} > .fede-nav`);
-    if(v==='movimientos') document.getElementById('movBar').insertBefore(tabs, destino);
-    else { destino.classList.remove('col-hidden'); destino.appendChild(tabs); }
+    const destino = document.querySelector(`#${({movimientos:'vistaMovimientos', sueros:'vistaSueros', cremas:'vistaCremas', conta:'vistaConta'})[v]} > .fede-nav`);
+    destino.classList.remove('col-hidden'); destino.appendChild(tabs);
     tabs.querySelectorAll('[data-ir]').forEach(b=> b.classList.toggle('active', b.dataset.ir===v));
     document.body.classList.add('fede-nav-on');
   }
@@ -8068,13 +8085,13 @@ document.getElementById('hcPDF').onclick = ()=>{
 function puedeCrearPacientes(){ return suerosLimitado() || esFede() || primerNombre()==='SABRINA'; }
 // Fede: fichas de pacientes desde la vista de sueros
 document.getElementById('sBtnPacientes').onclick = ()=>{
-  if(!esFede()) return;
+  if(!esAdminSueros()) return;
   if(!unsubFichasSueros){
     unsubFichasSueros = db.collection('historiasSueros').onSnapshot(snap=>{
       fichasSuerosIds = new Set(snap.docs.map(d=> d.id));
     }, ()=>{});
   }
-  document.getElementById('pBtnNuevoPac').classList.remove('col-hidden');
+  document.getElementById('pBtnNuevoPac').classList.toggle('col-hidden', !puedeCrearPacientes());
   document.getElementById('pNuevoPacCard').classList.add('col-hidden');
   document.getElementById('pBuscarPac').value = '';
   pacVista('lista');
@@ -8469,8 +8486,14 @@ document.getElementById('vcBtnPDF').onclick = ()=>{
 document.querySelectorAll('#fedeTabs [data-ir]').forEach(b=> b.onclick = ()=>{
   const ir = b.dataset.ir;
   if(ir==='sueros' || ir==='cremas' || ir==='movimientos' || ir==='conta') mostrarVista(ir);
-  else if(ir==='informes') document.getElementById('btnInformes').click();
-  else if(ir==='nuevo') document.getElementById('btnNuevo').click();
+  // "Informes": por ahora inactivo (se va a definir qué mostrar)
+});
+document.querySelectorAll('#movSubTabs [data-msub]').forEach(b=> b.onclick = ()=>{
+  const sub = b.dataset.msub;
+  if(sub==='cajas') document.getElementById('btnCajas').click();
+  else if(sub==='pacientes') document.getElementById('btnPacientes').click();
+  else if(sub==='deudores') document.getElementById('btnDeudores').click();
+  else if(sub==='nuevo') document.getElementById('btnNuevo').click();
 });
 </script>
 </body>
