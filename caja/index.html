@@ -937,7 +937,10 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     .fede-nav .s-tabs, .sueros-bar > .s-tabs, #movSubTabs{width:100%;}
     .fede-nav .s-tabs .s-tab, .sueros-bar > .s-tabs .s-tab, #movSubTabs .s-tab{flex:1 0 auto;text-align:center;}
     #fedeTabs .s-tab{padding:7px 9px;font-size:11.5px;}
-    #fedeTabs.una-sola{display:none !important;}   /* recepción: una sola sección, no hace falta la fila */
+    #fedeTabs.una-sola{display:none !important;}
+    /* la burbuja de Deudores va dentro del botón (la fila se desliza y la cortaba arriba) */
+    .s-tab-badge .badge-count{position:static;display:inline-block;margin-left:4px;vertical-align:1px;font-size:9px;padding:1px 5px;}
+    .s-tab-badge .badge-count.col-hidden{display:none;}   /* recepción: una sola sección, no hace falta la fila */
     body.fede-nav-on #vistaSueros .sueros-bar .s-tab, body.fede-nav-on #vistaCremas .sueros-bar .s-tab, body.fede-nav-on #movSubTabs .s-tab{padding:6px 8px;font-size:11px;}
     .mov-bar, .sueros-bar{margin-top:10px;}
     .mov-bar.con-tabs{gap:10px;}
