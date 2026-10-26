@@ -254,6 +254,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .pf-nombre-campos{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .pf-cuerpo{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
   .pf-datos .field{margin-bottom:10px;}
+  .pf-datos .pf-vacio, .pf-ref .pf-vacio{background:#fdeeee;border-color:#f3d3d3;}   /* campo sin completar */
   .pf-ref{background:#fbf4e3;border:1px dashed #d8c69c;border-radius:8px;padding:8px 10px;margin-top:8px;}
   .pf-ref label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px;}
   .pf-areas{background:#f8f2e2;border-radius:10px;padding:12px 14px;}
@@ -7512,6 +7513,10 @@ function pfSetMedio(valor){
 }
 document.getElementById('pfMedio').addEventListener('change', e=> document.getElementById('pfRefWrap').classList.toggle('col-hidden', e.target.value!=='REFERIDO'));
 document.getElementById('pfFnac').addEventListener('input', e=>{ const ed = edadDesde(e.target.value); document.getElementById('pfEdad').textContent = ed==='—' ? '' : `(${ed})`; });
+// Campos sin completar en la ficha: fondo rosado (se va solo al completarlos)
+const PF_CAMPOS = ['pfTelefono','pfEmail','pfFnac','pfDni','pfMedio','pfReferido'];
+function pfMarcarVacios(){ PF_CAMPOS.forEach(id=>{ const el = document.getElementById(id); el.classList.toggle('pf-vacio', !String(el.value||'').trim()); }); }
+PF_CAMPOS.forEach(id=>{ const el = document.getElementById(id); el.addEventListener('input', pfMarcarVacios); el.addEventListener('change', pfMarcarVacios); });
 document.getElementById('pfEditarNombre').onclick = ()=> document.getElementById('pfNombreCampos').classList.toggle('col-hidden');
 
 function abrirFichaPaciente(id){
@@ -7534,6 +7539,7 @@ function abrirFichaPaciente(id){
   document.getElementById('pfReferido').value = p ? (p.referidoPor||'') : '';
   document.getElementById('pfEliminar').classList.toggle('col-hidden', nuevo);
   document.getElementById('pfGuardar').textContent = nuevo ? 'Crear paciente' : 'Guardar';
+  pfMarcarVacios();
   pacVistaPanel('ficha');
   overlayPacientes.classList.add('show');
   renderAreasPaciente(p);
