@@ -259,6 +259,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .cp-tabla{width:100%;min-width:1000px;table-layout:fixed;border-collapse:collapse;}
   .cp-tabla th{font-size:9px;padding:3px 4px;line-height:1.1;text-align:center;white-space:normal;}
   .cp-tabla input[type=date]{text-align:center;}
+  .cp-tabla input.cp-prox{text-align:center;cursor:pointer;}
+  .cp-tabla input.cp-prox::placeholder{color:var(--muted);}
   .cp-tabla input.cp-vencido{color:#c62828;font-weight:700;background:#fdecea;}
   .cpn-grid{display:grid;gap:10px;margin:6px 0 4px;}
   .cpn-grid label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
@@ -8974,7 +8976,7 @@ function renderClasesPrueba(){
       <td>${sw('compro', !!x.compro)}</td>
       <td><select class="cp-pill ${x.pack?'':'vacio'}" data-campo="pack">${opts(CP_PACKS, x.pack)}</select></td>
       <td><input type="checkbox" data-campo="msjPost" ${x.msjPost?'checked':''}></td>
-      <td><input type="date" data-campo="proxContacto" value="${x.proxContacto||''}" class="${x.proxContacto && x.proxContacto<=hoyISO() ? 'cp-vencido' : ''}"></td>
+      <td><input type="${x.proxContacto ? 'date' : 'text'}" data-campo="proxContacto" value="${x.proxContacto||''}" placeholder="—" class="cp-prox ${x.proxContacto && x.proxContacto<=hoyISO() ? 'cp-vencido' : ''}"></td>
       <td class="left"><input type="text" class="cp-notas" data-campo="notas" data-no-mayus value="${escHtml(x.notas||'')}"></td>
       <td><button type="button" class="cp-del" title="Eliminar">✕</button></td>
     </tr>`).join('');
@@ -9014,6 +9016,25 @@ cpBody.addEventListener('click', async e=>{
     if(!confirm(`¿Eliminar la clase de prueba${x && x.alumno ? ' de ' + x.alumno : ''}?`)) return;
     try{ await db.collection('clasesPrueba').doc(tr.dataset.id).delete(); }catch(err){ alert('No se pudo eliminar: ' + err.message); }
   }
+});
+// Notas: no se puede escribir más de lo que entra en el casillero
+cpBody.addEventListener('input', e=>{
+  const el = e.target;
+  if(!el.classList || !el.classList.contains('cp-notas')) return;
+  while(el.value && el.scrollWidth > el.clientWidth + 1){
+    const pos = el.selectionStart;
+    el.value = el.value.slice(0, Math.max(0, pos-1)) + el.value.slice(pos);   // saca lo último que se escribió
+    el.setSelectionRange(pos-1, pos-1);
+  }
+});
+// Próx. contacto vacío muestra "—"; al tocarlo se convierte en fecha
+cpBody.addEventListener('focusin', e=>{
+  const el = e.target;
+  if(el.classList && el.classList.contains('cp-prox') && el.type==='text'){ el.type = 'date'; try{ el.showPicker(); }catch(_){} }
+});
+cpBody.addEventListener('focusout', e=>{
+  const el = e.target;
+  if(el.classList && el.classList.contains('cp-prox') && !el.value) el.type = 'text';
 });
 cpBody.addEventListener('focusout', ()=> setTimeout(()=>{ if(cpPendiente && !cpBody.contains(document.activeElement)) renderClasesPrueba(); }, 50));
 const ovCpNueva = document.getElementById('overlayCpNueva');
