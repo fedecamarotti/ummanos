@@ -772,6 +772,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .mes-selector button:hover{background:#f0e8cf;}
   .mes-selector button:disabled{opacity:0.35;cursor:not-allowed;}
   .mes-selector span{font-size:13px;font-weight:700;text-transform:capitalize;min-width:150px;text-align:center;}
+  .mes-selector .mes-migrado{font-size:12px;color:#8a7f66;white-space:nowrap;}
+  td.mig-viejo{color:#c0392b !important;}
 
   .panel-container{position:relative;min-height:calc(100vh - 220px);}
 
@@ -956,6 +958,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     .sueros-bar{gap:8px;margin-top:10px;}
     .fede-nav{justify-content:flex-start;margin-top:10px;}
     .mes-selector span{min-width:120px;}
+    .mes-selector{flex-wrap:wrap;row-gap:4px;}
+    .mes-selector .mes-migrado{flex-basis:100%;font-size:11px;text-align:center;}
     #vistaCremas .sueros-bar > .mes-selector{display:none;}
     /* pestañas: se deslizan de costado en vez de cortarse */
     .s-tabs{max-width:100%;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
@@ -1446,6 +1450,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <button id="mesPrev" title="Mes anterior">◀</button>
         <span id="mesLabel"></span>
         <button id="mesNext" title="Mes siguiente">▶</button>
+        <em id="mesMigrado" class="mes-migrado col-hidden">Información migrada de planilla</em>
       </div>
       <div class="s-tabs col-hidden" id="movSubTabs" role="tablist" aria-label="Movimientos">
         <button class="s-tab active" data-msub="diarios" role="tab"><span class="t-largo">Movimientos diarios</span><span class="t-corto">Diarios</span></button>
@@ -2564,6 +2569,19 @@ let CONCEPTOS = {};              // { "SUEROTERAPIA": [{concepto, codigo}, ...],
 let CODIGO_POR_CONCEPTO = {};    // "SUEROTERAPIA||SUERO BASE..." -> "SUE-01", para buscar el código al guardar
 let TIPO_POR_CONCEPTO = {};      // "SUEROTERAPIA||SUERO BASE..." -> "ingreso" | "egreso" (por defecto: ingreso)
 function esEgreso(prof, concepto){ return TIPO_POR_CONCEPTO[prof+"||"+concepto] === "egreso"; }
+// Movimientos migrados de la planilla vieja: traen su propio tipo (los conceptos viejos no están en el catálogo)
+function esGastoMov(m){ return m && m.migrado ? m.tipo === 'egreso' : esGastoMov(m); }
+const noMigrado = m => !m.migrado;
+// Áreas que no cuentan como "área de Ummana" en la ficha del paciente
+const NO_ES_AREA = /^(CAJA DIARIA|ALQUILER CONSUL|GASTOS )/i;
+// Mes con información migrada de la planilla (dic 2024 → ago 2026)
+const MIGRADO_HASTA = '2026-08', MIGRADO_DESDE = '2024-12';
+function esViejoCatalogo(m, campo){
+  if(!m.migrado) return false;
+  const lista = CONCEPTOS[m.prof];
+  if(campo==='prof') return !lista;
+  return !lista || !lista.some(c=> c.concepto === m.concepto);
+}
 
 const MEDIO_LABELS = {
   efectivo: (m)=> m.moneda==="USD" ? "Efectivo USD" : "Efectivo $",
@@ -2613,7 +2631,7 @@ function isoToDisplay(iso){
 }
 function fmtTotal(m){
   const pref = m.moneda==="USD" ? "US$ " : "$";
-  return pref + Number(m.valor).toLocaleString('es-AR');
+  return pref + Number(m.valor).toLocaleString('es-AR') + (m.valorUsd ? ' + US$ ' + Number(m.valorUsd).toLocaleString('es-AR') : '');
 }
 function fmtMonto(valor, moneda){
   const pref = moneda==="USD" ? "US$ " : "$";
@@ -2635,7 +2653,7 @@ function medioLabelDe(medio, moneda){
 }
 function medioDisplayText(m){
   return pagosDe(m).map(p=>{
-    if(p.medio==="debe") return p.saldada ? `Pagó ${fmtMonto(p.valor, m.moneda)} el ${p.fechaSaldadoDisplay}` : "Debe";
+    if(p.medio==="debe") return p.saldada ? `Pagó ${fmtMonto(pagoMontoReal(p), pagoMoneda(m, p))}${p.fechaSaldadoDisplay ? ' el ' + p.fechaSaldadoDisplay : ''}` : "Debe";
     return medioLabelDe(p.medio, pagoMoneda(m, p));
   }).join(', ');
 }
@@ -2646,7 +2664,7 @@ function medioBadgesHTML(m){
     const otra = p.moneda && p.moneda !== m.moneda;
     const montoTxt = (varios || otra) ? ` ${fmtMonto(pagoMontoReal(p), pagoMoneda(m, p))}${otra && p.cotizacion ? ` (×${Number(p.cotizacion).toLocaleString('es-AR')})` : ''}` : "";
     if(p.medio==="debe"){
-      if(p.saldada) return `<span class="badge badge-pagado">Pagó ${fmtMonto(p.valor, m.moneda)} el ${p.fechaSaldadoDisplay}</span>`;
+      if(p.saldada) return `<span class="badge badge-pagado">Pagó ${fmtMonto(pagoMontoReal(p), pagoMoneda(m, p))}${p.fechaSaldadoDisplay ? ' el ' + p.fechaSaldadoDisplay : ''}</span>`;
       return `<span class="badge badge-debe">Debe${montoTxt}</span>`;
     }
     return `<span class="badge badge-${p.medio}">${medioLabelDe(p.medio, pagoMoneda(m, p))}${montoTxt}</span>`;
@@ -2858,6 +2876,8 @@ function actualizarMesLabel(){
   document.getElementById('mesLabel').textContent = `${MESES[mesActual.month-1]} ${mesActual.year}`;
   const esMesActualReal = mesActual.year===hoyRef.getFullYear() && mesActual.month===(hoyRef.getMonth()+1);
   document.getElementById('mesNext').disabled = esMesActualReal;
+  const ym = `${mesActual.year}-${String(mesActual.month).padStart(2,'0')}`;
+  document.getElementById('mesMigrado').classList.toggle('col-hidden', !(ym >= MIGRADO_DESDE && ym <= MIGRADO_HASTA));
 }
 document.getElementById('mesPrev').onclick = ()=>{
   mesActual.month--; if(mesActual.month<1){ mesActual.month=12; mesActual.year--; }
@@ -3126,16 +3146,16 @@ function renderTabla(){
   nombresPacientes = new Set(pacientesFullList.map(p=> mayus(p.nombreCompleto||'')));
   tbody.innerHTML = "";
   movimientos.filter(pasaFiltros).forEach(m=>{
-    const esGasto = esEgreso(m.prof, m.concepto);
+    const esGasto = esGastoMov(m);
     const tr = document.createElement('tr');
     const esPac = !esGasto && nombresPacientes.has(mayus(m.pac||''));
     tr.innerHTML = `
-      <td class="editcol"><button class="editbtn" title="Editar" onclick="abrirEdicion('${m.id}')">&#9998;</button></td>
+      <td class="editcol">${m.migrado ? '' : `<button class="editbtn" title="Editar" onclick="abrirEdicion('${m.id}')">&#9998;</button>`}</td>
       <td>${m.fechaDisplay}</td>
       <td class="left">${esPac ? `<span class="pac-link" data-pac="${escHtml(m.pac)}" title="Ver ficha del paciente">${m.pac}</span>` : m.pac}</td>
-      <td>${m.prof}</td>
+      <td${esViejoCatalogo(m,'prof') ? ' class="mig-viejo"' : ''}>${m.prof}</td>
       <td class="codigo">${m.codigo||""}</td>
-      <td class="concepto">${m.concepto}</td>
+      <td class="concepto${esViejoCatalogo(m,'concepto') ? ' mig-viejo' : ''}">${m.concepto}</td>
       <td class="notas" title="${(m.notas||"").replace(/"/g,'&quot;')}${m.jornada?' (JORNADA)':''}">${m.notas||""}${m.jornada ? `${m.notas ? ' ' : ''}<i class="tag-jornada">(JORNADA)</i>` : ''}</td>
       <td class="total ${m.valor==0 ? '' : (esGasto?'egreso':'ingreso')}">${fmtTotal(m)}</td>
       <td class="badges-cell">${medioBadgesHTML(m)}</td>
@@ -3154,8 +3174,9 @@ function renderTotalesCaja(filas){
   if(!filas.length){ tf.innerHTML = ''; return; }
   let pesos = 0, usd = 0, hayUsd = false;
   filas.forEach(m=>{
-    const v = (Number(m.valor)||0) * (esEgreso(m.prof, m.concepto) ? -1 : 1);
+    const v = (Number(m.valor)||0) * (esGastoMov(m) ? -1 : 1);
     if(m.moneda==="USD"){ usd += v; hayUsd = true; } else pesos += v;
+    if(m.valorUsd){ usd += (Number(m.valorUsd)||0) * (esGastoMov(m) ? -1 : 1); hayUsd = true; }
   });
   const cls = v => v<0 ? 'egreso' : (v>0 ? 'ingreso' : '');
   tf.innerHTML = `<tr>
@@ -3172,7 +3193,7 @@ function renderTotalesCaja(filas){
 
 // Neto en efectivo (ingresos - egresos) que impacta en la caja física para un movimiento.
 function netoEfectivoMovimiento(m){
-  const esGasto = esEgreso(m.prof, m.concepto);
+  const esGasto = esGastoMov(m);
   let neto = 0;
   pagosDe(m).filter(p=>p.medio==="efectivo" && pagoMoneda(m, p)==="$").forEach(p=>{   // solo los pesos en efectivo
     // Si lo cobró el profesional directamente, esa plata nunca entró a nuestra caja física.
@@ -3225,7 +3246,7 @@ async function movimientosParaSesiones(sesiones){
   const porId = {};
   snapFecha.docs.forEach(d=> porId[d.id] = d.data());
   snapNuevos.docs.forEach(d=> porId[d.id] = d.data());
-  return Object.values(porId);
+  return Object.values(porId).filter(noMigrado);
 }
 function netoPorSesion(movs, sesiones){
   const neto = {};
@@ -4113,7 +4134,7 @@ document.getElementById('generarReporteFecha').onclick = async ()=>{
       db.collection('movimientos').where('fechaISO','==', fechaISO).orderBy('creadoEn','asc').get(),
       db.collection('cajaSesiones').where('fechaISO','==', fechaISO).get(),
     ]);
-    const filas = snapMov.docs.map(d=>({id:d.id, ...d.data()}));
+    const filas = snapMov.docs.map(d=>({id:d.id, ...d.data()})).filter(noMigrado);
     if(!filas.length){ alert("No hay movimientos cargados en esa fecha."); return; }
     const sesiones = snapCaja.docs.map(d=> d.data())
       .sort((a,b)=> (a.abiertaEn?.toMillis()||0) - (b.abiertaEn?.toMillis()||0));
@@ -4241,7 +4262,7 @@ document.getElementById('descargarPreviewPDF').onclick = ()=>{
 };
 
 function construirFilaVisual(m){
-  const esGasto = esEgreso(m.prof, m.concepto);
+  const esGasto = esGastoMov(m);
   const totalClass = m.valor==0 ? '' : (esGasto?'egreso':'ingreso');
   return `
     <tr>
@@ -4267,7 +4288,7 @@ async function generarPNGReporteDiario(filas, fechaISO, sesiones){
   let inPesosMp=0, outPesosMp=0, inPesosTransf=0, outPesosTransf=0;
   const pagosProfesionales = [];
   filas.forEach(m=>{
-    const esGasto = esEgreso(m.prof, m.concepto);
+    const esGasto = esGastoMov(m);
     if(/honorario/i.test(m.concepto||"")) pagosProfesionales.push(m);
     pagosDe(m).forEach(p=>{
       // Igual que en "Cerrar caja": si lo cobró el profesional directo, esa plata nunca entró a nuestra caja física.
@@ -4359,7 +4380,7 @@ function generarPDFReporteDiario(filas, fechaISO, sesiones){
         const m = filas[data.row.index];
         if(m.valor != 0){
           data.cell.styles.fontStyle = 'bold';
-          if(esEgreso(m.prof, m.concepto)){ data.cell.styles.fillColor = ROJO_BG; data.cell.styles.textColor = ROJO_TXT; }
+          if(esGastoMov(m)){ data.cell.styles.fillColor = ROJO_BG; data.cell.styles.textColor = ROJO_TXT; }
           else { data.cell.styles.fillColor = VERDE_BG; data.cell.styles.textColor = VERDE_TXT; }
         }
       }
@@ -4371,7 +4392,7 @@ function generarPDFReporteDiario(filas, fechaISO, sesiones){
   let inPesosMp=0, outPesosMp=0, inPesosTransf=0, outPesosTransf=0;
   const pagosProfesionales = [];
   filas.forEach(m=>{
-    const esGasto = esEgreso(m.prof, m.concepto);
+    const esGasto = esGastoMov(m);
     if(/honorario/i.test(m.concepto||"")) pagosProfesionales.push(m);
     pagosDe(m).forEach(p=>{
       const monP = pagoMoneda(m, p), vP = pagoMontoReal(p);
@@ -4482,7 +4503,7 @@ async function refreshPagoPreview(){
   preview.innerHTML = '<div class="empty-state">Buscando…</div>';
   try{
     const snap = await db.collection('movimientos').where('fechaISO','==', fechaISO).where('prof','==', prof).orderBy('creadoEn','asc').get();
-    const todos = snap.docs.map(d=> d.data());
+    const todos = snap.docs.map(d=> d.data()).filter(noMigrado);
     pagoJornadaExcluidos = todos.filter(m=> m.jornada).length;
     pagoMovsActuales = todos.filter(m=> !m.jornada);   // lo de jornada se liquida aparte a fin de mes
   }catch(e){
@@ -6473,7 +6494,7 @@ async function cargarMovsCremas(){
 function movimientosCremas(){
   const base = cEsMesTabla() ? movimientos : cremasMovsMes;
   return base
-    .filter(m=> esProfCremas(m.prof) && !esSaldaDeudaCrema(m) && !esEgreso(m.prof, m.concepto) && tipoProductoCrema(m.prof)===cTab)
+    .filter(m=> !m.migrado && esProfCremas(m.prof) && !esSaldaDeudaCrema(m) && !esGastoMov(m) && tipoProductoCrema(m.prof)===cTab)
     .sort((a,b)=> a.fechaISO===b.fechaISO ? 0 : (a.fechaISO < b.fechaISO ? -1 : 1));
 }
 // Cuentas de cada fila
@@ -6536,7 +6557,7 @@ function ventasCremasTodas(){
   (cremasVentas||[]).forEach(m=> porId[m.id] = m);
   movimientos.forEach(m=>{ if(esProfCremas(m.prof)) porId[m.id] = m; });   // lo del mes en curso, en vivo
   return Object.values(porId)
-    .filter(m=> m.fechaISO >= CREMAS_DESDE && esProfCremas(m.prof) && !esSaldaDeudaCrema(m) && !esEgreso(m.prof, m.concepto))
+    .filter(m=> !m.migrado && m.fechaISO >= CREMAS_DESDE && esProfCremas(m.prof) && !esSaldaDeudaCrema(m) && !esGastoMov(m))
     .sort((a,b)=> a.fechaISO===b.fechaISO ? msCreado(a)-msCreado(b) : (a.fechaISO < b.fechaISO ? -1 : 1));
 }
 /* ---- Ingresos / retiros de stock (los trae o se los lleva el proveedor) ---- */
@@ -6882,7 +6903,7 @@ function stockProducto(clave){
   const c = cremasInicial.cantidades || {};
   if(c[clave]==null || c[clave]==='') return null;
   const desde = cremasInicial.fecha || '0000-00-00';
-  const vendidos = (cremasVentas||[]).filter(m=> claveProducto(m)===clave && m.fechaISO>=desde && !esSaldaDeudaCrema(m) && !esEgreso(m.prof, m.concepto)).length;
+  const vendidos = (cremasVentas||[]).filter(m=> claveProducto(m)===clave && m.fechaISO>=desde && !esSaldaDeudaCrema(m) && !esGastoMov(m)).length;
   const ajuste = (cremasAjustes||[]).filter(a=> a.clave===clave && a.fechaISO>=desde).reduce((t,a)=> t + (a.tipo==='retiro' ? -Number(a.cant) : Number(a.cant)), 0);
   return Number(c[clave]) - vendidos + ajuste;
 }
@@ -7071,7 +7092,7 @@ document.getElementById('btnGenerarInforme').onclick = async ()=>{
 
     let ingresosPesos=0, egresosPesos=0, ingresosUsd=0, egresosUsd=0;
     filas.forEach(m=>{
-      const out = esEgreso(m.prof, m.concepto);
+      const out = esGastoMov(m);
       if(out){
         if(m.moneda==="USD") egresosUsd+=m.valor; else egresosPesos+=m.valor;
       } else {
@@ -7626,7 +7647,7 @@ async function renderAreasPaciente(p){
     const cuenta = {};
     snap.docs.forEach(d=>{
       const m = d.data();
-      if(esEgreso(m.prof, m.concepto) || /^salda deuda/i.test(m.concepto||'')) return;
+      if(esGastoMov(m) || /^salda deuda/i.test(m.concepto||'') || NO_ES_AREA.test(m.prof||'')) return;
       cuenta[m.prof] = (cuenta[m.prof]||0) + 1;
     });
     const lista = Object.entries(cuenta).sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0],'es'));
@@ -8582,7 +8603,7 @@ const vcClave = v => normBusqueda(v||'').replace(/[^a-z]/g,'');
 const vcEsVictoria = v => { const k = vcClave(v); return k.includes('barbieri') && k.includes('victoria'); };
 function vcCalcularAuto(movs){
   const out = [];
-  movs.forEach(m=>{
+  movs.filter(noMigrado).forEach(m=>{
     const pagos = pagosDe(m);
     if(vcEsVictoria(m.pac) && vcClave(m.concepto).startsWith('retirohonorariosmedicos')){
       const ps = pagos.filter(p=> p.medio!=='debe');
