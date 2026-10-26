@@ -1560,8 +1560,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       </div>
       <div class="sheet-wrap cp-hoja">
         <table class="cp-tabla">
-          <colgroup><col style="width:112px"><col style="width:140px"><col style="width:84px"><col style="width:190px"><col style="width:46px"><col style="width:46px"><col style="width:56px"><col style="width:108px"><col style="width:52px"><col style="width:112px"><col><col style="width:30px"></colgroup>
-          <thead><tr><th>Fecha</th><th>Clase</th><th>Hora</th><th>Alumno/a</th><th>Vino</th><th>Msj<br>prof</th><th>Compró<br>pack</th><th>Pack<br>vendido</th><th>Msj<br>p/clase</th><th>Próx.<br>contacto</th><th>Notas</th><th></th></tr></thead>
+          <colgroup><col style="width:112px"><col style="width:140px"><col style="width:84px"><col style="width:190px"><col style="width:46px"><col style="width:46px"><col style="width:56px"><col style="width:108px"><col style="width:112px"><col><col style="width:30px"></colgroup>
+          <thead><tr><th>Fecha</th><th>Clase</th><th>Hora</th><th>Alumno/a</th><th>Vino</th><th>Msj<br>prof</th><th>Compró<br>pack</th><th>Pack<br>vendido</th><th>Próx.<br>contacto</th><th>Notas</th><th></th></tr></thead>
           <tbody id="cpBody"></tbody>
         </table>
       </div>
@@ -8904,6 +8904,8 @@ const CP_CLASES = ['Tai Chi Chuan','Meditación','Ashtanga Vinyasa','Ashtanga My
 const CP_HORAS = ['8:00','8:30','10:30','12:00','14:00','17:00','18:30'];
 const CP_PACKS = ['1 / 2 clases','4 clases','8 clases','12 clases'];
 let movSub = 'diarios';
+// Próximo contacto automático: el día después de la clase de prueba
+function cpDiaSiguiente(iso){ const d = new Date(iso+'T12:00:00'); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); }
 // Chi Kung solo se dio en septiembre 2026: después no aparece ni en el resumen ni en los desplegables
 function cpClasesDe(ym){ return CP_CLASES.filter(c=> c!=='Chi Kung' || ym==='2026-09'); }
 const cpClasesMes = ()=> cpClasesDe(mesInicioISO().slice(0,7));
@@ -8926,7 +8928,7 @@ function suscribirClasesPrueba(){
       renderClasesPrueba();
     }, err=>{
       cpLista = [];
-      document.getElementById('cpBody').innerHTML = `<tr><td colspan="12" class="empty-state" style="color:#a13a3a;">No se pudieron leer las clases de prueba: ${escHtml(err.message)}<br>Revisá que en las reglas de Firebase esté la colección <b>clasesPrueba</b>.</td></tr>`;
+      document.getElementById('cpBody').innerHTML = `<tr><td colspan="11" class="empty-state" style="color:#a13a3a;">No se pudieron leer las clases de prueba: ${escHtml(err.message)}<br>Revisá que en las reglas de Firebase esté la colección <b>clasesPrueba</b>.</td></tr>`;
     });
 }
 function cpOrdenadas(){
@@ -8961,9 +8963,9 @@ function renderClasesPrueba(){
   const tb = document.getElementById('cpBody');
   if(tb.contains(document.activeElement) && document.activeElement.matches('input[type=text], input[type=date]')){ cpPendiente = true; return; }   // no pisar lo que se está escribiendo
   cpPendiente = false;
-  if(cpLista==null){ tb.innerHTML = '<tr><td colspan="12" class="empty-state">Cargando…</td></tr>'; return; }
+  if(cpLista==null){ tb.innerHTML = '<tr><td colspan="11" class="empty-state">Cargando…</td></tr>'; return; }
   const lista = cpOrdenadas();
-  if(!lista.length){ tb.innerHTML = '<tr><td colspan="12" class="empty-state">No hay clases de prueba cargadas este mes. Agregalas con "+ Nueva clase de prueba".</td></tr>'; return; }
+  if(!lista.length){ tb.innerHTML = '<tr><td colspan="11" class="empty-state">No hay clases de prueba cargadas este mes. Agregalas con "+ Nueva clase de prueba".</td></tr>'; return; }
   const opts = (arr, val)=> `<option value="">—</option>` + arr.map(o=> `<option ${o===val?'selected':''}>${escHtml(o)}</option>`).join('') + (val && !arr.includes(val) ? `<option selected>${escHtml(val)}</option>` : '');
   const sw = (campo, on)=> `<button type="button" class="cp-sw ${on?'on':''}" data-campo="${campo}" aria-pressed="${on?'true':'false'}"><i></i></button>`;
   tb.innerHTML = lista.map(x=> `<tr data-id="${x.id}">
@@ -8975,7 +8977,6 @@ function renderClasesPrueba(){
       <td><input type="checkbox" data-campo="msjProf" ${x.msjProf?'checked':''}></td>
       <td>${sw('compro', !!x.compro)}</td>
       <td><select class="cp-pill ${x.pack?'':'vacio'}" data-campo="pack">${opts(CP_PACKS, x.pack)}</select></td>
-      <td><input type="checkbox" data-campo="msjPost" ${x.msjPost?'checked':''}></td>
       <td><input type="${x.proxContacto ? 'date' : 'text'}" data-campo="proxContacto" value="${x.proxContacto||''}" placeholder="—" class="cp-prox ${x.proxContacto && x.proxContacto<=hoyISO() ? 'cp-vencido' : ''}"></td>
       <td class="left"><input type="text" class="cp-notas" data-campo="notas" data-no-mayus value="${escHtml(x.notas||'')}"></td>
       <td><button type="button" class="cp-del" title="Eliminar">✕</button></td>
@@ -8994,9 +8995,10 @@ cpBody.addEventListener('change', e=>{
   if(campo==='fechaISO' && !v){ renderClasesPrueba(); return; }
   if(campo==='proxContacto') el.classList.toggle('cp-vencido', !!v && v<=hoyISO());
   if(el.tagName==='SELECT') el.classList.toggle('vacio', !v);
-  const x = (cpLista||[]).find(y=> y.id===id); if(x) x[campo] = v;
+  const x = (cpLista||[]).find(y=> y.id===id); if(x){ x._fechaAnt = x.fechaISO; x[campo] = v; }
   const cambios = {[campo]: v};
-  if(campo==='pack' && v){ cambios.compro = true; if(x) x.compro = true; }   // si se elige un pack, compró
+  if(campo==='pack' && v){ cambios.compro = true; cambios.proxContacto = ''; if(x){ x.compro = true; x.proxContacto = ''; } }   // si se elige un pack, compró: no hay que volver a contactar
+  if(campo==='fechaISO' && x && x._fechaAnt && x.proxContacto && x.proxContacto===cpDiaSiguiente(x._fechaAnt)){ cambios.proxContacto = x.proxContacto = cpDiaSiguiente(v); renderClasesPrueba(); }
   cpGuardar(id, cambios);
   renderResumenCp();
   if(campo==='pack' && v) renderClasesPrueba();
@@ -9007,7 +9009,9 @@ cpBody.addEventListener('click', async e=>{
     const id = sw.closest('tr').dataset.id, campo = sw.dataset.campo, on = !sw.classList.contains('on');
     sw.classList.toggle('on', on); sw.setAttribute('aria-pressed', on ? 'true' : 'false');
     const x = (cpLista||[]).find(y=> y.id===id); if(x) x[campo] = on;
-    cpGuardar(id, {[campo]: on}); renderResumenCp();
+    const cambios = {[campo]: on};
+    if(campo==='compro' && on){ cambios.proxContacto = ''; if(x) x.proxContacto = ''; renderClasesPrueba(); }   // compró: no hay que volver a contactar
+    cpGuardar(id, cambios); renderResumenCp();
     return;
   }
   const del = e.target.closest('.cp-del');
@@ -9070,7 +9074,7 @@ document.getElementById('cpnGuardar').onclick = async ()=>{
   if(!clase || !hora || !alumno){ alert('Completá clase, hora y alumno/a.'); return; }
   const btn = document.getElementById('cpnGuardar'); btn.disabled = true;
   try{
-    await db.collection('clasesPrueba').add({fechaISO, clase, hora, alumno, vino:false, msjProf:false, compro:false, pack:'', msjPost:false, notas:'', proxContacto:'',
+    await db.collection('clasesPrueba').add({fechaISO, clase, hora, alumno, vino:false, msjProf:false, compro:false, pack:'', msjPost:false, notas:'', proxContacto: cpDiaSiguiente(fechaISO),
       creadoPor: currentUser ? currentUser.nombre : '', creadoEn: firebase.firestore.FieldValue.serverTimestamp()});
     cpnCerrar();
     // si es de otro mes, se muestra ese mes
