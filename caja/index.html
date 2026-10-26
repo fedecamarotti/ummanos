@@ -254,11 +254,15 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .cp-pk{display:flex;justify-content:space-between;padding:2px 0;border-top:1px solid #efe6d0;}
   .cp-pk.tot{background:#f4eeda;margin:0 -12px -8px;padding:3px 12px;font-weight:700;border-radius:0 0 12px 12px;}
   .cp-hoja{flex:1;min-height:0;margin:10px 28px 20px;overflow:auto;}
-  .cp-hd{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;position:sticky;left:0;}
-  .cp-hd .btn{padding:6px 12px;font-size:11.5px;}
-  .cp-tabla{width:100%;min-width:1100px;table-layout:fixed;border-collapse:collapse;}
-  .cp-tabla th{font-size:9px;padding:7px 6px;}
-  .cp-tabla th.left{text-align:left;padding-left:8px;}
+  .cp-lado{display:flex;flex-direction:column;gap:8px;min-width:0;}
+  .cp-lado .btn{padding:7px 10px;font-size:11.5px;width:100%;}
+  .cp-tabla{width:100%;min-width:1000px;table-layout:fixed;border-collapse:collapse;}
+  .cp-tabla th{font-size:9px;padding:6px 4px;line-height:1.25;text-align:center;white-space:normal;}
+  .cp-tabla input[type=date]{text-align:center;}
+  .cp-tabla input.cp-vencido{color:#c62828;font-weight:700;background:#fdecea;}
+  .cpn-grid{display:grid;gap:10px;margin:6px 0 4px;}
+  .cpn-grid label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
+  .cpn-grid input, .cpn-grid select{font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text);}
   .cp-tabla td{padding:3px 5px;font-size:10.5px;}
   .cp-tabla input[type=text], .cp-tabla input[type=date], .cp-tabla select{width:100%;padding:4px 7px;font-size:10.5px;border-radius:7px;border:1px solid transparent;background:transparent;}
   .cp-tabla input[type=text]:hover, .cp-tabla input[type=date]:hover, .cp-tabla select:hover{border-color:var(--border);background:#fdfbf2;}
@@ -1093,6 +1097,24 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   </div>
 </div>
 
+<!-- ============ MODAL: NUEVA CLASE DE PRUEBA ============ -->
+<div class="overlay" id="overlayCpNueva">
+  <div class="modal">
+    <button class="close-x" id="cpnCerrar">✕</button>
+    <h2>Nueva clase de prueba</h2>
+    <div class="cpn-grid">
+      <label>Fecha de clase de prueba<input type="date" id="cpnFecha"></label>
+      <label>Clase<select id="cpnClase"></select></label>
+      <label>Hora<select id="cpnHora"></select></label>
+      <label>Alumno/a<input type="text" id="cpnAlumno" placeholder="Apellido, nombre" autocomplete="off"></label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="cpnCancelar">Cancelar</button>
+      <button class="btn btn-primary" id="cpnGuardar">Cargar clase de prueba</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ MODAL: MOVIMIENTOS DE UN INSUMO ============ -->
 <div class="overlay" id="overlayKardex">
   <div class="modal wide" style="max-width:760px;">
@@ -1454,7 +1476,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       </div>
       <div class="s-tabs col-hidden" id="movSubTabs" role="tablist" aria-label="Movimientos">
         <button class="s-tab active" data-msub="diarios" role="tab"><span class="t-largo">Movimientos diarios</span><span class="t-corto">Diarios</span></button>
-        <button class="s-tab" data-msub="prueba"><span class="t-largo">Clases de prueba</span><span class="t-corto">Prueba</span></button>
+        <button class="s-tab s-tab-badge" data-msub="prueba"><span class="t-largo">Clases de prueba</span><span class="t-corto">Prueba</span> <span class="badge-count col-hidden" id="mSubPruebaN" title="Contactos vencidos">0</span></button>
         <button class="s-tab" data-msub="cajas" id="mSubCajas">Cajas</button>
         <button class="s-tab" data-msub="pacientes"><span class="t-largo">Pacientes/alumnos</span><span class="t-corto">Pacientes</span></button>
         <button class="s-tab s-tab-badge" data-msub="deudores">Deudores <span class="badge-count col-hidden" id="mSubDeudoresN">0</span></button>
@@ -1526,20 +1548,20 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
           <div class="cp-tit" id="cpTitResumen">Resumen</div>
           <div class="cp-scroll"><table class="cp-res" id="cpResumen"></table></div>
         </div>
-        <div class="cp-card cp-packs">
-          <div class="cp-tit">Packs vendidos</div>
-          <div id="cpPacks"></div>
+        <div class="cp-lado">
+          <button class="btn btn-primary" id="cpNueva">+ Nueva clase de prueba</button>
+          <div class="cp-card cp-packs">
+            <div class="cp-tit">Packs vendidos</div>
+            <div id="cpPacks"></div>
+          </div>
         </div>
       </div>
       <div class="sheet-wrap cp-hoja">
-        <div class="cp-hd"><div class="cp-tit" id="cpTitLista">Clases de prueba</div><button class="btn btn-primary" id="cpNueva">+ Nueva clase de prueba</button></div>
-        <div class="cp-scroll">
         <table class="cp-tabla">
-          <colgroup><col style="width:122px"><col style="width:150px"><col style="width:84px"><col style="width:200px"><col style="width:58px"><col style="width:70px"><col style="width:96px"><col style="width:118px"><col style="width:104px"><col><col style="width:34px"></colgroup>
-          <thead><tr><th>Fecha</th><th>Clase</th><th>Hora</th><th class="left">Alumno/a</th><th>Vino</th><th>Msj prof.</th><th>Compró pack</th><th>Pack vendido</th><th>Msj post clase</th><th class="left">Notas</th><th></th></tr></thead>
+          <colgroup><col style="width:112px"><col style="width:140px"><col style="width:84px"><col style="width:190px"><col style="width:46px"><col style="width:46px"><col style="width:56px"><col style="width:108px"><col style="width:58px"><col style="width:112px"><col><col style="width:30px"></colgroup>
+          <thead><tr><th>Fecha</th><th>Clase</th><th>Hora</th><th>Alumno/a</th><th>Vino</th><th>Msj<br>prof</th><th>Compró<br>pack</th><th>Pack<br>vendido</th><th>Msj post<br>clase</th><th>Próx.<br>contacto</th><th>Notas</th><th></th></tr></thead>
           <tbody id="cpBody"></tbody>
         </table>
-        </div>
       </div>
     </div>
    </div><!-- /#vistaMovimientos -->
@@ -3018,6 +3040,7 @@ function iniciarListeners(){
     });
     renderDeudoresCount();
   });
+  suscribirCpContactos();
 
   // Sesión de caja abierta (si hay)
   unsubCajaAbierta = db.collection('cajaSesiones').where('cerradaEn','==', null).onSnapshot(async snap=>{
@@ -8879,6 +8902,9 @@ const CP_CLASES = ['Tai Chi Chuan','Meditación','Ashtanga Vinyasa','Ashtanga My
 const CP_HORAS = ['8:00','8:30','10:30','12:00','14:00','17:00','18:30'];
 const CP_PACKS = ['1 / 2 clases','4 clases','8 clases','12 clases'];
 let movSub = 'diarios';
+// Chi Kung solo se dio en septiembre 2026: después no aparece ni en el resumen ni en los desplegables
+function cpClasesDe(ym){ return CP_CLASES.filter(c=> c!=='Chi Kung' || ym==='2026-09'); }
+const cpClasesMes = ()=> cpClasesDe(mesInicioISO().slice(0,7));
 let cpLista = null, unsubCp = null, cpMesSuscripto = null, cpPendiente = false;
 function mostrarSubMov(sub){
   movSub = sub;
@@ -8898,7 +8924,7 @@ function suscribirClasesPrueba(){
       renderClasesPrueba();
     }, err=>{
       cpLista = [];
-      document.getElementById('cpBody').innerHTML = `<tr><td colspan="11" class="empty-state" style="color:#a13a3a;">No se pudieron leer las clases de prueba: ${escHtml(err.message)}<br>Revisá que en las reglas de Firebase esté la colección <b>clasesPrueba</b>.</td></tr>`;
+      document.getElementById('cpBody').innerHTML = `<tr><td colspan="12" class="empty-state" style="color:#a13a3a;">No se pudieron leer las clases de prueba: ${escHtml(err.message)}<br>Revisá que en las reglas de Firebase esté la colección <b>clasesPrueba</b>.</td></tr>`;
     });
 }
 function cpOrdenadas(){
@@ -8909,9 +8935,9 @@ function cpOrdenadas(){
 function renderResumenCp(){
   const mesTxt = `${MESES[mesActual.month-1].toLowerCase()}`;
   document.getElementById('cpTitResumen').textContent = `Resumen de ${mesTxt}`;
-  document.getElementById('cpTitLista').textContent = `Clases de prueba de ${mesTxt}`;
   const lista = cpLista || [];
-  const st = {}; CP_CLASES.forEach(c=> st[c] = [0,0,0]);
+  const CLASES = cpClasesMes();
+  const st = {}; CLASES.forEach(c=> st[c] = [0,0,0]);
   const packs = {}; CP_PACKS.forEach(p=> packs[p] = 0);
   lista.forEach(x=>{
     const k = st[x.clase] ? x.clase : null;
@@ -8921,8 +8947,8 @@ function renderResumenCp(){
   });
   const T = [0,0,0]; lista.forEach(x=>{ T[0]++; if(x.vino) T[1]++; if(x.compro) T[2]++; });
   const pct = (v,c)=> c ? Math.round(v/c*100)+'%' : '—';
-  const fila = (lbl, f, cls='')=> `<tr><td class="l">${lbl}</td>${CP_CLASES.map(c=> `<td class="${cls}">${f(st[c])}</td>`).join('')}<td class="tt ${cls}">${f(T)}</td></tr>`;
-  document.getElementById('cpResumen').innerHTML = `<tr><th></th>${CP_CLASES.map(c=> `<th>${c}</th>`).join('')}<th class="tt">Total</th></tr>`
+  const fila = (lbl, f, cls='')=> `<tr><td class="l">${lbl}</td>${CLASES.map(c=> `<td class="${cls}">${f(st[c])}</td>`).join('')}<td class="tt ${cls}">${f(T)}</td></tr>`;
+  document.getElementById('cpResumen').innerHTML = `<tr><th></th>${CLASES.map(c=> `<th>${c}</th>`).join('')}<th class="tt">Total</th></tr>`
     + fila('Clases', v=> v[0]) + fila('Asistencias', v=> v[1]) + fila('Ventas', v=> v[2], 'g') + fila('No ventas', v=> v[0]-v[2]) + fila('% Conv.', v=> pct(v[2], v[0]), 'b');
   const totP = Object.values(packs).reduce((a,b)=> a+b, 0);
   document.getElementById('cpPacks').innerHTML = CP_PACKS.map(p=> `<div class="cp-pk"><span>${p}</span><b>${packs[p]}</b></div>`).join('') + `<div class="cp-pk tot"><span>Total</span><b>${totP}</b></div>`;
@@ -8933,14 +8959,14 @@ function renderClasesPrueba(){
   const tb = document.getElementById('cpBody');
   if(tb.contains(document.activeElement) && document.activeElement.matches('input[type=text], input[type=date]')){ cpPendiente = true; return; }   // no pisar lo que se está escribiendo
   cpPendiente = false;
-  if(cpLista==null){ tb.innerHTML = '<tr><td colspan="11" class="empty-state">Cargando…</td></tr>'; return; }
+  if(cpLista==null){ tb.innerHTML = '<tr><td colspan="12" class="empty-state">Cargando…</td></tr>'; return; }
   const lista = cpOrdenadas();
-  if(!lista.length){ tb.innerHTML = '<tr><td colspan="11" class="empty-state">No hay clases de prueba cargadas este mes. Agregalas con "+ Nueva clase de prueba".</td></tr>'; return; }
+  if(!lista.length){ tb.innerHTML = '<tr><td colspan="12" class="empty-state">No hay clases de prueba cargadas este mes. Agregalas con "+ Nueva clase de prueba".</td></tr>'; return; }
   const opts = (arr, val)=> `<option value="">—</option>` + arr.map(o=> `<option ${o===val?'selected':''}>${escHtml(o)}</option>`).join('') + (val && !arr.includes(val) ? `<option selected>${escHtml(val)}</option>` : '');
   const sw = (campo, on)=> `<button type="button" class="cp-sw ${on?'on':''}" data-campo="${campo}" aria-pressed="${on?'true':'false'}"><i></i></button>`;
   tb.innerHTML = lista.map(x=> `<tr data-id="${x.id}">
       <td><input type="date" data-campo="fechaISO" value="${x.fechaISO||''}"></td>
-      <td><select class="cp-pill ${x.clase?'':'vacio'}" data-campo="clase">${opts(CP_CLASES, x.clase)}</select></td>
+      <td><select class="cp-pill ${x.clase?'':'vacio'}" data-campo="clase">${opts(cpClasesDe((x.fechaISO||'').slice(0,7)), x.clase)}</select></td>
       <td><select class="cp-pill ${x.hora?'':'vacio'}" data-campo="hora">${opts(CP_HORAS, x.hora)}</select></td>
       <td class="left"><input type="text" data-campo="alumno" value="${escHtml(x.alumno||'')}" placeholder="Apellido, nombre"></td>
       <td>${sw('vino', !!x.vino)}</td>
@@ -8948,7 +8974,8 @@ function renderClasesPrueba(){
       <td>${sw('compro', !!x.compro)}</td>
       <td><select class="cp-pill ${x.pack?'':'vacio'}" data-campo="pack">${opts(CP_PACKS, x.pack)}</select></td>
       <td><input type="checkbox" data-campo="msjPost" ${x.msjPost?'checked':''}></td>
-      <td class="left"><input type="text" class="cp-notas" data-campo="notas" data-no-mayus value="${escHtml(x.notas||'')}" placeholder="Notas"></td>
+      <td><input type="date" data-campo="proxContacto" value="${x.proxContacto||''}" class="${x.proxContacto && x.proxContacto<=hoyISO() ? 'cp-vencido' : ''}"></td>
+      <td class="left"><input type="text" class="cp-notas" data-campo="notas" data-no-mayus value="${escHtml(x.notas||'')}"></td>
       <td><button type="button" class="cp-del" title="Eliminar">✕</button></td>
     </tr>`).join('');
 }
@@ -8963,6 +8990,7 @@ cpBody.addEventListener('change', e=>{
   let v = el.type==='checkbox' ? el.checked : el.value;
   if(campo==='alumno') v = mayus(String(v).trim());
   if(campo==='fechaISO' && !v){ renderClasesPrueba(); return; }
+  if(campo==='proxContacto') el.classList.toggle('cp-vencido', !!v && v<=hoyISO());
   if(el.tagName==='SELECT') el.classList.toggle('vacio', !v);
   const x = (cpLista||[]).find(y=> y.id===id); if(x) x[campo] = v;
   const cambios = {[campo]: v};
@@ -8988,18 +9016,62 @@ cpBody.addEventListener('click', async e=>{
   }
 });
 cpBody.addEventListener('focusout', ()=> setTimeout(()=>{ if(cpPendiente && !cpBody.contains(document.activeElement)) renderClasesPrueba(); }, 50));
-document.getElementById('cpNueva').onclick = async ()=>{
+const ovCpNueva = document.getElementById('overlayCpNueva');
+function cpnLlenarClases(){
+  const sel = document.getElementById('cpnClase'), actual = sel.value;
+  const cl = cpClasesDe((document.getElementById('cpnFecha').value||'').slice(0,7));
+  sel.innerHTML = '<option value="">Elegí la clase…</option>' + cl.map(c=> `<option ${c===actual?'selected':''}>${escHtml(c)}</option>`).join('');
+}
+document.getElementById('cpNueva').onclick = ()=>{
   const hoy = hoyISO();
-  const fechaISO = hoy >= mesInicioISO() && hoy < mesFinISO() ? hoy : mesInicioISO();
-  const btn = document.getElementById('cpNueva'); btn.disabled = true;
+  document.getElementById('cpnFecha').value = hoy >= mesInicioISO() && hoy < mesFinISO() ? hoy : mesInicioISO();
+  document.getElementById('cpnClase').value = '';
+  cpnLlenarClases();
+  document.getElementById('cpnHora').innerHTML = '<option value="">Elegí la hora…</option>' + CP_HORAS.map(h=> `<option>${h}</option>`).join('');
+  document.getElementById('cpnAlumno').value = '';
+  ovCpNueva.classList.add('show');
+  setTimeout(()=> document.getElementById('cpnClase').focus(), 50);
+};
+document.getElementById('cpnFecha').addEventListener('change', cpnLlenarClases);
+const cpnCerrar = ()=> ovCpNueva.classList.remove('show');
+document.getElementById('cpnCerrar').onclick = cpnCerrar;
+document.getElementById('cpnCancelar').onclick = cpnCerrar;
+document.getElementById('cpnAlumno').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('cpnGuardar').click(); });
+document.getElementById('cpnGuardar').onclick = async ()=>{
+  const fechaISO = document.getElementById('cpnFecha').value;
+  const clase = document.getElementById('cpnClase').value, hora = document.getElementById('cpnHora').value;
+  const alumno = mayus(document.getElementById('cpnAlumno').value.trim());
+  if(!fechaISO){ alert('Elegí la fecha de la clase de prueba.'); return; }
+  if(!clase || !hora || !alumno){ alert('Completá clase, hora y alumno/a.'); return; }
+  const btn = document.getElementById('cpnGuardar'); btn.disabled = true;
   try{
-    const ref = await db.collection('clasesPrueba').add({fechaISO, clase:'', hora:'', alumno:'', vino:false, msjProf:false, compro:false, pack:'', msjPost:false, notas:'',
+    await db.collection('clasesPrueba').add({fechaISO, clase, hora, alumno, vino:false, msjProf:false, compro:false, pack:'', msjPost:false, notas:'', proxContacto:'',
       creadoPor: currentUser ? currentUser.nombre : '', creadoEn: firebase.firestore.FieldValue.serverTimestamp()});
-    // foco en la clase de la fila nueva cuando aparezca
-    setTimeout(()=>{ const sel = cpBody.querySelector(`tr[data-id="${ref.id}"] select[data-campo="clase"]`); if(sel) sel.focus(); }, 400);
-  }catch(e){ alert('No se pudo agregar: ' + e.message); }
+    cpnCerrar();
+    // si es de otro mes, se muestra ese mes
+    if(fechaISO < mesInicioISO() || fechaISO >= mesFinISO()){
+      const [y, m] = fechaISO.split('-').map(Number);
+      mesActual = {year:y, month:m}; actualizarMesLabel(); suscribirMovimientos(); suscribirClasesPrueba(); renderClasesPrueba();
+    }
+  }catch(e){ alert('No se pudo cargar: ' + e.message); }
   btn.disabled = false;
 };
+
+// Alarmas de "próx. contacto": vencen el mismo día de la fecha puesta → globo rojo en "Clases de prueba"
+let cpContactos = [], unsubCpContactos = null;
+function renderCpContactosCount(){
+  const hoy = hoyISO();
+  const n = cpContactos.filter(x=> x.proxContacto && x.proxContacto <= hoy).length;
+  const b = document.getElementById('mSubPruebaN');
+  if(b){ b.textContent = n; b.classList.toggle('col-hidden', !n); }
+}
+function suscribirCpContactos(){
+  if(unsubCpContactos) return;
+  unsubCpContactos = db.collection('clasesPrueba').where('proxContacto','>','')
+    .onSnapshot(snap=>{ cpContactos = snap.docs.map(d=> ({id:d.id, ...d.data()})); renderCpContactosCount(); },
+      err=> console.warn('No se pudieron leer los próximos contactos', err));
+  setInterval(renderCpContactosCount, 5*60*1000);   // por si la pantalla queda abierta y cambia el día
+}
 
 document.querySelectorAll('#movSubTabs [data-msub]').forEach(b=> b.onclick = ()=>{
   const sub = b.dataset.msub;
