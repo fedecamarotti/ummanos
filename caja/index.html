@@ -9017,6 +9017,10 @@ cpBody.addEventListener('click', async e=>{
     try{ await db.collection('clasesPrueba').doc(tr.dataset.id).delete(); }catch(err){ alert('No se pudo eliminar: ' + err.message); }
   }
 });
+// Enter guarda y sale del casillero (como al hacer clic afuera)
+cpBody.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && e.target.matches('input[type=text], input[type=date]')){ e.preventDefault(); e.target.blur(); }
+});
 // Notas: no se puede escribir más de lo que entra en el casillero
 cpBody.addEventListener('input', e=>{
   const el = e.target;
