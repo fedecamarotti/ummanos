@@ -7642,10 +7642,13 @@ async function renderAreasPaciente(p){
   cont.innerHTML = '<div class="pf-total">Buscando…</div>';
   const nombre = p.nombreCompleto;
   try{
-    const snap = await db.collection('movimientos').where('pac','==', nombre).get();
+    // también en mayúsculas: los movimientos migrados de la planilla vienen así
+    const variantes = [...new Set([nombre, mayus(nombre)])];
+    const snaps = await Promise.all(variantes.map(v=> db.collection('movimientos').where('pac','==', v).get()));
     if(!pfPaciente || pfPaciente.id!==p.id) return;   // se cambió de ficha mientras buscaba
     const cuenta = {};
-    snap.docs.forEach(d=>{
+    const docs = {}; snaps.forEach(sn=> sn.docs.forEach(d=> docs[d.id] = d));
+    Object.values(docs).forEach(d=>{
       const m = d.data();
       if(esGastoMov(m) || /^salda deuda/i.test(m.concepto||'') || NO_ES_AREA.test(m.prof||'')) return;
       cuenta[m.prof] = (cuenta[m.prof]||0) + 1;
