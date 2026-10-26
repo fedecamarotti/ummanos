@@ -8880,7 +8880,7 @@ function suscribirClasesPrueba(){
 function cpOrdenadas(){
   const ms = ts => ts && ts.toMillis ? ts.toMillis() : Date.now();
   const hNum = h => { const [a,b] = String(h||'99:99').split(':').map(Number); return a*60+(b||0); };
-  return (cpLista||[]).slice().sort((a,b)=> a.fechaISO!==b.fechaISO ? (a.fechaISO<b.fechaISO?-1:1) : (hNum(a.hora)-hNum(b.hora) || ms(a.creadoEn)-ms(b.creadoEn)));
+  return (cpLista||[]).slice().sort((a,b)=> a.fechaISO!==b.fechaISO ? (a.fechaISO<b.fechaISO?-1:1) : (hNum(a.hora)-hNum(b.hora) || ((a.orden??1e9)-(b.orden??1e9)) || ms(a.creadoEn)-ms(b.creadoEn)));
 }
 function renderResumenCp(){
   const mesTxt = `${MESES[mesActual.month-1].toLowerCase()}`;
