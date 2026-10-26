@@ -256,7 +256,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .cp-hoja{flex:1;min-height:0;margin:10px 28px 20px;overflow:auto;}
   .cp-lado{display:flex;flex-direction:column;gap:8px;min-width:0;}
   .cp-lado .btn{padding:7px 10px;font-size:11.5px;width:100%;}
-  .cp-tabla{width:100%;min-width:1000px;table-layout:fixed;border-collapse:collapse;}
+  .cp-tabla{width:100%;min-width:1236px;table-layout:fixed;border-collapse:collapse;}
   .cp-tabla th{font-size:9px;padding:3px 4px;line-height:1.1;text-align:center;white-space:normal;}
   .cp-tabla input[type=date]{text-align:center;}
   .cp-tabla input.cp-prox{text-align:center;cursor:pointer;}
@@ -1560,7 +1560,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       </div>
       <div class="sheet-wrap cp-hoja">
         <table class="cp-tabla">
-          <colgroup><col style="width:112px"><col style="width:140px"><col style="width:84px"><col style="width:190px"><col style="width:46px"><col style="width:46px"><col style="width:56px"><col style="width:108px"><col style="width:112px"><col><col style="width:30px"></colgroup>
+          <colgroup><col style="width:100px"><col style="width:126px"><col style="width:80px"><col style="width:160px"><col style="width:44px"><col style="width:44px"><col style="width:54px"><col style="width:98px"><col style="width:100px"><col style="width:400px"><col style="width:30px"></colgroup>
           <thead><tr><th>Fecha</th><th>Clase</th><th>Hora</th><th>Alumno/a</th><th>Vino</th><th>Msj<br>prof</th><th>Compró<br>pack</th><th>Pack<br>vendido</th><th>Próx.<br>contacto</th><th>Notas</th><th></th></tr></thead>
           <tbody id="cpBody"></tbody>
         </table>
@@ -8902,6 +8902,7 @@ document.querySelectorAll('#fedeTabs [data-ir]').forEach(b=> b.onclick = ()=>{
    ===================================================================== */
 const CP_CLASES = ['Tai Chi Chuan','Meditación','Ashtanga Vinyasa','Ashtanga Mysore','Yoga Suave','Hatha Yoga','Chi Kung'];
 const CP_HORAS = ['8:00','8:30','10:30','12:00','14:00','17:00','18:30'];
+const CP_NOTAS_MAX = 55;   // lo que entra en el casillero de notas (igual en PC y celular)
 const CP_PACKS = ['1 / 2 clases','4 clases','8 clases','12 clases'];
 let movSub = 'diarios';
 // Próximo contacto automático: el día después de la clase de prueba
@@ -8978,7 +8979,7 @@ function renderClasesPrueba(){
       <td>${sw('compro', !!x.compro)}</td>
       <td><select class="cp-pill ${x.pack?'':'vacio'}" data-campo="pack">${opts(CP_PACKS, x.pack)}</select></td>
       <td><input type="${x.proxContacto ? 'date' : 'text'}" data-campo="proxContacto" value="${x.proxContacto||''}" placeholder="—" class="cp-prox ${x.proxContacto && x.proxContacto<=hoyISO() ? 'cp-vencido' : ''}"></td>
-      <td class="left"><input type="text" class="cp-notas" data-campo="notas" data-no-mayus value="${escHtml(x.notas||'')}"></td>
+      <td class="left"><input type="text" class="cp-notas" data-campo="notas" data-no-mayus maxlength="${CP_NOTAS_MAX}" value="${escHtml(x.notas||'')}"></td>
       <td><button type="button" class="cp-del" title="Eliminar">✕</button></td>
     </tr>`).join('');
 }
@@ -9024,16 +9025,6 @@ cpBody.addEventListener('click', async e=>{
 // Enter guarda y sale del casillero (como al hacer clic afuera)
 cpBody.addEventListener('keydown', e=>{
   if(e.key==='Enter' && e.target.matches('input[type=text], input[type=date]')){ e.preventDefault(); e.target.blur(); }
-});
-// Notas: no se puede escribir más de lo que entra en el casillero
-cpBody.addEventListener('input', e=>{
-  const el = e.target;
-  if(!el.classList || !el.classList.contains('cp-notas')) return;
-  while(el.value && el.scrollWidth > el.clientWidth + 1){
-    const pos = el.selectionStart;
-    el.value = el.value.slice(0, Math.max(0, pos-1)) + el.value.slice(pos);   // saca lo último que se escribió
-    el.setSelectionRange(pos-1, pos-1);
-  }
 });
 // Próx. contacto vacío muestra "—"; al tocarlo se convierte en fecha
 cpBody.addEventListener('focusin', e=>{
