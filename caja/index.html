@@ -2570,7 +2570,7 @@ let CODIGO_POR_CONCEPTO = {};    // "SUEROTERAPIA||SUERO BASE..." -> "SUE-01", p
 let TIPO_POR_CONCEPTO = {};      // "SUEROTERAPIA||SUERO BASE..." -> "ingreso" | "egreso" (por defecto: ingreso)
 function esEgreso(prof, concepto){ return TIPO_POR_CONCEPTO[prof+"||"+concepto] === "egreso"; }
 // Movimientos migrados de la planilla vieja: traen su propio tipo (los conceptos viejos no están en el catálogo)
-function esGastoMov(m){ return m && m.migrado ? m.tipo === 'egreso' : esGastoMov(m); }
+function esGastoMov(m){ return m && m.migrado ? m.tipo === 'egreso' : esEgreso(m.prof, m.concepto); }
 const noMigrado = m => !m.migrado;
 // Áreas que no cuentan como "área de Ummana" en la ficha del paciente
 const NO_ES_AREA = /^(CAJA DIARIA|ALQUILER CONSUL|GASTOS )/i;
