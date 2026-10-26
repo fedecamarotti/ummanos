@@ -239,6 +239,34 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   body.fede-nav-on #vistaSueros .sueros-bar .s-tab, body.fede-nav-on #vistaCremas .sueros-bar .s-tab, body.fede-nav-on #movSubTabs .s-tab{padding:5px 12px;font-size:11px;}
   body.fede-nav-on #vistaSueros .sueros-bar .s-tabs, body.fede-nav-on #vistaCremas .sueros-bar .s-tabs, body.fede-nav-on #movSubTabs{padding:2px;border-radius:9px;}
   .t-corto{display:none;}
+  /* Pacientes: lista + ficha */
+  .pf-modal{max-width:760px;}
+  .lista-toolbar .addbtn{height:36px;align-self:stretch;}
+  .pf-lista{max-height:60vh;overflow-y:auto;border:1px solid var(--border);border-radius:10px;}
+  .pf-item{display:flex;justify-content:space-between;align-items:center;width:100%;border:none;border-bottom:1px solid var(--border);background:#fffcf5;padding:10px 14px;font-size:12.5px;font-weight:600;color:var(--text);text-align:left;cursor:pointer;}
+  .pf-item:last-child{border-bottom:none;}
+  .pf-item:hover{background:#f6f0de;}
+  .pf-item .flecha{color:var(--muted);font-weight:500;}
+  .pf-cabeza{display:flex;align-items:center;gap:8px;border-bottom:2px solid #e6dcc3;padding-bottom:10px;margin:6px 0 14px;}
+  .pf-nombre{font-size:22px;font-weight:700;letter-spacing:.2px;}
+  .pf-editar-nombre{border:none;background:none;font-size:13px;opacity:.55;cursor:pointer;padding:4px;}
+  .pf-editar-nombre:hover{opacity:1;}
+  .pf-nombre-campos{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .pf-cuerpo{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+  .pf-datos .field{margin-bottom:10px;}
+  .pf-ref{background:#fbf4e3;border:1px dashed #d8c69c;border-radius:8px;padding:8px 10px;margin-top:8px;}
+  .pf-ref label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px;}
+  .pf-areas{background:#f8f2e2;border-radius:10px;padding:12px 14px;}
+  .pf-areas-tit{font-size:10.5px;font-weight:700;color:#9c8250;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;}
+  .pf-area{font-size:12px;margin-bottom:10px;}
+  .pf-area .fila{display:flex;justify-content:space-between;gap:8px;margin-bottom:3px;}
+  .pf-area .barra{height:7px;background:#ece2c8;border-radius:4px;}
+  .pf-area .barra i{display:block;height:7px;background:#c9b183;border-radius:4px;}
+  .pf-total{margin-top:12px;font-size:11px;color:var(--muted);}
+  .pf-total b{color:var(--text);}
+  .pac-link{cursor:pointer;}
+  .pac-link:hover{text-decoration:underline;color:var(--accent-dk);}
+  @media (max-width:640px){ .pf-cuerpo{grid-template-columns:1fr;} .pf-nombre{font-size:19px;} }
   body.fede-nav-on #vistaInformes > .sueros-bar{margin-top:8px;}
   body.fede-nav-on #vistaInformes .sueros-bar .s-tab{padding:5px 12px;font-size:11px;}
   body.fede-nav-on #vistaInformes .sueros-bar .s-tabs{padding:2px;border-radius:9px;}
@@ -1812,9 +1840,10 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <label>Medio de llegada <span class="opt">(opcional)</span></label>
         <select id="npMedio">
           <option value="">Seleccionar…</option>
-          <option>Instagram</option><option>Recomendación</option><option>Google</option>
-          <option>Pasó por la puerta</option><option>Otro</option>
+          <option value="GOOGLE">Google</option><option value="PACIENTE ANTERIOR">Paciente anterior</option>
+          <option value="INSTAGRAM">Instagram</option><option value="REFERIDO">Referido</option>
         </select>
+        <div class="pf-ref col-hidden" id="npRefWrap"><label>Referido por</label><input type="text" id="npReferido" placeholder="¿Quién lo refirió?"></div>
       </div>
       <div class="modal-actions">
         <button class="btn" id="cancelPaciente">Cancelar</button>
@@ -2225,17 +2254,52 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
 
 <!-- ============ MODAL: PACIENTES (buscar y editar) ============ -->
 <div class="overlay" id="overlayPacientes">
-  <div class="modal" style="max-width:1100px;">
+  <div class="modal pf-modal">
     <button class="close-x" id="closePacientes">✕</button>
-    <h2>Pacientes</h2>
-    <div class="modal-sub">Orden alfabético — escribí para filtrar por apellido o nombre.</div>
-    <div class="lista-toolbar">
-      <input type="text" id="buscarPacienteInput" placeholder="Buscar por apellido o nombre…" autocomplete="off">
-      <button class="addbtn" id="btnNuevoPaciente" title="Agregar paciente">+</button>
+    <!-- Lista -->
+    <div id="pacVistaLista">
+      <h2>Pacientes</h2>
+      <div class="modal-sub">Orden alfabético — escribí para filtrar por apellido o nombre. Tocá un paciente para ver su ficha.</div>
+      <div class="lista-toolbar">
+        <input type="text" id="buscarPacienteInput" placeholder="Buscar por apellido o nombre…" autocomplete="off">
+        <button class="addbtn" id="btnNuevoPaciente" title="Agregar paciente">+</button>
+      </div>
+      <div class="pf-lista" id="pacientesScroll"></div>
+      <div class="modal-actions"><button class="btn" id="cerrarPacientes">Cerrar</button></div>
     </div>
-    <div class="lista-rows" id="pacientesScroll"></div>
-    <div class="modal-actions">
-      <button class="btn" id="cerrarPacientes">Cerrar</button>
+    <!-- Ficha -->
+    <div id="pacVistaFicha" class="col-hidden">
+      <button class="btn hc-volver" id="pfVolver">← Pacientes</button>
+      <div class="pf-cabeza">
+        <div class="pf-nombre" id="pfNombre"></div>
+        <button type="button" class="pf-editar-nombre" id="pfEditarNombre" title="Corregir apellido o nombre">✏️</button>
+      </div>
+      <div class="pf-nombre-campos col-hidden" id="pfNombreCampos">
+        <div class="field"><label>Apellido</label><input type="text" id="pfApellido"></div>
+        <div class="field"><label>Nombre</label><input type="text" id="pfNombreIn"></div>
+      </div>
+      <div class="pf-cuerpo">
+        <div class="pf-datos">
+          <div class="field"><label>Teléfono</label><input type="tel" id="pfTelefono"></div>
+          <div class="field"><label>Email</label><input type="email" id="pfEmail" data-no-mayus></div>
+          <div class="field"><label>Fecha de nacimiento <span class="opt" id="pfEdad"></span></label><input type="date" id="pfFnac"></div>
+          <div class="field"><label>DNI</label><input type="text" id="pfDni" inputmode="numeric"></div>
+          <div class="field"><label>Medio de llegada</label><select id="pfMedio"></select>
+            <div class="pf-ref col-hidden" id="pfRefWrap"><label>Referido por</label><input type="text" id="pfReferido" placeholder="¿Quién lo refirió?"></div>
+          </div>
+        </div>
+        <div class="pf-areas">
+          <div class="pf-areas-tit">Áreas de Ummana</div>
+          <div id="pfAreas"></div>
+        </div>
+      </div>
+      <div class="modal-actions between">
+        <button class="btn btn-eliminar" id="pfEliminar">Eliminar paciente</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn" id="pfCerrar">Cerrar</button>
+          <button class="btn btn-primary" id="pfGuardar">Guardar</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -2451,6 +2515,7 @@ const MEDIO_LABELS = {
 // ---------------- ESTADO LOCAL (espejo en vivo de Firestore) ----------------
 let currentUser = null;       // {uid, nombre, rol}
 let pacienteRegistry = [];    // ["APELLIDO, Nombre", ...]
+let nombresPacientes = new Set();   // para que los nombres de la tabla abran la ficha
 let movimientos = [];         // espejo local de "movimientos" del mes que se está mirando (tabla + filtros)
 let movimientosHoy = [];      // espejo local de los movimientos de HOY, sin importar qué mes se esté mirando (caja, reportes)
 let movimientosDeuda = [];    // espejo local de todas las deudas pendientes, de cualquier fecha (deudores)
@@ -2813,6 +2878,7 @@ function iniciarListeners(){
     pacientesFullList = snap.docs.map(d=> ({id:d.id, ...d.data()}));
     pacienteRegistry = pacientesFullList.map(p=> p.nombreCompleto);
     if(!pausaRenderPaneles && overlayPacientes.classList.contains('show')) renderPacientesBusqueda();
+    if(vistaActual==='movimientos') renderTabla();   // para que los nombres se puedan tocar y abran la ficha
   });
 
   // Catálogo de profesionales/conceptos (con su código)
@@ -2994,14 +3060,16 @@ function pasaFiltros(m){
 
 function renderTabla(){
   if(vistaActual==='cremas' && typeof renderCremas==='function') renderCremas();
+  nombresPacientes = new Set(pacientesFullList.map(p=> mayus(p.nombreCompleto||'')));
   tbody.innerHTML = "";
   movimientos.filter(pasaFiltros).forEach(m=>{
     const esGasto = esEgreso(m.prof, m.concepto);
     const tr = document.createElement('tr');
+    const esPac = !esGasto && nombresPacientes.has(mayus(m.pac||''));
     tr.innerHTML = `
       <td class="editcol"><button class="editbtn" title="Editar" onclick="abrirEdicion('${m.id}')">&#9998;</button></td>
       <td>${m.fechaDisplay}</td>
-      <td class="left">${m.pac}</td>
+      <td class="left">${esPac ? `<span class="pac-link" data-pac="${escHtml(m.pac)}" title="Ver ficha del paciente">${m.pac}</span>` : m.pac}</td>
       <td>${m.prof}</td>
       <td class="codigo">${m.codigo||""}</td>
       <td class="concepto">${m.concepto}</td>
@@ -3725,12 +3793,15 @@ document.getElementById('guardarPaciente').onclick = async ()=>{
     fnac: document.getElementById('npFnac').value,
     dni: document.getElementById('npDni').value.trim(),
     medioLlegada: document.getElementById('npMedio').value,
+    referidoPor: document.getElementById('npMedio').value==='REFERIDO' ? mayus(document.getElementById('npReferido').value.trim()) : '',
     creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
   });
   selPaciente.value = nombreCompleto;
   document.getElementById('cardNuevoPaciente').classList.add('col-hidden');
-  ['npApellido','npNombre','npTelefono','npEmail','npFnac','npDni','npMedio'].forEach(id=>document.getElementById(id).value="");
+  ['npApellido','npNombre','npTelefono','npEmail','npFnac','npDni','npMedio','npReferido'].forEach(id=>document.getElementById(id).value="");
+  document.getElementById('npRefWrap').classList.add('col-hidden');
 };
+document.getElementById('npMedio').addEventListener('change', e=> document.getElementById('npRefWrap').classList.toggle('col-hidden', e.target.value!=='REFERIDO'));
 
 selPaciente.addEventListener('input', refreshDeudasPaciente);
 function refreshDeudasPaciente(){
@@ -7386,108 +7457,174 @@ const buscarPacienteInput = document.getElementById('buscarPacienteInput');
 document.getElementById('btnPacientes').onclick = ()=>{
   buscarPacienteInput.value = "";
   mostrarNuevoPaciente = false;
+  pacVistaPanel('lista');
   renderPacientesBusqueda();
   overlayPacientes.classList.add('show');
   buscarPacienteInput.focus();
 };
 document.getElementById('closePacientes').onclick = ()=> overlayPacientes.classList.remove('show');
 document.getElementById('cerrarPacientes').onclick = ()=> overlayPacientes.classList.remove('show');
-document.getElementById('btnNuevoPaciente').onclick = ()=>{
-  mostrarNuevoPaciente = !mostrarNuevoPaciente;
-  renderPacientesBusqueda();
-};
+document.getElementById('btnNuevoPaciente').onclick = ()=> abrirFichaPaciente(null);
 buscarPacienteInput.addEventListener('input', renderPacientesBusqueda);
 
-function filaPacienteHTML(p, esNueva){
-  return `
-    <div class="fila-editable" data-id="${p.id||''}">
-      <input type="text" class="col pc-apellido" value="${p.apellido||""}" placeholder="Apellido">
-      <input type="text" class="col pc-nombre" value="${p.nombre||""}" placeholder="Nombre">
-      <input type="tel" class="col col-chico pc-telefono" value="${p.telefono||""}" placeholder="Teléfono">
-      <input type="email" class="col pc-email" value="${p.email||""}" placeholder="Email">
-      <input type="text" class="col col-chico pc-fnac" value="${p.fnac||""}" placeholder="F. nac.">
-      <input type="text" class="col col-chico pc-dni" value="${p.dni||""}" placeholder="DNI">
-      <input type="text" class="col pc-medio" value="${p.medioLlegada||""}" placeholder="Medio de llegada">
-      <button class="btn-guardar-fila" onclick="${esNueva ? 'crearPacienteFila(this)' : `guardarPacienteCard('${p.id}', this)`}">${esNueva ? "Crear" : "Guardar"}</button>
-      ${esNueva ? "" : `<button class="btn-eliminar-fila" onclick="eliminarPacienteFila('${p.id}', this)" title="Eliminar">✕</button>`}
-    </div>
-  `;
+// Medio de llegada: opciones fijas (se guardan en mayúsculas, como el resto de los datos)
+const MEDIOS_LLEGADA = [['GOOGLE','Google'],['PACIENTE ANTERIOR','Paciente anterior'],['INSTAGRAM','Instagram'],['REFERIDO','Referido']];
+function medioLlegadaNormal(v){
+  const k = normBusqueda(v||'').trim();
+  if(!k) return '';
+  const o = MEDIOS_LLEGADA.find(([val, lbl])=> normBusqueda(lbl)===k);
+  if(o) return o[0];
+  if(k.startsWith('recomend') || k.startsWith('referid')) return 'REFERIDO';
+  return mayus(v);   // valor viejo que no está en la lista: se conserva
 }
+const escHtml = t => String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
+function pacVistaPanel(v){
+  document.getElementById('pacVistaLista').classList.toggle('col-hidden', v!=='lista');
+  document.getElementById('pacVistaFicha').classList.toggle('col-hidden', v!=='ficha');
+  overlayPacientes.scrollTop = 0;
+}
 function renderPacientesBusqueda(){
+  if(!document.getElementById('pacVistaFicha').classList.contains('col-hidden')) return;   // con la ficha abierta no se toca nada
   const q = normBusqueda(buscarPacienteInput.value.trim());
   const cont = document.getElementById('pacientesScroll');
-  const filtrados = q
-    ? pacientesFullList.filter(p=> normBusqueda(p.apellido||"").includes(q) || normBusqueda(p.nombre||"").includes(q))
-    : pacientesFullList;
-  const nuevaFila = mostrarNuevoPaciente ? filaPacienteHTML({}, true) : "";
-  if(!filtrados.length && !nuevaFila){ cont.innerHTML = '<div class="empty-state">No encontré pacientes con ese nombre.</div>'; return; }
-  cont.innerHTML = nuevaFila + filtrados.map(p=> filaPacienteHTML(p, false)).join('');
+  const filtrados = (q
+    ? pacientesFullList.filter(p=> normBusqueda(p.nombreCompleto || `${p.apellido||''}, ${p.nombre||''}`).includes(q))
+    : pacientesFullList).slice().sort((a,b)=> (a.nombreCompleto||'').localeCompare(b.nombreCompleto||'','es'));
+  if(!filtrados.length){ cont.innerHTML = '<div class="empty-state">No encontré pacientes con ese nombre. Para crearlo, tocá el +.</div>'; return; }
+  cont.innerHTML = filtrados.slice(0, 300).map(p=> `<button type="button" class="pf-item" data-id="${p.id}"><span>${escHtml(p.nombreCompleto || `${p.apellido||''}, ${p.nombre||''}`)}</span><span class="flecha">›</span></button>`).join('')
+    + (filtrados.length > 300 ? `<div class="empty-state">Hay ${filtrados.length} pacientes: escribí para filtrar.</div>` : '');
+}
+document.getElementById('pacientesScroll').addEventListener('click', e=>{
+  const b = e.target.closest('.pf-item'); if(b) abrirFichaPaciente(b.dataset.id);
+});
+
+/* ---- Ficha del paciente ---- */
+let pfPaciente = null;   // null = paciente nuevo
+function pfSetMedio(valor){
+  const sel = document.getElementById('pfMedio');
+  const v = medioLlegadaNormal(valor);
+  const ops = [['','Seleccionar…'], ...MEDIOS_LLEGADA];
+  if(v && !MEDIOS_LLEGADA.some(o=> o[0]===v)) ops.push([v, v]);
+  sel.innerHTML = ops.map(([val, lbl])=> `<option value="${escHtml(val)}">${escHtml(lbl)}</option>`).join('');
+  sel.value = v;
+  document.getElementById('pfRefWrap').classList.toggle('col-hidden', v!=='REFERIDO');
+}
+document.getElementById('pfMedio').addEventListener('change', e=> document.getElementById('pfRefWrap').classList.toggle('col-hidden', e.target.value!=='REFERIDO'));
+document.getElementById('pfFnac').addEventListener('input', e=>{ const ed = edadDesde(e.target.value); document.getElementById('pfEdad').textContent = ed==='—' ? '' : `(${ed})`; });
+document.getElementById('pfEditarNombre').onclick = ()=> document.getElementById('pfNombreCampos').classList.toggle('col-hidden');
+
+function abrirFichaPaciente(id){
+  const p = id ? pacientesFullList.find(x=> x.id===id) : null;
+  if(id && !p) return;
+  pfPaciente = p || null;
+  const nuevo = !p;
+  document.getElementById('pfNombre').textContent = nuevo ? 'Nuevo paciente' : (p.nombreCompleto || `${p.apellido}, ${p.nombre}`);
+  document.getElementById('pfEditarNombre').classList.toggle('col-hidden', nuevo);
+  document.getElementById('pfNombreCampos').classList.toggle('col-hidden', !nuevo);
+  document.getElementById('pfApellido').value = p ? (p.apellido||'') : '';
+  document.getElementById('pfNombreIn').value = p ? (p.nombre||'') : '';
+  document.getElementById('pfTelefono').value = p ? (p.telefono||'') : '';
+  document.getElementById('pfEmail').value = p ? (p.email||'') : '';
+  const fn = p ? fnacISO(p.fnac) : '';
+  document.getElementById('pfFnac').value = fn;
+  const ed = edadDesde(fn); document.getElementById('pfEdad').textContent = fn && ed!=='—' ? `(${ed})` : '';
+  document.getElementById('pfDni').value = p ? (p.dni||'') : '';
+  pfSetMedio(p ? p.medioLlegada : '');
+  document.getElementById('pfReferido').value = p ? (p.referidoPor||'') : '';
+  document.getElementById('pfEliminar').classList.toggle('col-hidden', nuevo);
+  document.getElementById('pfGuardar').textContent = nuevo ? 'Crear paciente' : 'Guardar';
+  pacVistaPanel('ficha');
+  overlayPacientes.classList.add('show');
+  renderAreasPaciente(p);
+  if(nuevo) document.getElementById('pfApellido').focus();
+}
+window.abrirFichaPaciente = abrirFichaPaciente;
+function abrirFichaPacientePorNombre(nombre){
+  const p = pacientesFullList.find(x=> mayus(x.nombreCompleto||'')===mayus(nombre||''));
+  if(p) abrirFichaPaciente(p.id);
+}
+window.abrirFichaPacientePorNombre = abrirFichaPacientePorNombre;
+
+// Áreas de Ummana: cuántas veces aparece en Movimientos (ingresos) con cada profesional/área
+async function renderAreasPaciente(p){
+  const cont = document.getElementById('pfAreas');
+  if(!p){ cont.innerHTML = '<div class="pf-total">Todavía no tiene movimientos.</div>'; return; }
+  cont.innerHTML = '<div class="pf-total">Buscando…</div>';
+  const nombre = p.nombreCompleto;
+  try{
+    const snap = await db.collection('movimientos').where('pac','==', nombre).get();
+    if(!pfPaciente || pfPaciente.id!==p.id) return;   // se cambió de ficha mientras buscaba
+    const cuenta = {};
+    snap.docs.forEach(d=>{
+      const m = d.data();
+      if(esEgreso(m.prof, m.concepto) || /^salda deuda/i.test(m.concepto||'')) return;
+      cuenta[m.prof] = (cuenta[m.prof]||0) + 1;
+    });
+    const lista = Object.entries(cuenta).sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0],'es'));
+    if(!lista.length){ cont.innerHTML = '<div class="pf-total">Todavía no tiene movimientos.</div>'; return; }
+    const max = lista[0][1], total = lista.reduce((a,x)=> a + x[1], 0);
+    const lindo = n => n.toLowerCase().replace(/(^|[\s,(])([a-záéíóúñ])/g, (m0, a, b)=> a + b.toUpperCase());
+    cont.innerHTML = lista.map(([prof, n])=> `<div class="pf-area"><div class="fila"><span>${escHtml(lindo(prof))}</span><b>${n}</b></div><div class="barra"><i style="width:${Math.max(4, n/max*100)}%"></i></div></div>`).join('')
+      + `<div class="pf-total">Total: <b>${total} ${total===1 ? 'ingreso' : 'ingresos'}</b></div>`;
+  }catch(e){ cont.innerHTML = `<div class="pf-total" style="color:#a13a3a;">No se pudieron leer los movimientos: ${escHtml(e.message)}</div>`; }
 }
 
-async function crearPacienteFila(btn){
-  const fila = btn.closest('.fila-editable');
-  const apellido = fila.querySelector('.pc-apellido').value.trim().toUpperCase();
-  const nombre = fila.querySelector('.pc-nombre').value.trim();
-  if(!apellido || !nombre){ alert("Apellido y nombre son obligatorios."); return; }
-  if(!confirmarDatosFaltantes({tel: fila.querySelector('.pc-telefono').value, dni: fila.querySelector('.pc-dni').value, fnac: fila.querySelector('.pc-fnac').value, medio: fila.querySelector('.pc-medio').value})) return;
+document.getElementById('pfVolver').onclick = ()=>{ pacVistaPanel('lista'); renderPacientesBusqueda(); };
+document.getElementById('pfCerrar').onclick = ()=> overlayPacientes.classList.remove('show');
+document.getElementById('pfGuardar').onclick = async ()=>{
+  const nuevo = !pfPaciente;
+  const apellido = mayus(document.getElementById('pfApellido').value.trim());
+  const nombre = mayus(document.getElementById('pfNombreIn').value.trim());
+  if(!apellido || !nombre){ alert("Apellido y nombre son obligatorios."); document.getElementById('pfNombreCampos').classList.remove('col-hidden'); return; }
+  const medio = document.getElementById('pfMedio').value;
   const datos = {
     apellido, nombre, nombreCompleto: `${apellido}, ${nombre}`,
-    telefono: fila.querySelector('.pc-telefono').value.trim(),
-    email: fila.querySelector('.pc-email').value.trim(),
-    fnac: fila.querySelector('.pc-fnac').value.trim(),
-    dni: fila.querySelector('.pc-dni').value.trim(),
-    medioLlegada: fila.querySelector('.pc-medio').value.trim(),
-    creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
+    telefono: document.getElementById('pfTelefono').value.trim(),
+    email: document.getElementById('pfEmail').value.trim(),
+    fnac: document.getElementById('pfFnac').value,
+    dni: document.getElementById('pfDni').value.trim(),
+    medioLlegada: medio,
+    referidoPor: medio==='REFERIDO' ? mayus(document.getElementById('pfReferido').value.trim()) : '',
   };
-  btn.disabled = true; btn.textContent = "Creando…";
-  try{
-    await db.collection('pacientes').add(datos);
-    mostrarNuevoPaciente = false;
-  }catch(e){
-    alert("No se pudo crear: " + e.message);
-    btn.disabled = false; btn.textContent = "Crear";
+  if(nuevo){
+    if(pacientesFullList.some(x=> mayus(x.nombreCompleto||'')===datos.nombreCompleto)){ alert("Ya existe un paciente con ese apellido y nombre."); return; }
+    if(!confirmarDatosFaltantes({tel: datos.telefono, dni: datos.dni, fnac: datos.fnac, medio})) return;
   }
-}
-window.crearPacienteFila = crearPacienteFila;
-
-async function guardarPacienteCard(id, btn){
-  const fila = btn.closest('.fila-editable');
-  const apellido = fila.querySelector('.pc-apellido').value.trim().toUpperCase();
-  const nombre = fila.querySelector('.pc-nombre').value.trim();
-  if(!apellido || !nombre){ alert("Apellido y nombre son obligatorios."); return; }
-  const datos = {
-    apellido, nombre, nombreCompleto: `${apellido}, ${nombre}`,
-    telefono: fila.querySelector('.pc-telefono').value.trim(),
-    email: fila.querySelector('.pc-email').value.trim(),
-    fnac: fila.querySelector('.pc-fnac').value.trim(),
-    dni: fila.querySelector('.pc-dni').value.trim(),
-    medioLlegada: fila.querySelector('.pc-medio').value.trim(),
-  };
-  const txtOriginal = btn.textContent;
-  btn.disabled = true; btn.textContent = "Guardando…";
+  const btn = document.getElementById('pfGuardar'); const txt = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Guardando…';
   try{
-    await db.collection('pacientes').doc(id).update(datos);
-    btn.textContent = "¡Guardado!";
-    setTimeout(()=>{ btn.textContent = txtOriginal; btn.disabled = false; }, 1200);
+    if(nuevo){
+      const ref = await db.collection('pacientes').add({...datos, creadoEn: firebase.firestore.FieldValue.serverTimestamp()});
+      if(!pacientesFullList.some(x=> x.id===ref.id)) pacientesFullList.push({id: ref.id, ...datos});
+      pacienteRegistry = pacientesFullList.map(x=> x.nombreCompleto);
+      pfPaciente = pacientesFullList.find(x=> x.id===ref.id);
+      abrirFichaPaciente(ref.id);
+    } else {
+      await db.collection('pacientes').doc(pfPaciente.id).update(datos);
+      Object.assign(pfPaciente, datos);
+      document.getElementById('pfNombre').textContent = datos.nombreCompleto;
+      document.getElementById('pfNombreCampos').classList.add('col-hidden');
+    }
+    btn.textContent = '¡Guardado!';
+    setTimeout(()=>{ btn.textContent = nuevo ? 'Guardar' : txt; btn.disabled = false; }, 1100);
   }catch(e){
     alert("No se pudo guardar: " + e.message);
-    btn.disabled = false; btn.textContent = txtOriginal;
+    btn.disabled = false; btn.textContent = txt;
   }
-}
-window.guardarPacienteCard = conPausaRender(guardarPacienteCard);
-
-async function eliminarPacienteFila(id, btn){
-  if(!confirm("¿Eliminar este paciente? Esta acción no se puede deshacer. No borra los movimientos ya cargados con su nombre.")) return;
-  btn.disabled = true;
+};
+document.getElementById('pfEliminar').onclick = async ()=>{
+  if(!pfPaciente || !confirm("¿Eliminar este paciente? Esta acción no se puede deshacer. No borra los movimientos ya cargados con su nombre.")) return;
   try{
-    await db.collection('pacientes').doc(id).delete();
-  }catch(e){
-    alert("No se pudo eliminar: " + e.message);
-    btn.disabled = false;
-  }
-}
-window.eliminarPacienteFila = eliminarPacienteFila;
+    await db.collection('pacientes').doc(pfPaciente.id).delete();
+    pfPaciente = null;
+    pacVistaPanel('lista'); renderPacientesBusqueda();
+  }catch(e){ alert("No se pudo eliminar: " + e.message); }
+};
+// Nombres de pacientes en Movimientos: se pueden tocar para abrir la ficha
+document.getElementById('tbody').addEventListener('click', e=>{
+  const el = e.target.closest('.pac-link'); if(el) abrirFichaPacientePorNombre(el.dataset.pac);
+});
 
 /* =====================================================================
    PANEL "PROVEEDORES / DESTINATARIOS" (admin)
