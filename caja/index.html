@@ -239,6 +239,40 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   body.fede-nav-on #vistaSueros .sueros-bar .s-tab, body.fede-nav-on #vistaCremas .sueros-bar .s-tab, body.fede-nav-on #movSubTabs .s-tab{padding:5px 12px;font-size:11px;}
   body.fede-nav-on #vistaSueros .sueros-bar .s-tabs, body.fede-nav-on #vistaCremas .sueros-bar .s-tabs, body.fede-nav-on #movSubTabs{padding:2px;border-radius:9px;}
   .t-corto{display:none;}
+  /* ---------- Clases de prueba ---------- */
+  .cp-panel{flex:1;min-height:0;display:flex;flex-direction:column;}
+  .cp-arriba{display:grid;grid-template-columns:1fr 190px;gap:12px;margin:10px 28px 0;flex:none;}
+  .cp-card{background:#fffcf5;border:1px solid var(--border);border-radius:12px;padding:8px 12px;min-width:0;}
+  .cp-tit{font-size:9.5px;font-weight:700;color:#9c8250;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+  .cp-scroll{overflow-x:auto;}
+  .cp-res{width:100%;border-collapse:collapse;font-size:10.5px;}
+  .cp-res th{background:#f4eeda;font-size:8.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.2px;padding:3px 6px;font-weight:700;position:static;white-space:nowrap;}
+  .cp-res td{padding:2px 6px;text-align:center;border-bottom:none;border-top:1px solid #efe6d0;}
+  .cp-res td.l{text-align:left;font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;}
+  .cp-res td.g{color:#2f7a2f;font-weight:700;} .cp-res td.b{font-weight:700;} .cp-res .tt{background:#f4eeda;font-weight:700;}
+  .cp-packs{font-size:10.5px;}
+  .cp-pk{display:flex;justify-content:space-between;padding:2px 0;border-top:1px solid #efe6d0;}
+  .cp-pk.tot{background:#f4eeda;margin:0 -12px -8px;padding:3px 12px;font-weight:700;border-radius:0 0 12px 12px;}
+  .cp-hoja{flex:1;min-height:0;margin:10px 28px 20px;overflow:auto;}
+  .cp-hd{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;position:sticky;left:0;}
+  .cp-hd .btn{padding:6px 12px;font-size:11.5px;}
+  .cp-tabla{width:100%;min-width:1100px;table-layout:fixed;border-collapse:collapse;}
+  .cp-tabla th{font-size:9px;padding:7px 6px;}
+  .cp-tabla th.left{text-align:left;padding-left:8px;}
+  .cp-tabla td{padding:3px 5px;font-size:10.5px;}
+  .cp-tabla input[type=text], .cp-tabla input[type=date], .cp-tabla select{width:100%;padding:4px 7px;font-size:10.5px;border-radius:7px;border:1px solid transparent;background:transparent;}
+  .cp-tabla input[type=text]:hover, .cp-tabla input[type=date]:hover, .cp-tabla select:hover{border-color:var(--border);background:#fdfbf2;}
+  .cp-tabla input:focus, .cp-tabla select:focus{border-color:var(--accent) !important;background:#fffcf5 !important;}
+  .cp-tabla select.cp-pill{background:#f0e9d6;border-radius:20px;text-align:center;text-align-last:center;}
+  .cp-tabla select.cp-pill.vacio{color:var(--muted);}
+  .cp-tabla .cp-notas{color:#5b5e66;}
+  .cp-sw{width:30px;height:17px;border:none;border-radius:10px;background:#e08b87;position:relative;cursor:pointer;padding:0;vertical-align:middle;transition:background .2s;}
+  .cp-sw i{position:absolute;top:2px;left:14px;width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:left .2s;}
+  .cp-sw.on{background:#86c793;} .cp-sw.on i{left:3px;}
+  .cp-tabla input[type=checkbox]{width:15px;height:15px;accent-color:#9c8250;cursor:pointer;}
+  .cp-del{border:none;background:none;color:#c62828;opacity:.4;cursor:pointer;font-size:12px;}
+  .cp-del:hover{opacity:1;}
+  @media (max-width:700px){ .cp-arriba{grid-template-columns:1fr;margin:10px 10px 0;} .cp-hoja{margin:10px 10px 14px;flex:0 1 auto;} }
   /* Pacientes: lista + ficha */
   .pf-modal{max-width:760px;}
   .lista-toolbar .addbtn{height:36px;align-self:stretch;}
@@ -1415,8 +1449,9 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       </div>
       <div class="s-tabs col-hidden" id="movSubTabs" role="tablist" aria-label="Movimientos">
         <button class="s-tab active" data-msub="diarios" role="tab"><span class="t-largo">Movimientos diarios</span><span class="t-corto">Diarios</span></button>
+        <button class="s-tab" data-msub="prueba"><span class="t-largo">Clases de prueba</span><span class="t-corto">Prueba</span></button>
         <button class="s-tab" data-msub="cajas" id="mSubCajas">Cajas</button>
-        <button class="s-tab" data-msub="pacientes">Pacientes</button>
+        <button class="s-tab" data-msub="pacientes"><span class="t-largo">Pacientes/alumnos</span><span class="t-corto">Pacientes</span></button>
         <button class="s-tab s-tab-badge" data-msub="deudores">Deudores <span class="badge-count col-hidden" id="mSubDeudoresN">0</span></button>
         <button class="s-tab s-tab-nuevo" data-msub="nuevo"><span class="t-largo">+ Nuevo mov.</span><span class="t-corto">+ Nuevo</span></button>
       </div>
@@ -1475,6 +1510,30 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
             <button class="btn btn-primary" id="btnAbrirDesdeGate">Abrir caja</button>
             <button class="btn" id="btnVistaPreviaGate">Vista previa</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ CLASES DE PRUEBA (subsección de Movimientos) ============ -->
+    <div class="cp-panel col-hidden" id="cpPanel">
+      <div class="cp-arriba">
+        <div class="cp-card">
+          <div class="cp-tit" id="cpTitResumen">Resumen</div>
+          <div class="cp-scroll"><table class="cp-res" id="cpResumen"></table></div>
+        </div>
+        <div class="cp-card cp-packs">
+          <div class="cp-tit">Packs vendidos</div>
+          <div id="cpPacks"></div>
+        </div>
+      </div>
+      <div class="sheet-wrap cp-hoja">
+        <div class="cp-hd"><div class="cp-tit" id="cpTitLista">Clases de prueba</div><button class="btn btn-primary" id="cpNueva">+ Nueva clase de prueba</button></div>
+        <div class="cp-scroll">
+        <table class="cp-tabla">
+          <colgroup><col style="width:122px"><col style="width:150px"><col style="width:84px"><col style="width:200px"><col style="width:58px"><col style="width:70px"><col style="width:96px"><col style="width:118px"><col style="width:104px"><col><col style="width:34px"></colgroup>
+          <thead><tr><th>Fecha</th><th>Clase</th><th>Hora</th><th class="left">Alumno/a</th><th>Vino</th><th>Msj prof.</th><th>Compró pack</th><th>Pack vendido</th><th>Msj post clase</th><th class="left">Notas</th><th></th></tr></thead>
+          <tbody id="cpBody"></tbody>
+        </table>
         </div>
       </div>
     </div>
@@ -2760,6 +2819,7 @@ auth.onAuthStateChanged(async (user)=>{
     if(unsubSueros){ unsubSueros(); unsubSueros = null; }
     if(typeof unsubCremas!=='undefined' && unsubCremas){ unsubCremas(); unsubCremas = null; }
     if(typeof unsubConta!=='undefined' && unsubConta){ unsubConta(); unsubConta = null; }
+    if(typeof unsubCp!=='undefined' && unsubCp){ unsubCp(); unsubCp = null; }
     if(typeof unsubVcCfg!=='undefined' && unsubVcCfg){ unsubVcCfg(); unsubVcCfg = null; }
     if(typeof unsubContaCaja!=='undefined' && unsubContaCaja){ unsubContaCaja(); unsubContaCaja = null; }
     if(unsubPortalPac){ unsubPortalPac(); unsubPortalPac = null; }
@@ -2802,10 +2862,12 @@ function actualizarMesLabel(){
 document.getElementById('mesPrev').onclick = ()=>{
   mesActual.month--; if(mesActual.month<1){ mesActual.month=12; mesActual.year--; }
   actualizarMesLabel(); suscribirMovimientos();
+  if(movSub==='prueba'){ suscribirClasesPrueba(); renderClasesPrueba(); }
 };
 document.getElementById('mesNext').onclick = ()=>{
   mesActual.month++; if(mesActual.month>12){ mesActual.month=1; mesActual.year++; }
   actualizarMesLabel(); suscribirMovimientos();
+  if(movSub==='prueba'){ suscribirClasesPrueba(); renderClasesPrueba(); }
 };
 actualizarMesLabel();
 
@@ -8785,8 +8847,139 @@ document.querySelectorAll('#fedeTabs [data-ir]').forEach(b=> b.onclick = ()=>{
   const ir = b.dataset.ir;
   if(ir==='sueros' || ir==='cremas' || ir==='movimientos' || ir==='conta' || ir==='informes') mostrarVista(ir);
 });
+
+/* =====================================================================
+   CLASES DE PRUEBA — colección "clasesPrueba" (aparte de la caja)
+   ===================================================================== */
+const CP_CLASES = ['Tai Chi Chuan','Meditación','Ashtanga Vinyasa','Ashtanga Mysore','Yoga Suave','Hatha Yoga','Chi Kung'];
+const CP_HORAS = ['8:00','8:30','10:30','12:00','14:00','17:00','18:30'];
+const CP_PACKS = ['1 / 2 clases','4 clases','8 clases','12 clases'];
+let movSub = 'diarios';
+let cpLista = null, unsubCp = null, cpMesSuscripto = null, cpPendiente = false;
+function mostrarSubMov(sub){
+  movSub = sub;
+  document.querySelectorAll('#movSubTabs [data-msub]').forEach(x=> x.classList.toggle('active', x.dataset.msub===sub));
+  document.getElementById('panelContainer').classList.toggle('col-hidden', sub==='prueba');
+  document.getElementById('cpPanel').classList.toggle('col-hidden', sub!=='prueba');
+  if(sub==='prueba'){ suscribirClasesPrueba(); renderClasesPrueba(); }
+}
+function suscribirClasesPrueba(){
+  const clave = mesInicioISO();
+  if(unsubCp && cpMesSuscripto===clave) return;
+  if(unsubCp) unsubCp();
+  cpMesSuscripto = clave; cpLista = null;
+  unsubCp = db.collection('clasesPrueba').where('fechaISO','>=', mesInicioISO()).where('fechaISO','<', mesFinISO())
+    .onSnapshot(snap=>{
+      cpLista = snap.docs.map(d=> ({id:d.id, ...d.data()}));
+      renderClasesPrueba();
+    }, err=>{
+      cpLista = [];
+      document.getElementById('cpBody').innerHTML = `<tr><td colspan="11" class="empty-state" style="color:#a13a3a;">No se pudieron leer las clases de prueba: ${escHtml(err.message)}<br>Revisá que en las reglas de Firebase esté la colección <b>clasesPrueba</b>.</td></tr>`;
+    });
+}
+function cpOrdenadas(){
+  const ms = ts => ts && ts.toMillis ? ts.toMillis() : Date.now();
+  const hNum = h => { const [a,b] = String(h||'99:99').split(':').map(Number); return a*60+(b||0); };
+  return (cpLista||[]).slice().sort((a,b)=> a.fechaISO!==b.fechaISO ? (a.fechaISO<b.fechaISO?-1:1) : (hNum(a.hora)-hNum(b.hora) || ms(a.creadoEn)-ms(b.creadoEn)));
+}
+function renderResumenCp(){
+  const mesTxt = `${MESES[mesActual.month-1].toLowerCase()}`;
+  document.getElementById('cpTitResumen').textContent = `Resumen de ${mesTxt}`;
+  document.getElementById('cpTitLista').textContent = `Clases de prueba de ${mesTxt}`;
+  const lista = cpLista || [];
+  const st = {}; CP_CLASES.forEach(c=> st[c] = [0,0,0]);
+  const packs = {}; CP_PACKS.forEach(p=> packs[p] = 0);
+  lista.forEach(x=>{
+    const k = st[x.clase] ? x.clase : null;
+    const sumar = arr=>{ arr[0]++; if(x.vino) arr[1]++; if(x.compro) arr[2]++; };
+    if(k) sumar(st[k]);
+    if(x.compro && packs[x.pack]!=null) packs[x.pack]++;
+  });
+  const T = [0,0,0]; lista.forEach(x=>{ T[0]++; if(x.vino) T[1]++; if(x.compro) T[2]++; });
+  const pct = (v,c)=> c ? Math.round(v/c*100)+'%' : '—';
+  const fila = (lbl, f, cls='')=> `<tr><td class="l">${lbl}</td>${CP_CLASES.map(c=> `<td class="${cls}">${f(st[c])}</td>`).join('')}<td class="tt ${cls}">${f(T)}</td></tr>`;
+  document.getElementById('cpResumen').innerHTML = `<tr><th></th>${CP_CLASES.map(c=> `<th>${c}</th>`).join('')}<th class="tt">Total</th></tr>`
+    + fila('Clases', v=> v[0]) + fila('Asistencias', v=> v[1]) + fila('Ventas', v=> v[2], 'g') + fila('No ventas', v=> v[0]-v[2]) + fila('% Conv.', v=> pct(v[2], v[0]), 'b');
+  const totP = Object.values(packs).reduce((a,b)=> a+b, 0);
+  document.getElementById('cpPacks').innerHTML = CP_PACKS.map(p=> `<div class="cp-pk"><span>${p}</span><b>${packs[p]}</b></div>`).join('') + `<div class="cp-pk tot"><span>Total</span><b>${totP}</b></div>`;
+}
+function renderClasesPrueba(){
+  if(movSub!=='prueba') return;
+  renderResumenCp();
+  const tb = document.getElementById('cpBody');
+  if(tb.contains(document.activeElement) && document.activeElement.matches('input[type=text], input[type=date]')){ cpPendiente = true; return; }   // no pisar lo que se está escribiendo
+  cpPendiente = false;
+  if(cpLista==null){ tb.innerHTML = '<tr><td colspan="11" class="empty-state">Cargando…</td></tr>'; return; }
+  const lista = cpOrdenadas();
+  if(!lista.length){ tb.innerHTML = '<tr><td colspan="11" class="empty-state">No hay clases de prueba cargadas este mes. Agregalas con "+ Nueva clase de prueba".</td></tr>'; return; }
+  const opts = (arr, val)=> `<option value="">—</option>` + arr.map(o=> `<option ${o===val?'selected':''}>${escHtml(o)}</option>`).join('') + (val && !arr.includes(val) ? `<option selected>${escHtml(val)}</option>` : '');
+  const sw = (campo, on)=> `<button type="button" class="cp-sw ${on?'on':''}" data-campo="${campo}" aria-pressed="${on?'true':'false'}"><i></i></button>`;
+  tb.innerHTML = lista.map(x=> `<tr data-id="${x.id}">
+      <td><input type="date" data-campo="fechaISO" value="${x.fechaISO||''}"></td>
+      <td><select class="cp-pill ${x.clase?'':'vacio'}" data-campo="clase">${opts(CP_CLASES, x.clase)}</select></td>
+      <td><select class="cp-pill ${x.hora?'':'vacio'}" data-campo="hora">${opts(CP_HORAS, x.hora)}</select></td>
+      <td class="left"><input type="text" data-campo="alumno" value="${escHtml(x.alumno||'')}" placeholder="Apellido, nombre"></td>
+      <td>${sw('vino', !!x.vino)}</td>
+      <td><input type="checkbox" data-campo="msjProf" ${x.msjProf?'checked':''}></td>
+      <td>${sw('compro', !!x.compro)}</td>
+      <td><select class="cp-pill ${x.pack?'':'vacio'}" data-campo="pack">${opts(CP_PACKS, x.pack)}</select></td>
+      <td><input type="checkbox" data-campo="msjPost" ${x.msjPost?'checked':''}></td>
+      <td class="left"><input type="text" class="cp-notas" data-campo="notas" data-no-mayus value="${escHtml(x.notas||'')}" placeholder="Notas"></td>
+      <td><button type="button" class="cp-del" title="Eliminar">✕</button></td>
+    </tr>`).join('');
+}
+async function cpGuardar(id, cambios){
+  try{ await db.collection('clasesPrueba').doc(id).update({...cambios, actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()}); }
+  catch(e){ alert('No se pudo guardar: ' + e.message); }
+}
+const cpBody = document.getElementById('cpBody');
+cpBody.addEventListener('change', e=>{
+  const el = e.target.closest('[data-campo]'); if(!el || el.classList.contains('cp-sw')) return;
+  const id = el.closest('tr').dataset.id, campo = el.dataset.campo;
+  let v = el.type==='checkbox' ? el.checked : el.value;
+  if(campo==='alumno') v = mayus(String(v).trim());
+  if(campo==='fechaISO' && !v){ renderClasesPrueba(); return; }
+  if(el.tagName==='SELECT') el.classList.toggle('vacio', !v);
+  const x = (cpLista||[]).find(y=> y.id===id); if(x) x[campo] = v;
+  const cambios = {[campo]: v};
+  if(campo==='pack' && v){ cambios.compro = true; if(x) x.compro = true; }   // si se elige un pack, compró
+  cpGuardar(id, cambios);
+  renderResumenCp();
+  if(campo==='pack' && v) renderClasesPrueba();
+});
+cpBody.addEventListener('click', async e=>{
+  const sw = e.target.closest('.cp-sw');
+  if(sw){
+    const id = sw.closest('tr').dataset.id, campo = sw.dataset.campo, on = !sw.classList.contains('on');
+    sw.classList.toggle('on', on); sw.setAttribute('aria-pressed', on ? 'true' : 'false');
+    const x = (cpLista||[]).find(y=> y.id===id); if(x) x[campo] = on;
+    cpGuardar(id, {[campo]: on}); renderResumenCp();
+    return;
+  }
+  const del = e.target.closest('.cp-del');
+  if(del){
+    const tr = del.closest('tr'), x = (cpLista||[]).find(y=> y.id===tr.dataset.id);
+    if(!confirm(`¿Eliminar la clase de prueba${x && x.alumno ? ' de ' + x.alumno : ''}?`)) return;
+    try{ await db.collection('clasesPrueba').doc(tr.dataset.id).delete(); }catch(err){ alert('No se pudo eliminar: ' + err.message); }
+  }
+});
+cpBody.addEventListener('focusout', ()=> setTimeout(()=>{ if(cpPendiente && !cpBody.contains(document.activeElement)) renderClasesPrueba(); }, 50));
+document.getElementById('cpNueva').onclick = async ()=>{
+  const hoy = hoyISO();
+  const fechaISO = hoy >= mesInicioISO() && hoy < mesFinISO() ? hoy : mesInicioISO();
+  const btn = document.getElementById('cpNueva'); btn.disabled = true;
+  try{
+    const ref = await db.collection('clasesPrueba').add({fechaISO, clase:'', hora:'', alumno:'', vino:false, msjProf:false, compro:false, pack:'', msjPost:false, notas:'',
+      creadoPor: currentUser ? currentUser.nombre : '', creadoEn: firebase.firestore.FieldValue.serverTimestamp()});
+    // foco en la clase de la fila nueva cuando aparezca
+    setTimeout(()=>{ const sel = cpBody.querySelector(`tr[data-id="${ref.id}"] select[data-campo="clase"]`); if(sel) sel.focus(); }, 400);
+  }catch(e){ alert('No se pudo agregar: ' + e.message); }
+  btn.disabled = false;
+};
+
 document.querySelectorAll('#movSubTabs [data-msub]').forEach(b=> b.onclick = ()=>{
   const sub = b.dataset.msub;
+  if(sub==='diarios' || sub==='prueba'){ mostrarSubMov(sub); return; }
   if(sub==='cajas') document.getElementById('btnCajas').click();
   else if(sub==='pacientes') document.getElementById('btnPacientes').click();
   else if(sub==='deudores') document.getElementById('btnDeudores').click();
