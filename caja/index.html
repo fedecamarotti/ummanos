@@ -239,6 +239,10 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   body.fede-nav-on #vistaSueros .sueros-bar .s-tab, body.fede-nav-on #vistaCremas .sueros-bar .s-tab, body.fede-nav-on #movSubTabs .s-tab{padding:5px 12px;font-size:11px;}
   body.fede-nav-on #vistaSueros .sueros-bar .s-tabs, body.fede-nav-on #vistaCremas .sueros-bar .s-tabs, body.fede-nav-on #movSubTabs{padding:2px;border-radius:9px;}
   .t-corto{display:none;}
+  body.fede-nav-on #vistaInformes > .sueros-bar{margin-top:8px;}
+  body.fede-nav-on #vistaInformes .sueros-bar .s-tab{padding:5px 12px;font-size:11px;}
+  body.fede-nav-on #vistaInformes .sueros-bar .s-tabs{padding:2px;border-radius:9px;}
+  .inf-proximamente{margin:40px 28px;text-align:center;color:var(--muted);font-size:12.5px;font-weight:500;}
   .pdf-escala{margin:0 auto;}
   .pdf-escala .pdf-hoja{max-width:none;}
   .s-tab-badge{position:relative;}
@@ -764,7 +768,15 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .lista-toolbar{display:flex;gap:8px;margin-bottom:10px;align-items:center;}
   .lista-toolbar input[type=text]{flex:1;}
 
-  .pago-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
+  .pago-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;flex-wrap:wrap;}
+  .pago-row .pago-mon{flex:0 0 66px;padding-left:8px;padding-right:4px;}
+  .pago-cot-fila{flex-basis:100%;display:flex;align-items:center;gap:8px;padding:2px 0 4px 74px;}
+  .pago-cot-fila label{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;margin:0;}
+  .pago-cot-fila .pago-cot{flex:0 0 110px !important;padding:6px 9px;}
+  .pago-eq{font-size:12px;font-weight:700;color:#2f7a2f;}
+  .pagos-resto{font-size:11.5px;font-weight:600;color:#9a5b00;margin:0 0 8px;}
+  .pagos-resto:empty{display:none;}
+  .pagos-resto.ok{color:#2f7a2f;}
   .pago-row input{flex:1;min-width:0;}
   .pago-row select{flex:1;min-width:0;}
   .pago-row .pago-quien{flex:1.3;min-width:0;font-size:10.5px;}
@@ -1386,7 +1398,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <button class="s-tab active" data-ir="movimientos" role="tab">Movimientos</button>
       <button class="s-tab" data-ir="sueros" role="tab">Sueros</button>
       <button class="s-tab" data-ir="cremas" role="tab"><span class="t-largo">Cremas/Col./Geles</span><span class="t-corto">Cremas</span></button>
-      <button class="s-tab s-tab-inactivo" data-ir="informes" role="tab" title="Próximamente">Informes</button>
+      <button class="s-tab" data-ir="informes" role="tab">Informes</button>
       <button class="s-tab" data-ir="conta" role="tab"><span class="t-largo">Victoria contabilidad</span><span class="t-corto">Victoria</span></button>
     </div>
 
@@ -1665,6 +1677,20 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       </div>
     </div>
    </div><!-- /#vistaConta -->
+
+   <!-- ============ INFORMES (por ahora, solo los botones; se van a definir) ============ -->
+   <div class="vista col-hidden" id="vistaInformes">
+    <div class="fede-nav col-hidden"></div>
+    <div class="sueros-bar">
+      <div></div>
+      <div class="s-tabs" role="tablist" aria-label="Informes">
+        <button class="s-tab s-tab-inactivo" title="Próximamente">Aumentos</button>
+        <button class="s-tab s-tab-inactivo" title="Próximamente">Informe mensual</button>
+      </div>
+      <div></div>
+    </div>
+    <div class="inf-proximamente">Estos informes se van a habilitar más adelante.</div>
+   </div><!-- /#vistaInformes -->
   </div>
 </div>
 
@@ -1840,6 +1866,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <div class="field">
       <label>Pagos <span class="opt">(si no llega al total, la diferencia queda como deuda)</span></label>
       <div id="pagosLista"></div>
+      <div class="pagos-resto" id="pagosResto"></div>
       <button type="button" class="btn" id="btnAgregarPago" style="margin-top:4px;">+ Agregar pago</button>
     </div>
 
@@ -2475,25 +2502,29 @@ function pagosDe(m){
   if(m.medio) return [{medio: m.medio, valor: m.valor, saldada: !!m.saldada, fechaSaldadoISO: m.fechaSaldadoISO||null, fechaSaldadoDisplay: m.fechaSaldadoDisplay||null, cobradoPor: 'ummana'}];
   return [];
 }
+// Moneda y monto reales de un pago (puede ser distinto del total si se pagó en otra moneda con cotización)
+const pagoMoneda = (m, p) => p.moneda || m.moneda;
+const pagoMontoReal = p => p.montoOriginal!=null ? Number(p.montoOriginal) : Number(p.valor);
 function medioLabelDe(medio, moneda){
   return MEDIO_LABELS[medio] ? MEDIO_LABELS[medio]({moneda}) : medio;
 }
 function medioDisplayText(m){
   return pagosDe(m).map(p=>{
     if(p.medio==="debe") return p.saldada ? `Pagó ${fmtMonto(p.valor, m.moneda)} el ${p.fechaSaldadoDisplay}` : "Debe";
-    return medioLabelDe(p.medio, m.moneda);
+    return medioLabelDe(p.medio, pagoMoneda(m, p));
   }).join(', ');
 }
 function medioBadgesHTML(m){
   const pagos = pagosDe(m);
   const varios = pagos.length > 1;
   return pagos.map(p=>{
-    const montoTxt = varios ? ` ${fmtMonto(p.valor, m.moneda)}` : "";
+    const otra = p.moneda && p.moneda !== m.moneda;
+    const montoTxt = (varios || otra) ? ` ${fmtMonto(pagoMontoReal(p), pagoMoneda(m, p))}${otra && p.cotizacion ? ` (×${Number(p.cotizacion).toLocaleString('es-AR')})` : ''}` : "";
     if(p.medio==="debe"){
       if(p.saldada) return `<span class="badge badge-pagado">Pagó ${fmtMonto(p.valor, m.moneda)} el ${p.fechaSaldadoDisplay}</span>`;
       return `<span class="badge badge-debe">Debe${montoTxt}</span>`;
     }
-    return `<span class="badge badge-${p.medio}">${medioLabelDe(p.medio, m.moneda)}${montoTxt}</span>`;
+    return `<span class="badge badge-${p.medio}">${medioLabelDe(p.medio, pagoMoneda(m, p))}${montoTxt}</span>`;
   }).join('');
 }
 function cobroDesglose(m){
@@ -3010,13 +3041,13 @@ function renderTotalesCaja(filas){
 
 // Neto en efectivo (ingresos - egresos) que impacta en la caja física para un movimiento.
 function netoEfectivoMovimiento(m){
-  if(m.moneda !== "$") return 0;
   const esGasto = esEgreso(m.prof, m.concepto);
   let neto = 0;
-  pagosDe(m).filter(p=>p.medio==="efectivo").forEach(p=>{
+  pagosDe(m).filter(p=>p.medio==="efectivo" && pagoMoneda(m, p)==="$").forEach(p=>{   // solo los pesos en efectivo
     // Si lo cobró el profesional directamente, esa plata nunca entró a nuestra caja física.
     if(!esGasto && p.cobradoPor === "profesional") return;
-    neto += esGasto ? -p.valor : p.valor;
+    const v = pagoMontoReal(p);
+    neto += esGasto ? -v : v;
   });
   return neto;
 }
@@ -3294,10 +3325,13 @@ function opcionesMedioHTML(seleccion){
     `<option value="${o.value}" ${o.value===seleccion?"selected":""}>${o.label}</option>`
   ).join('');
 }
-function agregarFilaPago(monto, medio, cobradoPor){
+function agregarFilaPago(monto, medio, cobradoPor, extra){
+  extra = extra || {};
   const row = document.createElement('div');
   row.className = 'pago-row';
+  const monFila = extra.moneda || monedaSel;
   row.innerHTML = `
+    <select class="pago-mon" title="Moneda de este pago"><option value="$">$</option><option value="USD">USD</option></select>
     <input type="text" class="pago-monto" inputmode="numeric" placeholder="Monto">
     <select class="pago-medio">${opcionesMedioHTML(medio||"")}</select>
     <select class="pago-quien">
@@ -3305,13 +3339,29 @@ function agregarFilaPago(monto, medio, cobradoPor){
       <option value="profesional" ${cobradoPor==='profesional'?'selected':''}>Cobra el profesional</option>
     </select>
     <button type="button" class="btn-quitar" title="Quitar">✕</button>
+    <div class="pago-cot-fila col-hidden">
+      <label>Cotización</label><input type="text" class="pago-cot" inputmode="numeric" placeholder="Ej: 1.550">
+      <span class="pago-eq"></span>
+    </div>
   `;
   const inp = row.querySelector('.pago-monto');
-  inp.value = monto ? Number(monto).toLocaleString('es-AR') : "";
+  const selMon = row.querySelector('.pago-mon');
+  const inpCot = row.querySelector('.pago-cot');
+  selMon.value = monFila;
+  row.dataset.sigue = extra.moneda && extra.moneda!==monedaSel ? '0' : '1';   // sigue a la moneda del total hasta que se cambie a mano
+  // al editar: si el pago fue en otra moneda, se muestra el monto que se pagó en esa moneda
+  const montoVisible = extra.montoOriginal!=null ? extra.montoOriginal : monto;
+  inp.value = montoVisible ? Number(montoVisible).toLocaleString('es-AR') : "";
+  if(extra.cotizacion) inpCot.value = Number(extra.cotizacion).toLocaleString('es-AR');
+  if(extra.auto) row.dataset.auto = '1';   // propuesto con lo que resta: se actualiza solo hasta que se toque
   inp.addEventListener('input', ()=>{
     let raw = inp.value.replace(/\D/g,"");
     inp.value = raw ? Number(raw).toLocaleString('es-AR') : "";
+    delete row.dataset.auto;
+    recalcularPagos(row);
   });
+  inpCot.addEventListener('input', ()=>{ formatearInputMonto(inpCot); recalcularPagos(row); });
+  selMon.addEventListener('change', ()=>{ row.dataset.sigue = '0'; recalcularPagos(row); });
   const selMedio = row.querySelector('.pago-medio');
   const selQuien = row.querySelector('.pago-quien');
   // Transferencia: siempre la cobra el profesional (única opción).
@@ -3340,20 +3390,75 @@ function agregarFilaPago(monto, medio, cobradoPor){
   }
   selMedio.addEventListener('change', ()=> sincronizarQuienSegunMedio(false));
   sincronizarQuienSegunMedio(true);
-  row.querySelector('.btn-quitar').onclick = ()=> row.remove();
+  row.querySelector('.btn-quitar').onclick = ()=>{ row.remove(); recalcularPagos(); };
   document.getElementById('pagosLista').appendChild(row);
+  recalcularPagos();
 }
-document.getElementById('btnAgregarPago').onclick = ()=> agregarFilaPago();
+// Valor de un pago expresado en la moneda del total (con la cotización si es otra moneda)
+function valorPagoEnTotal(row){
+  const monto = Number(row.querySelector('.pago-monto').value.replace(/\D/g,"")) || 0;
+  const mon = row.querySelector('.pago-mon').value;
+  if(mon === monedaSel) return {ok:true, valor:monto, monto, mon};
+  const cot = parseMonto(row.querySelector('.pago-cot').value);
+  if(!cot) return {ok:false, valor:0, monto, mon};
+  const v = monedaSel === '$' ? monto * cot : monto / cot;
+  return {ok:true, valor: Math.round(v*100)/100, monto, mon, cot};
+}
+// Muestra la cotización y la equivalencia en los pagos en otra moneda, y completa lo que resta
+function recalcularPagos(origen){
+  const filas = [...document.querySelectorAll('#pagosLista .pago-row')];
+  const total = Number(inpValor.value.replace(/\D/g,"")) || 0;
+  let suma = 0;
+  filas.forEach(r=>{
+    const otra = r.querySelector('.pago-mon').value !== monedaSel;
+    r.querySelector('.pago-cot-fila').classList.toggle('col-hidden', !otra);
+    const x = valorPagoEnTotal(r);
+    const eq = r.querySelector('.pago-eq');
+    eq.textContent = otra ? (x.ok && x.monto ? `= ${fmtMonto(x.valor, monedaSel)}` : 'Cargá la cotización') : '';
+    if(!r.dataset.auto) suma += x.valor;
+  });
+  // si hay un pago en otra moneda, el de la moneda del total que quedó vacío (o autocompletado) se llena con lo que resta
+  const hayOtra = filas.some(r=> r.querySelector('.pago-mon').value !== monedaSel && valorPagoEnTotal(r).ok);
+  const resto = Math.max(0, Math.round((total - suma)*100)/100);
+  filas.forEach(r=>{
+    if(r===origen || r.querySelector('.pago-mon').value !== monedaSel) return;
+    const inpM = r.querySelector('.pago-monto');
+    if(hayOtra && total && (r.dataset.auto || !inpM.value)){
+      inpM.value = resto ? Math.round(resto).toLocaleString('es-AR') : '';
+      r.dataset.auto = '1';
+    }
+  });
+  const aviso = document.getElementById('pagosResto');
+  if(aviso){
+    let s2 = 0; filas.forEach(r=> s2 += valorPagoEnTotal(r).valor);
+    const r2 = Math.round((total - s2)*100)/100;
+    aviso.classList.toggle('ok', Math.abs(r2) < 1);
+    aviso.textContent = hayOtra && total ? (Math.abs(r2) < 1 ? 'Pagos completos.' : (r2 > 0 ? `Resta: ${fmtMonto(r2, monedaSel)} (queda como deuda)` : `Los pagos superan el total por ${fmtMonto(-r2, monedaSel)}`)) : '';
+  }
+}
+document.getElementById('btnAgregarPago').onclick = ()=>{
+  // el pago nuevo se propone con lo que falta para llegar al total
+  const total = Number(inpValor.value.replace(/\D/g,"")) || 0;
+  let suma = 0; document.querySelectorAll('#pagosLista .pago-row').forEach(r=> suma += valorPagoEnTotal(r).valor);
+  const resto = Math.max(0, Math.round(total - suma));
+  agregarFilaPago(resto || '', '', 'ummana', {auto:true});
+};
 agregarFilaPago();
 
 function leerPagosForm(){
   const pagos = [];
+  let falta = false;
   document.querySelectorAll('#pagosLista .pago-row').forEach(row=>{
-    const monto = Number(row.querySelector('.pago-monto').value.replace(/\D/g,""));
+    const x = valorPagoEnTotal(row);
     const medio = row.querySelector('.pago-medio').value;
     const cobradoPor = medio === 'debe' ? 'ummana' : row.querySelector('.pago-quien').value;
-    if(monto>0 && medio) pagos.push({medio, valor: monto, cobradoPor, saldada:false, fechaSaldadoISO:null, fechaSaldadoDisplay:null});
+    if(!(x.monto>0 && medio)) return;
+    if(!x.ok){ falta = true; return; }
+    const p = {medio, valor: x.valor, cobradoPor, saldada:false, fechaSaldadoISO:null, fechaSaldadoDisplay:null};
+    if(x.mon !== monedaSel){ p.moneda = x.mon; p.montoOriginal = x.monto; p.cotizacion = x.cot; }   // pago en otra moneda
+    pagos.push(p);
   });
+  if(falta){ alert("Cargá la cotización del pago en otra moneda."); return null; }
   return pagos;
 }
 
@@ -3496,7 +3601,7 @@ function abrirEdicion(id){
   monedaSel = m.moneda;
 
   document.getElementById('pagosLista').innerHTML = "";
-  pagosDe(m).forEach(p=> agregarFilaPago(p.valor, p.medio, p.cobradoPor));
+  pagosDe(m).forEach(p=> agregarFilaPago(p.valor, p.medio, p.cobradoPor, {moneda:p.moneda, montoOriginal:p.montoOriginal, cotizacion:p.cotizacion}));
   const pagosIniciales = pagosDe(m);
   montoAutoSync = pagosIniciales.length===1 ? String(pagosIniciales[0].valor) : null;
 
@@ -3595,11 +3700,23 @@ btnEliminar.onclick = async ()=>{
 
 document.getElementById('btnAddPaciente').onclick = ()=> document.getElementById('cardNuevoPaciente').classList.remove('col-hidden');
 document.getElementById('cancelPaciente').onclick = ()=> document.getElementById('cardNuevoPaciente').classList.add('col-hidden');
+// Si falta teléfono, DNI, fecha de nacimiento o método de llegada, se avisa (y se puede seguir igual)
+function confirmarDatosFaltantes(d){
+  const falta = [];
+  if(!String(d.tel||'').trim()) falta.push('teléfono');
+  if(!String(d.dni||'').trim()) falta.push('DNI');
+  if(!String(d.fnac||'').trim()) falta.push('fecha de nacimiento');
+  if(!String(d.medio||'').trim()) falta.push('método de llegada');
+  if(!falta.length) return true;
+  const lista = falta.length===1 ? falta[0] : falta.slice(0,-1).join(', ') + ' y ' + falta[falta.length-1];
+  return confirm(`¿Está seguro de que quiere cargar sin ${lista}?`);
+}
 document.getElementById('guardarPaciente').onclick = async ()=>{
   const ape = document.getElementById('npApellido').value.trim();
   const nom = document.getElementById('npNombre').value.trim();
   const tel = document.getElementById('npTelefono').value.trim();
   if(!ape || !nom){ alert("Apellido y nombre son obligatorios."); return; }
+  if(!confirmarDatosFaltantes({tel, dni: document.getElementById('npDni').value, fnac: document.getElementById('npFnac').value, medio: document.getElementById('npMedio').value})) return;
   const nombreCompleto = `${ape.toUpperCase()}, ${nom}`;
   await db.collection('pacientes').add({
     apellido: ape.toUpperCase(), nombre: nom, nombreCompleto,
@@ -3651,12 +3768,15 @@ document.querySelectorAll('.currency-toggle button').forEach(btn=>{
     document.querySelectorAll('.currency-toggle button').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     monedaSel = btn.dataset.cur;
+    document.querySelectorAll('#pagosLista .pago-row').forEach(r=>{ if(r.dataset.sigue!=='0') r.querySelector('.pago-mon').value = monedaSel; });
+    recalcularPagos();
   };
 });
 let montoAutoSync = null; // último monto que autocompletamos en el primer pago, para saber si el usuario lo tocó
 inpValor.addEventListener('input', ()=>{
   let raw = inpValor.value.replace(/\D/g,"");
   inpValor.value = raw ? Number(raw).toLocaleString('es-AR') : "";
+  setTimeout(()=> recalcularPagos(), 0);
 
   const filas = document.querySelectorAll('#pagosLista .pago-row');
   if(filas.length === 1){
@@ -3686,6 +3806,13 @@ btnGuardarMov.onclick = async ()=>{
   if(inpValor.value.trim() === "" || isNaN(valorNum)){ alert("Ingresá un total (puede ser 0)."); return; }
 
   let pagos = leerPagosForm();
+  if(!pagos) return;
+  // con cotización pueden quedar centavos de diferencia: se ajusta el último pago en otra moneda
+  {
+    const dif = Math.round((valorNum - pagos.reduce((a,p)=>a+p.valor,0))*100)/100;
+    const conv = pagos.filter(p=> p.moneda).pop();
+    if(conv && Math.abs(dif) < 1) conv.valor = Math.round((conv.valor + dif)*100)/100;
+  }
   const sumaPagos = pagos.reduce((a,p)=>a+p.valor,0);
   if(sumaPagos > valorNum){
     alert(`La suma de los pagos cargados (${fmtMonto(sumaPagos, monedaSel)}) supera el total (${fmtMonto(valorNum, monedaSel)}). Corregí los montos.`);
@@ -4011,13 +4138,14 @@ async function generarPNGReporteDiario(filas, fechaISO, sesiones){
     pagosDe(m).forEach(p=>{
       // Igual que en "Cerrar caja": si lo cobró el profesional directo, esa plata nunca entró a nuestra caja física.
       if(!esGasto && p.cobradoPor === "profesional") return;
+      const monP = pagoMoneda(m, p), vP = pagoMontoReal(p);
       if(p.medio==="efectivo"){
-        if(m.moneda==="USD"){ esGasto ? outUsdEf+=p.valor : inUsdEf+=p.valor; }
-        else { esGasto ? outPesosEf+=p.valor : inPesosEf+=p.valor; }
-      } else if(p.medio==="mp" && m.moneda!=="USD"){
-        esGasto ? outPesosMp+=p.valor : inPesosMp+=p.valor;
-      } else if(p.medio==="transferencia" && m.moneda!=="USD"){
-        esGasto ? outPesosTransf+=p.valor : inPesosTransf+=p.valor;
+        if(monP==="USD"){ esGasto ? outUsdEf+=vP : inUsdEf+=vP; }
+        else { esGasto ? outPesosEf+=vP : inPesosEf+=vP; }
+      } else if(p.medio==="mp" && monP!=="USD"){
+        esGasto ? outPesosMp+=vP : inPesosMp+=vP;
+      } else if(p.medio==="transferencia" && monP!=="USD"){
+        esGasto ? outPesosTransf+=vP : inPesosTransf+=vP;
       }
     });
   });
@@ -4112,13 +4240,14 @@ function generarPDFReporteDiario(filas, fechaISO, sesiones){
     const esGasto = esEgreso(m.prof, m.concepto);
     if(/honorario/i.test(m.concepto||"")) pagosProfesionales.push(m);
     pagosDe(m).forEach(p=>{
+      const monP = pagoMoneda(m, p), vP = pagoMontoReal(p);
       if(p.medio==="efectivo"){
-        if(m.moneda==="USD"){ esGasto ? outUsdEf+=p.valor : inUsdEf+=p.valor; }
-        else { esGasto ? outPesosEf+=p.valor : inPesosEf+=p.valor; }
-      } else if(p.medio==="mp" && m.moneda!=="USD"){
-        esGasto ? outPesosMp+=p.valor : inPesosMp+=p.valor;
-      } else if(p.medio==="transferencia" && m.moneda!=="USD"){
-        esGasto ? outPesosTransf+=p.valor : inPesosTransf+=p.valor;
+        if(monP==="USD"){ esGasto ? outUsdEf+=vP : inUsdEf+=vP; }
+        else { esGasto ? outPesosEf+=vP : inPesosEf+=vP; }
+      } else if(p.medio==="mp" && monP!=="USD"){
+        esGasto ? outPesosMp+=vP : inPesosMp+=vP;
+      } else if(p.medio==="transferencia" && monP!=="USD"){
+        esGasto ? outPesosTransf+=vP : inPesosTransf+=vP;
       }
     });
   });
@@ -4389,12 +4518,13 @@ function consumosDeIngreso(m){
 }
 
 function mostrarVista(v){
-  if((v==='sueros' && !esAdminSueros()) || ((v==="cremas" || v==='conta') && !esFede())) return;
+  if((v==='sueros' && !esAdminSueros()) || ((v==="cremas" || v==='conta') && !esFede()) || (v==='informes' && currentUser.rol!=='admin')) return;
   vistaActual = v;
   document.getElementById('vistaMovimientos').classList.toggle('col-hidden', v!=='movimientos');
   document.getElementById('vistaSueros').classList.toggle('col-hidden', v!=='sueros');
   document.getElementById('vistaCremas').classList.toggle('col-hidden', v!=='cremas');
   document.getElementById('vistaConta').classList.toggle('col-hidden', v!=='conta');
+  document.getElementById('vistaInformes').classList.toggle('col-hidden', v!=='informes');
   document.getElementById('btnNuevo').classList.add('col-hidden');
   document.getElementById('btnVistaMovimientos').classList.toggle('activo', v==='movimientos');
   document.getElementById('btnSueros').classList.toggle('activo', v==='sueros');
@@ -4403,7 +4533,7 @@ function mostrarVista(v){
   // La fila de secciones queda siempre arriba; los botones de cada sección van debajo, más chicos
   if(esUsuarioCaja()){
     const tabs = document.getElementById('fedeTabs');
-    const destino = document.querySelector(`#${({movimientos:'vistaMovimientos', sueros:'vistaSueros', cremas:'vistaCremas', conta:'vistaConta'})[v]} > .fede-nav`);
+    const destino = document.querySelector(`#${({movimientos:'vistaMovimientos', sueros:'vistaSueros', cremas:'vistaCremas', conta:'vistaConta', informes:'vistaInformes'})[v]} > .fede-nav`);
     destino.classList.remove('col-hidden'); destino.appendChild(tabs);
     tabs.querySelectorAll('[data-ir]').forEach(b=> b.classList.toggle('active', b.dataset.ir===v));
     document.body.classList.add('fede-nav-on');
@@ -7300,6 +7430,7 @@ async function crearPacienteFila(btn){
   const apellido = fila.querySelector('.pc-apellido').value.trim().toUpperCase();
   const nombre = fila.querySelector('.pc-nombre').value.trim();
   if(!apellido || !nombre){ alert("Apellido y nombre son obligatorios."); return; }
+  if(!confirmarDatosFaltantes({tel: fila.querySelector('.pc-telefono').value, dni: fila.querySelector('.pc-dni').value, fnac: fila.querySelector('.pc-fnac').value, medio: fila.querySelector('.pc-medio').value})) return;
   const datos = {
     apellido, nombre, nombreCompleto: `${apellido}, ${nombre}`,
     telefono: fila.querySelector('.pc-telefono').value.trim(),
@@ -8509,8 +8640,7 @@ document.getElementById('vcBtnPDF').onclick = ()=>{
 
 document.querySelectorAll('#fedeTabs [data-ir]').forEach(b=> b.onclick = ()=>{
   const ir = b.dataset.ir;
-  if(ir==='sueros' || ir==='cremas' || ir==='movimientos' || ir==='conta') mostrarVista(ir);
-  // "Informes": por ahora inactivo (se va a definir qué mostrar)
+  if(ir==='sueros' || ir==='cremas' || ir==='movimientos' || ir==='conta' || ir==='informes') mostrarVista(ir);
 });
 document.querySelectorAll('#movSubTabs [data-msub]').forEach(b=> b.onclick = ()=>{
   const sub = b.dataset.msub;
