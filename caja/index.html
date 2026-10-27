@@ -914,6 +914,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .tabla-vc tfoot td{position:sticky;bottom:0;background:#f4eeda;font-weight:700;border-top:2px solid var(--border);}
   .vc-extra{font-style:italic;color:#6e6757;}
   .tabla-vc tr.vc-auto td{background:#fcf9f0;}
+  #vistaConta .s-panel > .sheet-wrap.vc-deud{margin-top:0;}
   .vc-auto-ico{font-size:11px;opacity:.7;cursor:help;}
   .vc-medio.mp{background:#d8eefa;color:#1c7fa8;}
   .vc-medio.tarjeta{background:#ece2fb;color:#7a3fc9;}
@@ -942,7 +943,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .bal-tabla th{background:#f4eeda;font-size:9px;font-weight:700;color:#9c9179;text-transform:uppercase;letter-spacing:.3px;padding:7px 8px;text-align:right;}
   .bal-tabla th:nth-child(1){text-align:center;width:52px;}
   .bal-tabla th:nth-child(2){text-align:left;}
-  .bal-tabla th:nth-child(3), .bal-tabla th:nth-child(4), .bal-tabla th:nth-child(5){width:84px;}
+  .bal-tabla th:nth-child(3), .bal-tabla th:nth-child(4), .bal-tabla th:nth-child(5){width:96px;}
   .bal-tabla th:nth-child(6){width:92px;text-align:center;}
   .bal-tabla td.medio{text-align:center;color:#6e6757;font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;}
   .bal-tabla td.deb{color:#b26a00;font-weight:600;}
@@ -1784,7 +1785,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <div class="s-panel">
       <div class="sheet-wrap">
         <table class="tabla-vc">
-          <colgroup><col style="width:34px"><col style="width:66px"><col><col style="width:108px"><col style="width:108px"><col style="width:108px"><col style="width:118px"></colgroup>
+          <colgroup><col style="width:34px"><col style="width:66px"><col><col style="width:120px"><col style="width:120px"></colgroup>
           <thead>
             <tr>
               <th class="editcol"></th>
@@ -1792,12 +1793,17 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
               <th><div class="th-search th-search-left">Detalle</div></th>
               <th><div class="th-search" style="text-align:right;padding-right:16px;">Ingresos</div></th>
               <th><div class="th-search" style="text-align:right;padding-right:16px;">Egresos</div></th>
-              <th><div class="th-search" style="text-align:right;padding-right:16px;">Debe</div></th>
-              <th><div class="th-search">Medio de pago</div></th>
             </tr>
           </thead>
           <tbody id="vcTbody"></tbody>
           <tfoot id="vcTfoot"></tfoot>
+        </table>
+      </div>
+      <div class="sheet-wrap vc-deud col-hidden" id="vcDeudWrap">
+        <table class="tabla-vc">
+          <colgroup><col style="width:34px"><col style="width:66px"><col><col style="width:140px"></colgroup>
+          <thead><tr><th class="editcol"></th><th colspan="3"><div class="th-search th-search-left">Deudores del mes</div></th></tr></thead>
+          <tbody id="vcDeudTbody"></tbody>
         </table>
       </div>
     </div>
@@ -6067,7 +6073,7 @@ function renderPortalSueros(){
   const num = numerosDeAplicacion();
   const delDia = aplicacionesSueros().filter(m=> m.fechaISO>=desde && m.fechaISO<=hasta);
   if(!delDia.length){
-    tb.innerHTML = `<tr><td colspan="7" class="empty-state">${desde===hasta ? 'No hay aplicaciones cargadas este día.' : 'No hay aplicaciones cargadas en estas fechas.'}</td></tr>`;
+    tb.innerHTML = `<tr><td colspan="5" class="empty-state">${desde===hasta ? 'No hay aplicaciones cargadas este día.' : 'No hay aplicaciones cargadas en estas fechas.'}</td></tr>`;
   } else {
     tb.innerHTML = delDia.map((m, i)=>`
       <tr>
@@ -7025,7 +7031,7 @@ function renderCremasStock(){
       && (!fv('cfsCosto') || contiene(precioTxt(s.costo, pesos ? 'ars' : 'usd'), fv('cfsCosto')))
       && (!fv('cfsStock') || contiene(stockPlano, fv('cfsStock')));
   });
-  if(!lista.length){ tb.innerHTML = `<tr><td colspan="7" class="empty-state">No hay productos de cremas, colágenos o geles en Conceptos.</td></tr>`; document.getElementById('cStockFoot').innerHTML = ''; return; }
+  if(!lista.length){ tb.innerHTML = `<tr><td colspan="5" class="empty-state">No hay productos de cremas, colágenos o geles en Conceptos.</td></tr>`; document.getElementById('cStockFoot').innerHTML = ''; return; }
   tb.innerHTML = lista.map(p=>{
     const s = cremasStock[p.clave] || {};
     return `<tr>
@@ -8307,7 +8313,7 @@ function htmlRecupero(selEtiqueta, desde, hasta, rangoTxt){
         <td>${fechaLarga(x.fechaISO)}</td><td class="left">${x.proveedor||''}</td><td class="monto">${fmtPesos(x.inversion)}</td>
         <td>${x.usadas.toLocaleString('es-AR')} / ${x.cant.toLocaleString('es-AR')}</td><td class="monto">${fmtPesos(x.rec)}</td>
         <td>${barraRec(x.inversion ? x.rec/x.inversion*100 : 0, escala)}</td><td>${x.fechaRec ? fechaLarga(x.fechaRec) : guion}</td></tr>`).join('')
-        : '<tr><td colspan="7" class="empty-state">No hay compras desde el 1/10/2026 en estas fechas.</td></tr>'}</tbody>
+        : '<tr><td colspan="5" class="empty-state">No hay compras desde el 1/10/2026 en estas fechas.</td></tr>'}</tbody>
     </table></div>${lista.length ? leyenda : ''}`;
 }
 document.getElementById('sResumen').addEventListener('click', e=>{
@@ -8654,8 +8660,8 @@ function vcCalcularAuto(movs){
         // deudas pendientes de sus pacientes (las debe a Ummana o a ella): van a la columna Debe
         if(p.medio==='debe' && !p.saldada){
           out.push({
-            id:`auto_d_${m.id}_${i}`, auto:true, fechaISO:m.fechaISO, tipo:'ingreso', detalle:'Deuda de paciente',
-            extra: (m.pac || '') + (m.jornada ? ' (jornada)' : ''),
+            id:`auto_d_${m.id}_${i}`, auto:true, fechaISO:m.fechaISO, tipo:'ingreso', detalle: m.pac || 'Sin nombre',
+            extra: (m.concepto || '') + (m.jornada ? ' (jornada)' : ''),
             moneda: m.moneda==='USD' ? 'USD' : '$', valor: Number(p.valor)||0, medio: 'debe', creadoEn: m.creadoEn,
           });
           return;
@@ -8683,7 +8689,7 @@ const vcMesFin = ()=>{ let y = mesConta.year, m = mesConta.month+1; if(m>12){ m=
 const vcEsc = t => String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const vcMonto = (v, mon) => (mon==='USD' ? 'USD ' : '$') + Math.round(Math.abs(v)).toLocaleString('es-AR');
 const vcFecha = iso => { const [y,m,d] = iso.split('-'); return `${d}/${m}`; };
-const vcDetalleHTML = m => vcEsc(m.detalle) + (m.extra ? ` <span class="vc-extra">— ${vcEsc(m.extra)}</span>` : '');
+const vcDetalleHTML = m => (m.detalle==='Cobrado por Victoria' ? '<b>Cobrado por Victoria</b>' : vcEsc(m.detalle)) + (m.extra ? ` <span class="vc-extra">— ${vcEsc(m.extra)}</span>` : '');
 
 function suscribirConta(){
   if(!esFede()) return;
@@ -8710,13 +8716,13 @@ function suscribirConta(){
       renderConta();
     }, err=>{
       contaMovs = [];
-      document.getElementById('vcTbody').innerHTML = `<tr><td colspan="7" class="empty-state" style="color:#a13a3a;">No se pudieron leer los movimientos: ${vcEsc(err.message)}<br>Revisá que en las reglas de Firebase esté la colección <b>contaVictoria</b>.</td></tr>`;
+      document.getElementById('vcTbody').innerHTML = `<tr><td colspan="5" class="empty-state" style="color:#a13a3a;">No se pudieron leer los movimientos: ${vcEsc(err.message)}<br>Revisá que en las reglas de Firebase esté la colección <b>contaVictoria</b>.</td></tr>`;
     });
 }
 function vcTotales(lista){
   const t = {'$':{ing:0, egr:0, deb:0, n:0}, 'USD':{ing:0, egr:0, deb:0, n:0}};
   // lo que está en "Debe" no entra en ingresos/egresos (todavía no se cobró/pagó)
-  lista.forEach(m=>{ const k = m.moneda==='USD' ? 'USD' : '$'; t[k][vcEsDebe(m) ? 'deb' : (m.tipo==='egreso' ? 'egr' : 'ing')] += Number(m.valor)||0; t[k].n++; });
+  lista.forEach(m=>{ const k = m.moneda==='USD' ? 'USD' : '$'; t[k][vcEsDebe(m) ? 'deb' : (m.tipo==='egreso' ? 'egr' : 'ing')] += Number(m.valor)||0; if(!vcEsDebe(m)) t[k].n++; });
   return t;
 }
 function renderConta(){
@@ -8724,27 +8730,36 @@ function renderConta(){
   document.getElementById('vcMesLabel').textContent = `${MESES[mesConta.month-1]} ${mesConta.year}`;
   const tb = document.getElementById('vcTbody'), tf = document.getElementById('vcTfoot');
   const lista = vcListaCompleta();
-  if(lista==null){ tb.innerHTML = '<tr><td colspan="7" class="empty-state">Cargando…</td></tr>'; tf.innerHTML = ''; return; }
-  if(!lista.length){ tb.innerHTML = '<tr><td colspan="7" class="empty-state">No hay movimientos en este mes. Cargalos con "+ Nuevo movimiento".</td></tr>'; tf.innerHTML = ''; return; }
-  const hayUsd = lista.some(m=> m.moneda==='USD');
+  const deudWrap = document.getElementById('vcDeudWrap'); deudWrap.classList.add('col-hidden');
+  if(lista==null){ tb.innerHTML = '<tr><td colspan="5" class="empty-state">Cargando…</td></tr>'; tf.innerHTML = ''; return; }
+  // Deudores del mes: aparte, sin totales (no son ingresos todavía)
+  const deudas = lista.filter(vcEsDebe);
+  if(deudas.length){
+    deudWrap.classList.remove('col-hidden');
+    document.getElementById('vcDeudTbody').innerHTML = deudas.map(m=> `<tr class="${m.auto ? 'vc-auto' : ''}">
+      <td class="editcol">${m.auto ? '<span class="vc-auto-ico" title="Viene automático de Movimientos (caja diaria). Se modifica allá.">🔗</span>' : `<button class="editbtn" title="Editar" onclick="abrirConta('${m.id}')">&#9998;</button>`}</td>
+      <td>${vcFecha(m.fechaISO)}</td><td class="left">${vcDetalleHTML(m)}</td><td class="deb">${vcMonto(m.valor, m.moneda)}</td></tr>`).join('');
+  }
+  if(lista.length && !lista.some(m=> !vcEsDebe(m))){ tb.innerHTML = '<tr><td colspan="5" class="empty-state">No hay ingresos ni egresos en este mes.</td></tr>'; tf.innerHTML = ''; return; }
+  if(!lista.length){ tb.innerHTML = '<tr><td colspan="5" class="empty-state">No hay movimientos en este mes. Cargalos con "+ Nuevo movimiento".</td></tr>'; tf.innerHTML = ''; return; }
   const fila = m => `<tr class="${m.auto ? 'vc-auto' : ''}">
       <td class="editcol">${m.auto ? '<span class="vc-auto-ico" title="Viene automático de Movimientos (caja diaria). Se modifica allá.">🔗</span>' : `<button class="editbtn" title="Editar" onclick="abrirConta('${m.id}')">&#9998;</button>`}</td>
       <td>${vcFecha(m.fechaISO)}</td>
       <td class="left">${vcDetalleHTML(m)}</td>
       <td class="ing">${!vcEsDebe(m) && m.tipo!=='egreso' ? vcMonto(m.valor, m.moneda) : ''}</td>
       <td class="egr">${!vcEsDebe(m) && m.tipo==='egreso' ? vcMonto(m.valor, m.moneda) : ''}</td>
-      <td class="deb">${vcEsDebe(m) ? vcMonto(m.valor, m.moneda) : ''}</td>
-      <td class="medio">${m.medio ? `<span class="vc-medio ${m.medio}">${VC_MEDIOS[m.medio]||m.medio}</span>` : '<span class="pend">—</span>'}</td>
     </tr>`;
-  const pesos = lista.filter(m=> m.moneda!=='USD'), usd = lista.filter(m=> m.moneda==='USD');
-  tb.innerHTML = hayUsd
-    ? (pesos.length ? `<tr class="vc-sep"><td colspan="7">Pesos</td></tr>` + pesos.map(fila).join('') : '')
-      + `<tr class="vc-sep"><td colspan="7">Dólares</td></tr>` + usd.map(fila).join('')
-    : lista.map(fila).join('');
+  const mov = lista.filter(m=> !vcEsDebe(m));
+  const hayUsd2 = mov.some(m=> m.moneda==='USD');
+  const pesos = mov.filter(m=> m.moneda!=='USD'), usd = mov.filter(m=> m.moneda==='USD');
+  tb.innerHTML = hayUsd2
+    ? (pesos.length ? `<tr class="vc-sep"><td colspan="5">Pesos</td></tr>` + pesos.map(fila).join('') : '')
+      + `<tr class="vc-sep"><td colspan="5">Dólares</td></tr>` + usd.map(fila).join('')
+    : mov.map(fila).join('');
   const t = vcTotales(lista);
-  const totFila = (k, lbl) => `<tr><td class="editcol"></td><td></td><td class="left">${lbl}</td><td class="ing">${vcMonto(t[k].ing, k)}</td><td class="egr">${vcMonto(t[k].egr, k)}</td><td class="deb">${t[k].deb ? vcMonto(t[k].deb, k) : ''}</td><td></td></tr>`;
-  const balFila = (k) => { const b = t[k].ing - t[k].egr; return `<tr><td class="editcol"></td><td></td><td class="left">BALANCE ${k==='USD'?'USD':'$'}</td><td colspan="2" class="${b<0?'egr':'ing'}">${b<0?'−':'+'}${vcMonto(b, k)}</td><td></td><td></td></tr>`; };
-  tf.innerHTML = (t['$'].n ? totFila('$', `TOTALES${hayUsd?' $':''} <span class="tot-cant">(${t['$'].n} ${t['$'].n===1?'movimiento':'movimientos'})</span>`) + balFila('$') : '')
+  const totFila = (k, lbl) => `<tr><td class="editcol"></td><td></td><td class="left">${lbl}</td><td class="ing">${vcMonto(t[k].ing, k)}</td><td class="egr">${vcMonto(t[k].egr, k)}</td></tr>`;
+  const balFila = (k) => { const b = t[k].ing - t[k].egr; return `<tr><td class="editcol"></td><td></td><td class="left">BALANCE ${k==='USD'?'USD':'$'}</td><td colspan="2" class="${b<0?'egr':'ing'}">${b<0?'−':'+'}${vcMonto(b, k)}</td></tr>`; };
+  tf.innerHTML = (t['$'].n ? totFila('$', `TOTALES${hayUsd2?' $':''} <span class="tot-cant">(${t['$'].n} ${t['$'].n===1?'movimiento':'movimientos'})</span>`) + balFila('$') : '')
                + (t['USD'].n ? totFila('USD', `TOTALES USD <span class="tot-cant">(${t['USD'].n})</span>`) + balFila('USD') : '');
 }
 document.getElementById('vcMesPrev').onclick = ()=>{ mesConta.month--; if(mesConta.month<1){ mesConta.month=12; mesConta.year--; } suscribirConta(); renderConta(); };
@@ -8884,15 +8899,18 @@ document.getElementById('vcBtnPDF').onclick = ()=>{
   const ultimo = new Date(mesConta.year, mesConta.month, 0).getDate();
   const t = vcTotales(lista);
   const tabla = (k, titulo) => {
-    const movs = lista.filter(m=> (m.moneda==='USD' ? 'USD' : '$')===k);
+    const movs = lista.filter(m=> !vcEsDebe(m) && (m.moneda==='USD' ? 'USD' : '$')===k);
     if(!movs.length) return '';
     return `<div class="bal-h4">${titulo}</div>
-      <table class="bal-tabla"><thead><tr><th>Fecha</th><th>Detalle</th><th>Ingresos</th><th>Egresos</th><th>Debe</th><th>Medio de pago</th></tr></thead>
+      <table class="bal-tabla"><thead><tr><th>Fecha</th><th>Detalle</th><th>Ingresos</th><th>Egresos</th></tr></thead>
       <tbody>${movs.map(m=> `<tr><td>${vcFecha(m.fechaISO)}</td><td class="left">${vcDetalleHTML(m)}</td>
-        <td class="ing">${!vcEsDebe(m) && m.tipo!=='egreso' ? vcMonto(m.valor, k) : ''}</td><td class="egr">${!vcEsDebe(m) && m.tipo==='egreso' ? vcMonto(m.valor, k) : ''}</td>
-        <td class="deb">${vcEsDebe(m) ? vcMonto(m.valor, k) : ''}</td><td class="medio">${vcEsDebe(m) ? '—' : (VC_MEDIOS[m.medio]||'—')}</td></tr>`).join('')}</tbody>
-      <tfoot><tr><td></td><td class="left">TOTALES</td><td class="ing">${vcMonto(t[k].ing, k)}</td><td class="egr">${vcMonto(t[k].egr, k)}</td><td class="deb">${t[k].deb ? vcMonto(t[k].deb, k) : ''}</td><td></td></tr></tfoot></table>`;
+        <td class="ing">${m.tipo!=='egreso' ? vcMonto(m.valor, k) : ''}</td><td class="egr">${m.tipo==='egreso' ? vcMonto(m.valor, k) : ''}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td></td><td class="left">TOTALES</td><td class="ing">${vcMonto(t[k].ing, k)}</td><td class="egr">${vcMonto(t[k].egr, k)}</td></tr></tfoot></table>`;
   };
+  const deudas = lista.filter(vcEsDebe);
+  const tablaDeud = deudas.length ? `<div class="bal-h4">Deudores del mes</div>
+      <table class="bal-tabla bal-deud"><thead><tr><th>Fecha</th><th>Detalle</th><th>Debe</th></tr></thead>
+      <tbody>${deudas.map(m=> `<tr><td>${vcFecha(m.fechaISO)}</td><td class="left">${vcDetalleHTML(m)}</td><td class="deb">${vcMonto(m.valor, m.moneda)}</td></tr>`).join('')}</tbody></table>` : '';
   const bal = k => t[k].ing - t[k].egr;
   const balTxt = k => (bal(k)<0 ? '−' : '+') + vcMonto(bal(k), k);
   const principal = t['$'].n ? '$' : 'USD';
@@ -8900,9 +8918,9 @@ document.getElementById('vcBtnPDF').onclick = ()=>{
   const html = `
     ${tabla('$', 'Movimientos en pesos')}
     ${tabla('USD', 'Movimientos en dólares')}
+    ${tablaDeud}
     <div class="bal-cierre"><div><div class="t">Balance de ${mesTxt}</div></div>
-      <div class="v ${bal(principal)<0?'neg':''}">${balTxt(principal)}${secundario ? `<small class="${bal(secundario)<0?'neg':''}">${balTxt(secundario)}</small>` : ''}${
-        ['$','USD'].filter(k=> t[k].deb).map(k=> `<span class="debe">Debe (sin cobrar, no incluido): ${vcMonto(t[k].deb, k)}</span>`).join('')}</div></div>
+      <div class="v ${bal(principal)<0?'neg':''}">${balTxt(principal)}${secundario ? `<small class="${bal(secundario)<0?'neg':''}">${balTxt(secundario)}</small>` : ''}</div></div>
     <div class="bal-pie"><span>Ummana</span><span>${mesTxt}</span></div>`;
   abrirVistaPDF('Balance contable · Victoria', html, `Balance contable Victoria - ${mesTxt}`, {
     clase: 'pdf-balance', sinFecha: true,
