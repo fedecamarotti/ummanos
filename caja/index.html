@@ -2795,7 +2795,7 @@ document.addEventListener('click', (e)=>{
   if(menuDropdown.classList.contains('open') && !document.getElementById('menuWrap').contains(e.target)) cerrarMenu();
 });
 document.addEventListener('keydown', (e)=>{
-  if(e.key==='Escape' && menuDropdown.classList.contains('open')){ cerrarMenu(); btnMenu.focus(); }
+  if(e.key==='Escape' && menuDropdown.classList.contains('open')){ e.preventDefault(); cerrarMenu(); btnMenu.focus(); }
 });
 // al elegir una opción, el menú se cierra (el handler propio de cada botón sigue funcionando)
 menuDropdown.querySelectorAll('.menu-links button').forEach(b=> b.addEventListener('click', cerrarMenu));
@@ -3148,6 +3148,7 @@ function attachAutocomplete(input, getOptions, onPick, etiqueta){
         elegir(opcionesActuales[0]);
       }
     } else if(e.key === 'Escape'){
+      if(dd.classList.contains('show')) e.preventDefault();   // primero se cierra la lista; el próximo Esc cierra la ventana
       dd.classList.remove('show');
     }
   });
@@ -4899,7 +4900,7 @@ function activarInputsFalta(tb){
     inp.addEventListener('input', ()=> formatearInputMonto(inp));
     inp.addEventListener('keydown', e=>{
       if(e.key==='Enter'){ e.preventDefault(); inp.blur(); }
-      if(e.key==='Escape'){ inp.value=''; inp.blur(); }
+      if(e.key==='Escape'){ e.preventDefault(); inp.value=''; inp.blur(); }
     });
     inp.addEventListener('blur', ()=>{ if(inp.value.trim()!=='') guardarTotalInline(inp.dataset.falta, inp.value); });
   });
@@ -6776,7 +6777,7 @@ function renderCremasMovs(){
       inp.placeholder = 'pesos';
     });
     inp.addEventListener('input', ()=> formatearInputMonto(inp));
-    inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } if(e.key==='Escape'){ inp.dataset.cancelar='1'; inp.blur(); } });
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } if(e.key==='Escape'){ e.preventDefault(); inp.dataset.cancelar='1'; inp.blur(); } });
     inp.addEventListener('blur', ()=>{
       const id = inp.dataset.id, ex = cremasExtra[id] || {};
       const antes = ex.pagoPx!=null && ex.pagoPx!=='' ? Number(ex.pagoPx) : null;
@@ -9169,6 +9170,17 @@ document.querySelectorAll('#movSubTabs [data-msub]').forEach(b=> b.onclick = ()=
   else if(sub==='pacientes') document.getElementById('btnPacientes').click();
   else if(sub==='deudores') document.getElementById('btnDeudores').click();
   else if(sub==='nuevo') document.getElementById('btnNuevo').click();
+});
+
+// Esc cierra la ventana/desplegable que esté abierto arriba de todo
+document.addEventListener('keydown', e=>{
+  if(e.key!=='Escape' || e.defaultPrevented) return;
+  const abiertas = [...document.querySelectorAll('.overlay.show')];
+  if(!abiertas.length) return;
+  const ov = abiertas.sort((a,b)=> (parseInt(getComputedStyle(a).zIndex)||0) - (parseInt(getComputedStyle(b).zIndex)||0)).pop();
+  e.preventDefault();
+  const cerrar = ov.querySelector('.close-x');
+  if(cerrar) cerrar.click(); else ov.classList.remove('show');
 });
 </script>
 </body>
