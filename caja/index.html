@@ -263,6 +263,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .fab-nuevo{position:fixed;right:24px;bottom:24px;z-index:50;width:54px;height:54px;border-radius:50%;border:1px solid #d9c9a3;background:#e8dcc0;color:#6b5226;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;box-shadow:0 3px 10px rgba(80,60,20,.18);}
   .fab-nuevo:hover{background:#dfd0ad;}
   #vistaMovimientos.col-hidden .fab-nuevo{display:none;}
+  body:has(.overlay.show) .fab-nuevo{display:none;}   /* que no quede arriba de las ventanas */
   #panelContent > .sheet-wrap, .cp-hoja{padding-bottom:64px;}   /* que el + flotante no tape la última fila */
   @media (max-width:700px){ .fab-nuevo{right:16px;bottom:16px;width:50px;height:50px;} }
   .cp-tabla{width:100%;min-width:1236px;table-layout:fixed;border-collapse:collapse;}
@@ -588,6 +589,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .hc-plan > select{flex:1;min-width:0;}
   .hc-campo .hc-ses{display:flex;align-items:center;gap:6px;margin:0;white-space:nowrap;}
   .hc-campo .hc-ses select{width:64px;}
+  .hc-campo .hc-ses{font-size:10.5px;gap:4px;}
+  .hc-plan-nota{font-weight:400;font-style:italic;text-transform:none;letter-spacing:0;}
   .hc-campo textarea:focus, .hc-campo input:focus{outline:none;border-color:var(--accent);background:#fffcf5;}
   .hc-valor{padding:6px 0;font-size:12.5px;font-weight:700;}
   .hc-acciones{display:flex;align-items:center;gap:10px;margin-top:12px;}
@@ -1409,14 +1412,21 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
             <div class="hc-campo"><label>Motivo de derivación / objetivo terapéutico</label><textarea rows="2" data-hc="motivo"></textarea></div>
             <div class="hc-campo"><label>Plan propuesto por derivante <span class="opt">(opcional)</span></label><textarea rows="2" data-hc="plan"></textarea></div>
             <div class="hc-campo"><label>Profesional derivante</label><select data-hc="derivante" id="hcDerivante"></select></div>
-            <div class="hc-campo"><label>Plan</label>
+            <div class="hc-campo"><label>Plan <i class="hc-plan-nota">(BASE: 10 GR VIT C / GLUTATION HASTA 3)</i></label>
               <div class="hc-plan">
                 <select data-hc="planTipo">
                   <option value="">—</option>
-                  <option>Base + Amp Heel (hasta 4)</option>
-                  <option>Base + Amp Heel (hasta 7)</option>
+                  <option>BASE</option>
+                  <option>BASE + HEEL (HASTA 3)</option>
+                  <option>BASE + HEEL (HASTA 7)</option>
+                  <option>BASE + OLIGOELEMENTOS</option>
+                  <option>BASE + COMP. B</option>
+                  <option>BASE + OLIGO. + COMP. B</option>
+                  <option>QUELACION DEP. CÁLCICOS</option>
+                  <option>QUELACIÓN MET. PESADOS</option>
+                  <option>QUELACIÓN SOP. ANTIINF.</option>
                 </select>
-                <label class="hc-ses">Sesiones recomendadas
+                <label class="hc-ses">Ses. recom.
                   <select data-hc="sesiones"><option value="">—</option></select>
                 </label>
               </div>
@@ -6247,7 +6257,9 @@ function abrirFichaHC(id){
     if(primera){   // los campos se completan al abrir; después no se pisa lo que se está escribiendo
       primera = false;
       document.getElementById('hcInicio').value = hcDatos.hcInicio || hoyISO();
-      document.querySelectorAll('[data-hc]').forEach(el=>{ if(el.dataset.hc!=='derivante') el.value = hcDatos[el.dataset.hc] || ''; });
+      document.querySelectorAll('[data-hc]').forEach(el=>{ if(el.dataset.hc==='derivante') return; const v = hcDatos[el.dataset.hc] || '';
+        if(el.tagName==='SELECT' && v && ![...el.options].some(o=> o.value===v)) el.add(new Option(v, v));   // opción vieja que ya no está en la lista
+        el.value = v; });
       const dv = hcDatos.derivante || '';
       llenarDerivantes(derivanteNormalizado(dv) ?? dv);
       document.getElementById('hcEstado').textContent = hcDatos.actualizadoPor ? `Última edición: ${hcDatos.actualizadoPor}` : '';
