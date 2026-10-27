@@ -341,7 +341,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .asis-ley span.sel{background:#f3dfd5;font-weight:700;}
   .asis-ley i{width:12px;height:3px;border-radius:2px;display:inline-block;}
   .asis-nota{font-size:10.5px;color:var(--muted);margin-top:10px;}
-  @media (max-width:800px){ .asis-grid{grid-template-columns:1fr;} .asis-panel{margin:10px;} }
+  .asis-grid.cuatro{grid-template-columns:repeat(4,1fr);}
+  @media (max-width:800px){ .asis-grid, .asis-grid.cuatro{grid-template-columns:1fr;} .asis-panel{margin:10px;} }
   .inf-proximamente{margin:40px 28px;text-align:center;color:var(--muted);font-size:12.5px;font-weight:500;}
   .pdf-escala{margin:0 auto;}
   .pdf-escala .pdf-hoja{max-width:none;}
@@ -1844,7 +1845,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <div class="sueros-bar">
       <div></div>
       <div class="s-tabs" role="tablist" aria-label="Informes">
-        <button class="s-tab active" id="infBtnAsis">Bienestar - Asistencias</button>
+        <button class="s-tab active" data-inf="asistencias">Bienestar - Asistencias</button>
+        <button class="s-tab" data-inf="packs">Bienestar - Packs</button>
         <button class="s-tab s-tab-inactivo" title="Próximamente">Aumentos</button>
         <button class="s-tab s-tab-inactivo" title="Próximamente">Informe mensual</button>
       </div>
@@ -9212,13 +9214,28 @@ document.querySelectorAll('#movSubTabs [data-msub]').forEach(b=> b.onclick = ()=
 const ASIS_LC = ['#3d6fb0','#e0913a','#4f9a6a','#b0508a'];
 const ASIS_MES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 let asisData = null, asisSel = null;   // asisSel: {estilo} o {slot}
+let asisTipo = 'asistencias'; const asisCache = {};
+const ASIS_TIPOS = {
+  asistencias: {tit:'Asistencias por mes', unidad:'asistencias', corta:'asist.', nota:'Datos de Momoyoga (yoguis con "Asistida" tildado)', toca:'Tocá un estilo o un horario para verlo en el gráfico; tocá de nuevo para volver a todas.', todas:'Todas las clases'},
+  packs: {tit:'Packs vendidos por mes', unidad:'packs', corta:'packs', nota:'Datos de Momoyoga (packs de créditos BIENESTAR pagados, por fecha de compra; los de miembros cuentan como el pack de su cantidad)', toca:'Tocá un pack para verlo solo en el gráfico; tocá de nuevo para volver a todos.', todas:'Todos los packs'},
+};
+document.querySelectorAll('#vistaInformes [data-inf]').forEach(b=> b.onclick = ()=>{
+  if(asisTipo===b.dataset.inf) return;
+  asisTipo = b.dataset.inf; asisSel = null; asisData = null;
+  document.querySelectorAll('#vistaInformes [data-inf]').forEach(x=> x.classList.toggle('active', x===b));
+  cargarAsistencias();
+});
 async function cargarAsistencias(){
   if(asisData){ renderAsistencias(); return; }
+  document.getElementById('asisBarras').innerHTML = '<div class="inf-proximamente">Cargando…</div>'; document.getElementById('asisEstilos').innerHTML = ''; document.getElementById('asisSub').textContent = ''; document.getElementById('asisNota').textContent = '';
+  document.getElementById('asisTit').textContent = ASIS_TIPOS[asisTipo].tit;
+  const tipo = asisTipo;
   try{
-    const d = await db.collection('adminCharts').doc('asistencias').get();
-    asisData = d.exists ? d.data() : null;
+    if(!(tipo in asisCache)){ const d = await db.collection('adminCharts').doc(tipo).get(); asisCache[tipo] = d.exists ? d.data() : null; }
+    if(tipo!==asisTipo) return;
+    asisData = asisCache[tipo];
   }catch(e){ document.getElementById('asisBarras').innerHTML = `<div class="inf-proximamente">No se pudieron leer las asistencias: ${escHtml(e.message)}</div>`; return; }
-  if(!asisData){ document.getElementById('asisBarras').innerHTML = '<div class="inf-proximamente">Todavía no hay datos de asistencias.</div>'; return; }
+  if(!asisData){ document.getElementById('asisBarras').innerHTML = '<div class="inf-proximamente">Todavía no hay datos para este informe.</div>'; return; }
   const meses = Object.keys(asisData.meses).sort();
   const lbl = ym => { const [y,m] = ym.split('-'); return `${MESES[+m-1]} ${y}`; };
   const opts = sel => meses.map(m=> `<option value="${m}" ${m===sel?'selected':''}>${lbl(m)}</option>`).join('');
@@ -9256,17 +9273,20 @@ function renderAsistencias(){
   const fs = chico ? (meses.length > 8 ? 9 : 11) : (meses.length > 18 ? 8.5 : 10);
   meses.forEach((m, j)=>{
     const v = tot[j], act = m===mesActual, gap = Math.min(10, bw*.18);
-    g += `<rect x="${pad+j*bw+gap/2}" width="${Math.max(1,bw-gap)}" y="${y(v)}" height="${y(0)-y(v)}" rx="${Math.min(5,bw/6)}" fill="${act ? '#c0705a' : '#e3b9a3'}"><title>${corto(m)}: ${v} asistencias</title></rect>`;
+    g += `<rect x="${pad+j*bw+gap/2}" width="${Math.max(1,bw-gap)}" y="${y(v)}" height="${y(0)-y(v)}" rx="${Math.min(5,bw/6)}" fill="${act ? '#c0705a' : '#e3b9a3'}"><title>${corto(m)}: ${v} ${ASIS_TIPOS[asisTipo].unidad}</title></rect>`;
     g += `<text x="${pad+j*bw+bw/2}" y="${y(v)-5}" font-size="${fs}" font-weight="${act?700:400}" text-anchor="middle" fill="#5b5444">${v}</text>`;
     if((chico ? meses.length <= 8 : meses.length <= 18) || j%2===0 || act) g += `<text x="${pad+j*bw+bw/2}" y="${H-8}" font-size="${fs}" text-anchor="middle" fill="${act?'#3a2f1c':'#9c9179'}" font-weight="${act?700:400}">${corto(m)}</text>`;
   });
   document.getElementById('asisBarras').innerHTML = `<svg viewBox="0 0 ${W} ${H}">${g}</svg>`;
-  const nombreSel = asisSel ? (asisSel.slot!=null ? `${asisData.slots[asisSel.slot].estilo} · ${asisData.slots[asisSel.slot].dia} ${asisData.slots[asisSel.slot].hora}` : asisSel.estilo) : '';
-  document.getElementById('asisTit').textContent = 'Asistencias por mes';
-  document.getElementById('asisSub').innerHTML = (asisSel ? `Mostrando <b>${escHtml(nombreSel)}</b><button id="asisVerTodas">ver todas</button> · ` : 'Todas las clases · ')
-    + `${tot.reduce((a,b)=> a+b, 0).toLocaleString('es-AR')} asistencias en el período`;
+  const T = ASIS_TIPOS[asisTipo];
+  const slotNom = i=> { const sl = asisData.slots[i]; return sl.dia ? `${sl.estilo} · ${sl.dia} ${sl.hora}` : sl.estilo; };
+  const nombreSel = asisSel ? (asisSel.slot!=null ? slotNom(asisSel.slot) : asisSel.estilo) : '';
+  document.getElementById('asisTit').textContent = T.tit;
+  document.getElementById('asisSub').innerHTML = (asisSel ? `Mostrando <b>${escHtml(nombreSel)}</b><button id="asisVerTodas">ver todo</button> · ` : T.todas + ' · ')
+    + `${tot.reduce((a,b)=> a+b, 0).toLocaleString('es-AR')} ${T.unidad} en el período`;
   const vt = document.getElementById('asisVerTodas'); if(vt) vt.onclick = e=>{ e.stopPropagation(); asisSel = null; renderAsistencias(); };
   // tarjetas por estilo
+  document.getElementById('asisEstilos').classList.toggle('cuatro', est.length===4);
   document.getElementById('asisEstilos').innerHTML = est.map(e=>{
     const series = e.slots.map(i=> meses.map(m=> asisData.meses[m][i]||0));
     const mx = Math.max(1, ...series.flat())*1.1, w = 300, hh = 90, n = meses.length;
@@ -9275,13 +9295,13 @@ function renderAsistencias(){
     const total = series.flat().reduce((a,b)=> a+b, 0);
     const selEst = asisSel && asisSel.estilo===e.nombre;
     return `<div class="asis-est ${selEst || (asisSel && e.slots.includes(asisSel.slot)) ? 'sel' : ''}" data-estilo="${escHtml(e.nombre)}">
-      <div class="asis-est-h"><b>${escHtml(e.nombre)}</b><small>${total.toLocaleString('es-AR')} asist.</small></div>
+      <div class="asis-est-h"><b>${escHtml(e.nombre)}</b><small>${total.toLocaleString('es-AR')} ${T.corta}</small></div>
       <svg viewBox="0 0 ${w} ${hh}">${lineas}</svg>
-      <div class="asis-ley">${e.slots.map((i,k)=> `<span data-slot="${i}" class="${asisSel && asisSel.slot===i ? 'sel' : ''}" title="Ver solo este horario"><i style="background:${ASIS_LC[k]}"></i>${asisData.slots[i].dia} ${asisData.slots[i].hora}</span>`).join('')}</div>
+      <div class="asis-ley ${asisData.slots[e.slots[0]].dia ? '' : 'col-hidden'}">${e.slots.map((i,k)=> `<span data-slot="${i}" class="${asisSel && asisSel.slot===i ? 'sel' : ''}" title="Ver solo este horario"><i style="background:${ASIS_LC[k]}"></i>${asisData.slots[i].dia} ${asisData.slots[i].hora}</span>`).join('')}</div>
     </div>`;
   }).join('');
   const act = asisData.hasta ? asisData.hasta.split('-').reverse().join('/') : '';
-  document.getElementById('asisNota').textContent = `Datos de Momoyoga (yoguis con "Asistida" tildado), actualizados al ${act}. Tocá un estilo o un horario para verlo en el gráfico; tocá de nuevo para volver a todas.`;
+  document.getElementById('asisNota').textContent = `${T.nota}, actualizados al ${act}. ${T.toca}`;
 }
 document.getElementById('asisEstilos').addEventListener('click', e=>{
   const sl = e.target.closest('[data-slot]');
