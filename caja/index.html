@@ -3003,7 +3003,7 @@ function suscribirMovimientos(){
 function iniciarListeners(){
   // Pacientes
   unsubPacientes = db.collection('pacientes').orderBy('apellido').onSnapshot(snap=>{
-    pacientesFullList = snap.docs.map(d=> ({id:d.id, ...d.data()}));
+    pacientesFullList = snap.docs.map(d=> ({id:d.id, ...d.data()})).filter(p=> !p.fusionadoCon);   // los duplicados unificados quedan ocultos
     pacienteRegistry = pacientesFullList.map(p=> p.nombreCompleto);
     if(!pausaRenderPaneles && overlayPacientes.classList.contains('show')) renderPacientesBusqueda();
     if(vistaActual==='movimientos') renderTabla();   // para que los nombres se puedan tocar y abran la ficha
@@ -6017,7 +6017,7 @@ function mostrarPortal(){
     suscribirSueros();
     if(!unsubPortalPac){
       unsubPortalPac = db.collection('pacientes').orderBy('apellido').onSnapshot(snap=>{
-        pacientesFullList = snap.docs.map(d=> ({id:d.id, ...d.data()}));
+        pacientesFullList = snap.docs.map(d=> ({id:d.id, ...d.data()})).filter(p=> !p.fusionadoCon);   // los duplicados unificados quedan ocultos
         pacienteRegistry = pacientesFullList.map(p=> p.nombreCompleto);
       });
     }
