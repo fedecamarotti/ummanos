@@ -9230,7 +9230,11 @@ const CP_NOTAS_MAX = 55;   // lo que entra en el casillero de notas (igual en PC
 const CP_PACKS = ['1 / 2 clases','4 clases','8 clases','12 clases'];
 let movSub = 'diarios';
 // Próximo contacto automático: el día después de la clase de prueba
-function cpDiaSiguiente(iso){ const d = new Date(iso+'T12:00:00'); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); }
+function cpDiaSiguiente(iso){
+  const d = new Date(iso+'T12:00:00'); d.setDate(d.getDate()+1);
+  while(d.getDay()===6 || d.getDay()===0) d.setDate(d.getDate()+1);   // si cae sábado o domingo, pasa al lunes
+  return d.toISOString().slice(0,10);
+}
 // Chi Kung solo se dio en septiembre 2026: después no aparece ni en el resumen ni en los desplegables
 function cpClasesDe(ym){ return CP_CLASES.filter(c=> c!=='Chi Kung' || ym==='2026-09'); }
 const cpClasesMes = ()=> cpClasesDe(mesInicioISO().slice(0,7));
