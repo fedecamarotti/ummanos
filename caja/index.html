@@ -9568,8 +9568,10 @@ async function cargarAumentos(){
     const meses = Object.keys(aumData.valores).sort();
     const lbl = ym => { const [y,m] = ym.split('-'); return `${MESES[+m-1]} ${y}`; };
     const opts = sel => meses.map(m=> `<option value="${m}" ${m===sel?'selected':''}>${lbl(m)}</option>`).join('');
-    document.getElementById('aumDesde').innerHTML = opts(meses[0]);
-    document.getElementById('aumHasta').innerHTML = opts(meses[meses.length-1]);
+    // por defecto: de enero del año actual al último mes cargado (hasta el mes actual)
+    const actual = hoyISO().slice(0,7), hasta = [...meses].reverse().find(m=> m <= actual) || meses[meses.length-1];
+    document.getElementById('aumDesde').innerHTML = opts(meses.find(m=> m >= actual.slice(0,4)+'-01') || meses[0]);
+    document.getElementById('aumHasta').innerHTML = opts(hasta);
   }
   renderAumentos();
 }
