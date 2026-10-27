@@ -1114,6 +1114,31 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     #panelContent > .sheet-wrap, .s-panel > .sheet-wrap{max-height:85vh;}
     .topbar{position:static;}
   }
+
+  /* ---------- Celular: tipografía de app (texto base 13px, secundarios 11–12px, títulos 15px) ---------- */
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}   /* que el navegador no agrande el texto por su cuenta */
+  @media (max-width:700px){
+    .bienvenida{font-size:14px;}
+    .topbar .btn{padding:6px 10px;font-size:11px;}
+    .topbar-logo{height:24px;}
+    .modal h2{font-size:15px;}
+    .modal-sub{font-size:11px;}
+    .close-x{font-size:14px;}
+    .btn{font-size:11.5px;}
+    .s-tab{font-size:11px;}
+    body.fede-nav-on #vistaSueros .sueros-bar .s-tab, body.fede-nav-on #vistaCremas .sueros-bar .s-tab, body.fede-nav-on #movSubTabs .s-tab{font-size:10px;padding:5px 9px;}
+    #fedeTabs .s-tab, .fede-nav .s-tab{font-size:11px;}
+    .mes-selector span{font-size:12px;}
+    .mes-selector button{width:28px;height:28px;font-size:11px;}
+    .field label, .hc-campo label{font-size:10px;}
+    .field input, .field select, .field textarea{font-size:13px;}
+    .pf-nombre{font-size:17px;}
+    .asis-tit, .cp-tit{font-size:10px;}
+    th, .th-search, .th-search::placeholder{font-size:9px;}
+    td{font-size:10px;}
+    .fab-nuevo{width:46px;height:46px;}
+    .fab-nuevo svg{width:24px;height:24px;}
+  }
 </style>
 </head>
 <body>
