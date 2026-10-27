@@ -9418,7 +9418,7 @@ async function datosSueroterapia(){
   for(let k = SUERO_AUTO_DESDE; k <= actual; ){ meses[k] = [0,0,0]; renta[k] = [0,0,0]; let [y,m] = k.split('-').map(Number); m++; if(m>12){ m=1; y++; } k = `${y}-${String(m).padStart(2,'0')}`; }
   snap.docs.forEach(doc=>{ const m = doc.data(); if(m.tipo!=='ingreso' || !m.fechaISO) return; const k = m.fechaISO.slice(0,7); if(!meses[k]) return;
     const i = m.turno==='M' ? 0 : m.turno==='T' ? 1 : 2; meses[k][i]++; renta[k][i] += Number(m.ummana)||0; });
-  return {slots:[{estilo:'Mañana y tarde', dia:'Mañana', hora:'', color:'#6f9fd0'}, {estilo:'Mañana y tarde', dia:'Tarde', hora:'', color:'#e8975a'}, {estilo:'Sin asignar', dia:'Sin asignar', hora:'', oculto:true}],
+  return {slots:[{estilo:'Mañana vs Tarde', dia:'Mañana', hora:'', color:'#6f9fd0'}, {estilo:'Mañana vs Tarde', dia:'Tarde', hora:'', color:'#e8975a'}, {estilo:'Sin asignar', dia:'Sin asignar', hora:'', oculto:true}],
     meses, mesesRenta: renta, hasta: hoyISO()};
 }
 const ASIS_TIPOS = {
@@ -9527,7 +9527,7 @@ function renderAsistencias(){
     const ocultos = asisData.slots.map((sl,i)=> sl.oculto ? i : -1).filter(i=> i>=0);
     const sinAsig = ocultos.reduce((a,i)=> a + meses.reduce((b,m)=> b + ((asisData.meses[m]||[])[i]||0), 0), 0);
     if(asisTipo==='sueroterapia') return `<div class="asis-est asis-info">
-      <div class="asis-est-h"><b>${escHtml(e.nombre)}</b><small>${renta ? fmtTot(total) : total.toLocaleString('es-AR') + ' ' + T.corta}${sinAsig ? ` <span style="color:#c0705a">(${sinAsig} sin asignar)</span>` : ''}</small></div>
+      <div class="asis-est-h"><div class="asis-tit">${escHtml(e.nombre)}</div><small>${renta ? fmtTot(total) : total.toLocaleString('es-AR') + ' ' + T.corta}${sinAsig ? ` <span style="color:#c0705a">(${sinAsig} sin asignar)</span>` : ''}</small></div>
       <svg viewBox="0 0 ${w} ${hh}">${lineas}${extra}</svg>
       <div class="asis-ley">${e.slots.map((i,k)=> `<span><i style="background:${colorSlot(i,k)}"></i>${asisData.slots[i].dia}</span>`).join('')}</div>
     </div>`;
