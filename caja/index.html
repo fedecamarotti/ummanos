@@ -1806,6 +1806,13 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
           <tbody id="vcDeudTbody"></tbody>
         </table>
       </div>
+      <div class="sheet-wrap vc-deud col-hidden" id="vcDeudVicWrap">
+        <table class="tabla-vc">
+          <colgroup><col style="width:34px"><col style="width:66px"><col><col style="width:140px"></colgroup>
+          <thead><tr><th class="editcol"></th><th colspan="3"><div class="th-search th-search-left">Deuda Victoria</div></th></tr></thead>
+          <tbody id="vcDeudVicTbody"></tbody>
+        </table>
+      </div>
     </div>
    </div><!-- /#vistaConta -->
 
@@ -4132,6 +4139,7 @@ function renderDeudoresCount(){
   const b2 = document.getElementById('mSubDeudoresN');
   if(b2){ b2.textContent = pendientes.length; b2.classList.toggle('col-hidden', !pendientes.length); }
   document.getElementById('menuDot').classList.toggle('col-hidden', !pendientes.length);
+  if(vistaActual==='conta' && typeof renderConta==='function') renderConta();   // por "Deuda Victoria"
 }
 function renderDeudores(){
   const pendientes = movimientosDeuda;
@@ -8684,12 +8692,18 @@ function vcListaCompleta(){
   return [...contaMovs, ...contaAuto].sort((a,b)=> a.fechaISO===b.fechaISO ? ms(a.creadoEn)-ms(b.creadoEn) : (a.fechaISO<b.fechaISO?-1:1));
 }
 const vcEsDebe = m => m.medio==='debe';
+// Lo que Victoria le debe a Ummana: movimientos donde ella es la paciente/alumna y quedó "Debe" (de cualquier mes)
+function vcDeudaVictoria(){
+  return (movimientosDeuda||[]).filter(d=> vcEsVictoria(d.pac))
+    .map(d=> ({fecha: d.fechaDisplay||'', detalle: [d.prof, d.concepto].filter(Boolean).join(' · '), notas: d.notas||'', moneda: d.moneda==='USD' ? 'USD' : '$', valor: Number(d.valor)||0}));
+}
+const vcDeudaFilaHTML = d => `<td>${vcEsc(d.fecha)}</td><td class="left">${vcEsc(d.detalle)}${d.notas ? ` <span class="vc-extra">— ${vcEsc(d.notas)}</span>` : ''}</td><td class="deb">${vcMonto(d.valor, d.moneda)}</td>`;
 const vcMesIni = ()=> `${mesConta.year}-${String(mesConta.month).padStart(2,'0')}-01`;
 const vcMesFin = ()=>{ let y = mesConta.year, m = mesConta.month+1; if(m>12){ m=1; y++; } return `${y}-${String(m).padStart(2,'0')}-01`; };
 const vcEsc = t => String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const vcMonto = (v, mon) => (mon==='USD' ? 'USD ' : '$') + Math.round(Math.abs(v)).toLocaleString('es-AR');
 const vcFecha = iso => { const [y,m,d] = iso.split('-'); return `${d}/${m}`; };
-const vcDetalleHTML = m => (m.detalle==='Cobrado por Victoria' ? '<b>Cobrado por Victoria</b>' : vcEsc(m.detalle)) + (m.extra ? ` <span class="vc-extra">— ${vcEsc(m.extra)}</span>` : '');
+const vcDetalleHTML = m => vcEsc(m.detalle) + (m.extra ? ` <span class="vc-extra">— ${vcEsc(m.extra)}</span>` : '');
 
 function suscribirConta(){
   if(!esFede()) return;
@@ -8731,6 +8745,9 @@ function renderConta(){
   const tb = document.getElementById('vcTbody'), tf = document.getElementById('vcTfoot');
   const lista = vcListaCompleta();
   const deudWrap = document.getElementById('vcDeudWrap'); deudWrap.classList.add('col-hidden');
+  const dv = vcDeudaVictoria(), dvWrap = document.getElementById('vcDeudVicWrap');
+  dvWrap.classList.toggle('col-hidden', !dv.length);
+  document.getElementById('vcDeudVicTbody').innerHTML = dv.map(d=> `<tr><td class="editcol"></td>${vcDeudaFilaHTML(d)}</tr>`).join('');
   if(lista==null){ tb.innerHTML = '<tr><td colspan="5" class="empty-state">Cargando…</td></tr>'; tf.innerHTML = ''; return; }
   // Deudores del mes: aparte, sin totales (no son ingresos todavía)
   const deudas = lista.filter(vcEsDebe);
@@ -8919,6 +8936,9 @@ document.getElementById('vcBtnPDF').onclick = ()=>{
     ${tabla('$', 'Movimientos en pesos')}
     ${tabla('USD', 'Movimientos en dólares')}
     ${tablaDeud}
+    ${(()=>{ const dv = vcDeudaVictoria(); return dv.length ? `<div class="bal-h4">Deuda Victoria</div>
+      <table class="bal-tabla bal-deud"><thead><tr><th>Fecha</th><th>Detalle</th><th>Debe</th></tr></thead>
+      <tbody>${dv.map(d=> `<tr>${vcDeudaFilaHTML(d)}</tr>`).join('')}</tbody></table>` : ''; })()}
     <div class="bal-cierre"><div><div class="t">Balance de ${mesTxt}</div></div>
       <div class="v ${bal(principal)<0?'neg':''}">${balTxt(principal)}${secundario ? `<small class="${bal(secundario)<0?'neg':''}">${balTxt(secundario)}</small>` : ''}</div></div>
     <div class="bal-pie"><span>Ummana</span><span>${mesTxt}</span></div>`;
