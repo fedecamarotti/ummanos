@@ -365,7 +365,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .asis-ley i{width:12px;height:3px;border-radius:2px;display:inline-block;}
   .asis-nota{font-size:10.5px;color:var(--muted);margin-top:10px;}
   .asis-grid.cuatro{grid-template-columns:repeat(4,1fr);}
-  .asis-grid.uno{grid-template-columns:minmax(0,520px);}
+  .asis-grid.uno{grid-template-columns:1fr;}
   @media (max-width:800px){ .asis-grid, .asis-grid.cuatro{grid-template-columns:1fr;} .asis-panel{margin:10px;} }
   .inf-proximamente{margin:40px 28px;text-align:center;color:var(--muted);font-size:12.5px;font-weight:500;}
   .pdf-escala{margin:0 auto;}
@@ -9440,13 +9440,15 @@ async function cargarAsistencias(){
     asisData = asisCache[tipo];
   }catch(e){ document.getElementById('asisBarras').innerHTML = `<div class="inf-proximamente">No se pudieron leer las asistencias: ${escHtml(e.message)}</div>`; return; }
   if(!asisData){ document.getElementById('asisBarras').innerHTML = '<div class="inf-proximamente">Todavía no hay datos para este informe.</div>'; return; }
-  const meses = Object.keys(asisData.meses).sort();
+  const mesEnCurso = hoyISO().slice(0,7);
+  // Bienestar: el mes en curso no se mide (se mira a principio del mes siguiente)
+  const meses = Object.keys(asisData.meses).sort().filter(m=> asisTipo==='sueroterapia' || m < mesEnCurso);
   const lbl = ym => { const [y,m] = ym.split('-'); return `${MESES[+m-1]} ${y}`; };
   const opts = sel => meses.map(m=> `<option value="${m}" ${m===sel?'selected':''}>${lbl(m)}</option>`).join('');
   // por defecto: de enero del año actual al mes actual
   const actual = hoyISO().slice(0,7);
   const hasta = meses.includes(actual) ? actual : meses[meses.length-1];
-  const desde = meses.find(m=> m >= actual.slice(0,4)+'-01') || meses[0];
+  const desde = meses.find(m=> m >= hasta.slice(0,4)+'-01') || meses[0];
   document.getElementById('asisDesde').innerHTML = opts(desde);
   document.getElementById('asisHasta').innerHTML = opts(hasta);
   renderAsistencias();
@@ -9481,7 +9483,7 @@ function renderAsistencias(){
   for(let k=0;k<=4;k++){ const v = max*k/4; g += `<line x1="${pad}" x2="${W-10}" y1="${y(v)}" y2="${y(v)}" stroke="#efe7d3"/><text x="${pad-6}" y="${y(v)+3}" font-size="10" text-anchor="end" fill="#9c9179">${fmtV(v)}</text>`; }
   const fs = chico ? (meses.length > 8 ? 9 : 11) : (meses.length > 18 ? 8.5 : 10);
   meses.forEach((m, j)=>{
-    const v = tot[j], act = m===mesActual, gap = Math.min(10, bw*.18);
+    const v = tot[j], act = j===meses.length-1, gap = Math.min(10, bw*.18);
     g += `<rect x="${pad+j*bw+gap/2}" width="${Math.max(1,bw-gap)}" y="${y(v)}" height="${y(0)-y(v)}" rx="${Math.min(5,bw/6)}" fill="${act ? '#c0705a' : '#e3b9a3'}"><title>${corto(m)}: ${fmtTot(v)}${renta ? '' : ' ' + ASIS_TIPOS[asisTipo].unidad}</title></rect>`;
     g += `<text x="${pad+j*bw+bw/2}" y="${y(v)-5}" font-size="${fs}" font-weight="${act?700:400}" text-anchor="middle" fill="#5b5444">${fmtV(v)}</text>`;
     if((chico ? meses.length <= 8 : meses.length <= 18) || j%2===0 || act) g += `<text x="${pad+j*bw+bw/2}" y="${H-8}" font-size="${fs}" text-anchor="middle" fill="${act?'#3a2f1c':'#9c9179'}" font-weight="${act?700:400}">${corto(m)}</text>`;
@@ -9499,16 +9501,24 @@ function renderAsistencias(){
   document.getElementById('asisEstilos').classList.toggle('uno', est.length===1);
   document.getElementById('asisEstilos').innerHTML = est.map(e=>{
     const series = e.slots.map(i=> meses.map(m=> (SRC[m]||[])[i]||0));
-    const mx = Math.max(1, ...series.flat())*1.1, w = 300, hh = 90, n = meses.length;
-    const x = j=> 6 + (n>1 ? j*(w-12)/(n-1) : (w-12)/2), yy = v=> hh-6-(v/mx)*(hh-12);
+    const ancho = est.length===1;   // una sola tarjeta (Sueroterapia): ocupa todo el ancho, con meses y valores
+    const mx = Math.max(1, ...series.flat())*(ancho ? 1.18 : 1.1), w = ancho ? W : 300, hh = ancho ? (chico ? 220 : 190) : 90, n = meses.length;
+    const padX = ancho ? 30 : 6, padB = ancho ? 22 : 6, padT = ancho ? 16 : 6;
+    const x = j=> padX + (n>1 ? j*(w-2*padX)/(n-1) : (w-2*padX)/2), yy = v=> hh-padB-(v/mx)*(hh-padB-padT);
     const lineas = series.map((sr, k)=> `<polyline points="${sr.map((v,j)=> `${x(j)},${yy(v)}`).join(' ')}" fill="none" stroke="${colorSlot(e.slots[k],k)}" stroke-width="${asisSel && asisSel.slot===e.slots[k] ? 3 : 2}" stroke-linejoin="round"/>` + (n ? `<circle cx="${x(n-1)}" cy="${yy(sr[n-1])}" r="3" fill="${colorSlot(e.slots[k],k)}"/>` : '')).join('');
+    let extra = '';
+    if(ancho){
+      meses.forEach((m,j)=>{ if((chico ? n <= 8 : true) || j%2===0) extra += `<text x="${x(j)}" y="${hh-5}" font-size="${chico?11:10}" text-anchor="middle" fill="#9c9179">${corto(m)}</text>`; });
+      series.forEach((sr,k)=> sr.forEach((v,j)=>{ const c = colorSlot(e.slots[k],k); const otro = series[1-k] ? series[1-k][j] : null; const arriba = otro==null || v >= otro;
+        extra += `<circle cx="${x(j)}" cy="${yy(v)}" r="3" fill="${c}"/><text x="${x(j)}" y="${yy(v) + (arriba ? -7 : 14)}" font-size="${chico?10.5:9.5}" font-weight="700" text-anchor="middle" fill="${c}">${fmtV(v)}</text>`; }));
+    }
     const total = series.flat().reduce((a,b)=> a+b, 0);
     const selEst = asisSel && asisSel.estilo===e.nombre;
     const ocultos = asisData.slots.map((sl,i)=> sl.oculto ? i : -1).filter(i=> i>=0);
     const sinAsig = ocultos.reduce((a,i)=> a + meses.reduce((b,m)=> b + ((asisData.meses[m]||[])[i]||0), 0), 0);
     return `<div class="asis-est ${selEst || (asisSel && e.slots.includes(asisSel.slot)) ? 'sel' : ''}" data-estilo="${escHtml(e.nombre)}">
       <div class="asis-est-h"><b>${escHtml(e.nombre)}</b><small>${renta ? fmtTot(total) : total.toLocaleString('es-AR') + ' ' + T.corta}${sinAsig ? ` <span style="color:#c0705a">(${sinAsig} sin asignar)</span>` : ''}</small></div>
-      <svg viewBox="0 0 ${w} ${hh}">${lineas}</svg>
+      <svg viewBox="0 0 ${w} ${hh}">${lineas}${extra}</svg>
       <div class="asis-ley ${asisData.slots[e.slots[0]].dia ? '' : 'col-hidden'}">${e.slots.map((i,k)=> `<span data-slot="${i}" class="${asisSel && asisSel.slot===i ? 'sel' : ''}" title="Ver solo este horario"><i style="background:${colorSlot(i,k)}"></i>${asisData.slots[i].dia} ${asisData.slots[i].hora}</span>`).join('')}</div>
     </div>`;
   }).join('');
