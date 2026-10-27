@@ -254,8 +254,17 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .cp-pk{display:flex;justify-content:space-between;padding:2px 0;border-top:1px solid #efe6d0;}
   .cp-pk.tot{background:#f4eeda;margin:0 -12px -8px;padding:3px 12px;font-weight:700;border-radius:0 0 12px 12px;}
   .cp-hoja{flex:1;min-height:0;margin:10px 28px 20px;overflow:auto;}
-  .cp-lado{display:flex;flex-direction:column;gap:8px;min-width:0;}
-  .cp-lado .btn{padding:7px 10px;font-size:11.5px;width:100%;}
+  .cp-tit-fila{display:flex;justify-content:space-between;align-items:center;}
+  .cp-toggle{border:1px solid var(--border);background:#fffcf5;color:#9c8250;border-radius:6px;width:24px;height:20px;padding:0;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;}
+  .cp-toggle:hover{background:#f0e8cf;}
+  .cp-arriba.min .cp-plegable{display:none;}
+  .cp-arriba.min .cp-tit{margin-bottom:0;}
+  .cp-arriba.min .cp-toggle svg{transform:rotate(180deg);}
+  .fab-nuevo{position:fixed;right:24px;bottom:24px;z-index:50;width:54px;height:54px;border-radius:50%;border:1px solid #d9c9a3;background:#e8dcc0;color:#8a6f3c;font-size:32px;font-weight:300;line-height:1;display:flex;align-items:center;justify-content:center;padding:0 0 3px;cursor:pointer;box-shadow:0 3px 10px rgba(80,60,20,.18);}
+  .fab-nuevo:hover{background:#dfd0ad;}
+  #vistaMovimientos.col-hidden .fab-nuevo{display:none;}
+  #panelContent > .sheet-wrap, .cp-hoja{padding-bottom:64px;}   /* que el + flotante no tape la última fila */
+  @media (max-width:700px){ .fab-nuevo{right:16px;bottom:16px;width:50px;height:50px;} }
   .cp-tabla{width:100%;min-width:1236px;table-layout:fixed;border-collapse:collapse;}
   .cp-tabla th{font-size:9px;padding:3px 4px;line-height:1.1;text-align:center;white-space:normal;}
   .cp-tabla input[type=date]{text-align:center;}
@@ -1482,7 +1491,6 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <button class="s-tab" data-msub="cajas" id="mSubCajas">Cajas</button>
         <button class="s-tab" data-msub="pacientes"><span class="t-largo">Pacientes/alumnos</span><span class="t-corto">Pacientes</span></button>
         <button class="s-tab s-tab-badge" data-msub="deudores">Deudores <span class="badge-count col-hidden" id="mSubDeudoresN">0</span></button>
-        <button class="s-tab s-tab-nuevo" data-msub="nuevo"><span class="t-largo">+ Nuevo mov.</span><span class="t-corto">+ Nuevo</span></button>
       </div>
       <div></div>
     </div>
@@ -1543,19 +1551,19 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       </div>
     </div>
 
+    <button class="fab-nuevo" id="fabNuevo" title="Nuevo movimiento" aria-label="Nuevo">+</button>
     <!-- ============ CLASES DE PRUEBA (subsección de Movimientos) ============ -->
     <div class="cp-panel col-hidden" id="cpPanel">
       <div class="cp-arriba">
         <div class="cp-card">
-          <div class="cp-tit" id="cpTitResumen">Resumen</div>
-          <div class="cp-scroll"><table class="cp-res" id="cpResumen"></table></div>
-        </div>
-        <div class="cp-lado">
-          <button class="btn btn-primary" id="cpNueva">+ Nueva clase de prueba</button>
-          <div class="cp-card cp-packs">
-            <div class="cp-tit">Packs vendidos</div>
-            <div id="cpPacks"></div>
+          <div class="cp-tit cp-tit-fila"><span id="cpTitResumen">Resumen</span>
+            <button type="button" class="cp-toggle" id="cpToggle" title="Minimizar" aria-label="Minimizar resumen"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3.5 9.5 8 5l4.5 4.5M3.5 13 8 8.5l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
           </div>
+          <div class="cp-scroll cp-plegable"><table class="cp-res" id="cpResumen"></table></div>
+        </div>
+        <div class="cp-card cp-packs">
+          <div class="cp-tit">Packs vendidos</div>
+          <div id="cpPacks" class="cp-plegable"></div>
         </div>
       </div>
       <div class="sheet-wrap cp-hoja">
@@ -3196,6 +3204,7 @@ function renderTabla(){
 function renderTotalesCaja(filas){
   const tf = document.getElementById('tfootCaja');
   if(!tf) return;
+  tf.innerHTML = ''; return;   // sin totales: mezclaban cosas que no se cuentan (deudas, lo cobrado por el profesional…)
   if(!filas.length){ tf.innerHTML = ''; return; }
   let pesos = 0, usd = 0, hayUsd = false;
   filas.forEach(m=>{
@@ -9042,7 +9051,7 @@ function cpnLlenarClases(){
   const cl = cpClasesDe((document.getElementById('cpnFecha').value||'').slice(0,7));
   sel.innerHTML = '<option value="">Elegí la clase…</option>' + cl.map(c=> `<option ${c===actual?'selected':''}>${escHtml(c)}</option>`).join('');
 }
-document.getElementById('cpNueva').onclick = ()=>{
+function cpAbrirNueva(){
   const hoy = hoyISO();
   document.getElementById('cpnFecha').value = hoy >= mesInicioISO() && hoy < mesFinISO() ? hoy : mesInicioISO();
   document.getElementById('cpnClase').value = '';
@@ -9051,7 +9060,20 @@ document.getElementById('cpNueva').onclick = ()=>{
   document.getElementById('cpnAlumno').value = '';
   ovCpNueva.classList.add('show');
   setTimeout(()=> document.getElementById('cpnClase').focus(), 50);
+}
+// "+" flotante: en Clases de prueba carga una clase; en el resto, un movimiento
+document.getElementById('fabNuevo').onclick = ()=>{
+  if(movSub==='prueba') cpAbrirNueva();
+  else document.getElementById('btnNuevo').click();
 };
+// Resumen + packs de clases de prueba: se pueden minimizar (queda recordado en este navegador)
+(function(){
+  const arriba = document.querySelector('.cp-arriba'), bt = document.getElementById('cpToggle');
+  const aplicar = min=>{ arriba.classList.toggle('min', min); bt.title = min ? 'Expandir' : 'Minimizar'; bt.setAttribute('aria-label', bt.title + ' resumen'); };
+  let min = false; try{ min = localStorage.getItem('cpResumenMin')==='1'; }catch(_){}
+  aplicar(min);
+  bt.onclick = ()=>{ min = !arriba.classList.contains('min'); aplicar(min); try{ localStorage.setItem('cpResumenMin', min?'1':'0'); }catch(_){} };
+})();
 document.getElementById('cpnFecha').addEventListener('change', cpnLlenarClases);
 const cpnCerrar = ()=> ovCpNueva.classList.remove('show');
 document.getElementById('cpnCerrar').onclick = cpnCerrar;
