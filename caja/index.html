@@ -9222,7 +9222,10 @@ async function cargarAsistencias(){
   const meses = Object.keys(asisData.meses).sort();
   const lbl = ym => { const [y,m] = ym.split('-'); return `${MESES[+m-1]} ${y}`; };
   const opts = sel => meses.map(m=> `<option value="${m}" ${m===sel?'selected':''}>${lbl(m)}</option>`).join('');
-  const hasta = meses[meses.length-1], desde = meses[Math.max(0, meses.length-12)];
+  // por defecto: de enero del año actual al mes actual
+  const actual = hoyISO().slice(0,7);
+  const hasta = meses.includes(actual) ? actual : meses[meses.length-1];
+  const desde = meses.find(m=> m >= actual.slice(0,4)+'-01') || meses[0];
   document.getElementById('asisDesde').innerHTML = opts(desde);
   document.getElementById('asisHasta').innerHTML = opts(hasta);
   renderAsistencias();
