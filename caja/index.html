@@ -375,7 +375,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .asis-nota{font-size:10.5px;color:var(--muted);margin-top:10px;}
   .asis-grid.cuatro{grid-template-columns:repeat(4,1fr);}
   .asis-grid.uno{grid-template-columns:1fr;}
-  @media (max-width:800px){ .asis-grid, .asis-grid.cuatro{grid-template-columns:1fr;} .asis-panel{margin:10px;} }
+  @media (max-width:800px){ .asis-grid, .asis-grid.cuatro{grid-template-columns:1fr 1fr;gap:8px;} .asis-grid.uno{grid-template-columns:1fr;} .asis-panel{margin:10px;} .asis-est{padding:7px 9px;} }
   .inf-proximamente{margin:40px 28px;text-align:center;color:var(--muted);font-size:12.5px;font-weight:500;}
   .pdf-escala{margin:0 auto;}
   .pdf-escala .pdf-hoja{max-width:none;}
@@ -1132,6 +1132,15 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     .topbar{position:static;}
   }
 
+  /* ---------- Celular: todo un 18% más chico (en muchos teléfonos el navegador agranda la página por la letra del sistema) ---------- */
+  @media (max-width:700px){
+    html{zoom:.82;}
+    .asis-head{flex-direction:column;align-items:stretch;}
+    .asis-per{flex-wrap:wrap;justify-content:flex-start;row-gap:6px;}
+    .asis-per select{padding:4px 6px;}
+    .asis-card, .asis-est{min-width:0;}
+    .asis-panel{overflow-x:hidden;}
+  }
   /* ---------- Celular: tipografía de app (texto base 13px, secundarios 11–12px, títulos 15px) ---------- */
   html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}   /* que el navegador no agrande el texto por su cuenta */
   @media (max-width:700px){
