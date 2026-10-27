@@ -336,6 +336,13 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   body.fede-nav-on #vistaInformes > .sueros-bar{margin-top:8px;}
   body.fede-nav-on #vistaInformes .sueros-bar .s-tab{padding:5px 12px;font-size:11px;}
   body.fede-nav-on #vistaInformes .sueros-bar .s-tabs{padding:2px;border-radius:9px;}
+  .sw-mt{position:relative;width:46px;height:22px;border-radius:12px;border:none;background:#e4e1dc;cursor:pointer;padding:0;vertical-align:middle;transition:background .2s;}
+  .sw-mt i{position:absolute;top:2px;left:14px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);font-style:normal;font-size:10px;font-weight:700;line-height:18px;text-align:center;transition:left .2s;}
+  .sw-mt.m{background:#b9d3ec;} .sw-mt.m i{left:2px;color:#2f5f8f;}
+  .sw-mt.t{background:#f5c9a0;} .sw-mt.t i{left:26px;color:#9a5a24;}
+  .asis-per .seg-modo{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-right:6px;}
+  .asis-per .seg-modo button{border:none;background:#fff;padding:5px 11px;font-size:11px;color:var(--text);cursor:pointer;}
+  .asis-per .seg-modo button.on{background:#e6d8b6;font-weight:700;}
   .asis-panel{margin:12px 28px 28px;overflow:auto;flex:1;min-height:0;}
   .asis-card{background:#fffcf5;border:1px solid var(--border);border-radius:14px;padding:14px 16px;}
   .asis-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:6px;}
@@ -358,6 +365,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .asis-ley i{width:12px;height:3px;border-radius:2px;display:inline-block;}
   .asis-nota{font-size:10.5px;color:var(--muted);margin-top:10px;}
   .asis-grid.cuatro{grid-template-columns:repeat(4,1fr);}
+  .asis-grid.uno{grid-template-columns:minmax(0,520px);}
   @media (max-width:800px){ .asis-grid, .asis-grid.cuatro{grid-template-columns:1fr;} .asis-panel{margin:10px;} }
   .inf-proximamente{margin:40px 28px;text-align:center;color:var(--muted);font-size:12.5px;font-weight:500;}
   .pdf-escala{margin:0 auto;}
@@ -1685,6 +1693,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
             <col style="width:78px">
             <col style="width:22%">
             <col>
+            <col style="width:64px">
             <col style="width:104px">
             <col style="width:104px">
             <col style="width:104px">
@@ -1697,6 +1706,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
               <th><input type="text" class="th-search" id="sfFecha" placeholder="Fecha" autocomplete="off"></th>
               <th><input type="text" class="th-search th-search-left" id="sfTercero" placeholder="Paciente/Proveedor" autocomplete="off"></th>
               <th><input type="text" class="th-search" id="sfDetalle" placeholder="Insumos" autocomplete="off"></th>
+              <th><div class="th-search">M/T</div></th>
               <th><input type="text" class="th-search" id="sfTotal" placeholder="Total" autocomplete="off"></th>
               <th><input type="text" class="th-search" id="sfInsumos" placeholder="Insumos" autocomplete="off"></th>
               <th><input type="text" class="th-search" id="sfSabrina" placeholder="Sabrina" autocomplete="off"></th>
@@ -1900,6 +1910,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <div class="s-tabs" role="tablist" aria-label="Informes">
         <button class="s-tab active" data-inf="asistencias">Bienestar - Asistencias</button>
         <button class="s-tab" data-inf="packs">Bienestar - Packs</button>
+        <button class="s-tab" data-inf="sueroterapia">Sueroterapia</button>
         <button class="s-tab s-tab-inactivo" title="Próximamente">Aumentos</button>
         <button class="s-tab s-tab-inactivo" title="Próximamente">Informe mensual</button>
       </div>
@@ -1909,7 +1920,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <div class="asis-card">
         <div class="asis-head">
           <div><div class="asis-tit" id="asisTit">Asistencias por mes</div><div class="asis-sub" id="asisSub"></div></div>
-          <div class="asis-per"><span>Desde</span><select id="asisDesde"></select><span>hasta</span><select id="asisHasta"></select></div>
+          <div class="asis-per"><span class="seg-modo col-hidden" id="asisModo"><button type="button" data-modo="p" class="on">Pacientes</button><button type="button" data-modo="r">Renta</button></span><span>Desde</span><select id="asisDesde"></select><span>hasta</span><select id="asisHasta"></select></div>
         </div>
         <div id="asisBarras" class="asis-barras"><div class="inf-proximamente">Cargando…</div></div>
       </div>
@@ -4881,7 +4892,7 @@ function mostrarVista(v){
     tabs.querySelectorAll('[data-ir]').forEach(b=> b.classList.toggle('active', b.dataset.ir===v));
     document.body.classList.add('fede-nav-on');
   }
-  if(v==='sueros'){ suscribirSueros(); renderSueros(); }
+  if(v==='sueros'){ suscribirSueros(); if(sTabActual==='resumen') sResAlMesActual(); renderSueros(); }
   if(v==='cremas'){ suscribirCremas(); cremasVentas = null; renderCremas(); }
   if(v==='conta'){ suscribirConta(); renderConta(); }
   if(v==='informes') cargarAsistencias();
@@ -4935,7 +4946,7 @@ document.getElementById('sMesNext').onclick = ()=>{
   renderSueros();
 };
 document.querySelectorAll('.s-tab[data-tab]').forEach(b=>{
-  b.onclick = ()=>{ if(suerosLimitado() && b.dataset.tab==='movs') return; sTabActual = b.dataset.tab; renderSueros(); };
+  b.onclick = ()=>{ if(suerosLimitado() && b.dataset.tab==='movs') return; sTabActual = b.dataset.tab; if(sTabActual==='resumen') sResAlMesActual(); renderSueros(); };
 });
 ['sfFecha','sfTercero','sfDetalle','sfTotal','sfInsumos','sfSabrina','sfGabriela','sfUmmana'].forEach(id=>
   document.getElementById(id).addEventListener('input', renderSuerosTabla));
@@ -5063,7 +5074,7 @@ function renderSuerosTabla(){
         && (!f('sfUmmana')   || contiene(vs(r.ummana), f('sfUmmana')));
   });
   if(!filas.length){
-    tb.innerHTML = `<tr><td colspan="9" class="empty-state">${sueros.length ? 'No hay movimientos de sueros en este mes.' : 'Todavía no cargaste movimientos de sueros. Empezá con "+ Nuevo mov."'}</td></tr>`;
+    tb.innerHTML = `<tr><td colspan="10" class="empty-state">${sueros.length ? 'No hay movimientos de sueros en este mes.' : 'Todavía no cargaste movimientos de sueros. Empezá con "+ Nuevo mov."'}</td></tr>`;
     document.getElementById('sTfoot').innerHTML = '';
     return;
   }
@@ -5077,6 +5088,7 @@ function renderSuerosTabla(){
         <td class="left">${m.tercero||''}</td>
         ${esEg ? `<td class="concepto cortable" data-full="${detalleSuero(m).replace(/"/g,'&quot;')}">${detalleSuero(m)}</td>`
                : `<td class="concepto cortable" data-full="${insumosTxt(m).replace(/"/g,'&quot;')}">${insumosHTML(m) || '<span class="pend">—</span>'}</td>`}
+        <td>${esEg ? '' : `<button type="button" class="sw-mt ${m.turno==='M' ? 'm' : m.turno==='T' ? 't' : ''}" data-turno="${m.id}" title="Mañana / sin asignar / tarde"><i>${m.turno||''}</i></button>`}</td>
         <td class="monto total ${esEg?'egreso':'ingreso'}">${m.pagoPendiente ? `<input class="falta-input" data-falta="${m.id}" inputmode="numeric" placeholder="FALTA" title="Escribí el pago y tocá Enter">` : esEg ? fmtPesos(-m.total) : `<span class="total-edit" data-total="${m.id}" title="Tocá para modificar el pago">${fmtPesos(m.total||0)}</span>`}</td>
         <td class="monto">${celdaReparto(r.insumos)}</td>
         <td class="monto">${celdaReparto(r.sabrina)}</td>
@@ -5094,10 +5106,19 @@ function renderSuerosTabla(){
   const c = v => `<td class="monto ${v<0?'neg':''}">${fmtPesos(v)}</td>`;
   document.getElementById('sTfoot').innerHTML = `<tr>
     <td class="editcol"></td>
-    <td colspan="3" class="left">TOTALES <span class="tot-cant">(${filas.length} ${filas.length===1?'movimiento':'movimientos'})</span></td>
+    <td colspan="4" class="left">TOTALES <span class="tot-cant">(${filas.length} ${filas.length===1?'movimiento':'movimientos'})</span></td>
     ${c(t.total)}${c(t.insumos)}${c(t.sabrina)}${c(t.gabriela)}${c(t.ummana)}
   </tr>`;
   activarInputsFalta(tb);
+  tb.querySelectorAll('[data-turno]').forEach(b=> b.onclick = e=>{
+    const m = sueros.find(x=> x.id===b.dataset.turno); if(!m) return;
+    const r = b.getBoundingClientRect(), x = (e.clientX - r.left) / r.width;
+    let nuevo = x < 0.4 ? 'M' : x > 0.6 ? 'T' : '';
+    if(nuevo && nuevo===m.turno) nuevo = '';   // tocar el mismo lado lo vuelve a "sin asignar"
+    m.turno = nuevo;
+    b.className = 'sw-mt ' + (nuevo==='M' ? 'm' : nuevo==='T' ? 't' : ''); b.querySelector('i').textContent = nuevo;
+    db.collection('sueros').doc(m.id).update({turno: nuevo}).catch(err=> alert('No se pudo guardar: ' + err.message));
+  });
   ajustarColumna(document.querySelector('.tabla-sueros col:nth-child(3)'), filas.map(m=> m.tercero), '500 10.5px Montserrat, sans-serif', 26, 165);
   tooltipSiCortado(tb);
 }
@@ -5492,7 +5513,9 @@ function ultimoDiaMesISO(){
   return `${y}-${String(m).padStart(2,'0')}-${String(new Date(y, m, 0).getDate()).padStart(2,'0')}`;
 }
 function fechaLarga(iso){ const [y,m,d] = iso.split('-'); return `${Number(d)}/${Number(m)}/${y}`; }
-function sResAlMes(){ sResDesde = sMesInicio(); sResHasta = ultimoDiaMesISO(); }
+function sResAlMes(){ sResDesde = sMesInicio(); sResHasta = sEsMesActual() ? hoyISO() : ultimoDiaMesISO(); }
+// Al entrar a Informes: siempre el mes en curso, del 1 al día de hoy
+function sResAlMesActual(){ mesSueros = {year: hoyRef.getFullYear(), month: hoyRef.getMonth()+1}; sResMesKey = sMesInicio(); sResAlMes(); }
 const INF_PLACEHOLDER = { paciente:'Elegí un paciente…', producto:'Elegí un producto…', proveedor:'Elegí un proveedor…', recupero:'Todas las compras (o elegí una)…' };
 function opcionesInforme(){
   const set = new Set();
@@ -5533,7 +5556,7 @@ function renderResumenSueros(){
   if(sResMesKey !== key || !sResDesde || !sResHasta){ sResMesKey = key; sResAlMes(); }
   if(suerosLimitado() && sInfTipo==='mensual') sInfTipo = 'paciente';
   if(sResDesde > sResHasta){ const t = sResDesde; sResDesde = sResHasta; sResHasta = t; }
-  const esMesCompleto = sResDesde===sMesInicio() && sResHasta===ultimoDiaMesISO();
+  const esMesCompleto = sResDesde===sMesInicio() && (sResHasta===ultimoDiaMesISO() || (sEsMesActual() && sResHasta===hoyISO()));
   document.getElementById('sResDesde').value = sResDesde;
   document.getElementById('sResHasta').value = sResHasta;
   document.getElementById('sResMes').classList.toggle('col-hidden', esMesCompleto);
@@ -6192,7 +6215,7 @@ function portalIr(v){
 document.getElementById('pLogout').onclick = ()=> auth.signOut().then(()=> location.replace('../'));
 document.getElementById('pIrSueros').onclick = ()=>{ if(puedeCargarSueros()) portalIr('sueros'); };
 document.getElementById('pBtnStock').onclick = ()=>{ if(!suerosLimitado()) return; sTabActual = 'stock'; portalIr('extra'); };
-document.getElementById('pBtnInformes').onclick = ()=>{ if(!suerosLimitado()) return; sTabActual = 'resumen'; portalIr('extra'); };
+document.getElementById('pBtnInformes').onclick = ()=>{ if(!suerosLimitado()) return; sTabActual = 'resumen'; sResAlMesActual(); portalIr('extra'); };
 document.getElementById('sBtnVolverPortal').onclick = ()=> portalIr('sueros');
 document.getElementById('sBtnVenc').onclick = ()=>{ sTabActual = 'stock'; mesSueros = {year: hoyRef.getFullYear(), month: hoyRef.getMonth()+1}; renderSueros(); };
 document.getElementById('pVolver').onclick = ()=> location.href = '../';
@@ -9376,14 +9399,32 @@ document.querySelectorAll('#movSubTabs [data-msub]').forEach(b=> b.onclick = ()=
 const ASIS_LC = ['#3d6fb0','#e0913a','#4f9a6a','#b0508a'];
 const ASIS_MES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 let asisData = null, asisSel = null;   // asisSel: {estilo} o {slot}
-let asisTipo = 'asistencias'; const asisCache = {};
+let asisTipo = 'asistencias'; const asisCache = {}; let asisModo = 'p';
+document.getElementById('asisModo').addEventListener('click', e=>{ const b = e.target.closest('[data-modo]'); if(!b || b.dataset.modo===asisModo) return; asisModo = b.dataset.modo; document.querySelectorAll('#asisModo button').forEach(x=> x.classList.toggle('on', x===b)); renderAsistencias(); });
+// Sueroterapia: ene–ago 2026 de la planilla (adminCharts/sueroterapia) + desde sep 2026 automático de Movimientos sueros
+const SUERO_AUTO_DESDE = '2026-09';
+async function datosSueroterapia(){
+  const [d, snap] = await Promise.all([db.collection('adminCharts').doc('sueroterapia').get(), db.collection('sueros').where('fechaISO','>=', SUERO_AUTO_DESDE + '-01').get()]);
+  const base = d.exists ? d.data() : {meses:{}, renta:{}};
+  const meses = {}, renta = {};
+  Object.keys(base.meses||{}).filter(k=> k < SUERO_AUTO_DESDE).forEach(k=>{ meses[k] = base.meses[k].slice(); renta[k] = (base.renta[k]||[0,0,0]).slice(); });
+  const actual = hoyISO().slice(0,7);
+  for(let k = SUERO_AUTO_DESDE; k <= actual; ){ meses[k] = [0,0,0]; renta[k] = [0,0,0]; let [y,m] = k.split('-').map(Number); m++; if(m>12){ m=1; y++; } k = `${y}-${String(m).padStart(2,'0')}`; }
+  snap.docs.forEach(doc=>{ const m = doc.data(); if(m.tipo!=='ingreso' || !m.fechaISO) return; const k = m.fechaISO.slice(0,7); if(!meses[k]) return;
+    const i = m.turno==='M' ? 0 : m.turno==='T' ? 1 : 2; meses[k][i]++; renta[k][i] += Number(m.ummana)||0; });
+  return {slots:[{estilo:'Mañana y tarde', dia:'Mañana', hora:'', color:'#6f9fd0'}, {estilo:'Mañana y tarde', dia:'Tarde', hora:'', color:'#e8975a'}, {estilo:'Sin asignar', dia:'Sin asignar', hora:'', oculto:true}],
+    meses, mesesRenta: renta, hasta: hoyISO()};
+}
 const ASIS_TIPOS = {
   asistencias: {tit:'Asistencias por mes', unidad:'asistencias', corta:'asist.', nota:'Datos de Momoyoga (yoguis con "Asistida" tildado)', toca:'Tocá un estilo o un horario para verlo en el gráfico; tocá de nuevo para volver a todas.', todas:'Todas las clases'},
+  sueroterapia: {tit:'Sueroterapia por mes', unidad:'pacientes', corta:'pacientes', nota:'Enero a agosto 2026: datos de la planilla anterior. Desde septiembre 2026: automático desde Movimientos sueros (cada suero aplicado es un paciente; la renta es la columna Ummana; mañana/tarde según la tecla M/T)', toca:'Tocá Mañana o Tarde para verlo solo en el gráfico.', todas:'Todos los sueros'},
   packs: {tit:'Packs vendidos por mes', unidad:'packs', corta:'packs', nota:'Datos de Momoyoga (packs de créditos BIENESTAR pagados, por fecha de compra; los de miembros cuentan como el pack de su cantidad)', toca:'Tocá un pack para verlo solo en el gráfico; tocá de nuevo para volver a todos.', todas:'Todos los packs'},
 };
 document.querySelectorAll('#vistaInformes [data-inf]').forEach(b=> b.onclick = ()=>{
   if(asisTipo===b.dataset.inf) return;
-  asisTipo = b.dataset.inf; asisSel = null; asisData = null;
+  asisTipo = b.dataset.inf; asisSel = null; asisData = null; asisModo = 'p';
+  document.querySelectorAll('#asisModo button').forEach(x=> x.classList.toggle('on', x.dataset.modo==='p'));
+  document.getElementById('asisModo').classList.toggle('col-hidden', asisTipo!=='sueroterapia');
   document.querySelectorAll('#vistaInformes [data-inf]').forEach(x=> x.classList.toggle('active', x===b));
   cargarAsistencias();
 });
@@ -9393,7 +9434,8 @@ async function cargarAsistencias(){
   document.getElementById('asisTit').textContent = ASIS_TIPOS[asisTipo].tit;
   const tipo = asisTipo;
   try{
-    if(!(tipo in asisCache)){ const d = await db.collection('adminCharts').doc(tipo).get(); asisCache[tipo] = d.exists ? d.data() : null; }
+    if(tipo==='sueroterapia') asisCache[tipo] = await datosSueroterapia();   // siempre al día con lo cargado
+    else if(!(tipo in asisCache)){ const d = await db.collection('adminCharts').doc(tipo).get(); asisCache[tipo] = d.exists ? d.data() : null; }
     if(tipo!==asisTipo) return;
     asisData = asisCache[tipo];
   }catch(e){ document.getElementById('asisBarras').innerHTML = `<div class="inf-proximamente">No se pudieron leer las asistencias: ${escHtml(e.message)}</div>`; return; }
@@ -9416,7 +9458,7 @@ async function cargarAsistencias(){
 }));
 function asisEstilos(){
   const est = [];
-  asisData.slots.forEach((s, i)=>{ let e = est.find(x=> x.nombre===s.estilo); if(!e){ e = {nombre:s.estilo, slots:[]}; est.push(e); } e.slots.push(i); });
+  asisData.slots.forEach((s, i)=>{ if(s.oculto) return; let e = est.find(x=> x.nombre===s.estilo); if(!e){ e = {nombre:s.estilo, slots:[]}; est.push(e); } e.slots.push(i); });
   return est;
 }
 function renderAsistencias(){
@@ -9425,18 +9467,23 @@ function renderAsistencias(){
   const meses = Object.keys(asisData.meses).sort().filter(m=> m>=d && m<=h);
   const est = asisEstilos();
   const slotsSel = asisSel ? (asisSel.slot!=null ? [asisSel.slot] : est.find(e=> e.nombre===asisSel.estilo).slots) : asisData.slots.map((_, i)=> i);
-  const tot = meses.map(m=> slotsSel.reduce((a, i)=> a + (asisData.meses[m][i]||0), 0));
+  const renta = asisTipo==='sueroterapia' && asisModo==='r';
+  const SRC = renta ? asisData.mesesRenta : asisData.meses;
+  const tot = meses.map(m=> slotsSel.reduce((a, i)=> a + ((SRC[m]||[])[i]||0), 0));
+  const fmtV = v=> renta ? (Math.abs(v) >= 1e6 ? '$' + (v/1e6).toLocaleString('es-AR', {maximumFractionDigits:2}) + ' M' : '$' + Math.round(v/1000).toLocaleString('es-AR') + 'k') : Math.round(v).toLocaleString('es-AR');
+  const fmtTot = v=> renta ? fmtPesos(Math.round(v)) : v.toLocaleString('es-AR');
+  const colorSlot = (i,k)=> asisData.slots[i].color || ASIS_LC[k];
   const mesActual = hoyISO().slice(0,7);
   const corto = ym => { const [y,m] = ym.split('-'); return ASIS_MES[+m-1] + (m==='01' || ym===meses[0] ? ' ' + y.slice(2) : ''); };
   // barras
-  const chico = window.innerWidth < 700; const W = chico ? 520 : 1000, H = chico ? 300 : 250, pad = 36, max = Math.max(1, ...tot)*1.12, bw = (W-pad-10)/Math.max(1, meses.length), y = v=> H-24-(v/max)*(H-40);
+  const chico = window.innerWidth < 700; const W = chico ? 520 : 1000, H = chico ? 300 : 250, pad = renta ? 52 : 36, max = Math.max(1, ...tot)*1.12, bw = (W-pad-10)/Math.max(1, meses.length), y = v=> H-24-(v/max)*(H-40);
   let g = '';
-  for(let k=0;k<=4;k++){ const v = max*k/4; g += `<line x1="${pad}" x2="${W-10}" y1="${y(v)}" y2="${y(v)}" stroke="#efe7d3"/><text x="${pad-6}" y="${y(v)+3}" font-size="10" text-anchor="end" fill="#9c9179">${Math.round(v)}</text>`; }
+  for(let k=0;k<=4;k++){ const v = max*k/4; g += `<line x1="${pad}" x2="${W-10}" y1="${y(v)}" y2="${y(v)}" stroke="#efe7d3"/><text x="${pad-6}" y="${y(v)+3}" font-size="10" text-anchor="end" fill="#9c9179">${fmtV(v)}</text>`; }
   const fs = chico ? (meses.length > 8 ? 9 : 11) : (meses.length > 18 ? 8.5 : 10);
   meses.forEach((m, j)=>{
     const v = tot[j], act = m===mesActual, gap = Math.min(10, bw*.18);
-    g += `<rect x="${pad+j*bw+gap/2}" width="${Math.max(1,bw-gap)}" y="${y(v)}" height="${y(0)-y(v)}" rx="${Math.min(5,bw/6)}" fill="${act ? '#c0705a' : '#e3b9a3'}"><title>${corto(m)}: ${v} ${ASIS_TIPOS[asisTipo].unidad}</title></rect>`;
-    g += `<text x="${pad+j*bw+bw/2}" y="${y(v)-5}" font-size="${fs}" font-weight="${act?700:400}" text-anchor="middle" fill="#5b5444">${v}</text>`;
+    g += `<rect x="${pad+j*bw+gap/2}" width="${Math.max(1,bw-gap)}" y="${y(v)}" height="${y(0)-y(v)}" rx="${Math.min(5,bw/6)}" fill="${act ? '#c0705a' : '#e3b9a3'}"><title>${corto(m)}: ${fmtTot(v)}${renta ? '' : ' ' + ASIS_TIPOS[asisTipo].unidad}</title></rect>`;
+    g += `<text x="${pad+j*bw+bw/2}" y="${y(v)-5}" font-size="${fs}" font-weight="${act?700:400}" text-anchor="middle" fill="#5b5444">${fmtV(v)}</text>`;
     if((chico ? meses.length <= 8 : meses.length <= 18) || j%2===0 || act) g += `<text x="${pad+j*bw+bw/2}" y="${H-8}" font-size="${fs}" text-anchor="middle" fill="${act?'#3a2f1c':'#9c9179'}" font-weight="${act?700:400}">${corto(m)}</text>`;
   });
   document.getElementById('asisBarras').innerHTML = `<svg viewBox="0 0 ${W} ${H}">${g}</svg>`;
@@ -9445,21 +9492,24 @@ function renderAsistencias(){
   const nombreSel = asisSel ? (asisSel.slot!=null ? slotNom(asisSel.slot) : asisSel.estilo) : '';
   document.getElementById('asisTit').textContent = T.tit;
   document.getElementById('asisSub').innerHTML = (asisSel ? `Mostrando <b>${escHtml(nombreSel)}</b><button id="asisVerTodas">ver todo</button> · ` : T.todas + ' · ')
-    + `${tot.reduce((a,b)=> a+b, 0).toLocaleString('es-AR')} ${T.unidad} en el período`;
+    + (renta ? `Renta Ummana: ${fmtTot(tot.reduce((a,b)=> a+b, 0))} en el período` : `${tot.reduce((a,b)=> a+b, 0).toLocaleString('es-AR')} ${T.unidad} en el período`);
   const vt = document.getElementById('asisVerTodas'); if(vt) vt.onclick = e=>{ e.stopPropagation(); asisSel = null; renderAsistencias(); };
   // tarjetas por estilo
   document.getElementById('asisEstilos').classList.toggle('cuatro', est.length===4);
+  document.getElementById('asisEstilos').classList.toggle('uno', est.length===1);
   document.getElementById('asisEstilos').innerHTML = est.map(e=>{
-    const series = e.slots.map(i=> meses.map(m=> asisData.meses[m][i]||0));
+    const series = e.slots.map(i=> meses.map(m=> (SRC[m]||[])[i]||0));
     const mx = Math.max(1, ...series.flat())*1.1, w = 300, hh = 90, n = meses.length;
     const x = j=> 6 + (n>1 ? j*(w-12)/(n-1) : (w-12)/2), yy = v=> hh-6-(v/mx)*(hh-12);
-    const lineas = series.map((sr, k)=> `<polyline points="${sr.map((v,j)=> `${x(j)},${yy(v)}`).join(' ')}" fill="none" stroke="${ASIS_LC[k]}" stroke-width="${asisSel && asisSel.slot===e.slots[k] ? 3 : 2}" stroke-linejoin="round"/>` + (n ? `<circle cx="${x(n-1)}" cy="${yy(sr[n-1])}" r="3" fill="${ASIS_LC[k]}"/>` : '')).join('');
+    const lineas = series.map((sr, k)=> `<polyline points="${sr.map((v,j)=> `${x(j)},${yy(v)}`).join(' ')}" fill="none" stroke="${colorSlot(e.slots[k],k)}" stroke-width="${asisSel && asisSel.slot===e.slots[k] ? 3 : 2}" stroke-linejoin="round"/>` + (n ? `<circle cx="${x(n-1)}" cy="${yy(sr[n-1])}" r="3" fill="${colorSlot(e.slots[k],k)}"/>` : '')).join('');
     const total = series.flat().reduce((a,b)=> a+b, 0);
     const selEst = asisSel && asisSel.estilo===e.nombre;
+    const ocultos = asisData.slots.map((sl,i)=> sl.oculto ? i : -1).filter(i=> i>=0);
+    const sinAsig = ocultos.reduce((a,i)=> a + meses.reduce((b,m)=> b + ((asisData.meses[m]||[])[i]||0), 0), 0);
     return `<div class="asis-est ${selEst || (asisSel && e.slots.includes(asisSel.slot)) ? 'sel' : ''}" data-estilo="${escHtml(e.nombre)}">
-      <div class="asis-est-h"><b>${escHtml(e.nombre)}</b><small>${total.toLocaleString('es-AR')} ${T.corta}</small></div>
+      <div class="asis-est-h"><b>${escHtml(e.nombre)}</b><small>${renta ? fmtTot(total) : total.toLocaleString('es-AR') + ' ' + T.corta}${sinAsig ? ` <span style="color:#c0705a">(${sinAsig} sin asignar)</span>` : ''}</small></div>
       <svg viewBox="0 0 ${w} ${hh}">${lineas}</svg>
-      <div class="asis-ley ${asisData.slots[e.slots[0]].dia ? '' : 'col-hidden'}">${e.slots.map((i,k)=> `<span data-slot="${i}" class="${asisSel && asisSel.slot===i ? 'sel' : ''}" title="Ver solo este horario"><i style="background:${ASIS_LC[k]}"></i>${asisData.slots[i].dia} ${asisData.slots[i].hora}</span>`).join('')}</div>
+      <div class="asis-ley ${asisData.slots[e.slots[0]].dia ? '' : 'col-hidden'}">${e.slots.map((i,k)=> `<span data-slot="${i}" class="${asisSel && asisSel.slot===i ? 'sel' : ''}" title="Ver solo este horario"><i style="background:${colorSlot(i,k)}"></i>${asisData.slots[i].dia} ${asisData.slots[i].hora}</span>`).join('')}</div>
     </div>`;
   }).join('');
   const act = asisData.hasta ? asisData.hasta.split('-').reverse().join('/') : '';
