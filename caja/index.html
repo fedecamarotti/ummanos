@@ -8651,6 +8651,15 @@ function vcCalcularAuto(movs){
     }
     if(vcEsVictoria(m.prof)){
       pagos.forEach((p, i)=>{
+        // deudas pendientes de sus pacientes (las debe a Ummana o a ella): van a la columna Debe
+        if(p.medio==='debe' && !p.saldada){
+          out.push({
+            id:`auto_d_${m.id}_${i}`, auto:true, fechaISO:m.fechaISO, tipo:'ingreso', detalle:'Deuda de paciente',
+            extra: (m.pac || '') + (m.jornada ? ' (jornada)' : ''),
+            moneda: m.moneda==='USD' ? 'USD' : '$', valor: Number(p.valor)||0, medio: 'debe', creadoEn: m.creadoEn,
+          });
+          return;
+        }
         if(p.cobradoPor!=='profesional' || p.medio==='debe') return;
         out.push({
           id:`auto_c_${m.id}_${i}`, auto:true, fechaISO:m.fechaISO, tipo:'ingreso', detalle:'Cobrado por Victoria',
