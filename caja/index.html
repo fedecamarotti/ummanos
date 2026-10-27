@@ -442,6 +442,9 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .tabla-cremas td.monto{font-weight:700;white-space:nowrap;}
   .tabla-cremas td.monto.neg{color:#a13a3a;}
   .tabla-cremas .pend{color:#c4b995;font-weight:500;}
+  .indica-col{flex:none;width:170px;}
+  .indica-col select{width:100%;}
+  @media (max-width:520px){ .indica-col{width:130px;} }
   .tabla-cremas select.c-indica{width:100%;padding:3px 6px;font-size:10.5px;border-radius:6px;background:#fdfbf2;}
   .tabla-cremas input.c-cot, .tabla-stock input.c-precio{border:1px solid var(--border);background:#fdfbf2;font-family:inherit;color:var(--text);}
   .tabla-cremas input.c-cot:focus, .tabla-stock input.c-precio:focus, .tabla-cremas select.c-indica:focus{outline:none;border-color:var(--accent);background:#fffcf5;}
@@ -2020,6 +2023,10 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
           <div class="ac-wrap">
             <input type="text" id="selConcepto" placeholder="Elegí primero un profesional/área…" autocomplete="off" disabled>
           </div>
+        </div>
+        <div class="indica-col col-hidden" id="indicaWrap">
+          <label>Indicó</label>
+          <select id="selIndica"></select>
         </div>
         <div class="jornada-col col-hidden" id="jornadaWrap">
           <label>Jornada</label>
@@ -3739,8 +3746,36 @@ function setMovTipo(t, limpiar){
 }
 document.querySelectorAll('#movTipo button').forEach(b=> b.onclick = ()=>{ if(b.dataset.tipo!==movTipo) setMovTipo(b.dataset.tipo, true); });
 
+// Cremas / colágenos / geles: en el desplegable solo lo que tiene stock
+const INDICA_OPCIONES = ['PARTICULAR', 'BARBIERI, VICTORIA', 'BASLINI, GABRIELA'];
+let stockFormListo = false;
+function claveConceptoCrema(prof, c){ return mayus((c.codigo||'').trim()) || mayus((c.concepto||'').trim()); }
+async function cargarStockCremasForm(){
+  stockFormListo = false;
+  try{
+    if(esFede()) suscribirCremas();
+    else {
+      const [si, aj] = await Promise.all([db.collection('cremas').doc('_stockInicial').get(), db.collection('cremas').doc('_ajustes').get()]);
+      cremasInicial = {fecha:'', cantidades:{}, ...(si.exists ? si.data() : {})};
+      cremasAjustes = aj.exists ? (aj.data().items || []) : [];
+    }
+    cremasVentas = null; cargandoVentasCremas = false;
+    await cargarVentasCremas();
+    stockFormListo = true;
+  }catch(e){ console.warn('No se pudo leer el stock de cremas', e); stockFormListo = null; }
+  if(overlay.classList.contains('show') && esProfCremas(selProfesional.value||'')) actualizarSoloConceptos();
+}
+function actualizarIndicaVisible(){
+  const ok = movTipo==='ingreso' && esProfCremas(selProfesional.value||'');
+  document.getElementById('indicaWrap').classList.toggle('col-hidden', !ok);
+}
 function actualizarSoloConceptos(){
-  const opts = (CONCEPTOS[selProfesional.value] || []).filter(c=> tipoConcepto(selProfesional.value, c.concepto)===movTipo);
+  let opts = (CONCEPTOS[selProfesional.value] || []).filter(c=> tipoConcepto(selProfesional.value, c.concepto)===movTipo);
+  if(movTipo==='ingreso' && esProfCremas(selProfesional.value||'') && stockFormListo){
+    const actual = modo==='editar' ? selConcepto.value : null;   // al editar, se mantiene el que ya tenía
+    opts = opts.filter(c=> c.concepto===actual || /salda deuda/i.test(c.concepto) || (stockProducto(claveConceptoCrema(selProfesional.value, c)) || 0) > 0);
+  }
+  actualizarIndicaVisible();
   if(opts.length){
     selConcepto.disabled = false;
     selConcepto.placeholder = "Escribí para buscar…";
@@ -3748,11 +3783,12 @@ function actualizarSoloConceptos(){
   } else {
     selConcepto.disabled = true;
     selConcepto.value = "";
-    selConcepto.placeholder = selProfesional.value.trim() ? "Sin conceptos de este tipo" : "Elegí primero un profesional/área…";
+    selConcepto.placeholder = selProfesional.value.trim() ? (esProfCremas(selProfesional.value) && movTipo==='ingreso' ? "No hay productos con stock" : "Sin conceptos de este tipo") : "Elegí primero un profesional/área…";
     conceptosDisponiblesActual = [];
   }
 }
 function actualizarConceptosDesdeProfesional(){
+  if(esProfCremas(selProfesional.value||'') && stockFormListo===false && !cargandoVentasCremas) cargarStockCremasForm();
   actualizarSoloConceptos();
   actualizarCampoPacienteSegunTipo();
 }
@@ -3817,7 +3853,9 @@ document.getElementById('btnNuevo').onclick = ()=>{
   btnGuardarMov.textContent = "Guardar movimiento";
   btnEliminar.classList.add('col-hidden');
   document.getElementById('inpFechaMovimiento').value = hoyISO();
+  document.getElementById('selIndica').innerHTML = INDICA_OPCIONES.map(o=> `<option>${o}</option>`).join('');
   overlay.classList.add('show');
+  cargarStockCremasForm();
 };
 
 function abrirEdicion(id){
@@ -3852,6 +3890,9 @@ function abrirEdicion(id){
 
   inpValor.value = Number(m.valor).toLocaleString('es-AR');
   setJornada(!!m.jornada && !document.getElementById('jornadaWrap').classList.contains('col-hidden'));
+  { const ind = (cremasExtra[m.id] && cremasExtra[m.id].indica) || m.indicaCrema || 'PARTICULAR';
+    document.getElementById('selIndica').innerHTML = [...new Set([...INDICA_OPCIONES, ind])].map(o=> `<option ${o===ind?'selected':''}>${o}</option>`).join('');
+    actualizarIndicaVisible(); }
   overlay.classList.add('show');
 }
 window.abrirEdicion = abrirEdicion;
@@ -3880,6 +3921,7 @@ function bloquearFechaMovimiento(bloquear){
 })();
 function resetModal(){
   montoAutoSync = null;
+  document.getElementById('indicaWrap').classList.add('col-hidden');
   setJornada(false);
   document.getElementById('jornadaWrap').classList.add('col-hidden');
   bloquearFechaMovimiento(false);
@@ -4107,6 +4149,7 @@ btnGuardarMov.onclick = async ()=>{
       pagos, tieneDeudaPendiente: pendienteDeuda, jornada: movJornada,
       actualizadoEn: firebase.firestore.FieldValue.serverTimestamp(),
     };
+    if(!document.getElementById('indicaWrap').classList.contains('col-hidden')) cambios.indicaCrema = document.getElementById('selIndica').value || 'PARTICULAR';
     await db.collection('movimientos').doc(editingId).update(cambios);
     nuevoMovId = editingId;
   } else {
@@ -4122,6 +4165,7 @@ btnGuardarMov.onclick = async ()=>{
       fechaISO, fechaDisplay, pac: pacValor, prof: selProfesional.value,
       concepto: selConcepto.value, codigo, notas: document.getElementById('inpNotas').value,
       moneda: monedaSel, valor: valorNum, pagos, tieneDeudaPendiente: pendienteDeuda, jornada: movJornada,
+      ...(!document.getElementById('indicaWrap').classList.contains('col-hidden') ? {indicaCrema: document.getElementById('selIndica').value || 'PARTICULAR'} : {}),
       creadoPor: currentUser.nombre, creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
       cajaId: cajaActual ? cajaActual.id : 'SIN_CAJA',
     });
@@ -6610,7 +6654,7 @@ function calcularCrema(m){
   // Pago px: lo cargado en la caja, salvo que en esta planilla se haya puesto el valor en pesos (pagos en dólares, por ejemplo)
   const pagoEditado = ex.pagoPx!=null && ex.pagoPx!=='';
   const pago = pagoEditado ? Number(ex.pagoPx) : (Number(m.valor)||0);
-  const indica = ex.indica || PARTICULAR;
+  const indica = ex.indica || m.indicaCrema || PARTICULAR;   // en la planilla se puede cambiar; si no, lo que se eligió al cargar la venta
   const cot = Number(ex.cot)||0;
   const costo = prod.costo!=null && prod.costo!=='' ? Number(prod.costo) : null;
   const colageno = esColageno(m.prof);
