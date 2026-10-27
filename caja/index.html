@@ -1135,6 +1135,14 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   /* ---------- Celular: todo un 18% más chico (en muchos teléfonos el navegador agranda la página por la letra del sistema) ---------- */
   @media (max-width:700px){
     html{zoom:.82;}
+    /* con zoom, las alturas "de pantalla" (vh) se achican también: se compensan para que todo llegue hasta abajo */
+    #app:not(.col-hidden){min-height:calc(100dvh / .82) !important;}
+    #panelContent > .sheet-wrap, .s-panel > .sheet-wrap{max-height:calc(100dvh / .82 - 30px) !important;}
+    .pf-lista, .p-pac-lista{max-height:calc(60vh / .82);}
+    .hc-lista{max-height:calc(56vh / .82);}
+    .csi-lista, .sini-lista{max-height:calc(52vh / .82);}
+    .pdf-fondo{max-height:calc(68vh / .82) !important;}
+    #portal{min-height:calc(100vh / .82);}
     .asis-head{flex-direction:column;align-items:stretch;}
     .asis-per{flex-wrap:wrap;justify-content:flex-start;row-gap:6px;}
     .asis-per select{padding:4px 6px;}
