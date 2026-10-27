@@ -314,6 +314,21 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .pf-area .barra{height:7px;background:#ece2c8;border-radius:4px;}
   .pf-area .barra i{display:block;height:7px;background:#c9b183;border-radius:4px;}
   .pf-total{margin-top:12px;font-size:11px;color:var(--muted);}
+  .pf-btn-hist{width:100%;margin-top:10px;}
+  #pacVistaFicha.ver-hist .pf-cuerpo, #pacVistaFicha.ver-hist #pfAcciones, #pacVistaFicha.ver-hist #pfVolver, #pacVistaFicha.ver-hist .pf-editar-nombre, #pacVistaFicha.ver-hist #pfNombreCampos{display:none !important;}
+  .pf-hist-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+  .pf-hist-chips button{display:inline-flex;align-items:center;gap:5px;border:1px solid #e0d4b6;border-radius:20px;padding:4px 10px;font-size:10.5px;background:#fff;color:var(--text);cursor:pointer;}
+  .pf-hist-chips button.on{background:#f0e6cc;font-weight:700;border-color:#c9b183;}
+  .pf-hist-chips i{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .pf-hist-res{font-size:11px;color:var(--muted);margin-bottom:6px;}
+  .pf-hist-res b{color:var(--text);}
+  .pf-hist-fila{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid #efe6d0;}
+  .pf-hist-fila .bar{width:4px;align-self:stretch;border-radius:3px;flex:none;}
+  .pf-hist-fila .txt{flex:1;min-width:0;}
+  .pf-hist-fila .meta{font-size:10.5px;color:#9c8250;text-transform:uppercase;letter-spacing:.2px;}
+  .pf-hist-fila .con{font-size:13px;font-weight:700;color:var(--text);margin-top:1px;}
+  .pf-hist-fila .tot{font-weight:700;color:#2f7a2f;white-space:nowrap;text-align:right;}
+  .pf-hist-fila .tot small{display:block;font-size:9.5px;color:#b26a00;font-weight:600;}
   .pf-total b{color:var(--text);}
   .pac-link{cursor:pointer;}
   .pac-link:hover{text-decoration:underline;color:var(--accent-dk);}
@@ -2432,6 +2447,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <!-- Ficha -->
     <div id="pacVistaFicha" class="col-hidden">
       <button class="btn hc-volver" id="pfVolver">← Pacientes</button>
+      <button class="btn hc-volver col-hidden" id="pfVolverFicha">← Ficha</button>
       <div class="pf-cabeza">
         <div class="pf-nombre" id="pfNombre"></div>
         <button type="button" class="pf-editar-nombre" id="pfEditarNombre" title="Corregir apellido o nombre">✏️</button>
@@ -2439,6 +2455,12 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <div class="pf-nombre-campos col-hidden" id="pfNombreCampos">
         <div class="field"><label>Apellido</label><input type="text" id="pfApellido"></div>
         <div class="field"><label>Nombre</label><input type="text" id="pfNombreIn"></div>
+      </div>
+      <div class="pf-hist col-hidden" id="pfHist">
+        <div class="pf-areas-tit">Historial</div>
+        <div class="pf-hist-chips" id="pfHistChips"></div>
+        <div class="pf-hist-res" id="pfHistRes"></div>
+        <div id="pfHistLista"></div>
       </div>
       <div class="pf-cuerpo">
         <div class="pf-datos">
@@ -2450,12 +2472,15 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
             <div class="pf-ref col-hidden" id="pfRefWrap"><label>Referido por</label><input type="text" id="pfReferido" placeholder="¿Quién lo refirió?"></div>
           </div>
         </div>
-        <div class="pf-areas">
-          <div class="pf-areas-tit">Áreas de Ummana</div>
-          <div id="pfAreas"></div>
+        <div>
+          <div class="pf-areas">
+            <div class="pf-areas-tit">Áreas de Ummana</div>
+            <div id="pfAreas"></div>
+          </div>
+          <button type="button" class="btn pf-btn-hist" id="pfBtnHist">🧾 Historial</button>
         </div>
       </div>
-      <div class="modal-actions between">
+      <div class="modal-actions between" id="pfAcciones">
         <button class="btn btn-eliminar" id="pfEliminar">Eliminar paciente</button>
         <div style="display:flex;gap:8px;">
           <button class="btn" id="pfCerrar">Cerrar</button>
@@ -7748,6 +7773,8 @@ function abrirFichaPaciente(id){
   if(id && !p) return;
   pfPaciente = p || null;
   const nuevo = !p;
+  if(typeof pfMostrarHist==='function') pfMostrarHist(false);
+  document.getElementById('pfBtnHist').classList.toggle('col-hidden', nuevo);
   document.getElementById('pfNombre').textContent = nuevo ? 'Nuevo paciente' : (p.nombreCompleto || `${p.apellido}, ${p.nombre}`);
   document.getElementById('pfEditarNombre').classList.toggle('col-hidden', nuevo);
   document.getElementById('pfNombreCampos').classList.toggle('col-hidden', !nuevo);
@@ -7804,6 +7831,60 @@ async function renderAreasPaciente(p){
 }
 
 document.getElementById('pfVolver').onclick = ()=>{ pacVistaPanel('lista'); renderPacientesBusqueda(); };
+
+/* ---- Historial del paciente (en la misma ventana de la ficha) ---- */
+const HIST_COLORES = ['#c0705a','#5e8f62','#4f7397','#b48ab8','#c9a24a','#6e9aa0','#8a6f3c','#d0824c','#7a7ab8','#a0b45a'];
+let pfHistMovs = [], pfHistFiltro = null;
+function pfMostrarHist(si){
+  document.getElementById('pacVistaFicha').classList.toggle('ver-hist', si);
+  document.getElementById('pfHist').classList.toggle('col-hidden', !si);
+  document.getElementById('pfVolverFicha').classList.toggle('col-hidden', !si);
+  overlayPacientes.scrollTop = 0;
+}
+document.getElementById('pfVolverFicha').onclick = ()=> pfMostrarHist(false);
+document.getElementById('pfBtnHist').onclick = async ()=>{
+  if(!pfPaciente) return;
+  pfHistFiltro = null; pfHistMovs = [];
+  pfMostrarHist(true);
+  document.getElementById('pfHistChips').innerHTML = ''; document.getElementById('pfHistRes').textContent = '';
+  document.getElementById('pfHistLista').innerHTML = '<div class="pf-total">Buscando…</div>';
+  const p = pfPaciente, nombre = p.nombreCompleto;
+  try{
+    const variantes = [...new Set([nombre, mayus(nombre)])];
+    const snaps = await Promise.all(variantes.map(v=> db.collection('movimientos').where('pac','==', v).get()));
+    if(!pfPaciente || pfPaciente.id!==p.id) return;
+    const docs = {}; snaps.forEach(sn=> sn.docs.forEach(d=> docs[d.id] = {id:d.id, ...d.data()}));
+    const ms = ts => ts && ts.toMillis ? ts.toMillis() : 0;
+    pfHistMovs = Object.values(docs)
+      .filter(m=> !esGastoMov(m) && !/^salda deuda/i.test(m.concepto||'') && !m.saldaDeuda && !(m.saldaDeudas||[]).length)
+      .sort((a,b)=> a.fechaISO===b.fechaISO ? ms(b.creadoEn)-ms(a.creadoEn) : (a.fechaISO<b.fechaISO ? 1 : -1));
+  }catch(e){ document.getElementById('pfHistLista').innerHTML = `<div class="pf-total">No se pudo leer el historial: ${escHtml(e.message)}</div>`; return; }
+  renderPfHist();
+};
+function renderPfHist(){
+  const cuenta = {}; pfHistMovs.forEach(m=> cuenta[m.prof] = (cuenta[m.prof]||0) + 1);
+  const areas = Object.keys(cuenta).sort((a,b)=> cuenta[b]-cuenta[a] || a.localeCompare(b,'es'));
+  const color = {}; areas.forEach((a,i)=> color[a] = HIST_COLORES[i % HIST_COLORES.length]);
+  document.getElementById('pfHistChips').innerHTML = areas.length > 1
+    ? `<button type="button" data-area="" class="${pfHistFiltro ? '' : 'on'}">Todas</button>` + areas.map(a=> `<button type="button" data-area="${escHtml(a)}" class="${pfHistFiltro===a ? 'on' : ''}"><i style="background:${color[a]}"></i>${escHtml(a)}</button>`).join('')
+    : '';
+  const lista = pfHistMovs.filter(m=> !pfHistFiltro || m.prof===pfHistFiltro);
+  if(!lista.length){ document.getElementById('pfHistRes').textContent = ''; document.getElementById('pfHistLista').innerHTML = '<div class="pf-total">Todavía no tiene movimientos.</div>'; return; }
+  let pesos = 0, usd = 0;
+  lista.forEach(m=>{ if(m.moneda==='USD') usd += Number(m.valor)||0; else pesos += Number(m.valor)||0; usd += Number(m.valorUsd)||0; });
+  document.getElementById('pfHistRes').innerHTML = `<b>${lista.length}</b> ${lista.length===1 ? 'ingreso' : 'ingresos'} · total <b>${fmtMonto(pesos,'$')}</b>${usd ? ` + <b>${fmtMonto(usd,'USD')}</b>` : ''}`;
+  const fecha = iso=> { const [y,m,d] = (iso||'').split('-'); return d ? `${+d}/${+m}/${y.slice(2)}` : ''; };
+  document.getElementById('pfHistLista').innerHTML = lista.map(m=>{
+    const debe = pagosDe(m).filter(x=> x.medio==='debe' && !x.saldada).reduce((a,x)=> a + (Number(x.valor)||0), 0);
+    return `<div class="pf-hist-fila"><span class="bar" style="background:${color[m.prof]}"></span>
+      <div class="txt"><div class="meta">${fecha(m.fechaISO)} · ${escHtml(m.prof||'')}</div><div class="con">${escHtml(m.concepto||'')}</div></div>
+      <div class="tot">${fmtTotal(m)}${debe ? `<small>debe ${fmtMonto(debe, m.moneda)}</small>` : ''}</div></div>`;
+  }).join('');
+}
+document.getElementById('pfHistChips').addEventListener('click', e=>{
+  const b = e.target.closest('[data-area]'); if(!b) return;
+  pfHistFiltro = b.dataset.area || null; renderPfHist();
+});
 document.getElementById('pfCerrar').onclick = ()=> overlayPacientes.classList.remove('show');
 document.getElementById('pfGuardar').onclick = async ()=>{
   const nuevo = !pfPaciente;
