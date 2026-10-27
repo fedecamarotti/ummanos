@@ -351,6 +351,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .asis-sub b{color:#c0705a;} .asis-sub button{border:none;background:none;color:#9c8250;cursor:pointer;font-size:11px;text-decoration:underline;padding:0 0 0 6px;}
   .asis-per{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);}
   .mes-anio{display:inline-flex;gap:4px;}
+  .asis-salto{display:none;}
   .asis-per select{font-size:12px;padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:#fff;width:auto;}
   .asis-barras svg{width:100%;height:auto;display:block;}
   .aum-ley{display:flex;gap:18px;font-size:11px;margin-top:4px;}
@@ -1148,7 +1149,11 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     #portal{min-height:calc(100vh / .82);}
     .asis-head{flex-direction:column;align-items:stretch;}
     .asis-per{flex-wrap:wrap;justify-content:flex-start;row-gap:6px;}
-    .asis-per select{padding:4px 6px;}
+    .asis-per select{padding:4px 4px;font-size:11.5px;}
+    .asis-per{flex-wrap:wrap;gap:5px;}
+    .asis-per .asis-salto{display:block;flex-basis:100%;height:0;}   /* Pacientes/Renta arriba; Desde…hasta todo en la línea de abajo */
+    .asis-per .seg-modo.col-hidden + .asis-salto{display:none;}
+    .asis-per .mes-anio{gap:3px;}
     .asis-card, .asis-est{min-width:0;}
     .asis-panel{overflow-x:hidden;}
   }
@@ -1949,7 +1954,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <div class="asis-card">
         <div class="asis-head">
           <div><div class="asis-tit" id="asisTit">Asistencias por mes</div><div class="asis-sub" id="asisSub"></div></div>
-          <div class="asis-per"><span class="seg-modo col-hidden" id="asisModo"><button type="button" data-modo="p" class="on">Pacientes</button><button type="button" data-modo="r">Renta</button></span><span>Desde</span><select id="asisDesde"></select><span>hasta</span><select id="asisHasta"></select></div>
+          <div class="asis-per"><span class="seg-modo col-hidden" id="asisModo"><button type="button" data-modo="p" class="on">Pacientes</button><button type="button" data-modo="r">Renta</button></span><span class="asis-salto"></span><span>Desde</span><select id="asisDesde"></select><span>hasta</span><select id="asisHasta"></select></div>
         </div>
         <div id="asisBarras" class="asis-barras"><div class="inf-proximamente">Cargando…</div></div>
         <div class="asis-filtros col-hidden" id="asisFiltros"></div>
