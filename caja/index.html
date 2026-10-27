@@ -1063,6 +1063,9 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     #cPanelStock .tabla-stock td:nth-child(2), #cPanelStock .tabla-stock th:nth-child(2){position:sticky;left:0;z-index:1;background:#fffcf5;box-shadow:inset -1px 0 0 var(--border);}
     #sPanelStock .tabla-stock th:first-child, #cPanelStock .tabla-stock th:nth-child(2){z-index:4;background:#f4eeda;}
     #sPanelStock .tabla-stock tfoot td:first-child, #cPanelStock .tabla-stock tfoot td:nth-child(2){background:#f4eeda;z-index:3;}
+    .tabla-stock tfoot td{z-index:2;}   /* el pie (totales) queda por encima de las filas fijas a la izquierda */
+    #cPanelStock .tabla-stock tfoot td:first-child, #sPanelStock .tabla-stock tfoot td:first-child{position:sticky;left:0;bottom:0;z-index:3;}
+    #cPanelStock .tabla-stock tfoot td:nth-child(2){left:auto;}   /* en el pie la 2ª celda no es el producto (el título ocupa 3 columnas) */
     #sPanelStock .tabla-stock tr.s-critico td:first-child{background:#fbe3e1;}
     /* modal de sueros: cada insumo en dos/tres renglones */
     .s-items-head, .s-item{grid-template-columns:56px minmax(0,1fr) minmax(0,1fr) 32px;gap:6px;}
