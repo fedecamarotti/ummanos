@@ -8654,7 +8654,7 @@ function vcCalcularAuto(movs){
         if(p.cobradoPor!=='profesional' || p.medio==='debe') return;
         out.push({
           id:`auto_c_${m.id}_${i}`, auto:true, fechaISO:m.fechaISO, tipo:'ingreso', detalle:'Cobrado por Victoria',
-          extra: [m.pac, m.concepto].filter(Boolean).join(' · ') + (m.jornada ? ' (jornada)' : ''),
+          extra: (m.pac || '') + (m.jornada ? ' (jornada)' : ''),
           moneda: m.moneda==='USD' ? 'USD' : '$', valor: Number(p.valor)||0, medio: p.medio||'', creadoEn: m.creadoEn,
         });
       });
