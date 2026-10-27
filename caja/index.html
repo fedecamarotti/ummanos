@@ -350,6 +350,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .asis-sub{font-size:11px;color:var(--muted);margin-top:2px;}
   .asis-sub b{color:#c0705a;} .asis-sub button{border:none;background:none;color:#9c8250;cursor:pointer;font-size:11px;text-decoration:underline;padding:0 0 0 6px;}
   .asis-per{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);}
+  .mes-anio{display:inline-flex;gap:4px;}
   .asis-per select{font-size:12px;padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:#fff;width:auto;}
   .asis-barras svg{width:100%;height:auto;display:block;}
   .aum-ley{display:flex;gap:18px;font-size:11px;margin-top:4px;}
@@ -9413,6 +9414,37 @@ document.querySelectorAll('#movSubTabs [data-msub]').forEach(b=> b.onclick = ()=
   else if(sub==='nuevo') document.getElementById('btnNuevo').click();
 });
 
+/* ---- Períodos: en vez de un desplegable eterno "Enero 2025, Febrero 2025…", dos desplegables (mes y año).
+   El <select> original queda oculto con los valores 'AAAA-MM' y el resto del código lo sigue usando igual. ---- */
+function mesAnioSync(id){
+  const sel = document.getElementById(id); if(!sel) return;
+  let par = document.getElementById(id + 'Par');
+  if(!par){
+    par = document.createElement('span'); par.id = id + 'Par'; par.className = 'mes-anio';
+    par.innerHTML = `<select class="ma-mes" aria-label="Mes"></select><select class="ma-anio" aria-label="Año"></select>`;
+    sel.after(par); sel.classList.add('col-hidden');
+    const cambiar = ()=>{
+      const m = par.querySelector('.ma-mes').value, y = par.querySelector('.ma-anio').value;
+      const disp = [...sel.options].map(o=> o.value);
+      let v = `${y}-${m}`;
+      if(!disp.includes(v)){   // ese mes no está en ese año: el más cercano de ese año
+        const delAnio = disp.filter(x=> x.startsWith(y + '-'));
+        v = delAnio.reduce((a,x)=> Math.abs(+x.slice(5) - +m) < Math.abs(+a.slice(5) - +m) ? x : a, delAnio[0]);
+      }
+      sel.value = v; sel.dispatchEvent(new Event('change'));
+      mesAnioSync(id);
+    };
+    par.querySelector('.ma-mes').onchange = cambiar; par.querySelector('.ma-anio').onchange = cambiar;
+  }
+  const disp = [...sel.options].map(o=> o.value), v = sel.value || disp[disp.length-1] || '';
+  const [y, m] = v.split('-');
+  const anios = [...new Set(disp.map(x=> x.slice(0,4)))];
+  const mesesAnio = disp.filter(x=> x.startsWith(y + '-')).map(x=> x.slice(5));
+  par.querySelector('.ma-anio').innerHTML = anios.map(a=> `<option ${a===y?'selected':''}>${a}</option>`).join('');
+  par.querySelector('.ma-mes').innerHTML = mesesAnio.map(mm=> `<option value="${mm}" ${mm===m?'selected':''}>${MESES[+mm-1]}</option>`).join('');
+}
+function periodoSync(a, b){ mesAnioSync(a); mesAnioSync(b); }
+
 /* =====================================================================
    INFORMES · ASISTENCIAS (datos de Momoyoga: adminCharts/asistencias)
    ===================================================================== */
@@ -9475,11 +9507,13 @@ async function cargarAsistencias(){
   const desde = meses.find(m=> m >= hasta.slice(0,4)+'-01') || meses[0];
   document.getElementById('asisDesde').innerHTML = opts(desde);
   document.getElementById('asisHasta').innerHTML = opts(hasta);
+  periodoSync('asisDesde','asisHasta');
   renderAsistencias();
 }
 ['asisDesde','asisHasta'].forEach(id=> document.getElementById(id).addEventListener('change', e=>{
   const d = document.getElementById('asisDesde'), h = document.getElementById('asisHasta');
   if(d.value > h.value){ if(id==='asisDesde') h.value = d.value; else d.value = h.value; }
+  periodoSync('asisDesde','asisHasta');
   renderAsistencias();
 }));
 function asisEstilos(){
@@ -9572,12 +9606,14 @@ async function cargarAumentos(){
     const actual = hoyISO().slice(0,7), hasta = [...meses].reverse().find(m=> m <= actual) || meses[meses.length-1];
     document.getElementById('aumDesde').innerHTML = opts(meses.find(m=> m >= actual.slice(0,4)+'-01') || meses[0]);
     document.getElementById('aumHasta').innerHTML = opts(hasta);
+    periodoSync('aumDesde','aumHasta');
   }
   renderAumentos();
 }
 ['aumDesde','aumHasta'].forEach(id=> document.getElementById(id).addEventListener('change', ()=>{
   const d = document.getElementById('aumDesde'), h = document.getElementById('aumHasta');
   if(d.value > h.value){ if(id==='aumDesde') h.value = d.value; else d.value = h.value; }
+  periodoSync('aumDesde','aumHasta');
   renderAumentos();
 }));
 function renderAumentos(){
