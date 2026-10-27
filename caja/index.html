@@ -352,6 +352,10 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .asis-per{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);}
   .asis-per select{font-size:12px;padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:#fff;width:auto;}
   .asis-barras svg{width:100%;height:auto;display:block;}
+  .asis-filtros{display:flex;gap:6px;margin-top:4px;}
+  .asis-filtros button{display:inline-flex;align-items:center;gap:6px;border:1px solid #e0d4b6;border-radius:20px;padding:4px 11px;font-size:11px;background:#fff;color:var(--text);cursor:pointer;}
+  .asis-filtros button.on{background:#f3dfd5;border-color:#c0705a;font-weight:700;}
+  .asis-filtros i{width:12px;height:3px;border-radius:2px;display:inline-block;}
   .asis-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px;}
   .asis-est{background:#fffcf5;border:1px solid var(--border);border-radius:12px;padding:9px 12px;cursor:pointer;min-width:0;}
   .asis-est:hover{border-color:#d9c9a3;}
@@ -1923,6 +1927,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
           <div class="asis-per"><span class="seg-modo col-hidden" id="asisModo"><button type="button" data-modo="p" class="on">Pacientes</button><button type="button" data-modo="r">Renta</button></span><span>Desde</span><select id="asisDesde"></select><span>hasta</span><select id="asisHasta"></select></div>
         </div>
         <div id="asisBarras" class="asis-barras"><div class="inf-proximamente">Cargando…</div></div>
+        <div class="asis-filtros col-hidden" id="asisFiltros"></div>
       </div>
       <div class="asis-grid" id="asisEstilos"></div>
       <div class="asis-nota" id="asisNota"></div>
@@ -9490,12 +9495,16 @@ function renderAsistencias(){
   });
   document.getElementById('asisBarras').innerHTML = `<svg viewBox="0 0 ${W} ${H}">${g}</svg>`;
   const T = ASIS_TIPOS[asisTipo];
-  const slotNom = i=> { const sl = asisData.slots[i]; return sl.dia ? `${sl.estilo} · ${sl.dia} ${sl.hora}` : sl.estilo; };
+  const slotNom = i=> { const sl = asisData.slots[i]; return asisTipo==='sueroterapia' ? sl.dia : sl.dia ? `${sl.estilo} · ${sl.dia} ${sl.hora}` : sl.estilo; };
   const nombreSel = asisSel ? (asisSel.slot!=null ? slotNom(asisSel.slot) : asisSel.estilo) : '';
   document.getElementById('asisTit').textContent = T.tit;
   document.getElementById('asisSub').innerHTML = (asisSel ? `Mostrando <b>${escHtml(nombreSel)}</b><button id="asisVerTodas">ver todo</button> · ` : T.todas + ' · ')
     + (renta ? `Renta Ummana: ${fmtTot(tot.reduce((a,b)=> a+b, 0))} en el período` : `${tot.reduce((a,b)=> a+b, 0).toLocaleString('es-AR')} ${T.unidad} en el período`);
   const vt = document.getElementById('asisVerTodas'); if(vt) vt.onclick = e=>{ e.stopPropagation(); asisSel = null; renderAsistencias(); };
+  // Sueroterapia: botones Mañana / Tarde dentro del cuadro de barras, abajo a la izquierda
+  const filt = document.getElementById('asisFiltros');
+  filt.classList.toggle('col-hidden', asisTipo!=='sueroterapia');
+  if(asisTipo==='sueroterapia') filt.innerHTML = asisData.slots.map((sl,i)=> sl.oculto ? '' : `<button type="button" data-slot="${i}" class="${asisSel && asisSel.slot===i ? 'on' : ''}"><i style="background:${sl.color||ASIS_LC[i]}"></i>${escHtml(sl.dia)}</button>`).join('');
   // tarjetas por estilo
   document.getElementById('asisEstilos').classList.toggle('cuatro', est.length===4);
   document.getElementById('asisEstilos').classList.toggle('uno', est.length===1);
@@ -9525,6 +9534,10 @@ function renderAsistencias(){
   const act = asisData.hasta ? asisData.hasta.split('-').reverse().join('/') : '';
   document.getElementById('asisNota').textContent = `${T.nota}, actualizados al ${act}. ${T.toca}`;
 }
+document.getElementById('asisFiltros').addEventListener('click', e=>{
+  const b = e.target.closest('[data-slot]'); if(!b) return;
+  const i = +b.dataset.slot; asisSel = asisSel && asisSel.slot===i ? null : {slot:i}; renderAsistencias();
+});
 document.getElementById('asisEstilos').addEventListener('click', e=>{
   const sl = e.target.closest('[data-slot]');
   if(sl){ const i = +sl.dataset.slot; asisSel = asisSel && asisSel.slot===i ? null : {slot:i}; renderAsistencias(); return; }
