@@ -360,6 +360,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .asis-est{background:#fffcf5;border:1px solid var(--border);border-radius:12px;padding:9px 12px;cursor:pointer;min-width:0;}
   .asis-est:hover{border-color:#d9c9a3;}
   .asis-est.sel{border-color:#c0705a;background:#fbf0ea;}
+  .asis-est.asis-info{cursor:default;} .asis-est.asis-info:hover{border-color:var(--border);}
   .asis-est-h{display:flex;justify-content:space-between;align-items:baseline;}
   .asis-est-h b{font-size:12px;} .asis-est-h small{font-size:10px;color:var(--muted);}
   .asis-est svg{width:100%;height:auto;display:block;margin:4px 0;}
@@ -9422,7 +9423,7 @@ async function datosSueroterapia(){
 }
 const ASIS_TIPOS = {
   asistencias: {tit:'Asistencias por mes', unidad:'asistencias', corta:'asist.', nota:'Datos de Momoyoga (yoguis con "Asistida" tildado)', toca:'Tocá un estilo o un horario para verlo en el gráfico; tocá de nuevo para volver a todas.', todas:'Todas las clases'},
-  sueroterapia: {tit:'Sueroterapia por mes', unidad:'pacientes', corta:'pacientes', nota:'Enero a agosto 2026: datos de la planilla anterior. Desde septiembre 2026: automático desde Movimientos sueros (cada suero aplicado es un paciente; la renta es la columna Ummana; mañana/tarde según la tecla M/T)', toca:'Tocá Mañana o Tarde para verlo solo en el gráfico.', todas:'Todos los sueros'},
+  sueroterapia: {tit:'Sueroterapia por mes', unidad:'pacientes', corta:'pacientes', nota:'Enero a agosto 2026: datos de la planilla anterior. Desde septiembre 2026: automático desde Movimientos sueros (cada suero aplicado es un paciente; la renta es la columna Ummana; mañana/tarde según la tecla M/T)', toca:'Con los botones Mañana y Tarde del gráfico de barras ves solo ese turno.', todas:'Todos los sueros'},
   packs: {tit:'Packs vendidos por mes', unidad:'packs', corta:'packs', nota:'Datos de Momoyoga (packs de créditos BIENESTAR pagados, por fecha de compra; los de miembros cuentan como el pack de su cantidad)', toca:'Tocá un pack para verlo solo en el gráfico; tocá de nuevo para volver a todos.', todas:'Todos los packs'},
 };
 document.querySelectorAll('#vistaInformes [data-inf]').forEach(b=> b.onclick = ()=>{
@@ -9504,7 +9505,7 @@ function renderAsistencias(){
   // Sueroterapia: botones Mañana / Tarde dentro del cuadro de barras, abajo a la izquierda
   const filt = document.getElementById('asisFiltros');
   filt.classList.toggle('col-hidden', asisTipo!=='sueroterapia');
-  if(asisTipo==='sueroterapia') filt.innerHTML = asisData.slots.map((sl,i)=> sl.oculto ? '' : `<button type="button" data-slot="${i}" class="${asisSel && asisSel.slot===i ? 'on' : ''}"><i style="background:${sl.color||ASIS_LC[i]}"></i>${escHtml(sl.dia)}</button>`).join('');
+  if(asisTipo==='sueroterapia') filt.innerHTML = asisData.slots.map((sl,i)=> sl.oculto ? '' : `<button type="button" data-slot="${i}" class="${asisSel && asisSel.slot===i ? 'on' : ''}">${escHtml(sl.dia)}</button>`).join('');
   // tarjetas por estilo
   document.getElementById('asisEstilos').classList.toggle('cuatro', est.length===4);
   document.getElementById('asisEstilos').classList.toggle('uno', est.length===1);
@@ -9514,7 +9515,7 @@ function renderAsistencias(){
     const mx = Math.max(1, ...series.flat())*(ancho ? 1.18 : 1.1), w = ancho ? W : 300, hh = ancho ? (chico ? 220 : 190) : 90, n = meses.length;
     const padX = ancho ? 30 : 6, padB = ancho ? 22 : 6, padT = ancho ? 16 : 6;
     const x = j=> padX + (n>1 ? j*(w-2*padX)/(n-1) : (w-2*padX)/2), yy = v=> hh-padB-(v/mx)*(hh-padB-padT);
-    const lineas = series.map((sr, k)=> `<polyline points="${sr.map((v,j)=> `${x(j)},${yy(v)}`).join(' ')}" fill="none" stroke="${colorSlot(e.slots[k],k)}" stroke-width="${asisSel && asisSel.slot===e.slots[k] ? 3 : 2}" stroke-linejoin="round"/>` + (n ? `<circle cx="${x(n-1)}" cy="${yy(sr[n-1])}" r="3" fill="${colorSlot(e.slots[k],k)}"/>` : '')).join('');
+    const lineas = series.map((sr, k)=> `<polyline points="${sr.map((v,j)=> `${x(j)},${yy(v)}`).join(' ')}" fill="none" stroke="${colorSlot(e.slots[k],k)}" stroke-width="${asisTipo!=='sueroterapia' && asisSel && asisSel.slot===e.slots[k] ? 3 : 2}" stroke-linejoin="round"/>` + (n ? `<circle cx="${x(n-1)}" cy="${yy(sr[n-1])}" r="3" fill="${colorSlot(e.slots[k],k)}"/>` : '')).join('');
     let extra = '';
     if(ancho){
       meses.forEach((m,j)=>{ if((chico ? n <= 8 : true) || j%2===0) extra += `<text x="${x(j)}" y="${hh-5}" font-size="${chico?11:10}" text-anchor="middle" fill="#9c9179">${corto(m)}</text>`; });
@@ -9525,6 +9526,11 @@ function renderAsistencias(){
     const selEst = asisSel && asisSel.estilo===e.nombre;
     const ocultos = asisData.slots.map((sl,i)=> sl.oculto ? i : -1).filter(i=> i>=0);
     const sinAsig = ocultos.reduce((a,i)=> a + meses.reduce((b,m)=> b + ((asisData.meses[m]||[])[i]||0), 0), 0);
+    if(asisTipo==='sueroterapia') return `<div class="asis-est asis-info">
+      <div class="asis-est-h"><b>${escHtml(e.nombre)}</b><small>${renta ? fmtTot(total) : total.toLocaleString('es-AR') + ' ' + T.corta}${sinAsig ? ` <span style="color:#c0705a">(${sinAsig} sin asignar)</span>` : ''}</small></div>
+      <svg viewBox="0 0 ${w} ${hh}">${lineas}${extra}</svg>
+      <div class="asis-ley">${e.slots.map((i,k)=> `<span><i style="background:${colorSlot(i,k)}"></i>${asisData.slots[i].dia}</span>`).join('')}</div>
+    </div>`;
     return `<div class="asis-est ${selEst || (asisSel && e.slots.includes(asisSel.slot)) ? 'sel' : ''}" data-estilo="${escHtml(e.nombre)}">
       <div class="asis-est-h"><b>${escHtml(e.nombre)}</b><small>${renta ? fmtTot(total) : total.toLocaleString('es-AR') + ' ' + T.corta}${sinAsig ? ` <span style="color:#c0705a">(${sinAsig} sin asignar)</span>` : ''}</small></div>
       <svg viewBox="0 0 ${w} ${hh}">${lineas}${extra}</svg>
