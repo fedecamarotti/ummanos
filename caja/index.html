@@ -9630,8 +9630,10 @@ function renderAumentos(){
   const ks = todos.filter(k=> k>=d && k<=h);
   if(!ks.length) return;
   const pag = ks.map(k=> V[k]);
-  const aj = []; let ind = pag[0];
-  ks.forEach((k,j)=>{ aj.push(j===0 || IPC[ks[j-1]]!=null ? ind : null); ind *= 1 + (Number(IPC[k])||0)/100; });
+  // "Valor según IPC": el primer valor hora cargado ajustado mes a mes por IPC, siempre desde el comienzo
+  // (aunque se mire un período más corto), para que se compare de verdad con lo pagado
+  const ajTodos = {}; { let ind = V[todos[0]]; todos.forEach((k,j)=>{ ajTodos[k] = (j===0 || IPC[todos[j-1]]!=null) ? ind : null; ind *= 1 + (Number(IPC[k])||0)/100; }); }
+  const aj = ks.map(k=> ajTodos[k]);
   const ajOk = aj.map((v,j)=> v!=null ? [j,v] : null).filter(Boolean);
   const chico = window.innerWidth < 700;
   const W = chico ? 560 : 1030, H = chico ? 380 : 310, z = chico ? 1.5 : 1, L = chico ? 72 : 56, R = 20, T = chico ? 60 : 34, B = chico ? 36 : 30;
