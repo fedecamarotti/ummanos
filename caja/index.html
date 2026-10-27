@@ -320,6 +320,28 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   body.fede-nav-on #vistaInformes > .sueros-bar{margin-top:8px;}
   body.fede-nav-on #vistaInformes .sueros-bar .s-tab{padding:5px 12px;font-size:11px;}
   body.fede-nav-on #vistaInformes .sueros-bar .s-tabs{padding:2px;border-radius:9px;}
+  .asis-panel{margin:12px 28px 28px;overflow:auto;flex:1;min-height:0;}
+  .asis-card{background:#fffcf5;border:1px solid var(--border);border-radius:14px;padding:14px 16px;}
+  .asis-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:6px;}
+  .asis-tit{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#9c8250;}
+  .asis-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+  .asis-sub b{color:#c0705a;} .asis-sub button{border:none;background:none;color:#9c8250;cursor:pointer;font-size:11px;text-decoration:underline;padding:0 0 0 6px;}
+  .asis-per{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);}
+  .asis-per select{font-size:12px;padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:#fff;width:auto;}
+  .asis-barras svg{width:100%;height:auto;display:block;}
+  .asis-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px;}
+  .asis-est{background:#fffcf5;border:1px solid var(--border);border-radius:12px;padding:9px 12px;cursor:pointer;min-width:0;}
+  .asis-est:hover{border-color:#d9c9a3;}
+  .asis-est.sel{border-color:#c0705a;background:#fbf0ea;}
+  .asis-est-h{display:flex;justify-content:space-between;align-items:baseline;}
+  .asis-est-h b{font-size:12px;} .asis-est-h small{font-size:10px;color:var(--muted);}
+  .asis-est svg{width:100%;height:auto;display:block;margin:4px 0;}
+  .asis-ley{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:10px;}
+  .asis-ley span{display:flex;align-items:center;gap:4px;padding:1px 4px;border-radius:5px;}
+  .asis-ley span.sel{background:#f3dfd5;font-weight:700;}
+  .asis-ley i{width:12px;height:3px;border-radius:2px;display:inline-block;}
+  .asis-nota{font-size:10.5px;color:var(--muted);margin-top:10px;}
+  @media (max-width:800px){ .asis-grid{grid-template-columns:1fr;} .asis-panel{margin:10px;} }
   .inf-proximamente{margin:40px 28px;text-align:center;color:var(--muted);font-size:12.5px;font-weight:500;}
   .pdf-escala{margin:0 auto;}
   .pdf-escala .pdf-hoja{max-width:none;}
@@ -1822,12 +1844,23 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <div class="sueros-bar">
       <div></div>
       <div class="s-tabs" role="tablist" aria-label="Informes">
+        <button class="s-tab active" id="infBtnAsis">Asistencias</button>
         <button class="s-tab s-tab-inactivo" title="Próximamente">Aumentos</button>
         <button class="s-tab s-tab-inactivo" title="Próximamente">Informe mensual</button>
       </div>
       <div></div>
     </div>
-    <div class="inf-proximamente">Estos informes se van a habilitar más adelante.</div>
+    <div class="asis-panel" id="asisPanel">
+      <div class="asis-card">
+        <div class="asis-head">
+          <div><div class="asis-tit" id="asisTit">Asistencias por mes</div><div class="asis-sub" id="asisSub"></div></div>
+          <div class="asis-per"><span>Desde</span><select id="asisDesde"></select><span>hasta</span><select id="asisHasta"></select></div>
+        </div>
+        <div id="asisBarras" class="asis-barras"><div class="inf-proximamente">Cargando…</div></div>
+      </div>
+      <div class="asis-grid" id="asisEstilos"></div>
+      <div class="asis-nota" id="asisNota"></div>
+    </div>
    </div><!-- /#vistaInformes -->
   </div>
 </div>
@@ -4745,6 +4778,7 @@ function mostrarVista(v){
   if(v==='sueros'){ suscribirSueros(); renderSueros(); }
   if(v==='cremas'){ suscribirCremas(); cremasVentas = null; renderCremas(); }
   if(v==='conta'){ suscribirConta(); renderConta(); }
+  if(v==='informes') cargarAsistencias();
 }
 document.getElementById('btnVistaMovimientos').onclick = ()=> mostrarVista('movimientos');
 document.getElementById('btnSueros').onclick = ()=> mostrarVista('sueros');
@@ -9170,6 +9204,87 @@ document.querySelectorAll('#movSubTabs [data-msub]').forEach(b=> b.onclick = ()=
   else if(sub==='pacientes') document.getElementById('btnPacientes').click();
   else if(sub==='deudores') document.getElementById('btnDeudores').click();
   else if(sub==='nuevo') document.getElementById('btnNuevo').click();
+});
+
+/* =====================================================================
+   INFORMES · ASISTENCIAS (datos de Momoyoga: adminCharts/asistencias)
+   ===================================================================== */
+const ASIS_LC = ['#3d6fb0','#e0913a','#4f9a6a','#b0508a'];
+const ASIS_MES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+let asisData = null, asisSel = null;   // asisSel: {estilo} o {slot}
+async function cargarAsistencias(){
+  if(asisData){ renderAsistencias(); return; }
+  try{
+    const d = await db.collection('adminCharts').doc('asistencias').get();
+    asisData = d.exists ? d.data() : null;
+  }catch(e){ document.getElementById('asisBarras').innerHTML = `<div class="inf-proximamente">No se pudieron leer las asistencias: ${escHtml(e.message)}</div>`; return; }
+  if(!asisData){ document.getElementById('asisBarras').innerHTML = '<div class="inf-proximamente">Todavía no hay datos de asistencias.</div>'; return; }
+  const meses = Object.keys(asisData.meses).sort();
+  const lbl = ym => { const [y,m] = ym.split('-'); return `${MESES[+m-1]} ${y}`; };
+  const opts = sel => meses.map(m=> `<option value="${m}" ${m===sel?'selected':''}>${lbl(m)}</option>`).join('');
+  const hasta = meses[meses.length-1], desde = meses[Math.max(0, meses.length-12)];
+  document.getElementById('asisDesde').innerHTML = opts(desde);
+  document.getElementById('asisHasta').innerHTML = opts(hasta);
+  renderAsistencias();
+}
+['asisDesde','asisHasta'].forEach(id=> document.getElementById(id).addEventListener('change', e=>{
+  const d = document.getElementById('asisDesde'), h = document.getElementById('asisHasta');
+  if(d.value > h.value){ if(id==='asisDesde') h.value = d.value; else d.value = h.value; }
+  renderAsistencias();
+}));
+function asisEstilos(){
+  const est = [];
+  asisData.slots.forEach((s, i)=>{ let e = est.find(x=> x.nombre===s.estilo); if(!e){ e = {nombre:s.estilo, slots:[]}; est.push(e); } e.slots.push(i); });
+  return est;
+}
+function renderAsistencias(){
+  if(!asisData) return;
+  const d = document.getElementById('asisDesde').value, h = document.getElementById('asisHasta').value;
+  const meses = Object.keys(asisData.meses).sort().filter(m=> m>=d && m<=h);
+  const est = asisEstilos();
+  const slotsSel = asisSel ? (asisSel.slot!=null ? [asisSel.slot] : est.find(e=> e.nombre===asisSel.estilo).slots) : asisData.slots.map((_, i)=> i);
+  const tot = meses.map(m=> slotsSel.reduce((a, i)=> a + (asisData.meses[m][i]||0), 0));
+  const mesActual = hoyISO().slice(0,7);
+  const corto = ym => { const [y,m] = ym.split('-'); return ASIS_MES[+m-1] + (m==='01' || ym===meses[0] ? ' ' + y.slice(2) : ''); };
+  // barras
+  const chico = window.innerWidth < 700; const W = chico ? 520 : 1000, H = chico ? 300 : 250, pad = 36, max = Math.max(1, ...tot)*1.12, bw = (W-pad-10)/Math.max(1, meses.length), y = v=> H-24-(v/max)*(H-40);
+  let g = '';
+  for(let k=0;k<=4;k++){ const v = max*k/4; g += `<line x1="${pad}" x2="${W-10}" y1="${y(v)}" y2="${y(v)}" stroke="#efe7d3"/><text x="${pad-6}" y="${y(v)+3}" font-size="10" text-anchor="end" fill="#9c9179">${Math.round(v)}</text>`; }
+  const fs = chico ? (meses.length > 8 ? 9 : 11) : (meses.length > 18 ? 8.5 : 10);
+  meses.forEach((m, j)=>{
+    const v = tot[j], act = m===mesActual, gap = Math.min(10, bw*.18);
+    g += `<rect x="${pad+j*bw+gap/2}" width="${Math.max(1,bw-gap)}" y="${y(v)}" height="${y(0)-y(v)}" rx="${Math.min(5,bw/6)}" fill="${act ? '#c0705a' : '#e3b9a3'}"><title>${corto(m)}: ${v} asistencias</title></rect>`;
+    g += `<text x="${pad+j*bw+bw/2}" y="${y(v)-5}" font-size="${fs}" font-weight="${act?700:400}" text-anchor="middle" fill="#5b5444">${v}</text>`;
+    if((chico ? meses.length <= 8 : meses.length <= 18) || j%2===0 || act) g += `<text x="${pad+j*bw+bw/2}" y="${H-8}" font-size="${fs}" text-anchor="middle" fill="${act?'#3a2f1c':'#9c9179'}" font-weight="${act?700:400}">${corto(m)}</text>`;
+  });
+  document.getElementById('asisBarras').innerHTML = `<svg viewBox="0 0 ${W} ${H}">${g}</svg>`;
+  const nombreSel = asisSel ? (asisSel.slot!=null ? `${asisData.slots[asisSel.slot].estilo} · ${asisData.slots[asisSel.slot].dia} ${asisData.slots[asisSel.slot].hora}` : asisSel.estilo) : '';
+  document.getElementById('asisTit').textContent = 'Asistencias por mes';
+  document.getElementById('asisSub').innerHTML = (asisSel ? `Mostrando <b>${escHtml(nombreSel)}</b><button id="asisVerTodas">ver todas</button> · ` : 'Todas las clases · ')
+    + `${tot.reduce((a,b)=> a+b, 0).toLocaleString('es-AR')} asistencias en el período`;
+  const vt = document.getElementById('asisVerTodas'); if(vt) vt.onclick = e=>{ e.stopPropagation(); asisSel = null; renderAsistencias(); };
+  // tarjetas por estilo
+  document.getElementById('asisEstilos').innerHTML = est.map(e=>{
+    const series = e.slots.map(i=> meses.map(m=> asisData.meses[m][i]||0));
+    const mx = Math.max(1, ...series.flat())*1.1, w = 300, hh = 90, n = meses.length;
+    const x = j=> 6 + (n>1 ? j*(w-12)/(n-1) : (w-12)/2), yy = v=> hh-6-(v/mx)*(hh-12);
+    const lineas = series.map((sr, k)=> `<polyline points="${sr.map((v,j)=> `${x(j)},${yy(v)}`).join(' ')}" fill="none" stroke="${ASIS_LC[k]}" stroke-width="${asisSel && asisSel.slot===e.slots[k] ? 3 : 2}" stroke-linejoin="round"/>` + (n ? `<circle cx="${x(n-1)}" cy="${yy(sr[n-1])}" r="3" fill="${ASIS_LC[k]}"/>` : '')).join('');
+    const total = series.flat().reduce((a,b)=> a+b, 0);
+    const selEst = asisSel && asisSel.estilo===e.nombre;
+    return `<div class="asis-est ${selEst || (asisSel && e.slots.includes(asisSel.slot)) ? 'sel' : ''}" data-estilo="${escHtml(e.nombre)}">
+      <div class="asis-est-h"><b>${escHtml(e.nombre)}</b><small>${total.toLocaleString('es-AR')} asist.</small></div>
+      <svg viewBox="0 0 ${w} ${hh}">${lineas}</svg>
+      <div class="asis-ley">${e.slots.map((i,k)=> `<span data-slot="${i}" class="${asisSel && asisSel.slot===i ? 'sel' : ''}" title="Ver solo este horario"><i style="background:${ASIS_LC[k]}"></i>${asisData.slots[i].dia} ${asisData.slots[i].hora}</span>`).join('')}</div>
+    </div>`;
+  }).join('');
+  const act = asisData.hasta ? asisData.hasta.split('-').reverse().join('/') : '';
+  document.getElementById('asisNota').textContent = `Datos de Momoyoga (yoguis con "Asistida" tildado), actualizados al ${act}. Tocá un estilo o un horario para verlo en el gráfico; tocá de nuevo para volver a todas.`;
+}
+document.getElementById('asisEstilos').addEventListener('click', e=>{
+  const sl = e.target.closest('[data-slot]');
+  if(sl){ const i = +sl.dataset.slot; asisSel = asisSel && asisSel.slot===i ? null : {slot:i}; renderAsistencias(); return; }
+  const c = e.target.closest('[data-estilo]'); if(!c) return;
+  const n = c.dataset.estilo; asisSel = asisSel && asisSel.estilo===n ? null : {estilo:n}; renderAsistencias();
 });
 
 // Esc cierra la ventana/desplegable que esté abierto arriba de todo
