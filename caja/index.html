@@ -266,7 +266,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   body:has(.overlay.show) .fab-nuevo{display:none;}   /* que no quede arriba de las ventanas */
   #panelContent > .sheet-wrap, .cp-hoja{padding-bottom:64px;}   /* que el + flotante no tape la última fila */
   @media (max-width:700px){ .fab-nuevo{right:16px;bottom:16px;width:50px;height:50px;} }
-  .cp-tabla{width:100%;min-width:1236px;table-layout:fixed;border-collapse:collapse;}
+  .cp-tabla{width:100%;min-width:1282px;table-layout:fixed;border-collapse:collapse;}
   .cp-tabla th{font-size:9px;padding:3px 4px;line-height:1.1;text-align:center;white-space:normal;}
   .cp-tabla input[type=date]{text-align:center;}
   .cp-tabla input.cp-prox{text-align:center;cursor:pointer;}
@@ -288,7 +288,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .cp-tabla input:focus, .cp-tabla select:focus{border-color:var(--accent) !important;background:#fffcf5 !important;}
   .cp-tabla select.cp-pill{background:#f0e9d6;border-radius:20px;text-align:center;text-align-last:center;}
   .cp-tabla select.cp-pill.vacio{color:var(--muted);}
-  .cp-tabla .cp-notas{color:#5b5e66;}
+  .cp-tabla .cp-notas{color:#5b5e66;font-size:10px;letter-spacing:-.1px;}
   .cp-sw{width:30px;height:17px;border:none;border-radius:10px;background:#e08b87;position:relative;cursor:pointer;padding:0;vertical-align:middle;transition:background .2s;}
   .cp-sw i{position:absolute;top:2px;left:14px;width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:left .2s;}
   .cp-sw.on{background:#86c793;} .cp-sw.on i{left:3px;}
@@ -1694,7 +1694,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       </div>
       <div class="sheet-wrap cp-hoja">
         <table class="cp-tabla">
-          <colgroup><col style="width:78px"><col style="width:126px"><col style="width:66px"><col style="width:160px"><col style="width:44px"><col style="width:44px"><col style="width:54px"><col style="width:92px"><col style="width:78px"><col style="width:54px"><col style="width:400px"><col style="width:30px"></colgroup>
+          <colgroup><col style="width:78px"><col style="width:114px"><col style="width:66px"><col style="width:150px"><col style="width:44px"><col style="width:44px"><col style="width:54px"><col style="width:92px"><col style="width:78px"><col style="width:54px"><col style="width:478px"><col style="width:30px"></colgroup>
           <thead><tr><th>Fecha</th><th>Clase</th><th>Hora</th><th>Alumno/a</th><th>Vino</th><th>Msj<br>prof</th><th>Compró<br>pack</th><th>Pack<br>vendido</th><th>Próx.<br>contacto</th><th>Estado</th><th>Notas</th><th></th></tr></thead>
           <tbody id="cpBody"></tbody>
         </table>
@@ -9233,7 +9233,7 @@ document.querySelectorAll('#fedeTabs [data-ir]').forEach(b=> b.onclick = ()=>{
    ===================================================================== */
 const CP_CLASES = ['Tai Chi Chuan','Meditación','Ashtanga Vinyasa','Ashtanga Mysore','Yoga Suave','Hatha Yoga','Chi Kung'];
 const CP_HORAS = ['8:00','8:30','10:30','12:00','14:00','17:00','18:30'];
-const CP_NOTAS_MAX = 55;   // lo que entra en el casillero de notas (igual en PC y celular)
+const CP_NOTAS_MAX = 70;   // lo que entra en el casillero de notas (igual en PC y celular)
 const CP_PACKS = ['1 / 2 clases','4 clases','8 clases','12 clases'];
 let movSub = 'diarios';
 // Próximo contacto automático: el día después de la clase de prueba
