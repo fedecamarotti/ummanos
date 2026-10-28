@@ -161,6 +161,50 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     .menu-dropdown{clip-path:none;}
   }
 
+  /* ---------- Alertas (campana arriba a la derecha) ---------- */
+  .al-wrap{position:relative;display:flex;align-items:center;}
+  .al-bell{position:relative;border:none;background:none;padding:4px;margin:0 2px;color:#6b5226;display:flex;align-items:center;cursor:pointer;border-radius:8px;}
+  .al-bell:hover, .al-bell[aria-expanded="true"]{background:#f0e8cf;}
+  .al-bell .badge-count{top:-3px;right:-5px;}
+  .al-panel{position:absolute;top:calc(100% + 10px);right:-60px;width:400px;max-width:calc(100vw - 24px);z-index:60;
+    background:#fffcf5;border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 44px rgba(58,47,28,0.18);
+    display:none;flex-direction:column;max-height:calc(100vh - 110px);overflow:hidden;font-size:11px;text-align:left;}
+  .al-panel.open{display:flex;}
+  .al-hd{display:flex;align-items:center;gap:8px;padding:11px 12px 9px 14px;border-bottom:1px solid #efe6d2;}
+  .al-hd b{font-size:13px;flex:1;white-space:nowrap;}
+  .al-btns{display:flex;gap:5px;}
+  .al-chip{border:1px solid var(--border);background:#fbf6ea;border-radius:14px;padding:3px 9px;font-size:9.5px;font-weight:700;color:var(--accent-dk);white-space:nowrap;}
+  .al-chip.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .al-chip.nv{border-color:var(--accent);background:#fff;}
+  .al-filtros{display:flex;gap:5px;padding:8px 14px 0;flex-wrap:wrap;}
+  .al-frm{display:grid;gap:7px;padding:10px 14px 12px;background:#fbf6ea;border-bottom:1px solid var(--border);}
+  .al-frm label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:2px;}
+  .al-frm label .opt{font-weight:500;text-transform:none;letter-spacing:0;color:#b3a98e;}
+  .al-frm input[type=text], .al-frm input[type=date], .al-frm select, .al-frm textarea{width:100%;padding:6px 9px;border:1px solid var(--border);border-radius:8px;background:#fffcf5;font-size:11px;color:var(--text);font-family:inherit;}
+  .al-frm textarea{resize:none;line-height:1.35;}
+  .al-cnt{font-size:8.5px;color:var(--muted);text-align:right;margin-top:1px;}
+  .al-fila{display:flex;gap:6px;align-items:end;} .al-fila > div{flex:1;}
+  .al-acc{justify-content:flex-end;}
+  .al-gd{border:none;background:var(--accent);color:#fff;border-radius:8px;padding:7px 14px;font-weight:700;font-size:11px;}
+  .al-cn{border:1px solid var(--border);background:#fffcf5;color:var(--muted);border-radius:8px;padding:7px 10px;font-weight:600;font-size:11px;}
+  .al-ls{overflow-y:auto;padding:4px 0 8px;flex:1;min-height:0;}
+  .al-vacio{padding:22px 14px;text-align:center;color:var(--muted);font-size:11px;}
+  .al-it{display:flex;align-items:center;gap:9px;height:58px;margin:6px 10px;padding:0 10px 0 12px;border-left:4px solid #d9c9a3;border-radius:8px;background:#fdf9ef;}
+  .al-it.venc{border-left-color:#e05a52;background:#fff4f2;}
+  .al-it.hecha{border-left-color:#86c793;background:#f4f8f2;}
+  .al-it.hecha .al-nm, .al-it.hecha .al-nt{color:#8d918a;}
+  .al-tx{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;}
+  .al-nm{font-weight:700;font-size:10.5px;line-height:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .al-nt{font-size:9.5px;line-height:12px;color:#5b5e66;max-height:24px;overflow:hidden;overflow-wrap:anywhere;}
+  .al-de{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex:none;}
+  .al-vt{font-size:9.5px;font-weight:700;border-radius:10px;padding:2px 7px;background:#f0e9d6;color:var(--accent-dk);white-space:nowrap;}
+  .al-it.venc .al-vt{background:#fdecea;color:#c62828;}
+  .al-rs{font-size:8.5px;color:var(--muted);font-weight:600;letter-spacing:.2px;}
+  .al-ck{width:17px;height:17px;border-radius:50%;border:1.3px solid #c9bb98;background:transparent;color:#b3a77f;display:flex;align-items:center;justify-content:center;flex:none;padding:0;cursor:pointer;transition:background .2s,border-color .2s,color .2s;}
+  .al-ck:hover{border-color:#86c793;color:#86c793;}
+  .al-ck.ok{background:#86c793;border-color:#86c793;color:#fff;}
+  @media (max-width:700px){ .al-panel{position:fixed;top:64px;right:12px;left:12px;width:auto;max-width:none;} }
+
   /* ---------- Vista previa (solo lectura) ---------- */
   body.modo-lectura #tbody .editbtn{visibility:hidden;}
   .preview-banner{
@@ -1648,6 +1692,23 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   <div class="actions">
     <button class="btn col-hidden" id="btnCierre">Cerrar caja</button>
     <button class="btn col-hidden" id="btnVistaPrevia">Vista previa</button>
+    <div class="al-wrap" id="alWrap">
+      <button type="button" class="al-bell" id="alBell" title="Alertas" aria-label="Alertas" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <span class="badge-count col-hidden" id="alN" title="Alertas vencidas">0</span>
+      </button>
+      <div class="al-panel" id="alPanel" role="dialog" aria-label="Alertas">
+        <div class="al-hd"><b id="alTit">Alertas</b><div class="al-btns" id="alBtns"></div></div>
+        <div class="al-filtros col-hidden" id="alFiltros"></div>
+        <div class="al-frm col-hidden" id="alFrm">
+          <div><label>Paciente <span class="opt">(opcional)</span></label><div class="ac-wrap"><input type="text" id="alPac" placeholder="Escribí el nombre…" autocomplete="off" data-ac-libre></div></div>
+          <div><label>Nota</label><textarea id="alNota" rows="2" maxlength="80" placeholder="Hasta 80 caracteres (dos renglones)"></textarea><div class="al-cnt" id="alCnt">0 / 80</div></div>
+          <div class="al-fila"><div><label>Responsable</label><select id="alResp"></select></div><div><label>Vencimiento</label><input type="date" id="alVence"></div></div>
+          <div class="al-fila al-acc"><button type="button" class="al-cn" id="alCancelar">Cancelar</button><button type="button" class="al-gd" id="alGuardar">Guardar</button></div>
+        </div>
+        <div class="al-ls" id="alLista"></div>
+      </div>
+    </div>
     <div class="menu-wrap" id="menuWrap">
       <button class="btn" id="btnMenu" aria-haspopup="true" aria-expanded="false" aria-controls="menuDropdown">
         <span class="menu-icon" aria-hidden="true"><i></i><i></i><i></i></span> Menú
@@ -3330,6 +3391,7 @@ function iniciarListeners(){
   suscribirCpContactos();
   suscribirDvContactos();
   pasarNotasAMayus();
+  suscribirAlertas();
 
   // Sesión de caja abierta (si hay)
   unsubCajaAbierta = db.collection('cajaSesiones').where('cerradaEn','==', null).onSnapshot(async snap=>{
@@ -9829,6 +9891,154 @@ async function pasarNotasAMayus(){
     try{ localStorage.setItem('notasMayus_v1','1'); }catch(_){}
   }catch(e){ console.warn('No se pudieron pasar las notas a mayúsculas', e); }
 }
+
+/* =====================================================================
+   ALERTAS — campana arriba a la derecha (colección "alertas")
+   ===================================================================== */
+const AL_RESP = [['ESTEFANIA','Estefanía Medina'],['ORIANA','Oriana Medina'],['TIARA','Tiara Medina']];
+let alPend = [], alHechas = null, unsubAl = null, unsubAlHechas = null;
+let alVista = 'pend';          // 'pend' | 'hechas'
+let alFiltro = null;           // null = todas, o 'ESTEFANIA' / 'ORIANA' / 'TIARA'
+// Responsable que corresponde al usuario que entró (las recepcionistas); Fede y Pedro no tienen
+function alMia(){
+  const pn = primerNombre();
+  if(/^(TIA)/.test(pn)) return 'TIARA';
+  if(/^(ORI)/.test(pn)) return 'ORIANA';
+  if(/^(EST|STE)/.test(pn)) return 'ESTEFANIA';
+  return null;
+}
+const alEsAdmin = ()=> currentUser && currentUser.rol === 'admin';
+const alLabel = r=> r==='ESTEFANIA' ? 'ESTEFANIA' : (r || '');
+const alVencida = a=> !a.hecha && a.vence && a.vence <= hoyISO();
+function suscribirAlertas(){
+  if(unsubAl) return;
+  alFiltro = alEsAdmin() ? null : alMia();
+  unsubAl = db.collection('alertas').where('hecha','==',false).onSnapshot(snap=>{
+    alPend = snap.docs.map(d=> ({id:d.id, ...d.data()}));
+    renderAlertasCount(); if(alVista==='pend') renderAlertas();
+  }, err=> console.warn('No se pudieron leer las alertas', err));
+  setInterval(renderAlertasCount, 5*60*1000);
+}
+// Globito: las vencidas (o que vencen hoy) que ve cada una por defecto: las recepcionistas las suyas, Fede y Pedro todas
+function renderAlertasCount(){
+  const mia = alEsAdmin() ? null : alMia();
+  const n = alPend.filter(a=> alVencida(a) && (!mia || a.responsable===mia)).length;
+  const b = document.getElementById('alN');
+  b.textContent = n; b.classList.toggle('col-hidden', !n);
+}
+const alCk = ok=> `<button type="button" class="al-ck${ok?' ok':''}" title="${ok?'Volver a pendientes':'Marcar como hecha'}"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>`;
+function renderAlertas(){
+  const admin = alEsAdmin(), mia = alMia();
+  const tit = document.getElementById('alTit'), btns = document.getElementById('alBtns'), fil = document.getElementById('alFiltros');
+  if(alVista==='hechas'){
+    tit.textContent = 'Tareas realizadas';
+    btns.innerHTML = `<button type="button" class="al-chip" data-al="pend">← Pendientes</button>`;
+  } else {
+    tit.textContent = admin ? 'Alertas' : (alFiltro ? 'Mis alertas' : 'Todas las alertas');
+    btns.innerHTML = `<button type="button" class="al-chip nv" data-al="nueva">+ Nueva</button>`
+      + (!admin && mia ? `<button type="button" class="al-chip" data-al="toggle">${alFiltro ? 'Todas' : 'Mis alertas'}</button>` : '')
+      + `<button type="button" class="al-chip" data-al="hechas">Realizadas</button>`;
+  }
+  // Fede y Pedro: filtro por responsable
+  fil.classList.toggle('col-hidden', !admin);
+  if(admin) fil.innerHTML = [[null,'Todas'], ...AL_RESP.map(([k,l])=> [k, l.split(' ')[0]])]
+    .map(([k,l])=> `<button type="button" class="al-chip${alFiltro===k?' on':''}" data-alf="${k||''}">${l}</button>`).join('');
+  const ls = document.getElementById('alLista');
+  let lista;
+  if(alVista==='hechas'){
+    if(alHechas==null){ ls.innerHTML = '<div class="al-vacio">Cargando…</div>'; return; }
+    const ms = ts => ts && ts.toMillis ? ts.toMillis() : Date.now();
+    lista = alHechas.filter(a=> !alFiltro || a.responsable===alFiltro).sort((a,b)=> ms(b.hechaEn)-ms(a.hechaEn)).slice(0,150);
+  } else {
+    lista = alPend.filter(a=> !alFiltro || a.responsable===alFiltro)
+      .sort((a,b)=> (a.vence||'9').localeCompare(b.vence||'9') || ((a.creadoEn&&a.creadoEn.toMillis?a.creadoEn.toMillis():0) - (b.creadoEn&&b.creadoEn.toMillis?b.creadoEn.toMillis():0)));
+  }
+  if(!lista.length){ ls.innerHTML = `<div class="al-vacio">${alVista==='hechas' ? 'No hay tareas realizadas.' : 'No hay alertas pendientes.'}</div>`; return; }
+  ls.innerHTML = lista.map(a=> `<div class="al-it${alVista==='hechas' ? ' hecha' : (alVencida(a) ? ' venc' : '')}" data-id="${a.id}">
+      <div class="al-tx"><div class="al-nm">${escHtml(a.paciente || '—')}</div><div class="al-nt">${escHtml(a.nota || '')}</div></div>
+      <div class="al-de"><span class="al-vt">${alVista==='hechas' ? 'Venció' : 'Vence'} ${a.vence ? dvFechaCorta(a.vence) : '—'}</span><span class="al-rs">${escHtml(alLabel(a.responsable))}</span></div>
+      ${alCk(alVista==='hechas')}
+    </div>`).join('');
+}
+function alVerHechas(){
+  alVista = 'hechas'; alHechas = null; renderAlertas();
+  if(unsubAlHechas) unsubAlHechas();
+  unsubAlHechas = db.collection('alertas').where('hecha','==',true).onSnapshot(snap=>{
+    alHechas = snap.docs.map(d=> ({id:d.id, ...d.data()})); if(alVista==='hechas') renderAlertas();
+  }, err=>{ alHechas = []; console.warn(err); renderAlertas(); });
+}
+function alVerPend(){ alVista = 'pend'; if(unsubAlHechas){ unsubAlHechas(); unsubAlHechas = null; } renderAlertas(); }
+function alAbrirForm(){
+  const f = document.getElementById('alFrm');
+  document.getElementById('alPac').value = '';
+  document.getElementById('alNota').value = ''; document.getElementById('alCnt').textContent = '0 / 80';
+  const mia = alMia();
+  document.getElementById('alResp').innerHTML = '<option value="">Elegí…</option>' + AL_RESP.map(([k,l])=> `<option value="${k}" ${k===mia?'selected':''}>${l}</option>`).join('');
+  document.getElementById('alVence').value = hoyISO();
+  f.classList.remove('col-hidden');
+  setTimeout(()=> document.getElementById('alPac').focus(), 30);
+}
+const alCerrarForm = ()=> document.getElementById('alFrm').classList.add('col-hidden');
+function alAbrir(){
+  document.getElementById('alPanel').classList.add('open'); document.getElementById('alBell').setAttribute('aria-expanded','true');
+  alVista = 'pend'; alFiltro = alEsAdmin() ? null : alMia(); alCerrarForm(); renderAlertas();
+}
+function alCerrar(){
+  document.getElementById('alPanel').classList.remove('open'); document.getElementById('alBell').setAttribute('aria-expanded','false');
+  if(unsubAlHechas){ unsubAlHechas(); unsubAlHechas = null; }
+}
+document.getElementById('alBell').onclick = e=>{ e.stopPropagation(); document.getElementById('alPanel').classList.contains('open') ? alCerrar() : alAbrir(); };
+document.addEventListener('mousedown', e=>{
+  const p = document.getElementById('alPanel');
+  if(p.classList.contains('open') && !document.getElementById('alWrap').contains(e.target)) alCerrar();
+});
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape' && !e.defaultPrevented && document.getElementById('alPanel').classList.contains('open')){ e.preventDefault(); alCerrar(); }
+});
+document.getElementById('alPanel').addEventListener('click', async e=>{
+  const b = e.target.closest('[data-al]');
+  if(b){
+    const a = b.dataset.al;
+    if(a==='nueva'){ document.getElementById('alFrm').classList.contains('col-hidden') ? alAbrirForm() : alCerrarForm(); }
+    else if(a==='toggle'){ alFiltro = alFiltro ? null : alMia(); renderAlertas(); }
+    else if(a==='hechas') alVerHechas();
+    else if(a==='pend') alVerPend();
+    return;
+  }
+  const f = e.target.closest('[data-alf]');
+  if(f){ alFiltro = f.dataset.alf || null; renderAlertas(); return; }
+  const ck = e.target.closest('.al-ck');
+  if(ck){
+    const id = ck.closest('.al-it').dataset.id, hecha = alVista!=='hechas';
+    ck.classList.toggle('ok', hecha);
+    setTimeout(async ()=>{
+      try{
+        await db.collection('alertas').doc(id).update(hecha
+          ? {hecha:true, hechaEn: firebase.firestore.FieldValue.serverTimestamp(), hechaPor: currentUser ? currentUser.nombre : ''}
+          : {hecha:false, hechaEn: null, hechaPor: ''});
+      }catch(err){ ck.classList.toggle('ok', !hecha); alert('No se pudo guardar: ' + err.message); }
+    }, 300);   // que se vea el tilde en verde antes de que se vaya
+  }
+});
+document.getElementById('alNota').addEventListener('input', e=>{ document.getElementById('alCnt').textContent = `${e.target.value.length} / 80`; });
+document.getElementById('alNota').addEventListener('keydown', e=>{ if(e.key==='Enter') e.preventDefault(); });
+document.getElementById('alCancelar').onclick = alCerrarForm;
+attachAutocomplete(document.getElementById('alPac'), ()=> pacienteRegistry);
+document.getElementById('alGuardar').onclick = async ()=>{
+  const paciente = mayus(document.getElementById('alPac').value.trim());
+  const nota = mayus(document.getElementById('alNota').value.replace(/\s+/g,' ').trim());
+  const responsable = document.getElementById('alResp').value, vence = document.getElementById('alVence').value;
+  if(!nota){ alert('Escribí la nota de la alerta.'); return; }
+  if(!responsable){ alert('Elegí la responsable.'); return; }
+  if(!vence){ alert('Elegí la fecha de vencimiento.'); return; }
+  const btn = document.getElementById('alGuardar'); btn.disabled = true;
+  try{
+    await db.collection('alertas').add({paciente, nota, responsable, vence, hecha:false,
+      creadoPor: currentUser ? currentUser.nombre : '', creadoEn: firebase.firestore.FieldValue.serverTimestamp()});
+    alCerrarForm();
+  }catch(err){ alert('No se pudo guardar la alerta: ' + err.message); }
+  btn.disabled = false;
+};
 
 // Alarmas de "próx. contacto" de derivaciones → globo rojo en "Derivaciones"
 let dvContactos = [], dvAgendas = [], unsubDvContactos = null, unsubDvAgendas = null;
