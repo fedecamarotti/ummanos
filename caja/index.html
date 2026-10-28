@@ -291,7 +291,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .dv-tabla td{vertical-align:middle;}
   .dv-tabla .ac-wrap{position:relative;}
   .dv-tabla .ac-dropdown{min-width:220px;}
-  .dv-tabla textarea.dv-motivo{display:block;width:100%;resize:none;overflow:hidden;font:inherit;font-size:10.5px;line-height:13px;padding:3px 7px;height:21px;max-height:29px;border-radius:7px;border:1px solid transparent;background:transparent;color:inherit;}
+  .dv-tabla textarea.dv-motivo{display:block;width:100%;resize:none;overflow:hidden;font:inherit;font-size:10.5px;line-height:13px;padding:3px 7px;height:21px;max-height:34px;box-sizing:border-box;border-radius:7px;border:1px solid transparent;background:transparent;color:inherit;}
   .dv-tabla textarea.dv-motivo:hover{border-color:var(--border);background:#fdfbf2;}
   .dv-tabla textarea.dv-motivo:focus{border-color:var(--accent) !important;background:#fffcf5 !important;outline:none;}
   .cpn-grid textarea{width:100%;font-family:inherit;font-size:12.5px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text);resize:none;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:#fdfbf2;line-height:1.4;}
@@ -9549,7 +9549,7 @@ function suscribirDerivaciones(){
         document.getElementById('dvBody').innerHTML = `<tr><td colspan="11" class="empty-state" style="color:#a13a3a;">No se pudieron leer las derivaciones: ${escHtml(err.message)}<br>Revisá que en las reglas de Firebase esté la colección <b>derivaciones</b>.</td></tr>`;
       });
 }
-function dvAjustarAlto(t){ t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight + 2, 29) + 'px'; }
+function dvAjustarAlto(t){ t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight + 2, 34) + 'px'; }
 function renderDerivaciones(){
   if(movSub!=='deriv') return;
   const tb = document.getElementById('dvBody');
