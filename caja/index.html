@@ -9599,7 +9599,7 @@ function renderDerivaciones(){
   dvPendiente = false;
   if(dvLista==null){ tb.innerHTML = '<tr><td colspan="12" class="empty-state">Cargando…</td></tr>'; return; }
   const ms = ts => ts && ts.toMillis ? ts.toMillis() : Date.now();
-  const lista = dvLista.slice().sort((a,b)=> a.fechaISO!==b.fechaISO ? (a.fechaISO<b.fechaISO?-1:1) : ms(a.creadoEn)-ms(b.creadoEn));
+  const lista = dvLista.slice().sort((a,b)=> a.fechaISO!==b.fechaISO ? (a.fechaISO<b.fechaISO?-1:1) : ((a.orden??1e9)-(b.orden??1e9) || ms(a.creadoEn)-ms(b.creadoEn)));
   if(!lista.length){ tb.innerHTML = '<tr><td colspan="12" class="empty-state">No hay derivaciones cargadas este mes. Agregalas con el "+".</td></tr>'; return; }
   const sw = (campo, on)=> `<button type="button" class="cp-sw ${on?'on':''}" data-campo="${campo}" aria-pressed="${on?'true':'false'}"><i></i></button>`;
   tb.innerHTML = lista.map(x=> `<tr data-id="${x.id}" class="${({ok:'dv-ok', cerrado:'cp-cerrado'})[dvEstado(x)] || ''}">
