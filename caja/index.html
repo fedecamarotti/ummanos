@@ -1318,7 +1318,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <div class="cpn-grid">
       <label>Fecha<input type="date" id="dvnFecha"></label>
       <label>Paciente<div class="ac-wrap"><input type="text" id="dvnPaciente" placeholder="Apellido, nombre" autocomplete="off" data-ac-libre></div></label>
-      <label>Motivo<textarea id="dvnMotivo" data-no-mayus rows="2" maxlength="100" placeholder="Hasta 100 caracteres"></textarea></label>
+      <label>Motivo<textarea id="dvnMotivo" rows="2" maxlength="100" placeholder="Hasta 100 caracteres"></textarea></label>
       <label>Prof. deriva<div class="ac-wrap"><input type="text" id="dvnProfDeriva" placeholder="Escribí el profesional…" autocomplete="off"></div></label>
       <label>Deriva a<div class="ac-wrap"><input type="text" id="dvnDerivaA" placeholder="Escribí el profesional…" autocomplete="off"></div></label>
     </div>
@@ -3329,6 +3329,7 @@ function iniciarListeners(){
   });
   suscribirCpContactos();
   suscribirDvContactos();
+  pasarNotasAMayus();
 
   // Sesión de caja abierta (si hay)
   unsubCajaAbierta = db.collection('cajaSesiones').where('cerradaEn','==', null).onSnapshot(async snap=>{
@@ -9416,7 +9417,7 @@ function renderClasesPrueba(){
       <td><select class="cp-pill ${x.pack?'':'vacio'}" data-campo="pack">${opts(CP_PACKS, x.pack)}</select></td>
       <td><input type="text" readonly data-campo="proxContacto" data-iso="${x.proxContacto||''}" value="${cpFechaCorta(x.proxContacto)}" placeholder="—" class="cp-fc cp-prox ${x.proxContacto && x.proxContacto<=hoyISO() ? 'cp-vencido' : ''}"></td>
       <td><button type="button" class="cp-sw-estado ${x.cerrado?'cerrado':''}" title="${x.cerrado?'Negocio cerrado':'Abierto'} (tocá para cambiar)" aria-pressed="${x.cerrado?'true':'false'}"><i></i></button></td>
-      <td class="left"><input type="text" class="cp-notas" data-campo="notas" data-no-mayus maxlength="${CP_NOTAS_MAX}" value="${escHtml(x.notas||'')}"></td>
+      <td class="left"><input type="text" class="cp-notas" data-campo="notas" maxlength="${CP_NOTAS_MAX}" value="${escHtml(x.notas||'')}"></td>
       <td><button type="button" class="cp-del" title="Eliminar">✕</button></td>
     </tr>`).join('');
 }
@@ -9431,7 +9432,7 @@ cpBody.addEventListener('change', e=>{
   const el = e.target.closest('[data-campo]'); if(!el || el.classList.contains('cp-sw')) return;
   const id = el.closest('tr').dataset.id, campo = el.dataset.campo;
   let v = el.type==='checkbox' ? el.checked : el.value;
-  if(campo==='alumno') v = mayus(String(v).trim());
+  if(campo==='alumno' || campo==='notas') v = mayus(String(v).trim());
   if(campo==='fechaISO' && !v){ renderClasesPrueba(); return; }
   if(campo==='proxContacto') el.classList.toggle('cp-vencido', !!v && v<=hoyISO());
   if(el.classList.contains('cp-fc')) el.dataset.iso = v;
@@ -9653,7 +9654,7 @@ function renderDerivaciones(){
   tb.innerHTML = lista.map(x=> `<tr data-id="${x.id}" class="${({ok:'dv-ok', cerrado:'cp-cerrado'})[dvEstado(x)] || ''}">
       <td><input type="text" readonly class="cp-fc" data-campo="fechaISO" data-iso="${x.fechaISO||''}" value="${dvFechaCorta(x.fechaISO)}"></td>
       <td class="left"><div class="ac-wrap"><input type="text" class="dv-pac" data-campo="paciente" data-ac-libre value="${escHtml(x.paciente||'')}" placeholder="Apellido, nombre" autocomplete="off"></div></td>
-      <td class="left"><textarea class="dv-motivo" data-campo="motivo" data-no-mayus rows="1" maxlength="${DV_MOTIVO_MAX}">${escHtml(x.motivo||'')}</textarea></td>
+      <td class="left"><textarea class="dv-motivo" data-campo="motivo" rows="1" maxlength="${DV_MOTIVO_MAX}">${escHtml(x.motivo||'')}</textarea></td>
       <td><div class="ac-wrap"><input type="text" class="dv-prof" data-campo="profDeriva" value="${escHtml(x.profDeriva||'')}" placeholder="—" autocomplete="off"></div></td>
       <td><div class="ac-wrap"><input type="text" class="dv-prof" data-campo="derivaA" value="${escHtml(x.derivaA||'')}" placeholder="—" autocomplete="off"></div></td>
       <td><input type="text" readonly data-campo="proxContacto" data-iso="${x.proxContacto||''}" value="${dvFechaCorta(x.proxContacto)}" placeholder="—" class="cp-fc cp-prox ${dvProxVencido(x) ? 'cp-vencido' : ''}"></td>
@@ -9661,7 +9662,7 @@ function renderDerivaciones(){
       <td>${sw('agendado', !!x.agendado)}</td>
       <td><input type="text" readonly data-campo="fechaAgend" data-iso="${x.fechaAgend||''}" value="${dvFechaCorta(x.fechaAgend)}" placeholder="—" class="cp-fc cp-prox ${dvAgendVencida(x) ? 'cp-vencido' : ''}"></td>
       <td><button type="button" class="cp-sw-estado dv-sw3 ${dvEstado(x)}" title="${({ok:'Concretado', cerrado:'Cerrado'})[dvEstado(x)] || 'Abierto'} — izquierda: concretado · medio: abierto · derecha: cerrado"><i></i></button></td>
-      <td class="left"><input type="text" class="cp-notas" data-campo="notas" data-no-mayus maxlength="${CP_NOTAS_MAX}" value="${escHtml(x.notas||'')}"></td>
+      <td class="left"><input type="text" class="cp-notas" data-campo="notas" maxlength="${CP_NOTAS_MAX}" value="${escHtml(x.notas||'')}"></td>
       <td><button type="button" class="cp-del" title="Eliminar">✕</button></td>
     </tr>`).join('');
   tb.querySelectorAll('textarea.dv-motivo').forEach(dvAjustarAlto);
@@ -9680,7 +9681,8 @@ function dvCambio(el){
     if(v==null){ const x0 = (dvLista||[]).find(y=> y.id===id); el.value = x0 ? (x0[campo]||'') : ''; alert('Elegí un profesional de la lista.'); return; }
     el.value = v;
   }
-  if(campo==='motivo') v = String(v).replace(/\s*\n\s*/g,' ').trim();
+  if(campo==='motivo') v = mayus(String(v).replace(/\s*\n\s*/g,' ').trim());
+  if(campo==='notas') v = mayus(String(v).trim());
   if(campo==='fechaISO' && !v){ renderDerivaciones(); return; }
   const x = (dvLista||[]).find(y=> y.id===id);
   if(campo==='proxContacto') el.classList.toggle('cp-vencido', !!v && v<=hoyISO() && !(x && (x.fechaAgend || dvEstado(x))));
@@ -9790,7 +9792,7 @@ document.getElementById('dvnMotivo').addEventListener('keydown', e=>{ if(e.key==
 document.getElementById('dvnGuardar').onclick = async ()=>{
   const fechaISO = document.getElementById('dvnFecha').value;
   const paciente = mayus(document.getElementById('dvnPaciente').value.trim());
-  const motivo = document.getElementById('dvnMotivo').value.replace(/\s*\n\s*/g,' ').trim().slice(0, DV_MOTIVO_MAX);
+  const motivo = mayus(document.getElementById('dvnMotivo').value.replace(/\s*\n\s*/g,' ').trim());
   const profDeriva = dvProfDeLista(document.getElementById('dvnProfDeriva').value), derivaA = dvProfDeLista(document.getElementById('dvnDerivaA').value);
   if(profDeriva==null || derivaA==null){ alert('Elegí los profesionales de la lista.'); return; }
   if(!fechaISO){ alert('Elegí la fecha.'); return; }
@@ -9808,6 +9810,25 @@ document.getElementById('dvnGuardar').onclick = async ()=>{
   }catch(e){ alert('No se pudo cargar: ' + e.message); }
   btn.disabled = false;
 };
+
+// Una sola vez: las notas y motivos que ya estaban cargados en minúscula pasan a MAYÚSCULAS (como el resto del sistema)
+async function pasarNotasAMayus(){
+  if(!esFede()) return;
+  try{ if(localStorage.getItem('notasMayus_v1')==='1') return; }catch(_){}
+  try{
+    for(const [col, campos] of [['clasesPrueba',['notas']], ['derivaciones',['notas','motivo']]]){
+      const snap = await db.collection(col).get();
+      let batch = db.batch(), n = 0;
+      for(const d of snap.docs){
+        const x = d.data(), cambios = {};
+        campos.forEach(k=>{ if(typeof x[k]==='string' && x[k] !== mayus(x[k])) cambios[k] = mayus(x[k]); });
+        if(Object.keys(cambios).length){ batch.update(d.ref, cambios); if(++n % 400 === 0){ await batch.commit(); batch = db.batch(); } }
+      }
+      if(n % 400) await batch.commit();
+    }
+    try{ localStorage.setItem('notasMayus_v1','1'); }catch(_){}
+  }catch(e){ console.warn('No se pudieron pasar las notas a mayúsculas', e); }
+}
 
 // Alarmas de "próx. contacto" de derivaciones → globo rojo en "Derivaciones"
 let dvContactos = [], dvAgendas = [], unsubDvContactos = null, unsubDvAgendas = null;
