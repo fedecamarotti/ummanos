@@ -286,6 +286,15 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .cp-tabla tr.cp-cerrado td, .cp-tabla tr.cp-cerrado input, .cp-tabla tr.cp-cerrado select{color:#3f3c37;}
   .cp-tabla input.cp-prox::placeholder{color:var(--muted);}
   .cp-tabla input.cp-vencido{color:#c62828;font-weight:700;background:#fdecea;}
+  /* Derivaciones: misma planilla que Clases de prueba */
+  .dv-tabla{min-width:1400px;}
+  .dv-tabla td{vertical-align:middle;}
+  .dv-tabla .ac-wrap{position:relative;}
+  .dv-tabla .ac-dropdown{min-width:220px;}
+  .dv-tabla textarea.dv-motivo{display:block;width:100%;resize:none;overflow:hidden;font:inherit;font-size:10.5px;line-height:13px;padding:3px 7px;height:21px;max-height:29px;border-radius:7px;border:1px solid transparent;background:transparent;color:inherit;}
+  .dv-tabla textarea.dv-motivo:hover{border-color:var(--border);background:#fdfbf2;}
+  .dv-tabla textarea.dv-motivo:focus{border-color:var(--accent) !important;background:#fffcf5 !important;outline:none;}
+  .cpn-grid textarea{font:inherit;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text);resize:none;}
   .cpn-grid{display:grid;gap:10px;margin:6px 0 4px;}
   .cpn-grid label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
   .cpn-grid input, .cpn-grid select{font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text);}
@@ -1252,6 +1261,25 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   </div>
 </div>
 
+<!-- ============ MODAL: NUEVA DERIVACIÓN ============ -->
+<div class="overlay" id="overlayDvNueva">
+  <div class="modal">
+    <button class="close-x" id="dvnCerrar">✕</button>
+    <h2>Nueva derivación</h2>
+    <div class="cpn-grid">
+      <label>Fecha<input type="date" id="dvnFecha"></label>
+      <label>Paciente<div class="ac-wrap"><input type="text" id="dvnPaciente" placeholder="Apellido, nombre" autocomplete="off" data-ac-libre></div></label>
+      <label>Motivo<textarea id="dvnMotivo" data-no-mayus rows="2" maxlength="100" placeholder="Hasta 100 caracteres"></textarea></label>
+      <label>Prof. deriva<select id="dvnProfDeriva"></select></label>
+      <label>Deriva a<select id="dvnDerivaA"></select></label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="dvnCancelar">Cancelar</button>
+      <button class="btn btn-primary" id="dvnGuardar">Cargar derivación</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ MODAL: MOVIMIENTOS DE UN INSUMO ============ -->
 <div class="overlay" id="overlayKardex">
   <div class="modal wide" style="max-width:760px;">
@@ -1621,6 +1649,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <div class="s-tabs col-hidden" id="movSubTabs" role="tablist" aria-label="Movimientos">
         <button class="s-tab active" data-msub="diarios" role="tab"><span class="t-largo">Movimientos diarios</span><span class="t-corto">Diarios</span></button>
         <button class="s-tab s-tab-badge" data-msub="prueba"><span class="t-largo">Clases de prueba</span><span class="t-corto">Prueba</span> <span class="badge-count col-hidden" id="mSubPruebaN" title="Contactos vencidos">0</span></button>
+        <button class="s-tab s-tab-badge" data-msub="deriv"><span class="t-largo">Derivaciones</span><span class="t-corto">Deriv.</span> <span class="badge-count col-hidden" id="mSubDerivN" title="Contactos vencidos">0</span></button>
         <button class="s-tab" data-msub="cajas" id="mSubCajas">Cajas</button>
         <button class="s-tab" data-msub="pacientes"><span class="t-largo">Pacientes/alumnos</span><span class="t-corto">Pacientes</span></button>
         <button class="s-tab s-tab-badge" data-msub="deudores">Deudores <span class="badge-count col-hidden" id="mSubDeudoresN">0</span></button>
@@ -1704,6 +1733,16 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
           <colgroup><col style="width:78px"><col style="width:114px"><col style="width:66px"><col style="width:150px"><col style="width:44px"><col style="width:44px"><col style="width:54px"><col style="width:92px"><col style="width:78px"><col style="width:54px"><col style="width:478px"><col style="width:30px"></colgroup>
           <thead><tr><th>Fecha</th><th>Clase</th><th>Hora</th><th>Alumno/a</th><th>Vino</th><th>Msj<br>prof</th><th>Compró<br>pack</th><th>Pack<br>vendido</th><th>Próx.<br>contacto</th><th>Estado</th><th>Notas</th><th></th></tr></thead>
           <tbody id="cpBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- ============ DERIVACIONES (subsección de Movimientos) ============ -->
+    <div class="cp-panel col-hidden" id="dvPanel">
+      <div class="sheet-wrap cp-hoja">
+        <table class="cp-tabla dv-tabla">
+          <colgroup><col style="width:52px"><col style="width:170px"><col style="width:300px"><col style="width:130px"><col style="width:130px"><col style="width:62px"><col style="width:54px"><col style="width:60px"><col style="width:54px"><col style="width:358px"><col style="width:30px"></colgroup>
+          <thead><tr><th>Fecha</th><th>Paciente</th><th>Motivo</th><th>Prof.<br>deriva</th><th>Deriva a</th><th>Próx.<br>contacto</th><th>Enviado</th><th>Agendado</th><th>Estado</th><th>Notas</th><th></th></tr></thead>
+          <tbody id="dvBody"></tbody>
         </table>
       </div>
     </div>
@@ -3056,6 +3095,7 @@ auth.onAuthStateChanged(async (user)=>{
     if(typeof unsubCremas!=='undefined' && unsubCremas){ unsubCremas(); unsubCremas = null; }
     if(typeof unsubConta!=='undefined' && unsubConta){ unsubConta(); unsubConta = null; }
     if(typeof unsubCp!=='undefined' && unsubCp){ unsubCp(); unsubCp = null; }
+    if(typeof unsubDv!=='undefined' && unsubDv){ unsubDv(); unsubDv = null; }
     if(typeof unsubVcCfg!=='undefined' && unsubVcCfg){ unsubVcCfg(); unsubVcCfg = null; }
     if(typeof unsubContaCaja!=='undefined' && unsubContaCaja){ unsubContaCaja(); unsubContaCaja = null; }
     if(unsubPortalPac){ unsubPortalPac(); unsubPortalPac = null; }
@@ -3101,11 +3141,13 @@ document.getElementById('mesPrev').onclick = ()=>{
   mesActual.month--; if(mesActual.month<1){ mesActual.month=12; mesActual.year--; }
   actualizarMesLabel(); suscribirMovimientos();
   if(movSub==='prueba'){ suscribirClasesPrueba(); renderClasesPrueba(); }
+  if(movSub==='deriv'){ suscribirDerivaciones(); renderDerivaciones(); }
 };
 document.getElementById('mesNext').onclick = ()=>{
   mesActual.month++; if(mesActual.month>12){ mesActual.month=1; mesActual.year++; }
   actualizarMesLabel(); suscribirMovimientos();
   if(movSub==='prueba'){ suscribirClasesPrueba(); renderClasesPrueba(); }
+  if(movSub==='deriv'){ suscribirDerivaciones(); renderDerivaciones(); }
 };
 actualizarMesLabel();
 
@@ -3237,6 +3279,7 @@ function iniciarListeners(){
     renderDeudoresCount();
   });
   suscribirCpContactos();
+  suscribirDvContactos();
 
   // Sesión de caja abierta (si hay)
   unsubCajaAbierta = db.collection('cajaSesiones').where('cerradaEn','==', null).onSnapshot(async snap=>{
@@ -9256,9 +9299,11 @@ let cpLista = null, unsubCp = null, cpMesSuscripto = null, cpPendiente = false;
 function mostrarSubMov(sub){
   movSub = sub;
   document.querySelectorAll('#movSubTabs [data-msub]').forEach(x=> x.classList.toggle('active', x.dataset.msub===sub));
-  document.getElementById('panelContainer').classList.toggle('col-hidden', sub==='prueba');
+  document.getElementById('panelContainer').classList.toggle('col-hidden', sub==='prueba' || sub==='deriv');
   document.getElementById('cpPanel').classList.toggle('col-hidden', sub!=='prueba');
+  document.getElementById('dvPanel').classList.toggle('col-hidden', sub!=='deriv');
   if(sub==='prueba'){ suscribirClasesPrueba(); renderClasesPrueba(); }
+  if(sub==='deriv'){ suscribirDerivaciones(); renderDerivaciones(); }
 }
 function suscribirClasesPrueba(){
   const clave = mesInicioISO();
@@ -9416,6 +9461,7 @@ function cpAbrirNueva(){
 // "+" flotante: en Clases de prueba carga una clase; en el resto, un movimiento
 document.getElementById('fabNuevo').onclick = ()=>{
   if(movSub==='prueba') cpAbrirNueva();
+  else if(movSub==='deriv') dvAbrirNueva();
   else document.getElementById('btnNuevo').click();
 };
 // Resumen + packs de clases de prueba: se pueden minimizar (queda recordado en este navegador)
@@ -9467,9 +9513,198 @@ function suscribirCpContactos(){
   setInterval(renderCpContactosCount, 5*60*1000);   // por si la pantalla queda abierta y cambia el día
 }
 
+/* =====================================================================
+   DERIVACIONES — colección "derivaciones" (misma lógica que Clases de prueba)
+   ===================================================================== */
+const DV_MOTIVO_MAX = 100;   // dos renglones de ~50 caracteres
+let dvLista = null, unsubDv = null, dvMesSuscripto = null, dvPendiente = false;
+const dvFechaCorta = iso=> { if(!iso) return ''; const [y,m,d] = iso.split('-'); return `${d}/${m}`; };
+// Profesionales que atienden (sin cajas, alquileres ni gastos)
+function dvProfesionales(){
+  return todosLosNombresDeProfesionales().filter(n=>{
+    if(NO_ES_AREA.test(n)) return false;
+    const cs = CONCEPTOS[n] || [];
+    return cs.length ? cs.some(c=> tipoConcepto(n, c.concepto)==='ingreso') : true;
+  });
+}
+function suscribirDerivaciones(){
+  const clave = mesInicioISO();
+  if(unsubDv && dvMesSuscripto===clave) return;
+  if(unsubDv) unsubDv();
+  dvMesSuscripto = clave; dvLista = null;
+  unsubDv = db.collection('derivaciones').where('fechaISO','>=', mesInicioISO()).where('fechaISO','<', mesFinISO())
+    .onSnapshot(snap=>{ dvLista = snap.docs.map(d=> ({id:d.id, ...d.data()})); renderDerivaciones(); },
+      err=>{
+        dvLista = [];
+        document.getElementById('dvBody').innerHTML = `<tr><td colspan="11" class="empty-state" style="color:#a13a3a;">No se pudieron leer las derivaciones: ${escHtml(err.message)}<br>Revisá que en las reglas de Firebase esté la colección <b>derivaciones</b>.</td></tr>`;
+      });
+}
+function dvAjustarAlto(t){ t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight + 2, 29) + 'px'; }
+function renderDerivaciones(){
+  if(movSub!=='deriv') return;
+  const tb = document.getElementById('dvBody');
+  if(tb.contains(document.activeElement) && document.activeElement.matches('input[type=text], input[type=date], textarea')){ dvPendiente = true; return; }
+  dvPendiente = false;
+  if(dvLista==null){ tb.innerHTML = '<tr><td colspan="11" class="empty-state">Cargando…</td></tr>'; return; }
+  const ms = ts => ts && ts.toMillis ? ts.toMillis() : Date.now();
+  const lista = dvLista.slice().sort((a,b)=> a.fechaISO!==b.fechaISO ? (a.fechaISO<b.fechaISO?-1:1) : ms(a.creadoEn)-ms(b.creadoEn));
+  if(!lista.length){ tb.innerHTML = '<tr><td colspan="11" class="empty-state">No hay derivaciones cargadas este mes. Agregalas con el "+".</td></tr>'; return; }
+  const profs = dvProfesionales();
+  const opts = (arr, val)=> `<option value="">—</option>` + arr.map(o=> `<option ${o===val?'selected':''}>${escHtml(o)}</option>`).join('') + (val && !arr.includes(val) ? `<option selected>${escHtml(val)}</option>` : '');
+  const sw = (campo, on)=> `<button type="button" class="cp-sw ${on?'on':''}" data-campo="${campo}" aria-pressed="${on?'true':'false'}"><i></i></button>`;
+  tb.innerHTML = lista.map(x=> `<tr data-id="${x.id}" class="${x.cerrado ? 'cp-cerrado' : ''}">
+      <td><input type="text" readonly class="cp-fc" data-campo="fechaISO" data-iso="${x.fechaISO||''}" value="${dvFechaCorta(x.fechaISO)}"></td>
+      <td class="left"><div class="ac-wrap"><input type="text" class="dv-pac" data-campo="paciente" data-ac-libre value="${escHtml(x.paciente||'')}" placeholder="Apellido, nombre" autocomplete="off"></div></td>
+      <td class="left"><textarea class="dv-motivo" data-campo="motivo" data-no-mayus rows="1" maxlength="${DV_MOTIVO_MAX}">${escHtml(x.motivo||'')}</textarea></td>
+      <td><select class="cp-pill ${x.profDeriva?'':'vacio'}" data-campo="profDeriva">${opts(profs, x.profDeriva)}</select></td>
+      <td><select class="cp-pill ${x.derivaA?'':'vacio'}" data-campo="derivaA">${opts(profs, x.derivaA)}</select></td>
+      <td><input type="text" readonly data-campo="proxContacto" data-iso="${x.proxContacto||''}" value="${dvFechaCorta(x.proxContacto)}" placeholder="—" class="cp-fc cp-prox ${x.proxContacto && x.proxContacto<=hoyISO() ? 'cp-vencido' : ''}"></td>
+      <td>${sw('enviado', !!x.enviado)}</td>
+      <td>${sw('agendado', !!x.agendado)}</td>
+      <td><button type="button" class="cp-sw-estado ${x.cerrado?'cerrado':''}" title="${x.cerrado?'Cerrado':'Abierto'} (tocá para cambiar)" aria-pressed="${x.cerrado?'true':'false'}"><i></i></button></td>
+      <td class="left"><input type="text" class="cp-notas" data-campo="notas" data-no-mayus maxlength="${CP_NOTAS_MAX}" value="${escHtml(x.notas||'')}"></td>
+      <td><button type="button" class="cp-del" title="Eliminar">✕</button></td>
+    </tr>`).join('');
+  tb.querySelectorAll('textarea.dv-motivo').forEach(dvAjustarAlto);
+}
+async function dvGuardar(id, cambios){
+  try{ await db.collection('derivaciones').doc(id).update({...cambios, actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()}); }
+  catch(e){ alert('No se pudo guardar: ' + e.message); }
+}
+const dvBody = document.getElementById('dvBody');
+function dvCambio(el){
+  const id = el.closest('tr').dataset.id, campo = el.dataset.campo;
+  let v = el.value;
+  if(campo==='paciente') v = mayus(String(v).trim());
+  if(campo==='motivo') v = String(v).replace(/\s*\n\s*/g,' ').trim();
+  if(campo==='fechaISO' && !v){ renderDerivaciones(); return; }
+  if(campo==='proxContacto') el.classList.toggle('cp-vencido', !!v && v<=hoyISO());
+  if(el.classList.contains('cp-fc')) el.dataset.iso = v;
+  if(el.tagName==='SELECT') el.classList.toggle('vacio', !v);
+  const x = (dvLista||[]).find(y=> y.id===id);
+  const ant = x ? x.fechaISO : null;
+  if(x){ if(x[campo]===v) return; x[campo] = v; }
+  const cambios = {[campo]: v};
+  // si se corrige la fecha y el próx. contacto era el automático, se corre también
+  if(campo==='fechaISO' && x && ant && x.proxContacto && x.proxContacto===cpDiaSiguiente(ant)){ cambios.proxContacto = x.proxContacto = cpDiaSiguiente(v); renderDerivaciones(); }
+  dvGuardar(id, cambios);
+}
+dvBody.addEventListener('change', e=>{
+  const el = e.target.closest('[data-campo]'); if(!el || el.classList.contains('cp-sw')) return;
+  dvCambio(el);
+});
+dvBody.addEventListener('input', e=>{ if(e.target.matches('textarea.dv-motivo')) dvAjustarAlto(e.target); });
+dvBody.addEventListener('click', async e=>{
+  const sw = e.target.closest('.cp-sw');
+  if(sw){
+    const id = sw.closest('tr').dataset.id, campo = sw.dataset.campo, on = !sw.classList.contains('on');
+    sw.classList.toggle('on', on); sw.setAttribute('aria-pressed', on ? 'true' : 'false');
+    const x = (dvLista||[]).find(y=> y.id===id); if(x) x[campo] = on;
+    dvGuardar(id, {[campo]: on});
+    return;
+  }
+  const est = e.target.closest('.cp-sw-estado');
+  if(est){
+    const id = est.closest('tr').dataset.id, cerrado = !est.classList.contains('cerrado');
+    const x = (dvLista||[]).find(y=> y.id===id); if(x) x.cerrado = cerrado;
+    const cambios = {cerrado};
+    if(cerrado){ cambios.proxContacto = ''; if(x) x.proxContacto = ''; }   // cerrado: no hay que volver a contactar
+    dvGuardar(id, cambios);
+    renderDerivaciones();
+    if(cerrado && !((x && x.notas) || '').trim()) setTimeout(()=> alert('Recuerde motivo en nota'), 50);
+    return;
+  }
+  const del = e.target.closest('.cp-del');
+  if(del){
+    const tr = del.closest('tr'), x = (dvLista||[]).find(y=> y.id===tr.dataset.id);
+    if(!confirm(`¿Eliminar la derivación${x && x.paciente ? ' de ' + x.paciente : ''}?`)) return;
+    try{ await db.collection('derivaciones').doc(tr.dataset.id).delete(); }catch(err){ alert('No se pudo eliminar: ' + err.message); }
+  }
+});
+// Enter guarda y sale del casillero (también en Motivo: no hay saltos de línea, el texto pasa solo al segundo renglón)
+dvBody.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && e.target.matches('input[type=text], input[type=date], textarea')){
+    if(e.target.classList.contains('dv-pac') && e.target.closest('.ac-wrap').querySelector('.ac-dropdown.show .ac-option.activo')) return;   // está eligiendo de la lista
+    e.preventDefault(); e.target.blur();
+  }
+});
+dvBody.addEventListener('focusin', e=>{
+  const el = e.target;
+  if(el.classList && el.classList.contains('cp-fc') && el.type==='text'){ el.readOnly = false; el.type = 'date'; el.value = el.dataset.iso || ''; try{ el.showPicker(); }catch(_){} }
+  // Paciente: sugiere de la lista de pacientes (se arma la lista recién al tocar el casillero)
+  if(el.classList && el.classList.contains('dv-pac') && !el._ac){
+    el._ac = true;
+    attachAutocomplete(el, ()=> pacienteRegistry, ()=> dvCambio(el));
+    el.dispatchEvent(new Event('focus'));
+  }
+});
+dvBody.addEventListener('focusout', e=>{
+  const el = e.target;
+  if(el.classList && el.classList.contains('cp-fc') && el.type==='date'){
+    if(el.value || el.dataset.campo!=='fechaISO') el.dataset.iso = el.value;
+    el.type = 'text'; el.readOnly = true; el.value = dvFechaCorta(el.dataset.iso);
+  }
+  setTimeout(()=>{ if(dvPendiente && !dvBody.contains(document.activeElement)) renderDerivaciones(); }, 50);
+});
+
+// Nueva derivación
+const ovDvNueva = document.getElementById('overlayDvNueva');
+attachAutocomplete(document.getElementById('dvnPaciente'), ()=> pacienteRegistry);
+function dvAbrirNueva(){
+  const hoy = hoyISO();
+  document.getElementById('dvnFecha').value = hoy >= mesInicioISO() && hoy < mesFinISO() ? hoy : mesInicioISO();
+  document.getElementById('dvnPaciente').value = '';
+  document.getElementById('dvnMotivo').value = '';
+  const op = '<option value="">—</option>' + dvProfesionales().map(n=> `<option>${escHtml(n)}</option>`).join('');
+  document.getElementById('dvnProfDeriva').innerHTML = op;
+  document.getElementById('dvnDerivaA').innerHTML = op;
+  ovDvNueva.classList.add('show');
+  setTimeout(()=> document.getElementById('dvnPaciente').focus(), 50);
+}
+const dvnCerrar = ()=> ovDvNueva.classList.remove('show');
+document.getElementById('dvnCerrar').onclick = dvnCerrar;
+document.getElementById('dvnCancelar').onclick = dvnCerrar;
+document.getElementById('dvnMotivo').addEventListener('keydown', e=>{ if(e.key==='Enter') e.preventDefault(); });
+document.getElementById('dvnGuardar').onclick = async ()=>{
+  const fechaISO = document.getElementById('dvnFecha').value;
+  const paciente = mayus(document.getElementById('dvnPaciente').value.trim());
+  const motivo = document.getElementById('dvnMotivo').value.replace(/\s*\n\s*/g,' ').trim().slice(0, DV_MOTIVO_MAX);
+  const profDeriva = document.getElementById('dvnProfDeriva').value, derivaA = document.getElementById('dvnDerivaA').value;
+  if(!fechaISO){ alert('Elegí la fecha.'); return; }
+  if(!paciente){ alert('Completá el paciente.'); return; }
+  const btn = document.getElementById('dvnGuardar'); btn.disabled = true;
+  try{
+    await db.collection('derivaciones').add({fechaISO, paciente, motivo, profDeriva, derivaA, proxContacto: cpDiaSiguiente(fechaISO),
+      enviado:false, agendado:false, cerrado:false, notas:'',
+      creadoPor: currentUser ? currentUser.nombre : '', creadoEn: firebase.firestore.FieldValue.serverTimestamp()});
+    dvnCerrar();
+    if(fechaISO < mesInicioISO() || fechaISO >= mesFinISO()){
+      const [y, m] = fechaISO.split('-').map(Number);
+      mesActual = {year:y, month:m}; actualizarMesLabel(); suscribirMovimientos(); suscribirDerivaciones(); renderDerivaciones();
+    }
+  }catch(e){ alert('No se pudo cargar: ' + e.message); }
+  btn.disabled = false;
+};
+
+// Alarmas de "próx. contacto" de derivaciones → globo rojo en "Derivaciones"
+let dvContactos = [], unsubDvContactos = null;
+function renderDvContactosCount(){
+  const hoy = hoyISO();
+  const n = dvContactos.filter(x=> x.proxContacto && x.proxContacto <= hoy).length;
+  const b = document.getElementById('mSubDerivN');
+  if(b){ b.textContent = n; b.classList.toggle('col-hidden', !n); }
+}
+function suscribirDvContactos(){
+  if(unsubDvContactos) return;
+  unsubDvContactos = db.collection('derivaciones').where('proxContacto','>','')
+    .onSnapshot(snap=>{ dvContactos = snap.docs.map(d=> ({id:d.id, ...d.data()})); renderDvContactosCount(); },
+      err=> console.warn('No se pudieron leer los próximos contactos de derivaciones', err));
+  setInterval(renderDvContactosCount, 5*60*1000);
+}
+
 document.querySelectorAll('#movSubTabs [data-msub]').forEach(b=> b.onclick = ()=>{
   const sub = b.dataset.msub;
-  if(sub==='diarios' || sub==='prueba'){ mostrarSubMov(sub); return; }
+  if(sub==='diarios' || sub==='prueba' || sub==='deriv'){ mostrarSubMov(sub); return; }
   if(sub==='cajas') document.getElementById('btnCajas').click();
   else if(sub==='pacientes') document.getElementById('btnPacientes').click();
   else if(sub==='deudores') document.getElementById('btnDeudores').click();
