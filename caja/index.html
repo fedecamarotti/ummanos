@@ -276,6 +276,11 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .cp-sw-estado i{position:absolute;top:1px;left:14px;width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .2s;}
   .cp-sw-estado.cerrado{background:#55524c;border-color:#55524c;} .cp-sw-estado.cerrado i{left:2px;}
   .cp-tabla tr.cp-cerrado td{background:#cfcabf;}
+  .cp-tabla tr.cp-compro td{background:#e5f3e1;}
+  /* filas pintadas: todo queda "detrás" del color salvo la tecla que se tocó (Compró pack en verde, Estado en oscuro) */
+  .cp-tabla tr.cp-cerrado select, .cp-tabla tr.cp-compro select{background:transparent !important;opacity:.55;}
+  .cp-tabla tr.cp-cerrado .cp-sw, .cp-tabla tr.cp-cerrado input[type=checkbox], .cp-tabla tr.cp-cerrado .cp-del,
+  .cp-tabla tr.cp-compro .cp-sw:not([data-campo="compro"]), .cp-tabla tr.cp-compro .cp-sw-estado, .cp-tabla tr.cp-compro input[type=checkbox], .cp-tabla tr.cp-compro .cp-del{opacity:.3;}
   .cp-tabla tr.cp-cerrado td, .cp-tabla tr.cp-cerrado input, .cp-tabla tr.cp-cerrado select{color:#3f3c37;}
   .cp-tabla input.cp-prox::placeholder{color:var(--muted);}
   .cp-tabla input.cp-vencido{color:#c62828;font-weight:700;background:#fdecea;}
@@ -9304,7 +9309,7 @@ function renderClasesPrueba(){
   if(!lista.length){ tb.innerHTML = '<tr><td colspan="12" class="empty-state">No hay clases de prueba cargadas este mes. Agregalas con "+ Nueva clase de prueba".</td></tr>'; return; }
   const opts = (arr, val)=> `<option value="">—</option>` + arr.map(o=> `<option ${o===val?'selected':''}>${escHtml(o)}</option>`).join('') + (val && !arr.includes(val) ? `<option selected>${escHtml(val)}</option>` : '');
   const sw = (campo, on)=> `<button type="button" class="cp-sw ${on?'on':''}" data-campo="${campo}" aria-pressed="${on?'true':'false'}"><i></i></button>`;
-  tb.innerHTML = lista.map(x=> `<tr data-id="${x.id}" class="${x.cerrado ? 'cp-cerrado' : ''}">
+  tb.innerHTML = lista.map(x=> `<tr data-id="${x.id}" class="${x.cerrado ? 'cp-cerrado' : (x.compro ? 'cp-compro' : '')}">
       <td><input type="text" readonly class="cp-fc" data-campo="fechaISO" data-iso="${x.fechaISO||''}" value="${cpFechaCorta(x.fechaISO)}"></td>
       <td><select class="cp-pill ${x.clase?'':'vacio'}" data-campo="clase">${opts(cpClasesDe((x.fechaISO||'').slice(0,7)), x.clase)}</select></td>
       <td><select class="cp-pill ${x.hora?'':'vacio'}" data-campo="hora">${opts(CP_HORAS, x.hora)}</select></td>
@@ -9350,7 +9355,8 @@ cpBody.addEventListener('click', async e=>{
     sw.classList.toggle('on', on); sw.setAttribute('aria-pressed', on ? 'true' : 'false');
     const x = (cpLista||[]).find(y=> y.id===id); if(x) x[campo] = on;
     const cambios = {[campo]: on};
-    if(campo==='compro' && on){ cambios.proxContacto = ''; if(x) x.proxContacto = ''; renderClasesPrueba(); }   // compró: no hay que volver a contactar
+    if(campo==='compro' && on){ cambios.proxContacto = ''; if(x) x.proxContacto = ''; }   // compró: no hay que volver a contactar
+    if(campo==='compro') renderClasesPrueba();   // la fila se pone verde (o vuelve a la normalidad)
     cpGuardar(id, cambios); renderResumenCp();
     return;
   }
