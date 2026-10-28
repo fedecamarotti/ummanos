@@ -308,6 +308,18 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .dv-tabla tr.dv-ok td{background:#e5f3e1;}
   .dv-tabla tr.dv-ok input.dv-prof{background:transparent;}
   .dv-tabla tr.dv-ok .cp-sw, .dv-tabla tr.dv-ok .cp-del{opacity:.3;}
+  /* Notas cortadas: "… ver más" al final y al tocarlo se ve la nota completa */
+  td.vm-td{position:relative;}
+  .vm-btn{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:none;padding:1px 3px 1px 10px;margin:0;cursor:pointer;font:inherit;font-size:10px;line-height:1.2;color:var(--accent-dk);background:linear-gradient(to right, rgba(255,252,245,0), #fffcf5 9px);white-space:nowrap;opacity:1 !important;z-index:1;}
+  .vm-btn b{font-weight:700;}
+  .vm-btn:hover b{text-decoration:underline;}
+  td.vm-ta .vm-btn{top:auto;bottom:4px;transform:none;}
+  td.vm-ta textarea:not(:focus){clip-path:inset(0 0 3px 0);}   /* que no asome el 3er renglón */
+  tr.cp-compro .vm-btn, tr.dv-ok .vm-btn{background:linear-gradient(to right, rgba(229,243,225,0), #e5f3e1 9px);}
+  td:has(> input:focus, > textarea:focus) > .vm-btn{display:none;}   /* mientras se escribe no tapa el texto */
+  #overlayVerMas{z-index:200;align-items:center;}
+  #overlayVerMas .modal{max-width:440px;}
+  #vmTexto{white-space:pre-wrap;overflow-wrap:break-word;font-size:13px;line-height:1.45;color:var(--text);background:#fdfbf2;border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin:4px 0 14px;max-height:50vh;overflow:auto;}
   .cpn-grid{display:grid;gap:10px;margin:6px 0 4px;}
   .cpn-grid label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
   .cpn-grid input, .cpn-grid select{font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text);}
@@ -1271,6 +1283,16 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <button class="btn" id="cpnCancelar">Cancelar</button>
       <button class="btn btn-primary" id="cpnGuardar">Cargar clase de prueba</button>
     </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: VER NOTA COMPLETA ============ -->
+<div class="overlay" id="overlayVerMas">
+  <div class="modal">
+    <button class="close-x" id="vmCerrar">✕</button>
+    <h2 id="vmTitulo">Nota</h2>
+    <div id="vmTexto"></div>
+    <div class="modal-actions"><button class="btn btn-primary" id="vmOk">Cerrar</button></div>
   </div>
 </div>
 
@@ -10024,6 +10046,54 @@ document.getElementById('asisEstilos').addEventListener('click', e=>{
   const c = e.target.closest('[data-estilo]'); if(!c) return;
   const n = c.dataset.estilo; asisSel = asisSel && asisSel.estilo===n ? null : {estilo:n}; renderAsistencias();
 });
+
+/* ---- Notas cortadas en todo el sistema: si el texto no entra, aparece "… ver más" y se abre la nota completa ---- */
+const VM_SEL = 'td.notas:not(.tabla-mov td), td.cortable, td > input.cp-notas, td > textarea.dv-motivo';
+function vmTextoDe(td){
+  const f = td.querySelector(':scope > input.cp-notas, :scope > textarea.dv-motivo');
+  if(f) return f.value;
+  if(td.dataset.full) return td.dataset.full;
+  const c = td.cloneNode(true); c.querySelectorAll('.vm-btn').forEach(b=> b.remove());
+  return c.textContent.trim();
+}
+function vmRevisar(){
+  document.querySelectorAll(VM_SEL).forEach(el=>{
+    const td = el.tagName==='TD' ? el : el.parentElement;
+    if(!td.offsetParent || td.contains(document.activeElement)) return;   // oculto, o se está escribiendo
+    let cortado;
+    if(el.tagName==='TEXTAREA') cortado = el.scrollHeight > el.clientHeight + 1;
+    else if(el.tagName==='INPUT') cortado = el.scrollWidth > el.clientWidth + 1;
+    else cortado = td.scrollWidth > td.clientWidth + 1;
+    let b = td.querySelector(':scope > .vm-btn');
+    if(cortado && !b){
+      b = document.createElement('button'); b.type = 'button'; b.className = 'vm-btn'; b.tabIndex = -1;
+      b.innerHTML = '… <b>ver más</b>';
+      td.appendChild(b); td.classList.add('vm-td'); td.classList.toggle('vm-ta', el.tagName==='TEXTAREA');
+    } else if(!cortado && b){ b.remove(); td.classList.remove('vm-td', 'vm-ta'); }
+  });
+}
+let vmPendiente = false;
+const vmProgramar = ()=>{ if(vmPendiente) return; vmPendiente = true; requestAnimationFrame(()=>{ vmPendiente = false; vmRevisar(); }); };
+new MutationObserver(vmProgramar).observe(document.body, {childList:true, subtree:true, attributes:true, attributeFilter:['class']});
+window.addEventListener('resize', vmProgramar);
+document.addEventListener('focusout', ()=> setTimeout(vmProgramar, 60));
+document.addEventListener('mousedown', e=>{ if(e.target.closest('.vm-btn')) e.preventDefault(); }, true);   // que no tome el foco
+document.addEventListener('click', e=>{
+  const b = e.target.closest('.vm-btn'); if(!b) return;
+  e.preventDefault(); e.stopPropagation();
+  const td = b.closest('td'), tabla = td.closest('table');
+  let tit = '';
+  const filaTit = tabla && tabla.tHead ? tabla.tHead.rows[tabla.tHead.rows.length-1] : null;
+  const th = filaTit ? filaTit.cells[td.cellIndex] : null;
+  if(th) tit = (th.innerText || '').replace(/\s+/g,' ').trim() || ((th.querySelector('input')||{}).placeholder || '');
+  document.getElementById('vmTitulo').textContent = tit ? tit.charAt(0).toUpperCase() + tit.slice(1).toLowerCase() : 'Nota';
+  document.getElementById('vmTexto').textContent = vmTextoDe(td);
+  document.getElementById('overlayVerMas').classList.add('show');
+}, true);
+const vmCerrar = ()=> document.getElementById('overlayVerMas').classList.remove('show');
+document.getElementById('vmCerrar').onclick = vmCerrar;
+document.getElementById('vmOk').onclick = vmCerrar;
+document.getElementById('overlayVerMas').addEventListener('click', e=>{ if(e.target.id==='overlayVerMas') vmCerrar(); });
 
 // Esc cierra la ventana/desplegable que esté abierto arriba de todo
 document.addEventListener('keydown', e=>{
