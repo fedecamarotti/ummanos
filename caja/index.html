@@ -268,6 +268,13 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   @media (max-width:700px){ .fab-nuevo{right:16px;bottom:16px;width:50px;height:50px;} }
   .cp-tabla{width:100%;min-width:1282px;table-layout:fixed;border-collapse:collapse;}
   .cp-tabla th{font-size:9px;padding:3px 4px;line-height:1.1;text-align:center;white-space:normal;}
+  /* títulos que también son buscadores */
+  .cp-tabla th:has(.pl-busca){padding:0;}
+  .cp-tabla .pl-busca{display:block;padding:3px 1px;font-size:9px;line-height:1.1;letter-spacing:.1px;height:31px;}
+  .cp-tabla input.pl-busca[type=text]{height:31px;padding:3px 1px;border:none;border-radius:0;font-size:9px;}
+  .cp-tabla textarea.pl-busca{resize:none;overflow:hidden;padding-top:4px;}
+  .cp-tabla .pl-busca::placeholder{font-size:9px;line-height:1.1;letter-spacing:.1px;}
+  .cp-tabla .pl-busca:not(:placeholder-shown){background:#fff6dc;color:var(--text);}
   .cp-tabla input[type=date]{text-align:center;}
   .cp-tabla input.cp-prox{text-align:center;cursor:pointer;}
   .cp-tabla input.cp-fc{text-align:center;cursor:pointer;padding-left:2px;padding-right:2px;}
@@ -1766,7 +1773,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <div class="sheet-wrap cp-hoja">
         <table class="cp-tabla">
           <colgroup><col style="width:78px"><col style="width:114px"><col style="width:66px"><col style="width:150px"><col style="width:44px"><col style="width:44px"><col style="width:54px"><col style="width:92px"><col style="width:78px"><col style="width:54px"><col style="width:478px"><col style="width:30px"></colgroup>
-          <thead><tr><th>Fecha</th><th>Clase</th><th>Hora</th><th>Alumno/a</th><th>Vino</th><th>Msj<br>prof</th><th>Compró<br>pack</th><th>Pack<br>vendido</th><th>Próx.<br>contacto</th><th>Estado</th><th>Notas</th><th></th></tr></thead>
+          <thead><tr><th><input type="text" class="th-search pl-busca" placeholder="Fecha" autocomplete="off" aria-label="Buscar Fecha"></th><th><input type="text" class="th-search pl-busca" placeholder="Clase" autocomplete="off" aria-label="Buscar Clase"></th><th><input type="text" class="th-search pl-busca" placeholder="Hora" autocomplete="off" aria-label="Buscar Hora"></th><th><input type="text" class="th-search pl-busca" placeholder="Alumno/a" autocomplete="off" aria-label="Buscar Alumno/a"></th><th><input type="text" class="th-search pl-busca" placeholder="Vino" autocomplete="off" aria-label="Buscar Vino"></th><th><textarea class="th-search pl-busca" rows="2" placeholder="Msj&#10;prof" aria-label="Buscar Msj prof"></textarea></th><th><textarea class="th-search pl-busca" rows="2" placeholder="Compró&#10;pack" aria-label="Buscar Compró pack"></textarea></th><th><textarea class="th-search pl-busca" rows="2" placeholder="Pack&#10;vendido" aria-label="Buscar Pack vendido"></textarea></th><th><textarea class="th-search pl-busca" rows="2" placeholder="Próx.&#10;contacto" aria-label="Buscar Próx. contacto"></textarea></th><th><input type="text" class="th-search pl-busca" placeholder="Estado" autocomplete="off" aria-label="Buscar Estado"></th><th><input type="text" class="th-search pl-busca" placeholder="Notas" autocomplete="off" aria-label="Buscar Notas"></th><th></th></tr></thead>
           <tbody id="cpBody"></tbody>
         </table>
       </div>
@@ -1776,7 +1783,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <div class="sheet-wrap cp-hoja">
         <table class="cp-tabla dv-tabla">
           <colgroup><col style="width:52px"><col style="width:170px"><col style="width:300px"><col style="width:130px"><col style="width:130px"><col style="width:52px"><col style="width:42px"><col style="width:46px"><col style="width:52px"><col style="width:58px"><col style="width:338px"><col style="width:30px"></colgroup>
-          <thead><tr><th>Fecha</th><th>Paciente</th><th>Motivo</th><th>Prof.<br>deriva</th><th>Deriva a</th><th>Próx.<br>cont.</th><th>Env.</th><th>Agend.</th><th>Fecha<br>agend.</th><th>Estado</th><th>Notas</th><th></th></tr></thead>
+          <thead><tr><th><input type="text" class="th-search pl-busca" placeholder="Fecha" autocomplete="off" aria-label="Buscar Fecha"></th><th><input type="text" class="th-search pl-busca" placeholder="Paciente" autocomplete="off" aria-label="Buscar Paciente"></th><th><input type="text" class="th-search pl-busca" placeholder="Motivo" autocomplete="off" aria-label="Buscar Motivo"></th><th><textarea class="th-search pl-busca" rows="2" placeholder="Prof.&#10;deriva" aria-label="Buscar Prof. deriva"></textarea></th><th><input type="text" class="th-search pl-busca" placeholder="Deriva a" autocomplete="off" aria-label="Buscar Deriva a"></th><th><textarea class="th-search pl-busca" rows="2" placeholder="Próx.&#10;cont." aria-label="Buscar Próx. cont."></textarea></th><th><input type="text" class="th-search pl-busca" placeholder="Env." autocomplete="off" aria-label="Buscar Env."></th><th><input type="text" class="th-search pl-busca" placeholder="Agend." autocomplete="off" aria-label="Buscar Agend."></th><th><textarea class="th-search pl-busca" rows="2" placeholder="Fecha&#10;agend." aria-label="Buscar Fecha agend."></textarea></th><th><input type="text" class="th-search pl-busca" placeholder="Estado" autocomplete="off" aria-label="Buscar Estado"></th><th><input type="text" class="th-search pl-busca" placeholder="Notas" autocomplete="off" aria-label="Buscar Notas"></th><th></th></tr></thead>
           <tbody id="dvBody"></tbody>
         </table>
       </div>
@@ -9431,6 +9438,40 @@ cpBody.addEventListener('change', e=>{
   if(campo==='pack' && v) renderClasesPrueba();
   cpCerrarFecha(el);
 });
+// Títulos-buscadores de Clases de prueba y Derivaciones: filtran las filas del mes por lo que se ve en cada columna
+function plTextoCelda(td){
+  const el = td.querySelector('input:not([type=checkbox]), textarea, select, .cp-sw, .cp-sw-estado, input[type=checkbox]');
+  if(!el) return '';
+  if(el.classList.contains('cp-sw')) return el.classList.contains('on') ? 'si' : 'no';
+  if(el.classList.contains('cp-sw-estado')) return el.classList.contains('ok') ? 'concretado' : (el.classList.contains('cerrado') ? 'cerrado' : 'abierto');
+  if(el.type==='checkbox') return el.checked ? 'si' : 'no';
+  return el.value || '';
+}
+function plFiltrar(tbodyId){
+  const tb = document.getElementById(tbodyId); if(!tb) return;
+  const tabla = tb.closest('table');
+  const filtros = [...tabla.tHead.rows[0].cells].map(th=>{ const f = th.querySelector('.pl-busca'); return f ? normBusqueda(f.value.trim()) : ''; });
+  const activos = filtros.some(Boolean);
+  let visibles = 0;
+  [...tb.rows].forEach(tr=>{
+    if(!tr.dataset.id){ tr.style.display = tr.classList.contains('pl-sinres') ? 'none' : ''; return; }
+    const ok = !activos || filtros.every((q, i)=> !q || normBusqueda(plTextoCelda(tr.cells[i])).includes(q));
+    tr.style.display = ok ? '' : 'none'; if(ok) visibles++;
+  });
+  let sr = tb.querySelector('.pl-sinres');
+  if(activos && !visibles && tb.querySelector('tr[data-id]')){
+    if(!sr){ sr = tb.insertRow(); sr.className = 'pl-sinres'; sr.innerHTML = `<td colspan="12" class="empty-state">Sin resultados para esa búsqueda.</td>`; }
+    sr.style.display = '';
+  } else if(sr) sr.remove();
+}
+document.querySelectorAll('.cp-tabla .pl-busca').forEach(f=>{
+  const tbId = f.closest('table').tBodies[0].id;
+  f.addEventListener('input', ()=> plFiltrar(tbId));
+  f.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); f.blur(); } if(e.key==='Escape' && f.value){ e.preventDefault(); f.value=''; plFiltrar(tbId); } });
+});
+new MutationObserver(()=> plFiltrar('cpBody')).observe(document.getElementById('cpBody'), {childList:true});
+new MutationObserver(()=> plFiltrar('dvBody')).observe(document.getElementById('dvBody'), {childList:true});
+
 // Apenas se elige la fecha en el calendario, el casillero vuelve a mostrarse como dd/mm (sin esperar a tocar otra cosa).
 // Si se está escribiendo a mano, espera a que el año esté completo.
 function cpCerrarFecha(el){
