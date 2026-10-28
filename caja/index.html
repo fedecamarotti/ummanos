@@ -9407,7 +9407,13 @@ cpBody.addEventListener('change', e=>{
   cpGuardar(id, cambios);
   renderResumenCp();
   if(campo==='pack' && v) renderClasesPrueba();
+  cpCerrarFecha(el);
 });
+// Apenas se elige la fecha en el calendario, el casillero vuelve a mostrarse como dd/mm (sin esperar a tocar otra cosa).
+// Si se está escribiendo a mano, espera a que el año esté completo.
+function cpCerrarFecha(el){
+  if(el.classList.contains('cp-fc') && el.type==='date' && /^(19|20)\d\d-/.test(el.value)) setTimeout(()=> el.blur(), 0);
+}
 cpBody.addEventListener('click', async e=>{
   const sw = e.target.closest('.cp-sw');
   if(sw){
@@ -9619,6 +9625,7 @@ function dvCambio(el){
 dvBody.addEventListener('change', e=>{
   const el = e.target.closest('[data-campo]'); if(!el || el.classList.contains('cp-sw')) return;
   dvCambio(el);
+  cpCerrarFecha(el);
 });
 dvBody.addEventListener('input', e=>{ if(e.target.matches('textarea.dv-motivo')) dvAjustarAlto(e.target); });
 dvBody.addEventListener('click', async e=>{
