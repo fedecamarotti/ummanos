@@ -270,6 +270,13 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .cp-tabla th{font-size:9px;padding:3px 4px;line-height:1.1;text-align:center;white-space:normal;}
   .cp-tabla input[type=date]{text-align:center;}
   .cp-tabla input.cp-prox{text-align:center;cursor:pointer;}
+  .cp-tabla input.cp-fc{text-align:center;cursor:pointer;padding-left:2px;padding-right:2px;}
+  .cp-tabla select.cp-pill{padding-left:4px;padding-right:2px;}
+  .cp-sw-estado{width:30px;height:17px;border:1px solid #ddd5c3;border-radius:10px;background:#fbf8f1;position:relative;cursor:pointer;padding:0;vertical-align:middle;transition:background .2s;}
+  .cp-sw-estado i{position:absolute;top:1px;left:14px;width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .2s;}
+  .cp-sw-estado.cerrado{background:#55524c;border-color:#55524c;} .cp-sw-estado.cerrado i{left:2px;}
+  .cp-tabla tr.cp-cerrado td{background:#cfcabf;}
+  .cp-tabla tr.cp-cerrado td, .cp-tabla tr.cp-cerrado input, .cp-tabla tr.cp-cerrado select{color:#3f3c37;}
   .cp-tabla input.cp-prox::placeholder{color:var(--muted);}
   .cp-tabla input.cp-vencido{color:#c62828;font-weight:700;background:#fdecea;}
   .cpn-grid{display:grid;gap:10px;margin:6px 0 4px;}
@@ -1687,8 +1694,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       </div>
       <div class="sheet-wrap cp-hoja">
         <table class="cp-tabla">
-          <colgroup><col style="width:100px"><col style="width:126px"><col style="width:80px"><col style="width:160px"><col style="width:44px"><col style="width:44px"><col style="width:54px"><col style="width:98px"><col style="width:100px"><col style="width:400px"><col style="width:30px"></colgroup>
-          <thead><tr><th>Fecha</th><th>Clase</th><th>Hora</th><th>Alumno/a</th><th>Vino</th><th>Msj<br>prof</th><th>Compró<br>pack</th><th>Pack<br>vendido</th><th>Próx.<br>contacto</th><th>Notas</th><th></th></tr></thead>
+          <colgroup><col style="width:78px"><col style="width:126px"><col style="width:66px"><col style="width:160px"><col style="width:44px"><col style="width:44px"><col style="width:54px"><col style="width:92px"><col style="width:78px"><col style="width:54px"><col style="width:400px"><col style="width:30px"></colgroup>
+          <thead><tr><th>Fecha</th><th>Clase</th><th>Hora</th><th>Alumno/a</th><th>Vino</th><th>Msj<br>prof</th><th>Compró<br>pack</th><th>Pack<br>vendido</th><th>Próx.<br>contacto</th><th>Estado</th><th>Notas</th><th></th></tr></thead>
           <tbody id="cpBody"></tbody>
         </table>
       </div>
@@ -9257,7 +9264,7 @@ function suscribirClasesPrueba(){
       renderClasesPrueba();
     }, err=>{
       cpLista = [];
-      document.getElementById('cpBody').innerHTML = `<tr><td colspan="11" class="empty-state" style="color:#a13a3a;">No se pudieron leer las clases de prueba: ${escHtml(err.message)}<br>Revisá que en las reglas de Firebase esté la colección <b>clasesPrueba</b>.</td></tr>`;
+      document.getElementById('cpBody').innerHTML = `<tr><td colspan="12" class="empty-state" style="color:#a13a3a;">No se pudieron leer las clases de prueba: ${escHtml(err.message)}<br>Revisá que en las reglas de Firebase esté la colección <b>clasesPrueba</b>.</td></tr>`;
     });
 }
 function cpOrdenadas(){
@@ -9292,13 +9299,13 @@ function renderClasesPrueba(){
   const tb = document.getElementById('cpBody');
   if(tb.contains(document.activeElement) && document.activeElement.matches('input[type=text], input[type=date]')){ cpPendiente = true; return; }   // no pisar lo que se está escribiendo
   cpPendiente = false;
-  if(cpLista==null){ tb.innerHTML = '<tr><td colspan="11" class="empty-state">Cargando…</td></tr>'; return; }
+  if(cpLista==null){ tb.innerHTML = '<tr><td colspan="12" class="empty-state">Cargando…</td></tr>'; return; }
   const lista = cpOrdenadas();
-  if(!lista.length){ tb.innerHTML = '<tr><td colspan="11" class="empty-state">No hay clases de prueba cargadas este mes. Agregalas con "+ Nueva clase de prueba".</td></tr>'; return; }
+  if(!lista.length){ tb.innerHTML = '<tr><td colspan="12" class="empty-state">No hay clases de prueba cargadas este mes. Agregalas con "+ Nueva clase de prueba".</td></tr>'; return; }
   const opts = (arr, val)=> `<option value="">—</option>` + arr.map(o=> `<option ${o===val?'selected':''}>${escHtml(o)}</option>`).join('') + (val && !arr.includes(val) ? `<option selected>${escHtml(val)}</option>` : '');
   const sw = (campo, on)=> `<button type="button" class="cp-sw ${on?'on':''}" data-campo="${campo}" aria-pressed="${on?'true':'false'}"><i></i></button>`;
-  tb.innerHTML = lista.map(x=> `<tr data-id="${x.id}">
-      <td><input type="date" data-campo="fechaISO" value="${x.fechaISO||''}"></td>
+  tb.innerHTML = lista.map(x=> `<tr data-id="${x.id}" class="${x.cerrado ? 'cp-cerrado' : ''}">
+      <td><input type="text" readonly class="cp-fc" data-campo="fechaISO" data-iso="${x.fechaISO||''}" value="${cpFechaCorta(x.fechaISO)}"></td>
       <td><select class="cp-pill ${x.clase?'':'vacio'}" data-campo="clase">${opts(cpClasesDe((x.fechaISO||'').slice(0,7)), x.clase)}</select></td>
       <td><select class="cp-pill ${x.hora?'':'vacio'}" data-campo="hora">${opts(CP_HORAS, x.hora)}</select></td>
       <td class="left"><input type="text" data-campo="alumno" value="${escHtml(x.alumno||'')}" placeholder="Apellido, nombre"></td>
@@ -9306,11 +9313,14 @@ function renderClasesPrueba(){
       <td><input type="checkbox" data-campo="msjProf" ${x.msjProf?'checked':''}></td>
       <td>${sw('compro', !!x.compro)}</td>
       <td><select class="cp-pill ${x.pack?'':'vacio'}" data-campo="pack">${opts(CP_PACKS, x.pack)}</select></td>
-      <td><input type="${x.proxContacto ? 'date' : 'text'}" data-campo="proxContacto" value="${x.proxContacto||''}" placeholder="—" class="cp-prox ${x.proxContacto && x.proxContacto<=hoyISO() ? 'cp-vencido' : ''}"></td>
+      <td><input type="text" readonly data-campo="proxContacto" data-iso="${x.proxContacto||''}" value="${cpFechaCorta(x.proxContacto)}" placeholder="—" class="cp-fc cp-prox ${x.proxContacto && x.proxContacto<=hoyISO() ? 'cp-vencido' : ''}"></td>
+      <td><button type="button" class="cp-sw-estado ${x.cerrado?'cerrado':''}" title="${x.cerrado?'Negocio cerrado':'Abierto'} (tocá para cambiar)" aria-pressed="${x.cerrado?'true':'false'}"><i></i></button></td>
       <td class="left"><input type="text" class="cp-notas" data-campo="notas" data-no-mayus maxlength="${CP_NOTAS_MAX}" value="${escHtml(x.notas||'')}"></td>
       <td><button type="button" class="cp-del" title="Eliminar">✕</button></td>
     </tr>`).join('');
 }
+// Fechas de la planilla en formato corto dd/mm/aa (al tocarlas se abre el calendario)
+function cpFechaCorta(iso){ if(!iso) return ''; const [y,m,d] = iso.split('-'); return `${d}/${m}/${y.slice(2)}`; }
 async function cpGuardar(id, cambios){
   try{ await db.collection('clasesPrueba').doc(id).update({...cambios, actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()}); }
   catch(e){ alert('No se pudo guardar: ' + e.message); }
@@ -9323,6 +9333,7 @@ cpBody.addEventListener('change', e=>{
   if(campo==='alumno') v = mayus(String(v).trim());
   if(campo==='fechaISO' && !v){ renderClasesPrueba(); return; }
   if(campo==='proxContacto') el.classList.toggle('cp-vencido', !!v && v<=hoyISO());
+  if(el.classList.contains('cp-fc')) el.dataset.iso = v;
   if(el.tagName==='SELECT') el.classList.toggle('vacio', !v);
   const x = (cpLista||[]).find(y=> y.id===id); if(x){ x._fechaAnt = x.fechaISO; x[campo] = v; }
   const cambios = {[campo]: v};
@@ -9343,6 +9354,17 @@ cpBody.addEventListener('click', async e=>{
     cpGuardar(id, cambios); renderResumenCp();
     return;
   }
+  const est = e.target.closest('.cp-sw-estado');
+  if(est){
+    const tr = est.closest('tr'), id = tr.dataset.id, cerrado = !est.classList.contains('cerrado');
+    const x = (cpLista||[]).find(y=> y.id===id); if(x) x.cerrado = cerrado;
+    const cambios = {cerrado};
+    if(cerrado){ cambios.proxContacto = ''; if(x) x.proxContacto = ''; }   // negocio cerrado: no hay que volver a contactar
+    cpGuardar(id, cambios);
+    renderClasesPrueba();
+    if(cerrado && !((x && x.notas) || '').trim()) setTimeout(()=> alert('Recuerde motivo en nota'), 50);
+    return;
+  }
   const del = e.target.closest('.cp-del');
   if(del){
     const tr = del.closest('tr'), x = (cpLista||[]).find(y=> y.id===tr.dataset.id);
@@ -9357,11 +9379,14 @@ cpBody.addEventListener('keydown', e=>{
 // Próx. contacto vacío muestra "—"; al tocarlo se convierte en fecha
 cpBody.addEventListener('focusin', e=>{
   const el = e.target;
-  if(el.classList && el.classList.contains('cp-prox') && el.type==='text'){ el.type = 'date'; try{ el.showPicker(); }catch(_){} }
+  if(el.classList && el.classList.contains('cp-fc') && el.type==='text'){ el.readOnly = false; el.type = 'date'; el.value = el.dataset.iso || ''; try{ el.showPicker(); }catch(_){} }
 });
 cpBody.addEventListener('focusout', e=>{
   const el = e.target;
-  if(el.classList && el.classList.contains('cp-prox') && !el.value) el.type = 'text';
+  if(el.classList && el.classList.contains('cp-fc') && el.type==='date'){
+    if(el.value || el.dataset.campo!=='fechaISO') el.dataset.iso = el.value;
+    el.type = 'text'; el.readOnly = true; el.value = cpFechaCorta(el.dataset.iso);
+  }
 });
 cpBody.addEventListener('focusout', ()=> setTimeout(()=>{ if(cpPendiente && !cpBody.contains(document.activeElement)) renderClasesPrueba(); }, 50));
 const ovCpNueva = document.getElementById('overlayCpNueva');
