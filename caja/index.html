@@ -205,6 +205,17 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .th-search::placeholder{color:#b3a98e;text-transform:uppercase;letter-spacing:0.4px;font-weight:700;font-size:9.5px;}
   .th-search:focus{background:#fffcf5;color:var(--text);}
   .th-search-left{text-align:left;}
+  /* Títulos-buscador: el mismo recuadro en todas las planillas, con alto justo para dos renglones */
+  thead th input.th-search[type=text], thead th textarea.th-search{
+    display:block;width:100%;box-sizing:border-box;height:28px;margin:0;padding:2px 4px;
+    border:1px solid var(--border);border-radius:8px;background:#fdfbf2;
+    font-family:inherit;font-weight:700;font-size:9.5px;line-height:11px;text-transform:uppercase;letter-spacing:.4px;
+    color:var(--muted);text-align:center;
+  }
+  thead th textarea.th-search{resize:none;overflow:hidden;padding-top:2px;padding-bottom:2px;}
+  thead th input.th-search[type=text].th-search-left{text-align:left;}
+  thead th .th-search::placeholder{font-size:9.5px;line-height:11px;letter-spacing:.4px;}
+  thead th input.th-search[type=text]:focus, thead th textarea.th-search:focus{outline:none;border-color:var(--accent);background:#fffcf5;color:var(--text);}
   .editcol{width:34px;padding:0;}
   .editbtn{border:none;background:transparent;font-size:13px;padding:6px;color:#b5b7bd;border-radius:6px;}
   .editbtn:hover{background:#efe5cc;color:var(--accent);}
@@ -268,13 +279,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   @media (max-width:700px){ .fab-nuevo{right:16px;bottom:16px;width:50px;height:50px;} }
   .cp-tabla{width:100%;min-width:1282px;table-layout:fixed;border-collapse:collapse;}
   .cp-tabla th{font-size:9px;padding:3px 4px;line-height:1.1;text-align:center;white-space:normal;}
-  /* títulos que también son buscadores */
-  .cp-tabla th:has(.pl-busca){padding:0;}
-  .cp-tabla .pl-busca{display:block;padding:3px 1px;font-size:9px;line-height:1.1;letter-spacing:.1px;height:31px;}
-  .cp-tabla input.pl-busca[type=text]{height:31px;padding:3px 1px;border:none;border-radius:0;font-size:9px;}
-  .cp-tabla textarea.pl-busca{resize:none;overflow:hidden;padding-top:4px;}
-  .cp-tabla .pl-busca::placeholder{font-size:9px;line-height:1.1;letter-spacing:.1px;}
-  .cp-tabla .pl-busca:not(:placeholder-shown){background:#fff6dc;color:var(--text);}
+  .cp-tabla th:has(.th-search){padding:0;}
   .cp-tabla input[type=date]{text-align:center;}
   .cp-tabla input.cp-prox{text-align:center;cursor:pointer;}
   .cp-tabla input.cp-fc{text-align:center;cursor:pointer;padding-left:2px;padding-right:2px;}
@@ -1782,7 +1787,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <div class="cp-panel col-hidden" id="dvPanel">
       <div class="sheet-wrap cp-hoja">
         <table class="cp-tabla dv-tabla">
-          <colgroup><col style="width:52px"><col style="width:170px"><col style="width:300px"><col style="width:130px"><col style="width:130px"><col style="width:52px"><col style="width:42px"><col style="width:46px"><col style="width:52px"><col style="width:58px"><col style="width:338px"><col style="width:30px"></colgroup>
+          <colgroup><col style="width:52px"><col style="width:170px"><col style="width:300px"><col style="width:130px"><col style="width:130px"><col style="width:52px"><col style="width:42px"><col style="width:52px"><col style="width:52px"><col style="width:58px"><col style="width:332px"><col style="width:30px"></colgroup>
           <thead><tr><th><input type="text" class="th-search pl-busca" placeholder="Fecha" autocomplete="off" aria-label="Buscar Fecha"></th><th><input type="text" class="th-search pl-busca" placeholder="Paciente" autocomplete="off" aria-label="Buscar Paciente"></th><th><input type="text" class="th-search pl-busca" placeholder="Motivo" autocomplete="off" aria-label="Buscar Motivo"></th><th><textarea class="th-search pl-busca" rows="2" placeholder="Prof.&#10;deriva" aria-label="Buscar Prof. deriva"></textarea></th><th><input type="text" class="th-search pl-busca" placeholder="Deriva a" autocomplete="off" aria-label="Buscar Deriva a"></th><th><textarea class="th-search pl-busca" rows="2" placeholder="Próx.&#10;cont." aria-label="Buscar Próx. cont."></textarea></th><th><input type="text" class="th-search pl-busca" placeholder="Env." autocomplete="off" aria-label="Buscar Env."></th><th><input type="text" class="th-search pl-busca" placeholder="Agend." autocomplete="off" aria-label="Buscar Agend."></th><th><textarea class="th-search pl-busca" rows="2" placeholder="Fecha&#10;agend." aria-label="Buscar Fecha agend."></textarea></th><th><input type="text" class="th-search pl-busca" placeholder="Estado" autocomplete="off" aria-label="Buscar Estado"></th><th><input type="text" class="th-search pl-busca" placeholder="Notas" autocomplete="off" aria-label="Buscar Notas"></th><th></th></tr></thead>
           <tbody id="dvBody"></tbody>
         </table>
