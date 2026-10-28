@@ -294,7 +294,12 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .dv-tabla textarea.dv-motivo{display:block;width:100%;resize:none;overflow:hidden;font:inherit;font-size:10.5px;line-height:13px;padding:3px 7px;height:21px;max-height:29px;border-radius:7px;border:1px solid transparent;background:transparent;color:inherit;}
   .dv-tabla textarea.dv-motivo:hover{border-color:var(--border);background:#fdfbf2;}
   .dv-tabla textarea.dv-motivo:focus{border-color:var(--accent) !important;background:#fffcf5 !important;outline:none;}
-  .cpn-grid textarea{font:inherit;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text);resize:none;}
+  .cpn-grid textarea{width:100%;font-family:inherit;font-size:12.5px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text);resize:none;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:#fdfbf2;line-height:1.4;}
+  .cpn-grid textarea:focus{outline:none;border-color:var(--accent);background:#fffcf5;}
+  .cpn-grid .ac-dropdown{font-weight:400;text-transform:none;letter-spacing:0;color:var(--text);}   /* la lista no hereda el estilo del título */
+  .dv-tabla input.dv-prof{background:#f0e9d6;border-radius:20px;text-align:center;}
+  .dv-tabla input.dv-prof:placeholder-shown{color:var(--muted);}
+  .dv-tabla tr.cp-cerrado input.dv-prof{background:transparent;}
   .cpn-grid{display:grid;gap:10px;margin:6px 0 4px;}
   .cpn-grid label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
   .cpn-grid input, .cpn-grid select{font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text);}
@@ -1270,8 +1275,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <label>Fecha<input type="date" id="dvnFecha"></label>
       <label>Paciente<div class="ac-wrap"><input type="text" id="dvnPaciente" placeholder="Apellido, nombre" autocomplete="off" data-ac-libre></div></label>
       <label>Motivo<textarea id="dvnMotivo" data-no-mayus rows="2" maxlength="100" placeholder="Hasta 100 caracteres"></textarea></label>
-      <label>Prof. deriva<select id="dvnProfDeriva"></select></label>
-      <label>Deriva a<select id="dvnDerivaA"></select></label>
+      <label>Prof. deriva<div class="ac-wrap"><input type="text" id="dvnProfDeriva" placeholder="Escribí el profesional…" autocomplete="off"></div></label>
+      <label>Deriva a<div class="ac-wrap"><input type="text" id="dvnDerivaA" placeholder="Escribí el profesional…" autocomplete="off"></div></label>
     </div>
     <div class="modal-actions">
       <button class="btn" id="dvnCancelar">Cancelar</button>
@@ -9518,6 +9523,11 @@ function suscribirCpContactos(){
    ===================================================================== */
 const DV_MOTIVO_MAX = 100;   // dos renglones de ~50 caracteres
 let dvLista = null, unsubDv = null, dvMesSuscripto = null, dvPendiente = false;
+// Devuelve el nombre tal cual está en la lista ('' si quedó vacío, null si no existe)
+function dvProfDeLista(v){
+  const k = normBusqueda(String(v||'').trim()); if(!k) return '';
+  return dvProfesionales().find(n=> normBusqueda(n)===k) ?? null;
+}
 const dvFechaCorta = iso=> { if(!iso) return ''; const [y,m,d] = iso.split('-'); return `${d}/${m}`; };
 // Profesionales que atienden (sin cajas, alquileres ni gastos)
 function dvProfesionales(){
@@ -9549,15 +9559,13 @@ function renderDerivaciones(){
   const ms = ts => ts && ts.toMillis ? ts.toMillis() : Date.now();
   const lista = dvLista.slice().sort((a,b)=> a.fechaISO!==b.fechaISO ? (a.fechaISO<b.fechaISO?-1:1) : ms(a.creadoEn)-ms(b.creadoEn));
   if(!lista.length){ tb.innerHTML = '<tr><td colspan="11" class="empty-state">No hay derivaciones cargadas este mes. Agregalas con el "+".</td></tr>'; return; }
-  const profs = dvProfesionales();
-  const opts = (arr, val)=> `<option value="">—</option>` + arr.map(o=> `<option ${o===val?'selected':''}>${escHtml(o)}</option>`).join('') + (val && !arr.includes(val) ? `<option selected>${escHtml(val)}</option>` : '');
   const sw = (campo, on)=> `<button type="button" class="cp-sw ${on?'on':''}" data-campo="${campo}" aria-pressed="${on?'true':'false'}"><i></i></button>`;
   tb.innerHTML = lista.map(x=> `<tr data-id="${x.id}" class="${x.cerrado ? 'cp-cerrado' : ''}">
       <td><input type="text" readonly class="cp-fc" data-campo="fechaISO" data-iso="${x.fechaISO||''}" value="${dvFechaCorta(x.fechaISO)}"></td>
       <td class="left"><div class="ac-wrap"><input type="text" class="dv-pac" data-campo="paciente" data-ac-libre value="${escHtml(x.paciente||'')}" placeholder="Apellido, nombre" autocomplete="off"></div></td>
       <td class="left"><textarea class="dv-motivo" data-campo="motivo" data-no-mayus rows="1" maxlength="${DV_MOTIVO_MAX}">${escHtml(x.motivo||'')}</textarea></td>
-      <td><select class="cp-pill ${x.profDeriva?'':'vacio'}" data-campo="profDeriva">${opts(profs, x.profDeriva)}</select></td>
-      <td><select class="cp-pill ${x.derivaA?'':'vacio'}" data-campo="derivaA">${opts(profs, x.derivaA)}</select></td>
+      <td><div class="ac-wrap"><input type="text" class="dv-prof" data-campo="profDeriva" value="${escHtml(x.profDeriva||'')}" placeholder="—" autocomplete="off"></div></td>
+      <td><div class="ac-wrap"><input type="text" class="dv-prof" data-campo="derivaA" value="${escHtml(x.derivaA||'')}" placeholder="—" autocomplete="off"></div></td>
       <td><input type="text" readonly data-campo="proxContacto" data-iso="${x.proxContacto||''}" value="${dvFechaCorta(x.proxContacto)}" placeholder="—" class="cp-fc cp-prox ${x.proxContacto && x.proxContacto<=hoyISO() ? 'cp-vencido' : ''}"></td>
       <td>${sw('enviado', !!x.enviado)}</td>
       <td>${sw('agendado', !!x.agendado)}</td>
@@ -9576,6 +9584,11 @@ function dvCambio(el){
   const id = el.closest('tr').dataset.id, campo = el.dataset.campo;
   let v = el.value;
   if(campo==='paciente') v = mayus(String(v).trim());
+  if(campo==='profDeriva' || campo==='derivaA'){
+    v = dvProfDeLista(v);
+    if(v==null){ const x0 = (dvLista||[]).find(y=> y.id===id); el.value = x0 ? (x0[campo]||'') : ''; alert('Elegí un profesional de la lista.'); return; }
+    el.value = v;
+  }
   if(campo==='motivo') v = String(v).replace(/\s*\n\s*/g,' ').trim();
   if(campo==='fechaISO' && !v){ renderDerivaciones(); return; }
   if(campo==='proxContacto') el.classList.toggle('cp-vencido', !!v && v<=hoyISO());
@@ -9624,7 +9637,7 @@ dvBody.addEventListener('click', async e=>{
 // Enter guarda y sale del casillero (también en Motivo: no hay saltos de línea, el texto pasa solo al segundo renglón)
 dvBody.addEventListener('keydown', e=>{
   if(e.key==='Enter' && e.target.matches('input[type=text], input[type=date], textarea')){
-    if(e.target.classList.contains('dv-pac') && e.target.closest('.ac-wrap').querySelector('.ac-dropdown.show .ac-option.activo')) return;   // está eligiendo de la lista
+    if((e.target.classList.contains('dv-pac') || e.target.classList.contains('dv-prof')) && e.target.closest('.ac-wrap').querySelector('.ac-dropdown.show .ac-option.activo')) return;   // está eligiendo de la lista
     e.preventDefault(); e.target.blur();
   }
 });
@@ -9635,6 +9648,11 @@ dvBody.addEventListener('focusin', e=>{
   if(el.classList && el.classList.contains('dv-pac') && !el._ac){
     el._ac = true;
     attachAutocomplete(el, ()=> pacienteRegistry, ()=> dvCambio(el));
+    el.dispatchEvent(new Event('focus'));
+  }
+  if(el.classList && el.classList.contains('dv-prof') && !el._ac){
+    el._ac = true;
+    attachAutocomplete(el, dvProfesionales, ()=> dvCambio(el));
     el.dispatchEvent(new Event('focus'));
   }
 });
@@ -9650,14 +9668,15 @@ dvBody.addEventListener('focusout', e=>{
 // Nueva derivación
 const ovDvNueva = document.getElementById('overlayDvNueva');
 attachAutocomplete(document.getElementById('dvnPaciente'), ()=> pacienteRegistry);
+attachAutocomplete(document.getElementById('dvnProfDeriva'), dvProfesionales);
+attachAutocomplete(document.getElementById('dvnDerivaA'), dvProfesionales);
 function dvAbrirNueva(){
   const hoy = hoyISO();
   document.getElementById('dvnFecha').value = hoy >= mesInicioISO() && hoy < mesFinISO() ? hoy : mesInicioISO();
   document.getElementById('dvnPaciente').value = '';
   document.getElementById('dvnMotivo').value = '';
-  const op = '<option value="">—</option>' + dvProfesionales().map(n=> `<option>${escHtml(n)}</option>`).join('');
-  document.getElementById('dvnProfDeriva').innerHTML = op;
-  document.getElementById('dvnDerivaA').innerHTML = op;
+  document.getElementById('dvnProfDeriva').value = '';
+  document.getElementById('dvnDerivaA').value = '';
   ovDvNueva.classList.add('show');
   setTimeout(()=> document.getElementById('dvnPaciente').focus(), 50);
 }
@@ -9669,7 +9688,8 @@ document.getElementById('dvnGuardar').onclick = async ()=>{
   const fechaISO = document.getElementById('dvnFecha').value;
   const paciente = mayus(document.getElementById('dvnPaciente').value.trim());
   const motivo = document.getElementById('dvnMotivo').value.replace(/\s*\n\s*/g,' ').trim().slice(0, DV_MOTIVO_MAX);
-  const profDeriva = document.getElementById('dvnProfDeriva').value, derivaA = document.getElementById('dvnDerivaA').value;
+  const profDeriva = dvProfDeLista(document.getElementById('dvnProfDeriva').value), derivaA = dvProfDeLista(document.getElementById('dvnDerivaA').value);
+  if(profDeriva==null || derivaA==null){ alert('Elegí los profesionales de la lista.'); return; }
   if(!fechaISO){ alert('Elegí la fecha.'); return; }
   if(!paciente){ alert('Completá el paciente.'); return; }
   const btn = document.getElementById('dvnGuardar'); btn.disabled = true;
