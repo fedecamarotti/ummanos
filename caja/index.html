@@ -215,6 +215,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   thead th textarea.th-search{resize:none;overflow:hidden;padding-top:2px;padding-bottom:2px;}
   thead th input.th-search[type=text].th-search-left{text-align:left;}
   thead th .th-search::placeholder{font-size:9.5px;line-height:11px;letter-spacing:.4px;}
+  /* los títulos siempre centrados, en todas las tablas */
+  th, thead th .th-search, thead th .th-search::placeholder{text-align:center !important;}
   thead th input.th-search[type=text]:focus, thead th textarea.th-search:focus{outline:none;border-color:var(--accent);background:#fffcf5;color:var(--text);}
   .editcol{width:34px;padding:0;}
   .editbtn{border:none;background:transparent;font-size:13px;padding:6px;color:#b5b7bd;border-radius:6px;}
