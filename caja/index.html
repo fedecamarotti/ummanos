@@ -9546,6 +9546,8 @@ function dvProfDeLista(v){
 const dvEstado = x=> x.estado || (x.cerrado ? 'cerrado' : '');
 // La fecha de turno agendado avisa (rojo + globito) cuando llega el día, mientras la derivación siga abierta
 const dvAgendVencida = x=> !!x.fechaAgend && x.fechaAgend <= hoyISO() && !dvEstado(x);
+// Próx. contacto avisa cuando llega el día, salvo que ya tenga turno agendado (si se borra el turno, vuelve a avisar)
+const dvProxVencido = x=> !!x.proxContacto && x.proxContacto <= hoyISO() && !x.fechaAgend && !dvEstado(x);
 const dvFechaCorta = iso=> { if(!iso) return ''; const [y,m,d] = iso.split('-'); return `${d}/${m}`; };
 // Profesionales que atienden (sin cajas, alquileres ni gastos)
 function dvProfesionales(){
@@ -9584,7 +9586,7 @@ function renderDerivaciones(){
       <td class="left"><textarea class="dv-motivo" data-campo="motivo" data-no-mayus rows="1" maxlength="${DV_MOTIVO_MAX}">${escHtml(x.motivo||'')}</textarea></td>
       <td><div class="ac-wrap"><input type="text" class="dv-prof" data-campo="profDeriva" value="${escHtml(x.profDeriva||'')}" placeholder="—" autocomplete="off"></div></td>
       <td><div class="ac-wrap"><input type="text" class="dv-prof" data-campo="derivaA" value="${escHtml(x.derivaA||'')}" placeholder="—" autocomplete="off"></div></td>
-      <td><input type="text" readonly data-campo="proxContacto" data-iso="${x.proxContacto||''}" value="${dvFechaCorta(x.proxContacto)}" placeholder="—" class="cp-fc cp-prox ${x.proxContacto && x.proxContacto<=hoyISO() ? 'cp-vencido' : ''}"></td>
+      <td><input type="text" readonly data-campo="proxContacto" data-iso="${x.proxContacto||''}" value="${dvFechaCorta(x.proxContacto)}" placeholder="—" class="cp-fc cp-prox ${dvProxVencido(x) ? 'cp-vencido' : ''}"></td>
       <td>${sw('enviado', !!x.enviado)}</td>
       <td>${sw('agendado', !!x.agendado)}</td>
       <td><input type="text" readonly data-campo="fechaAgend" data-iso="${x.fechaAgend||''}" value="${dvFechaCorta(x.fechaAgend)}" placeholder="—" class="cp-fc cp-prox ${dvAgendVencida(x) ? 'cp-vencido' : ''}"></td>
@@ -9611,7 +9613,11 @@ function dvCambio(el){
   if(campo==='motivo') v = String(v).replace(/\s*\n\s*/g,' ').trim();
   if(campo==='fechaISO' && !v){ renderDerivaciones(); return; }
   const x = (dvLista||[]).find(y=> y.id===id);
-  if(campo==='proxContacto') el.classList.toggle('cp-vencido', !!v && v<=hoyISO());
+  if(campo==='proxContacto') el.classList.toggle('cp-vencido', !!v && v<=hoyISO() && !(x && (x.fechaAgend || dvEstado(x))));
+  if(campo==='fechaAgend'){
+    const pc = el.closest('tr').querySelector('[data-campo=proxContacto]');
+    if(pc && x) pc.classList.toggle('cp-vencido', dvProxVencido({...x, fechaAgend: v}));
+  }
   if(campo==='fechaAgend') el.classList.toggle('cp-vencido', !!v && v<=hoyISO() && !(x && dvEstado(x)));
   if(el.classList.contains('cp-fc')) el.dataset.iso = v;
   if(el.tagName==='SELECT') el.classList.toggle('vacio', !v);
@@ -9737,7 +9743,7 @@ document.getElementById('dvnGuardar').onclick = async ()=>{
 let dvContactos = [], dvAgendas = [], unsubDvContactos = null, unsubDvAgendas = null;
 function renderDvContactosCount(){
   const hoy = hoyISO();
-  const n = dvContactos.filter(x=> x.proxContacto && x.proxContacto <= hoy).length
+  const n = dvContactos.filter(dvProxVencido).length
           + dvAgendas.filter(dvAgendVencida).length;   // próx. contacto vencidos + turnos agendados que ya llegaron
   const b = document.getElementById('mSubDerivN');
   if(b){ b.textContent = n; b.classList.toggle('col-hidden', !n); }
