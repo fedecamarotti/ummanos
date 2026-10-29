@@ -1767,6 +1767,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <button class="s-tab s-tab-badge" data-msub="deriv"><span class="t-largo">Derivaciones</span><span class="t-corto">Deriv.</span> <span class="badge-count col-hidden" id="mSubDerivN" title="Contactos vencidos">0</span></button>
         <button class="s-tab" data-msub="cajas" id="mSubCajas">Cajas</button>
         <button class="s-tab" data-msub="pacientes"><span class="t-largo">Pacientes/alumnos</span><span class="t-corto">Pacientes</span></button>
+        <button class="s-tab col-hidden" data-msub="pago" id="mSubPago"><span class="t-largo">Calcular pago prof.</span><span class="t-corto">Pago prof.</span></button>
         <button class="s-tab s-tab-badge" data-msub="deudores">Deudores <span class="badge-count col-hidden" id="mSubDeudoresN">0</span></button>
       </div>
       <div></div>
@@ -3305,6 +3306,9 @@ function aplicarRolUI(){
   tabs.classList.remove('col-hidden');
   document.getElementById('movSubTabs').classList.remove('col-hidden');
   document.getElementById('mSubCajas').classList.toggle('col-hidden', !esAdmin);
+  // Recepcionistas: "Calcular pago prof." como botón y sin Menú (todo lo que usan está en los botones)
+  document.getElementById('mSubPago').classList.toggle('col-hidden', esAdmin);
+  document.getElementById('menuWrap').classList.toggle('col-hidden', !esAdmin);
   document.getElementById('movBar').classList.add('con-tabs');
   document.getElementById('btnNuevo').classList.add('col-hidden');   // "+ Nuevo mov." ahora está debajo de Movimientos
   mostrarVista('movimientos');
@@ -10111,6 +10115,7 @@ document.querySelectorAll('#movSubTabs [data-msub]').forEach(b=> b.onclick = ()=
   if(sub==='cajas') document.getElementById('btnCajas').click();
   else if(sub==='pacientes') document.getElementById('btnPacientes').click();
   else if(sub==='deudores') document.getElementById('btnDeudores').click();
+  else if(sub==='pago') document.getElementById('btnPagoProfesional').click();
   else if(sub==='nuevo') document.getElementById('btnNuevo').click();
 });
 
