@@ -3922,9 +3922,12 @@ function agregarFilaPago(monto, medio, cobradoPor, extra){
     if(selMedio.value === 'transferencia' && !(inicial && legadoTransfUmmana)){
       opcionesQuien(true);
     } else {
-      opcionesQuien(false, inicial ? cobradoPor : 'ummana');
+      // al cambiar el medio se respeta lo que ya estaba elegido (si eligió "Cobra el profesional" antes del medio)
+      opcionesQuien(false, inicial ? cobradoPor : quienElegido);
     }
   }
+  let quienElegido = cobradoPor === 'profesional' ? 'profesional' : 'ummana';
+  selQuien.addEventListener('change', ()=>{ if(!selQuien.disabled && selMedio.value!=='transferencia') quienElegido = selQuien.value; });
   selMedio.addEventListener('change', ()=> sincronizarQuienSegunMedio(false));
   sincronizarQuienSegunMedio(true);
   row.querySelector('.btn-quitar').onclick = ()=>{ row.remove(); recalcularPagos(); };
@@ -3984,17 +3987,19 @@ agregarFilaPago();
 
 function leerPagosForm(){
   const pagos = [];
-  let falta = false;
+  let falta = false, sinMedio = false;
   document.querySelectorAll('#pagosLista .pago-row').forEach(row=>{
     const x = valorPagoEnTotal(row);
     const medio = row.querySelector('.pago-medio').value;
     const cobradoPor = medio === 'debe' ? 'ummana' : row.querySelector('.pago-quien').value;
+    if(x.monto>0 && !medio){ sinMedio = true; return; }
     if(!(x.monto>0 && medio)) return;
     if(!x.ok){ falta = true; return; }
     const p = {medio, valor: x.valor, cobradoPor, saldada:false, fechaSaldadoISO:null, fechaSaldadoDisplay:null};
     if(x.mon !== monedaSel){ p.moneda = x.mon; p.montoOriginal = x.monto; p.cotizacion = x.cot; }   // pago en otra moneda
     pagos.push(p);
   });
+  if(sinMedio){ alert("Elegí el medio de pago."); return null; }
   if(falta){ alert("Cargá la cotización del pago en otra moneda."); return null; }
   return pagos;
 }
@@ -4391,6 +4396,11 @@ btnGuardarMov.onclick = async ()=>{
   const sumaPagos = pagos.reduce((a,p)=>a+p.valor,0);
   if(sumaPagos > valorNum){
     alert(`La suma de los pagos cargados (${fmtMonto(sumaPagos, monedaSel)}) supera el total (${fmtMonto(valorNum, monedaSel)}). Corregí los montos.`);
+    return;
+  }
+  // Saldando una deuda: si lo cargado no cubre el total, no se genera otra deuda por error
+  if(sumaPagos < valorNum && document.querySelector('input[name="saldarDeuda"]:checked')){
+    alert(`Para saldar la deuda, los pagos tienen que cubrir el total (${fmtMonto(valorNum, monedaSel)}). Faltan ${fmtMonto(valorNum - sumaPagos, monedaSel)}: revisá el monto y el medio de cada pago.`);
     return;
   }
   if(sumaPagos < valorNum){
