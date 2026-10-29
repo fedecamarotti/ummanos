@@ -426,6 +426,11 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .pf-area .barra i{display:block;height:7px;background:#c9b183;border-radius:4px;}
   .pf-total{margin-top:12px;font-size:11px;color:var(--muted);}
   .pf-btn-hist{width:100%;margin-top:10px;}
+  .pf-unif{margin:12px 0 0;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fbf6ea;}
+  .pf-unif-fila{display:flex;gap:8px;align-items:center;margin-top:6px;} .pf-unif-fila .ac-wrap{flex:1;}
+  .pf-unif-fila input{width:100%;}
+  .pf-unif-ayuda{font-size:10px;color:var(--muted);margin-top:6px;}
+  #pacVistaFicha.ver-hist .pf-unif,
   #pacVistaFicha.ver-hist .pf-cuerpo, #pacVistaFicha.ver-hist #pfAcciones, #pacVistaFicha.ver-hist #pfVolver, #pacVistaFicha.ver-hist .pf-editar-nombre, #pacVistaFicha.ver-hist #pfNombreCampos{display:none !important;}
   .pf-hist-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
   .pf-hist-chips button{display:inline-flex;align-items:center;gap:5px;border:1px solid #e0d4b6;border-radius:20px;padding:4px 10px;font-size:10.5px;background:#fff;color:var(--text);cursor:pointer;}
@@ -2731,8 +2736,14 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
           <button type="button" class="btn pf-btn-hist" id="pfBtnHist">🧾 Historial</button>
         </div>
       </div>
+      <div class="pf-unif col-hidden" id="pfUnifBox">
+        <div class="pf-areas-tit">Unificar duplicado en este paciente</div>
+        <div class="pf-unif-fila"><div class="ac-wrap"><input type="text" id="pfUnifDup" placeholder="Paciente duplicado (se oculta)…" autocomplete="off"></div>
+          <button type="button" class="btn btn-primary" id="pfUnifOk">Unificar</button></div>
+        <div class="pf-unif-ayuda">Los movimientos, sueros, clases de prueba, derivaciones y alertas del duplicado pasan a este paciente. El duplicado no se borra: queda oculto.</div>
+      </div>
       <div class="modal-actions between" id="pfAcciones">
-        <button class="btn btn-eliminar" id="pfEliminar">Eliminar paciente</button>
+        <div style="display:flex;gap:8px;"><button class="btn btn-eliminar" id="pfEliminar">Eliminar paciente</button><button class="btn col-hidden" id="pfUnificar" title="Juntar un paciente duplicado en este">Unificar duplicado</button></div>
         <div style="display:flex;gap:8px;">
           <button class="btn" id="pfCerrar">Cerrar</button>
           <button class="btn btn-primary" id="pfGuardar">Guardar</button>
@@ -8077,6 +8088,8 @@ function abrirFichaPaciente(id){
   pfSetMedio(p ? p.medioLlegada : '');
   document.getElementById('pfReferido').value = p ? (p.referidoPor||'') : '';
   document.getElementById('pfEliminar').classList.toggle('col-hidden', nuevo);
+  document.getElementById('pfUnificar').classList.toggle('col-hidden', nuevo || !esFede());
+  document.getElementById('pfUnifBox').classList.add('col-hidden'); document.getElementById('pfUnifDup').value = '';
   document.getElementById('pfGuardar').textContent = nuevo ? 'Crear paciente' : 'Guardar';
   pfMarcarVacios();
   pacVistaPanel('ficha');
@@ -8222,6 +8235,66 @@ document.getElementById('pfEliminar').onclick = async ()=>{
     pfPaciente = null;
     pacVistaPanel('lista'); renderPacientesBusqueda();
   }catch(e){ alert("No se pudo eliminar: " + e.message); }
+};
+/* ---- Unificar paciente duplicado (solo Fede): todo lo cargado con el nombre del duplicado pasa a este paciente.
+   El duplicado no se borra: queda con fusionadoCon y deja de aparecer. ---- */
+document.getElementById('pfUnificar').onclick = ()=>{
+  const box = document.getElementById('pfUnifBox'); box.classList.toggle('col-hidden');
+  if(!box.classList.contains('col-hidden')) document.getElementById('pfUnifDup').focus();
+};
+attachAutocomplete(document.getElementById('pfUnifDup'), ()=> pacienteRegistry.filter(n=> !pfPaciente || n!==pfPaciente.nombreCompleto));
+async function unificarPacientes(destino, dup){
+  const viejo = dup.nombreCompleto, nuevo = destino.nombreCompleto;
+  const refs = [   // [colección, campo con el nombre del paciente]
+    ['movimientos','pac'], ['sueros','tercero'], ['clasesPrueba','alumno'], ['derivaciones','paciente'], ['alertas','paciente'],
+  ];
+  const snaps = await Promise.all(refs.map(([c,f])=> db.collection(c).where(f,'==',viejo).get()));
+  const cuenta = refs.map(([c],i)=> [c, snaps[i].size]).filter(([,n])=> n);
+  const det = cuenta.length ? cuenta.map(([c,n])=> `· ${n} en ${c}`).join('\n') : '· No tiene registros cargados';
+  if(!confirm(`Unificar "${viejo}" en "${nuevo}":\n\n${det}\n\nTodo pasa a ${nuevo} y "${viejo}" queda oculto (no se borra). ¿Seguimos?`)) return false;
+  let batch = db.batch(), n = 0;
+  const flush = async ()=>{ if(n){ await batch.commit(); batch = db.batch(); n = 0; } };
+  for(let i=0; i<refs.length; i++){
+    for(const d of snaps[i].docs){
+      batch.update(d.ref, {[refs[i][1]]: nuevo, unificadoDe: viejo}); n++;
+      if(n >= 400) await flush();
+    }
+  }
+  await flush();
+  // Datos del paciente: lo que falte en el que queda se completa con lo del duplicado
+  const completar = {};
+  ['telefono','email','fnac','dni','medioLlegada','referidoPor'].forEach(k=>{ if(!destino[k] && dup[k]) completar[k] = dup[k]; });
+  if(Object.keys(completar).length){ await db.collection('pacientes').doc(destino.id).update(completar); Object.assign(destino, completar); }
+  // Ficha de sueros: si el duplicado tenía y el que queda no, se copia (la del duplicado no se borra)
+  try{
+    const [hDup, hDes] = await Promise.all([db.collection('historiasSueros').doc(dup.id).get(), db.collection('historiasSueros').doc(destino.id).get()]);
+    if(hDup.exists){
+      const a = hDup.data(), b = hDes.exists ? hDes.data() : {};
+      const merge = {};
+      Object.keys(a).forEach(k=>{ if(k==='notas') return; if(b[k]==null || b[k]==='') merge[k] = a[k]; });
+      if(Array.isArray(a.notas) && a.notas.length) merge.notas = firebase.firestore.FieldValue.arrayUnion(...a.notas);
+      if(Object.keys(merge).length) await db.collection('historiasSueros').doc(destino.id).set(merge, {merge:true});
+    }
+  }catch(e){ console.warn('Ficha de sueros no unificada', e); }
+  await db.collection('pacientes').doc(dup.id).update({fusionadoCon: destino.id, fusionadoEn: firebase.firestore.FieldValue.serverTimestamp(), fusionadoPor: currentUser ? currentUser.nombre : ''});
+  pacientesFullList = pacientesFullList.filter(x=> x.id!==dup.id);
+  pacienteRegistry = pacientesFullList.map(x=> x.nombreCompleto);
+  return true;
+}
+document.getElementById('pfUnifOk').onclick = async ()=>{
+  if(!pfPaciente || !esFede()) return;
+  const nom = mayus(document.getElementById('pfUnifDup').value.trim());
+  const dup = pacientesFullList.find(x=> mayus(x.nombreCompleto||'')===nom);
+  if(!dup){ alert('Elegí el paciente duplicado de la lista.'); return; }
+  if(dup.id===pfPaciente.id){ alert('Es el mismo paciente.'); return; }
+  const btn = document.getElementById('pfUnifOk'); btn.disabled = true; btn.textContent = 'Unificando…';
+  try{
+    if(await unificarPacientes(pfPaciente, dup)){
+      alert(`Listo: "${dup.nombreCompleto}" quedó unificado en "${pfPaciente.nombreCompleto}".`);
+      abrirFichaPaciente(pfPaciente.id);
+    }
+  }catch(e){ alert('No se pudo unificar: ' + e.message); }
+  btn.disabled = false; btn.textContent = 'Unificar';
 };
 // Nombres de pacientes en Movimientos: se pueden tocar para abrir la ficha
 document.getElementById('tbody').addEventListener('click', e=>{
