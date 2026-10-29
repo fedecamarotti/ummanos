@@ -9975,8 +9975,7 @@ function alAbrirForm(){
   const mia = alMia();
   document.getElementById('alResp').innerHTML = '<option value="">Elegí…</option>' + AL_RESP.map(([k,l])=> `<option value="${k}" ${k===mia?'selected':''}>${l}</option>`).join('');
   document.getElementById('alVence').value = hoyISO();
-  f.classList.remove('col-hidden');
-  setTimeout(()=> document.getElementById('alPac').focus(), 30);
+  f.classList.remove('col-hidden');   // sin foco automático: la lista de pacientes se abre recién al tocar el casillero
 }
 const alCerrarForm = ()=> document.getElementById('alFrm').classList.add('col-hidden');
 function alAbrir(){
