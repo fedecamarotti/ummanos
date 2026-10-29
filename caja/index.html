@@ -200,6 +200,10 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .al-vt{font-size:9.5px;font-weight:700;border-radius:10px;padding:2px 7px;background:#f0e9d6;color:var(--accent-dk);white-space:nowrap;}
   .al-it.venc .al-vt{background:#fdecea;color:#c62828;}
   .al-rs{font-size:8.5px;color:var(--muted);font-weight:600;letter-spacing:.2px;}
+  .al-ed{width:22px;height:22px;border:none;background:transparent;color:#b3a77f;display:flex;align-items:center;justify-content:center;flex:none;padding:0;margin-left:-4px;border-radius:6px;cursor:pointer;}
+  .al-ed:hover{background:#f0e8cf;color:var(--accent-dk);}
+  .al-it.editando{outline:1.5px solid var(--accent);}
+  .al-del{border:1px solid #f0c4bf;background:#fff4f2;color:#c62828;border-radius:8px;padding:7px 10px;font-weight:600;font-size:11px;margin-right:auto;}
   .al-ck{width:17px;height:17px;border-radius:50%;border:1.3px solid #c9bb98;background:transparent;color:#b3a77f;display:flex;align-items:center;justify-content:center;flex:none;padding:0;cursor:pointer;transition:background .2s,border-color .2s,color .2s;}
   .al-ck:hover{border-color:#86c793;color:#86c793;}
   .al-ck.ok{background:#86c793;border-color:#86c793;color:#fff;}
@@ -1704,7 +1708,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
           <div><label>Paciente <span class="opt">(opcional)</span></label><div class="ac-wrap"><input type="text" id="alPac" placeholder="Escribí el nombre…" autocomplete="off" data-ac-libre></div></div>
           <div><label>Nota</label><textarea id="alNota" rows="2" maxlength="80" placeholder="Hasta 80 caracteres (dos renglones)"></textarea><div class="al-cnt" id="alCnt">0 / 80</div></div>
           <div class="al-fila"><div><label>Responsable</label><select id="alResp"></select></div><div><label>Vencimiento</label><input type="date" id="alVence"></div></div>
-          <div class="al-fila al-acc"><button type="button" class="al-cn" id="alCancelar">Cancelar</button><button type="button" class="al-gd" id="alGuardar">Guardar</button></div>
+          <div class="al-fila al-acc"><button type="button" class="al-del col-hidden" id="alEliminar">Eliminar</button><button type="button" class="al-cn" id="alCancelar">Cancelar</button><button type="button" class="al-gd" id="alGuardar">Guardar</button></div>
         </div>
         <div class="al-ls" id="alLista"></div>
       </div>
@@ -9899,6 +9903,8 @@ const AL_RESP = [['ESTEFANIA','Estefanía Medina'],['ORIANA','Oriana Medina'],['
 let alPend = [], alHechas = null, unsubAl = null, unsubAlHechas = null;
 let alVista = 'pend';          // 'pend' | 'hechas'
 let alFiltro = null;           // null = todas, o 'ESTEFANIA' / 'ORIANA' / 'TIARA'
+let alEditId = null;           // id de la alerta que se está editando (null = nueva)
+const alEdBtn = `<button type="button" class="al-ed" title="Editar o eliminar"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>`;
 // Responsable que corresponde al usuario que entró (las recepcionistas); Fede y Pedro no tienen
 function alMia(){
   const pn = primerNombre();
@@ -9914,7 +9920,7 @@ function suscribirAlertas(){
   if(unsubAl) return;
   alFiltro = alEsAdmin() ? null : alMia();
   unsubAl = db.collection('alertas').where('hecha','==',false).onSnapshot(snap=>{
-    alPend = snap.docs.map(d=> ({id:d.id, ...d.data()}));
+    alPend = snap.docs.map(d=> ({id:d.id, ...d.data()})).filter(a=> !a.eliminada);
     renderAlertasCount(); if(alVista==='pend') renderAlertas();
   }, err=> console.warn('No se pudieron leer las alertas', err));
   setInterval(renderAlertasCount, 5*60*1000);
@@ -9954,8 +9960,8 @@ function renderAlertas(){
       .sort((a,b)=> (a.vence||'9').localeCompare(b.vence||'9') || ((a.creadoEn&&a.creadoEn.toMillis?a.creadoEn.toMillis():0) - (b.creadoEn&&b.creadoEn.toMillis?b.creadoEn.toMillis():0)));
   }
   if(!lista.length){ ls.innerHTML = `<div class="al-vacio">${alVista==='hechas' ? 'No hay tareas realizadas.' : 'No hay alertas pendientes.'}</div>`; return; }
-  ls.innerHTML = lista.map(a=> `<div class="al-it${alVista==='hechas' ? ' hecha' : (alVencida(a) ? ' venc' : '')}" data-id="${a.id}">
-      <div class="al-tx"><div class="al-nm">${escHtml(a.paciente || '—')}</div><div class="al-nt">${escHtml(a.nota || '')}</div></div>
+  ls.innerHTML = lista.map(a=> `<div class="al-it${alVista==='hechas' ? ' hecha' : (alVencida(a) ? ' venc' : '')}${a.id===alEditId?' editando':''}" data-id="${a.id}">
+      ${alEdBtn}<div class="al-tx"><div class="al-nm">${escHtml(a.paciente || '—')}</div><div class="al-nt">${escHtml(a.nota || '')}</div></div>
       <div class="al-de"><span class="al-vt">${alVista==='hechas' ? 'Venció' : 'Vence'} ${a.vence ? dvFechaCorta(a.vence) : '—'}</span><span class="al-rs">${escHtml(alLabel(a.responsable))}</span></div>
       ${alCk(alVista==='hechas')}
     </div>`).join('');
@@ -9964,20 +9970,27 @@ function alVerHechas(){
   alVista = 'hechas'; alHechas = null; renderAlertas();
   if(unsubAlHechas) unsubAlHechas();
   unsubAlHechas = db.collection('alertas').where('hecha','==',true).onSnapshot(snap=>{
-    alHechas = snap.docs.map(d=> ({id:d.id, ...d.data()})); if(alVista==='hechas') renderAlertas();
+    alHechas = snap.docs.map(d=> ({id:d.id, ...d.data()})).filter(a=> !a.eliminada); if(alVista==='hechas') renderAlertas();
   }, err=>{ alHechas = []; console.warn(err); renderAlertas(); });
 }
 function alVerPend(){ alVista = 'pend'; if(unsubAlHechas){ unsubAlHechas(); unsubAlHechas = null; } renderAlertas(); }
-function alAbrirForm(){
+function alAbrirForm(a){
   const f = document.getElementById('alFrm');
-  document.getElementById('alPac').value = '';
-  document.getElementById('alNota').value = ''; document.getElementById('alCnt').textContent = '0 / 80';
-  const mia = alMia();
-  document.getElementById('alResp').innerHTML = '<option value="">Elegí…</option>' + AL_RESP.map(([k,l])=> `<option value="${k}" ${k===mia?'selected':''}>${l}</option>`).join('');
-  document.getElementById('alVence').value = hoyISO();
-  f.classList.remove('col-hidden');   // sin foco automático: la lista de pacientes se abre recién al tocar el casillero
+  alEditId = a ? a.id : null;
+  document.getElementById('alPac').value = a ? (a.paciente || '') : '';
+  const nota = a ? (a.nota || '') : '';
+  document.getElementById('alNota').value = nota; document.getElementById('alCnt').textContent = `${nota.length} / 80`;
+  const sel = a ? a.responsable : alMia();
+  document.getElementById('alResp').innerHTML = '<option value="">Elegí…</option>' + AL_RESP.map(([k,l])=> `<option value="${k}" ${k===sel?'selected':''}>${l}</option>`).join('');
+  document.getElementById('alVence').value = a ? (a.vence || '') : hoyISO();
+  document.getElementById('alEliminar').classList.toggle('col-hidden', !a);
+  f.classList.remove('col-hidden');
+  renderAlertas();   // sin foco automático: la lista de pacientes se abre recién al tocar el casillero
 }
-const alCerrarForm = ()=> document.getElementById('alFrm').classList.add('col-hidden');
+function alCerrarForm(){
+  document.getElementById('alFrm').classList.add('col-hidden');
+  if(alEditId){ alEditId = null; renderAlertas(); }
+}
 function alAbrir(){
   document.getElementById('alPanel').classList.add('open'); document.getElementById('alBell').setAttribute('aria-expanded','true');
   alVista = 'pend'; alFiltro = alEsAdmin() ? null : alMia(); alCerrarForm(); renderAlertas();
@@ -9998,7 +10011,7 @@ document.getElementById('alPanel').addEventListener('click', async e=>{
   const b = e.target.closest('[data-al]');
   if(b){
     const a = b.dataset.al;
-    if(a==='nueva'){ document.getElementById('alFrm').classList.contains('col-hidden') ? alAbrirForm() : alCerrarForm(); }
+    if(a==='nueva'){ (document.getElementById('alFrm').classList.contains('col-hidden') || alEditId) ? alAbrirForm() : alCerrarForm(); }
     else if(a==='toggle'){ alFiltro = alFiltro ? null : alMia(); renderAlertas(); }
     else if(a==='hechas') alVerHechas();
     else if(a==='pend') alVerPend();
@@ -10006,6 +10019,14 @@ document.getElementById('alPanel').addEventListener('click', async e=>{
   }
   const f = e.target.closest('[data-alf]');
   if(f){ alFiltro = f.dataset.alf || null; renderAlertas(); return; }
+  const ed = e.target.closest('.al-ed');
+  if(ed){
+    const id = ed.closest('.al-it').dataset.id;
+    if(id===alEditId){ alCerrarForm(); return; }
+    const al = [...alPend, ...(alHechas||[])].find(x=> x.id===id);
+    if(al){ alAbrirForm(al); document.getElementById('alPanel').scrollTop = 0; }
+    return;
+  }
   const ck = e.target.closest('.al-ck');
   if(ck){
     const id = ck.closest('.al-it').dataset.id, hecha = alVista!=='hechas';
@@ -10022,6 +10043,18 @@ document.getElementById('alPanel').addEventListener('click', async e=>{
 document.getElementById('alNota').addEventListener('input', e=>{ document.getElementById('alCnt').textContent = `${e.target.value.length} / 80`; });
 document.getElementById('alNota').addEventListener('keydown', e=>{ if(e.key==='Enter') e.preventDefault(); });
 document.getElementById('alCancelar').onclick = alCerrarForm;
+// Eliminar: no se borra de Firestore, se marca eliminada y deja de mostrarse
+document.getElementById('alEliminar').onclick = async ()=>{
+  if(!alEditId || !confirm('¿Eliminar esta alerta?')) return;
+  const id = alEditId, btn = document.getElementById('alEliminar'); btn.disabled = true;
+  try{
+    await db.collection('alertas').doc(id).update({eliminada:true,
+      eliminadaPor: currentUser ? currentUser.nombre : '', eliminadaEn: firebase.firestore.FieldValue.serverTimestamp()});
+    if(alHechas) alHechas = alHechas.filter(x=> x.id!==id);
+    alCerrarForm();
+  }catch(err){ alert('No se pudo eliminar: ' + err.message); }
+  btn.disabled = false;
+};
 attachAutocomplete(document.getElementById('alPac'), ()=> pacienteRegistry);
 document.getElementById('alGuardar').onclick = async ()=>{
   const paciente = mayus(document.getElementById('alPac').value.trim());
@@ -10032,8 +10065,13 @@ document.getElementById('alGuardar').onclick = async ()=>{
   if(!vence){ alert('Elegí la fecha de vencimiento.'); return; }
   const btn = document.getElementById('alGuardar'); btn.disabled = true;
   try{
-    await db.collection('alertas').add({paciente, nota, responsable, vence, hecha:false,
-      creadoPor: currentUser ? currentUser.nombre : '', creadoEn: firebase.firestore.FieldValue.serverTimestamp()});
+    if(alEditId){
+      await db.collection('alertas').doc(alEditId).update({paciente, nota, responsable, vence,
+        editadoPor: currentUser ? currentUser.nombre : '', editadoEn: firebase.firestore.FieldValue.serverTimestamp()});
+    } else {
+      await db.collection('alertas').add({paciente, nota, responsable, vence, hecha:false,
+        creadoPor: currentUser ? currentUser.nombre : '', creadoEn: firebase.firestore.FieldValue.serverTimestamp()});
+    }
     alCerrarForm();
   }catch(err){ alert('No se pudo guardar la alerta: ' + err.message); }
   btn.disabled = false;
