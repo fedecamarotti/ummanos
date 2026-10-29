@@ -3931,11 +3931,15 @@ function agregarFilaPago(monto, medio, cobradoPor, extra){
   document.getElementById('pagosLista').appendChild(row);
   recalcularPagos();
 }
+// Retiro de honorarios médicos: el profesional se puede llevar pesos y dólares a la vez, sin cotización.
+// Los pagos en la otra moneda no cuentan para el total y se guardan como un segundo movimiento aparte.
+const esRetiroHon = ()=> /^RETIRO HONORARIOS MEDICOS/.test(mayus(selConcepto.value || '').trim());
 // Valor de un pago expresado en la moneda del total (con la cotización si es otra moneda)
 function valorPagoEnTotal(row){
   const monto = Number(row.querySelector('.pago-monto').value.replace(/\D/g,"")) || 0;
   const mon = row.querySelector('.pago-mon').value;
   if(mon === monedaSel) return {ok:true, valor:monto, monto, mon};
+  if(esRetiroHon()) return {ok:true, valor:0, monto, mon, aparte:true};
   const cot = parseMonto(row.querySelector('.pago-cot').value);
   if(!cot) return {ok:false, valor:0, monto, mon};
   const v = monedaSel === '$' ? monto * cot : monto / cot;
@@ -3947,15 +3951,15 @@ function recalcularPagos(origen){
   const total = Number(inpValor.value.replace(/\D/g,"")) || 0;
   let suma = 0;
   filas.forEach(r=>{
-    const otra = r.querySelector('.pago-mon').value !== monedaSel;
-    r.querySelector('.pago-cot-fila').classList.toggle('col-hidden', !otra);
     const x = valorPagoEnTotal(r);
+    const otra = r.querySelector('.pago-mon').value !== monedaSel && !x.aparte;
+    r.querySelector('.pago-cot-fila').classList.toggle('col-hidden', !otra);
     const eq = r.querySelector('.pago-eq');
     eq.textContent = otra ? (x.ok && x.monto ? `= ${fmtMonto(x.valor, monedaSel)}` : 'Cargá la cotización') : '';
     if(!r.dataset.auto) suma += x.valor;
   });
   // si hay un pago en otra moneda, el de la moneda del total que quedó vacío (o autocompletado) se llena con lo que resta
-  const hayOtra = filas.some(r=> r.querySelector('.pago-mon').value !== monedaSel && valorPagoEnTotal(r).ok);
+  const hayOtra = filas.some(r=>{ const x = valorPagoEnTotal(r); return r.querySelector('.pago-mon').value !== monedaSel && x.ok && !x.aparte; });
   const resto = Math.max(0, Math.round((total - suma)*100)/100);
   filas.forEach(r=>{
     if(r===origen || r.querySelector('.pago-mon').value !== monedaSel) return;
@@ -3971,6 +3975,14 @@ function recalcularPagos(origen){
     const r2 = Math.round((total - s2)*100)/100;
     aviso.classList.toggle('ok', Math.abs(r2) < 1);
     aviso.textContent = hayOtra && total ? (Math.abs(r2) < 1 ? 'Pagos completos.' : (r2 > 0 ? `Resta: ${fmtMonto(r2, monedaSel)} (queda como deuda)` : `Los pagos superan el total por ${fmtMonto(-r2, monedaSel)}`)) : '';
+    // retiro en dos monedas: lo de la otra moneda se guarda como otro movimiento
+    const aparte = {};
+    filas.forEach(r=>{ const x = valorPagoEnTotal(r); if(x.aparte && x.monto) aparte[x.mon] = (aparte[x.mon]||0) + x.monto; });
+    const ks = Object.keys(aparte);
+    if(ks.length){
+      aviso.classList.add('ok');
+      aviso.textContent = `Se guarda como dos retiros: ${fmtMonto(total, monedaSel)} y ${ks.map(k=> fmtMonto(aparte[k], k)).join(' y ')}.`;
+    }
   }
 }
 document.getElementById('btnAgregarPago').onclick = ()=>{
@@ -3982,14 +3994,17 @@ document.getElementById('btnAgregarPago').onclick = ()=>{
 };
 agregarFilaPago();
 
+let pagosAparte = [];   // retiro de honorarios: pagos en la otra moneda (van a un segundo movimiento)
 function leerPagosForm(){
   const pagos = [];
+  pagosAparte = [];
   let falta = false;
   document.querySelectorAll('#pagosLista .pago-row').forEach(row=>{
     const x = valorPagoEnTotal(row);
     const medio = row.querySelector('.pago-medio').value;
     const cobradoPor = medio === 'debe' ? 'ummana' : row.querySelector('.pago-quien').value;
     if(!(x.monto>0 && medio)) return;
+    if(x.aparte){ pagosAparte.push({medio, valor: x.monto, moneda: x.mon, cobradoPor, saldada:false, fechaSaldadoISO:null, fechaSaldadoDisplay:null}); return; }
     if(!x.ok){ falta = true; return; }
     const p = {medio, valor: x.valor, cobradoPor, saldada:false, fechaSaldadoISO:null, fechaSaldadoDisplay:null};
     if(x.mon !== monedaSel){ p.moneda = x.mon; p.montoOriginal = x.monto; p.cotizacion = x.cot; }   // pago en otra moneda
@@ -4106,6 +4121,7 @@ function actualizarCampoPacienteSegunTipo(){
   }
 }
 selConcepto.addEventListener('input', actualizarCampoPacienteSegunTipo);
+selConcepto.addEventListener('input', ()=> recalcularPagos());
 
 function poblarProfesionalesUI(){
   actualizarConceptosDesdeProfesional();
@@ -4365,6 +4381,22 @@ inpValor.addEventListener('input', ()=>{
 });
 
 
+// Segundo movimiento del retiro de honorarios con lo que se llevó en la otra moneda (uno por moneda)
+async function guardarRetiroAparte(aparte, fechaISO, fechaDisplay, pacValor, codigo, vinculadoA){
+  const porMon = {};
+  aparte.forEach(({moneda, ...p})=> (porMon[moneda] = porMon[moneda] || []).push(p));
+  for(const mon of Object.keys(porMon)){
+    const pagos = porMon[mon];
+    await db.collection('movimientos').add({
+      fechaISO, fechaDisplay, pac: pacValor, prof: selProfesional.value,
+      concepto: selConcepto.value, codigo, notas: document.getElementById('inpNotas').value,
+      moneda: mon, valor: pagos.reduce((a,p)=> a+p.valor, 0), pagos, tieneDeudaPendiente: false, jornada: movJornada,
+      retiroVinculadoA: vinculadoA,
+      creadoPor: currentUser.nombre, creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
+      cajaId: (modo==='editar' && movimientos.find(m=> m.id===vinculadoA) || {}).cajaId || (cajaActual ? cajaActual.id : 'SIN_CAJA'),
+    });
+  }
+}
 btnGuardarMov.onclick = async ()=>{
   const egreso = esEgreso(selProfesional.value, selConcepto.value);
   const pacValor = egreso ? document.getElementById('inpDestinatario').value.trim() : selPaciente.value;
@@ -4382,6 +4414,8 @@ btnGuardarMov.onclick = async ()=>{
 
   let pagos = leerPagosForm();
   if(!pagos) return;
+  const aparte = pagosAparte.slice();
+  if(aparte.length && !valorNum){ alert(`El total en ${monedaSel==='USD'?'USD':'pesos'} está en 0. Si solo se llevó la otra moneda, elegila arriba en Moneda.`); return; }
   // con cotización pueden quedar centavos de diferencia: se ajusta el último pago en otra moneda
   {
     const dif = Math.round((valorNum - pagos.reduce((a,p)=>a+p.valor,0))*100)/100;
@@ -4437,6 +4471,7 @@ btnGuardarMov.onclick = async ()=>{
     if(!document.getElementById('indicaWrap').classList.contains('col-hidden')) cambios.indicaCrema = document.getElementById('selIndica').value || 'PARTICULAR';
     await db.collection('movimientos').doc(editingId).update(cambios);
     nuevoMovId = editingId;
+    if(aparte.length) await guardarRetiroAparte(aparte, fechaISO, fechaDisplay, pacValor, codigo, editingId);
   } else {
     if(!cajaActual && !esFede()){ alert("La caja se encuentra cerrada, no se pueden cargar movimientos."); return; }
     if(cajaActual && fechaISO !== cajaActual.fechaISO){
@@ -4455,6 +4490,7 @@ btnGuardarMov.onclick = async ()=>{
       cajaId: cajaActual ? cajaActual.id : 'SIN_CAJA',
     });
     nuevoMovId = nuevoRef.id;
+    if(aparte.length) await guardarRetiroAparte(aparte, fechaISO, fechaDisplay, pacValor, codigo, nuevoMovId);
   }
 
   if(deudasASaldar.length){
