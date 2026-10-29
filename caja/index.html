@@ -201,6 +201,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .al-it.venc .al-vt{background:#fdecea;color:#c62828;}
   .al-rs{font-size:8.5px;color:var(--muted);font-weight:600;letter-spacing:.2px;}
   .al-ed{width:22px;height:22px;border:none;background:transparent;color:#b3a77f;display:flex;align-items:center;justify-content:center;flex:none;padding:0;margin-left:-4px;border-radius:6px;cursor:pointer;}
+  .al-ed-x{width:22px;flex:none;margin-left:-4px;}
   .al-ed:hover{background:#f0e8cf;color:var(--accent-dk);}
   .al-it.editando{outline:1.5px solid var(--accent);}
   .al-del{border:1px solid #f0c4bf;background:#fff4f2;color:#c62828;border-radius:8px;padding:7px 10px;font-weight:600;font-size:11px;margin-right:auto;}
@@ -9900,6 +9901,7 @@ async function pasarNotasAMayus(){
    ALERTAS — campana arriba a la derecha (colección "alertas")
    ===================================================================== */
 const AL_RESP = [['ESTEFANIA','Estefanía Medina'],['ORIANA','Oriana Medina'],['TIARA','Tiara Medina']];
+const AL_RESP_FORM = [...AL_RESP, ['TODAS','Todas (la primera que pueda)']];
 let alPend = [], alHechas = null, unsubAl = null, unsubAlHechas = null;
 let alVista = 'pend';          // 'pend' | 'hechas'
 let alFiltro = null;           // null = todas, o 'ESTEFANIA' / 'ORIANA' / 'TIARA'
@@ -9915,6 +9917,11 @@ function alMia(){
 }
 const alEsAdmin = ()=> currentUser && currentUser.rol === 'admin';
 const alLabel = r=> r==='ESTEFANIA' ? 'ESTEFANIA' : (r || '');
+// Una alerta para "TODAS" le aparece a las tres aunque esté filtrado su nombre
+const alDeResp = (a, f)=> !f || a.responsable===f || a.responsable==='TODAS';
+// Alertas creadas por Fede o Pedro: las recepcionistas no las pueden editar ni eliminar
+const alDeAdmin = a=> a.creadoRol ? a.creadoRol==='admin' : /^(FEDE|PEDRO)/.test(mayus(a.creadoPor||'').trim());
+const alPuedeEditar = a=> alEsAdmin() || !alDeAdmin(a);
 const alVencida = a=> !a.hecha && a.vence && a.vence <= hoyISO();
 function suscribirAlertas(){
   if(unsubAl) return;
@@ -9928,7 +9935,7 @@ function suscribirAlertas(){
 // Globito: las vencidas (o que vencen hoy) que ve cada una por defecto: las recepcionistas las suyas, Fede y Pedro todas
 function renderAlertasCount(){
   const mia = alEsAdmin() ? null : alMia();
-  const n = alPend.filter(a=> alVencida(a) && (!mia || a.responsable===mia)).length;
+  const n = alPend.filter(a=> alVencida(a) && alDeResp(a, mia)).length;
   const b = document.getElementById('alN');
   b.textContent = n; b.classList.toggle('col-hidden', !n);
 }
@@ -9954,14 +9961,14 @@ function renderAlertas(){
   if(alVista==='hechas'){
     if(alHechas==null){ ls.innerHTML = '<div class="al-vacio">Cargando…</div>'; return; }
     const ms = ts => ts && ts.toMillis ? ts.toMillis() : Date.now();
-    lista = alHechas.filter(a=> !alFiltro || a.responsable===alFiltro).sort((a,b)=> ms(b.hechaEn)-ms(a.hechaEn)).slice(0,150);
+    lista = alHechas.filter(a=> alDeResp(a, alFiltro)).sort((a,b)=> ms(b.hechaEn)-ms(a.hechaEn)).slice(0,150);
   } else {
-    lista = alPend.filter(a=> !alFiltro || a.responsable===alFiltro)
+    lista = alPend.filter(a=> alDeResp(a, alFiltro))
       .sort((a,b)=> (a.vence||'9').localeCompare(b.vence||'9') || ((a.creadoEn&&a.creadoEn.toMillis?a.creadoEn.toMillis():0) - (b.creadoEn&&b.creadoEn.toMillis?b.creadoEn.toMillis():0)));
   }
   if(!lista.length){ ls.innerHTML = `<div class="al-vacio">${alVista==='hechas' ? 'No hay tareas realizadas.' : 'No hay alertas pendientes.'}</div>`; return; }
   ls.innerHTML = lista.map(a=> `<div class="al-it${alVista==='hechas' ? ' hecha' : (alVencida(a) ? ' venc' : '')}${a.id===alEditId?' editando':''}" data-id="${a.id}">
-      ${alEdBtn}<div class="al-tx"><div class="al-nm">${escHtml(a.paciente || '—')}</div><div class="al-nt">${escHtml(a.nota || '')}</div></div>
+      ${alPuedeEditar(a) ? alEdBtn : '<span class="al-ed-x"></span>'}<div class="al-tx"><div class="al-nm">${escHtml(a.paciente || '—')}</div><div class="al-nt">${escHtml(a.nota || '')}</div></div>
       <div class="al-de"><span class="al-vt">${alVista==='hechas' ? 'Venció' : 'Vence'} ${a.vence ? dvFechaCorta(a.vence) : '—'}</span><span class="al-rs">${escHtml(alLabel(a.responsable))}</span></div>
       ${alCk(alVista==='hechas')}
     </div>`).join('');
@@ -9981,7 +9988,7 @@ function alAbrirForm(a){
   const nota = a ? (a.nota || '') : '';
   document.getElementById('alNota').value = nota; document.getElementById('alCnt').textContent = `${nota.length} / 80`;
   const sel = a ? a.responsable : alMia();
-  document.getElementById('alResp').innerHTML = '<option value="">Elegí…</option>' + AL_RESP.map(([k,l])=> `<option value="${k}" ${k===sel?'selected':''}>${l}</option>`).join('');
+  document.getElementById('alResp').innerHTML = '<option value="">Elegí…</option>' + AL_RESP_FORM.map(([k,l])=> `<option value="${k}" ${k===sel?'selected':''}>${l}</option>`).join('');
   document.getElementById('alVence').value = a ? (a.vence || '') : hoyISO();
   document.getElementById('alEliminar').classList.toggle('col-hidden', !a);
   f.classList.remove('col-hidden');
@@ -10024,7 +10031,7 @@ document.getElementById('alPanel').addEventListener('click', async e=>{
     const id = ed.closest('.al-it').dataset.id;
     if(id===alEditId){ alCerrarForm(); return; }
     const al = [...alPend, ...(alHechas||[])].find(x=> x.id===id);
-    if(al){ alAbrirForm(al); document.getElementById('alPanel').scrollTop = 0; }
+    if(al && alPuedeEditar(al)){ alAbrirForm(al); document.getElementById('alPanel').scrollTop = 0; }
     return;
   }
   const ck = e.target.closest('.al-ck');
@@ -10070,7 +10077,8 @@ document.getElementById('alGuardar').onclick = async ()=>{
         editadoPor: currentUser ? currentUser.nombre : '', editadoEn: firebase.firestore.FieldValue.serverTimestamp()});
     } else {
       await db.collection('alertas').add({paciente, nota, responsable, vence, hecha:false,
-        creadoPor: currentUser ? currentUser.nombre : '', creadoEn: firebase.firestore.FieldValue.serverTimestamp()});
+        creadoPor: currentUser ? currentUser.nombre : '', creadoRol: currentUser ? (currentUser.rol || '') : '',
+        creadoEn: firebase.firestore.FieldValue.serverTimestamp()});
     }
     alCerrarForm();
   }catch(err){ alert('No se pudo guardar la alerta: ' + err.message); }
