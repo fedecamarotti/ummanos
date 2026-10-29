@@ -4948,14 +4948,16 @@ async function refreshPagoPreview(){
     preview.innerHTML = `<div class="empty-state">Sin movimientos de este profesional en esa fecha.${pagoJornadaExcluidos ? `<br>(${pagoJornadaExcluidos} de jornada, que se liquidan aparte)` : ''}</div>`;
     btnExp.disabled = true; return;
   }
-  let totalPesos=0, totalUsd=0, profPesos=0, profUsd=0, ummPesos=0, ummUsd=0;
+  let totalPesos=0, totalUsd=0, profPesos=0, profUsd=0, ummPesos=0, ummUsd=0, debePesos=0, debeUsd=0;
   const lineas = [];
   pagoMovsActuales.forEach(m=>{
     pagosDe(m).forEach(p=>{
-      lineas.push({pac:m.pac, concepto:m.concepto, notas:m.notas, moneda:m.moneda, valor:p.valor, cobradoPor:p.cobradoPor||'ummana'});
+      const debe = p.medio==="debe";   // lo que quedó en "Debe" no se le paga al profesional (se paga el día que se salda)
+      lineas.push({pac:m.pac, concepto:m.concepto, notas:m.notas, moneda:m.moneda, valor:p.valor, cobradoPor:p.cobradoPor||'ummana', debe});
       const esUsd = m.moneda==="USD";
       if(esUsd) totalUsd+=p.valor; else totalPesos+=p.valor;
-      if(p.cobradoPor==="profesional"){ esUsd ? profUsd+=p.valor : profPesos+=p.valor; }
+      if(debe){ esUsd ? debeUsd+=p.valor : debePesos+=p.valor; }
+      else if(p.cobradoPor==="profesional"){ esUsd ? profUsd+=p.valor : profPesos+=p.valor; }
       else { esUsd ? ummUsd+=p.valor : ummPesos+=p.valor; }
     });
   });
@@ -4966,13 +4968,15 @@ async function refreshPagoPreview(){
       ${totalUsd>0 ? `<div class="chip" style="background:#f3ead3;border-color:#e3d3ad;color:#6b5530;">Total del día USD : US$ ${totalUsd.toLocaleString('es-AR')}</div>` : ""}
       ${profPesos>0 ? `<div class="chip" style="background:#f0e8cf;border-color:#e6dbc2;color:#7a7159;">Cobrado por el profesional $ : $${profPesos.toLocaleString('es-AR')}</div>` : ""}
       ${profUsd>0 ? `<div class="chip" style="background:#f0e8cf;border-color:#e6dbc2;color:#7a7159;">Cobrado por el profesional USD : US$ ${profUsd.toLocaleString('es-AR')}</div>` : ""}
-      ${ummPesos>0 ? `<div class="chip" style="background:#e3f1de;border-color:#c6e3ba;color:#2f7a2f;">A pagar (cobrado por Ummana) $ : $${ummPesos.toLocaleString('es-AR')}</div>` : ""}
+      ${ummPesos>0 || totalPesos>0 ? `<div class="chip" style="background:#e3f1de;border-color:#c6e3ba;color:#2f7a2f;">A pagar (cobrado por Ummana) $ : $${ummPesos.toLocaleString('es-AR')}</div>` : ""}
       ${ummUsd>0 ? `<div class="chip" style="background:#e3f1de;border-color:#c6e3ba;color:#2f7a2f;">A pagar (cobrado por Ummana) USD : US$ ${ummUsd.toLocaleString('es-AR')}</div>` : ""}
+      ${debePesos>0 ? `<div class="chip" style="background:#fdecea;border-color:#f5c6c2;color:#c62828;">Debe $ : $${debePesos.toLocaleString('es-AR')}</div>` : ""}
+      ${debeUsd>0 ? `<div class="chip" style="background:#fdecea;border-color:#f5c6c2;color:#c62828;">Debe USD : US$ ${debeUsd.toLocaleString('es-AR')}</div>` : ""}
     </div>
     ${lineas.map(l=>`
       <div class="deuda-row">
-        <div class="deuda-info"><span class="nom">${l.pac}</span><span class="det">${l.concepto}${l.notas ? " · " + l.notas : ""} — ${l.cobradoPor==='profesional' ? 'cobró el profesional' : 'cobró Ummana'}</span></div>
-        <span class="deuda-total" style="color:${l.cobradoPor==='profesional' ? '#7a7159' : '#2f7a2f'};">${fmtMonto(l.valor, l.moneda)}</span>
+        <div class="deuda-info"><span class="nom">${l.pac}</span><span class="det">${l.concepto}${l.notas ? " · " + l.notas : ""} — ${l.debe ? 'debe (no se paga)' : (l.cobradoPor==='profesional' ? 'cobró el profesional' : 'cobró Ummana')}</span></div>
+        <span class="deuda-total" style="color:${l.debe ? '#c62828' : (l.cobradoPor==='profesional' ? '#7a7159' : '#2f7a2f')};">${fmtMonto(l.valor, l.moneda)}</span>
       </div>
     `).join('')}
   `;
@@ -4994,12 +4998,13 @@ async function generarPNGPagoProfesional(prof, fechaISO, movs){
   document.getElementById('pvFecha').textContent = `${d_}/${m_}/${y_}`;
   document.getElementById('pvTbody').innerHTML = movs.map(construirFilaVisual).join('');
 
-  let totalPesos=0, totalUsd=0, profPesos=0, profUsd=0, ummPesos=0, ummUsd=0;
+  let totalPesos=0, totalUsd=0, profPesos=0, profUsd=0, ummPesos=0, ummUsd=0, debePesos=0, debeUsd=0;
   movs.forEach(m=>{
     pagosDe(m).forEach(p=>{
       const esUsd = m.moneda==="USD";
       if(esUsd) totalUsd+=p.valor; else totalPesos+=p.valor;
-      if(p.cobradoPor==="profesional"){ esUsd ? profUsd+=p.valor : profPesos+=p.valor; }
+      if(p.medio==="debe"){ esUsd ? debeUsd+=p.valor : debePesos+=p.valor; }
+      else if(p.cobradoPor==="profesional"){ esUsd ? profUsd+=p.valor : profPesos+=p.valor; }
       else { esUsd ? ummUsd+=p.valor : ummPesos+=p.valor; }
     });
   });
@@ -5009,6 +5014,7 @@ async function generarPNGPagoProfesional(prof, fechaISO, movs){
       <div class="kpi"><div class="lbl">Total del día</div><div class="val">$${totalPesos.toLocaleString('es-AR')}${totalUsd?' / US$ '+totalUsd.toLocaleString('es-AR'):''}</div></div>
       <div class="kpi"><div class="lbl">Cobrado por el profesional</div><div class="val">$${profPesos.toLocaleString('es-AR')}${profUsd?' / US$ '+profUsd.toLocaleString('es-AR'):''}</div></div>
       <div class="kpi"><div class="lbl">A pagar (cobrado por Ummana)</div><div class="val" style="color:#2f7a2f;">$${ummPesos.toLocaleString('es-AR')}${ummUsd?' / US$ '+ummUsd.toLocaleString('es-AR'):''}</div></div>
+      ${debePesos||debeUsd ? `<div class="kpi"><div class="lbl">Debe (no se paga)</div><div class="val" style="color:#c62828;">$${debePesos.toLocaleString('es-AR')}${debeUsd?' / US$ '+debeUsd.toLocaleString('es-AR'):''}</div></div>` : ''}
     </div>
   `;
 
