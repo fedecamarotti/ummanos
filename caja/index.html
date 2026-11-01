@@ -1069,6 +1069,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .sw-jornada.on i{left:18.5px;}
   .sw-jornada:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
   .tag-jornada{font-style:italic;font-weight:600;}
+  .mov-cargado{font-style:italic;font-size:11px;color:var(--muted);text-align:right;}
 
   /* ---------- Victoria contabilidad (solo Fede) ---------- */
   body.fede-nav-on #vistaConta > .sueros-bar{margin-top:8px;}
@@ -1742,7 +1743,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
           <button class="btn col-hidden" id="btnCremas"><span class="side-icon">🧴</span> Cremas/Col./Geles</button>
           <button class="btn col-hidden" id="btnConta"><span class="side-icon">📘</span> Victoria contabilidad</button>
           <button class="btn col-hidden" id="btnInformes"><span class="side-icon">📊</span> Informes</button>
-          <button class="btn" id="btnReporteDiario"><span class="side-icon">🧾</span> Reporte diario</button>
+          <button class="btn col-hidden" id="btnReporteDiario"><span class="side-icon">🧾</span> Reporte diario</button>
           <button class="btn" id="btnPagoProfesional"><span class="side-icon">🧮</span> Calcular pago profesional</button>
           <button class="btn col-hidden" id="btnImportar"><span class="side-icon">⬆</span> Importar catálogo</button>
         </div>
@@ -1773,6 +1774,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <button class="s-tab" data-msub="cajas" id="mSubCajas">Cajas</button>
         <button class="s-tab" data-msub="pacientes"><span class="t-largo">Pacientes/alumnos</span><span class="t-corto">Pacientes</span></button>
         <button class="s-tab col-hidden" data-msub="pago" id="mSubPago"><span class="t-largo">Calcular pago prof.</span><span class="t-corto">Pago prof.</span></button>
+        <button class="s-tab" data-msub="reporte"><span class="t-largo">Reporte diario</span><span class="t-corto">Reporte</span></button>
         <button class="s-tab s-tab-badge" data-msub="deudores">Deudores <span class="badge-count col-hidden" id="mSubDeudoresN">0</span></button>
       </div>
       <div></div>
@@ -2329,7 +2331,10 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <label>Pagos <span class="opt">(si no llega al total, la diferencia queda como deuda)</span></label>
       <div id="pagosLista"></div>
       <div class="pagos-resto" id="pagosResto"></div>
-      <button type="button" class="btn" id="btnAgregarPago" style="margin-top:4px;">+ Agregar pago</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px;">
+        <button type="button" class="btn" id="btnAgregarPago">+ Agregar pago</button>
+        <span class="mov-cargado col-hidden" id="movCargadoPor"></span>
+      </div>
     </div>
 
     <div class="modal-actions between" id="modalAcciones">
@@ -2345,7 +2350,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
 <!-- ============ CONTENEDOR OCULTO PARA EXPORTAR EL REPORTE COMO IMAGEN ============ -->
 <div id="reporteVisualHidden" style="position:fixed;left:-99999px;top:0;width:1400px;background:#f8f3e8;padding:28px;font-family:'Montserrat',sans-serif;">
   <div style="margin-bottom:18px;">
-    <div style="font-size:20px;font-weight:700;color:#24262b;">Reporte día <span id="rvFecha"></span></div>
+    <div style="font-size:20px;font-weight:700;color:#24262b;">Reporte del día <span id="rvFecha"></span> <span id="rvExportado" style="font-size:12px;font-weight:500;font-style:italic;color:#9c9179;"></span></div>
     <div style="font-size:12px;color:#9c9179;margin-top:2px;">CAJA UMMANA</div>
   </div>
   <div class="sheet-wrap" style="margin:0;">
@@ -3521,7 +3526,27 @@ const filtroCobro = document.getElementById('filtroCobro');
 const filtrosTabla = [filtroFecha, filtroPaciente, filtroProfesional, filtroCodigo, filtroConcepto, filtroNotas, filtroTotal, filtroMedio, filtroCobro];
 filtrosTabla.forEach(f=> f.addEventListener('input', renderTabla));
 
-function contiene(campo, texto){ return normBusqueda(campo).includes(normBusqueda(texto.trim())); }
+// Búsqueda de fechas estricta: "2/10" encuentra solo el 2/10 (no el 22/10); "3" solo los días 3; "/10" todo octubre.
+// Se aplica cuando lo buscado es una fecha (números y "/") y el campo tiene fechas; si no, búsqueda común por texto.
+function coincideFecha(campo, q){
+  q = (q||'').trim();
+  if(!/^\d{0,2}(\/\d{0,4}){0,2}$/.test(q) || !/\d/.test(q)) return null;
+  const fechas = String(campo||'').match(/\d{1,2}\/\d{1,2}(\/\d{2,4})?/g);
+  if(!fechas) return null;
+  const qp = q.split('/');
+  return fechas.some(f=>{
+    const fp = f.split('/');
+    return qp.every((x, i)=>{
+      if(x==='') return true;                       // "/10": cualquier día
+      if(i===2){ if(!fp[2]) return false; return x.length<=2 ? +fp[2].slice(-2)===+x : (fp[2].length===4 ? fp[2].startsWith(x) : false); }
+      return fp[i]!=null && +fp[i]===+x;
+    });
+  });
+}
+function contiene(campo, texto){
+  const f = coincideFecha(campo, texto); if(f!==null) return f;
+  return normBusqueda(campo).includes(normBusqueda(texto.trim()));
+}
 
 function pasaFiltros(m){
   if(filtroFecha.value && !contiene(m.fechaDisplay, filtroFecha.value)) return false;
@@ -4149,7 +4174,7 @@ selProfesional.addEventListener('input', actualizarConceptosDesdeProfesional);
 document.getElementById('btnNuevo').onclick = ()=>{
   if(soloLectura()){ alert("Para cargar movimientos hay que abrir caja."); return; }
   if(!cajaActual && !esFede()){ alert("La caja se encuentra cerrada, no se pueden cargar movimientos."); return; }
-  modo = 'nuevo'; editingId = null;
+  modo = 'nuevo'; editingId = null; document.getElementById('movCargadoPor').classList.add('col-hidden');
   modalTitle.textContent = "Nuevo movimiento";
   btnGuardarMov.textContent = "Guardar movimiento";
   btnEliminar.classList.add('col-hidden');
@@ -4159,6 +4184,9 @@ document.getElementById('btnNuevo').onclick = ()=>{
   cargarStockCremasForm();
 };
 
+// "Oriana" a partir del nombre guardado del usuario; "13/10, 14:30 hs" a partir de una fecha
+function nombreCortoUsuario(n){ const p = String(n||'').trim().split(/[\s,]+/)[0] || ''; return p ? p.charAt(0).toUpperCase() + p.slice(1).toLowerCase() : ''; }
+function fechaHoraCorta(d){ const z = x=> String(x).padStart(2,'0'); return `${z(d.getDate())}/${z(d.getMonth()+1)}, ${z(d.getHours())}:${z(d.getMinutes())} hs`; }
 function abrirEdicion(id){
   if(soloLectura()){ alert("Para editar movimientos hay que abrir caja."); return; }
   const m = movimientos.find(x=>x.id===id);
@@ -4168,6 +4196,13 @@ function abrirEdicion(id){
   modalTitle.textContent = "Editar movimiento";
   btnGuardarMov.textContent = "Guardar cambios";
   btnEliminar.classList.remove('col-hidden');
+  {
+    const cp = document.getElementById('movCargadoPor');
+    const ts = m.creadoEn && m.creadoEn.toDate ? m.creadoEn.toDate() : null;
+    const quien = m.creadoPor ? nombreCortoUsuario(m.creadoPor) : '';
+    cp.textContent = quien ? `cargado por ${quien}${ts ? ` (${fechaHoraCorta(ts)})` : ''}` : '';
+    cp.classList.toggle('col-hidden', !quien);
+  }
 
   selPaciente.value = m.pac;
   document.getElementById('inpDestinatario').value = m.pac;
@@ -4249,7 +4284,7 @@ function resetModal(){
   document.getElementById('deudasPacienteBox').classList.add('col-hidden');
   document.getElementById('deudasPacienteLista').innerHTML = "";
   setMovTipo('ingreso', false);
-  modo = 'nuevo'; editingId = null;
+  modo = 'nuevo'; editingId = null; document.getElementById('movCargadoPor').classList.add('col-hidden');
   modalTitle.textContent = "Nuevo movimiento";
   btnGuardarMov.textContent = "Guardar movimiento";
   btnEliminar.classList.add('col-hidden');
@@ -4726,6 +4761,7 @@ function construirFilaVisual(m){
 async function generarPNGReporteDiario(filas, fechaISO, sesiones){
   const [y_, m_, d_] = fechaISO.split('-');
   document.getElementById('rvFecha').textContent = `${d_}/${m_}/${y_}`;
+  document.getElementById('rvExportado').textContent = `(Exportado por ${nombreCortoUsuario(currentUser ? currentUser.nombre : '')} (${fechaHoraCorta(new Date())}))`;
   document.getElementById('rvTbody').innerHTML = filas.map(construirFilaVisual).join('');
 
   let inPesosEf=0, outPesosEf=0, inUsdEf=0, outUsdEf=0;
@@ -9623,7 +9659,7 @@ function plFiltrar(tbodyId){
   let visibles = 0;
   [...tb.rows].forEach(tr=>{
     if(!tr.dataset.id){ tr.style.display = tr.classList.contains('pl-sinres') ? 'none' : ''; return; }
-    const ok = !activos || filtros.every((q, i)=> !q || normBusqueda(plTextoCelda(tr.cells[i])).includes(q));
+    const ok = !activos || filtros.every((q, i)=> !q || contiene(plTextoCelda(tr.cells[i]), q));
     tr.style.display = ok ? '' : 'none'; if(ok) visibles++;
   });
   let sr = tb.querySelector('.pl-sinres');
@@ -10205,6 +10241,7 @@ document.querySelectorAll('#movSubTabs [data-msub]').forEach(b=> b.onclick = ()=
   else if(sub==='pacientes') document.getElementById('btnPacientes').click();
   else if(sub==='deudores') document.getElementById('btnDeudores').click();
   else if(sub==='pago') document.getElementById('btnPagoProfesional').click();
+  else if(sub==='reporte') document.getElementById('btnReporteDiario').click();
   else if(sub==='nuevo') document.getElementById('btnNuevo').click();
 });
 
