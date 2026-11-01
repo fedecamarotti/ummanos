@@ -2130,7 +2130,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <div class="asis-card">
         <div class="asis-head">
           <div><div class="asis-tit" id="asisTit">Asistencias por mes</div><div class="asis-sub" id="asisSub"></div></div>
-          <div class="asis-per"><span class="seg-modo col-hidden" id="asisModo"><button type="button" data-modo="p" class="on">Pacientes</button><button type="button" data-modo="r">Renta</button></span><span class="asis-salto"></span><span>Desde</span><select id="asisDesde"></select><span>hasta</span><select id="asisHasta"></select></div>
+          <div class="asis-per"><span class="seg-modo col-hidden" id="asisModo"><button type="button" data-modo="p" class="on" id="asisModoP">Pacientes</button><button type="button" data-modo="r" id="asisModoR">Renta</button></span><span class="asis-salto"></span><span>Desde</span><select id="asisDesde"></select><span>hasta</span><select id="asisHasta"></select></div>
         </div>
         <div id="asisBarras" class="asis-barras"><div class="inf-proximamente">Cargando…</div></div>
         <div class="asis-filtros col-hidden" id="asisFiltros"></div>
@@ -10298,10 +10298,12 @@ async function datosSueroterapia(){
   return {slots:[{estilo:'Mañana vs Tarde', dia:'Mañana', hora:'', color:'#6f9fd0'}, {estilo:'Mañana vs Tarde', dia:'Tarde', hora:'', color:'#e8975a'}, {estilo:'Sin asignar', dia:'Sin asignar', hora:'', oculto:true}],
     meses, mesesRenta: renta, hasta: hoyISO()};
 }
+// Informes con dos vistas: cantidad / plata (sueroterapia: pacientes y renta; packs: alumnos y cobros)
+const ASIS_CON_MODO = {sueroterapia:['Pacientes','Renta','Renta Ummana'], packs:['Alumnos','Cobros','Cobros']};
 const ASIS_TIPOS = {
   asistencias: {tit:'Asistencias por mes', unidad:'asistencias', corta:'asist.', nota:'Datos de Momoyoga (yoguis con "Asistida" tildado)', toca:'Tocá un estilo o un horario para verlo en el gráfico; tocá de nuevo para volver a todas.', todas:'Todas las clases'},
   sueroterapia: {tit:'Sueroterapia por mes', unidad:'pacientes', corta:'pacientes', nota:'Enero a agosto 2026: datos de la planilla anterior. Desde septiembre 2026: automático desde Movimientos sueros (cada suero aplicado es un paciente; la renta es la columna Ummana; mañana/tarde según la tecla M/T)', toca:'Con los botones Mañana y Tarde del gráfico de barras ves solo ese turno.', todas:'Todos los sueros'},
-  packs: {tit:'Packs vendidos por mes', unidad:'packs', corta:'packs', nota:'Datos de Momoyoga (packs de créditos BIENESTAR pagados, por fecha de compra; los de miembros cuentan como el pack de su cantidad)', toca:'Tocá un pack para verlo solo en el gráfico; tocá de nuevo para volver a todos.', todas:'Todos los packs'},
+  packs: {tit:'Packs vendidos por mes', unidad:'packs', corta:'packs', nota:'Datos de Momoyoga (packs de créditos BIENESTAR pagados, por fecha de compra; los de miembros cuentan como el pack de su cantidad). Cobros: lo que se cobró por esos packs', toca:'Tocá un pack para verlo solo en el gráfico; tocá de nuevo para volver a todos.', todas:'Todos los packs'},
 };
 document.querySelectorAll('#vistaInformes [data-inf]').forEach(b=> b.onclick = ()=>{
   if(asisTipo===b.dataset.inf) return;
@@ -10310,7 +10312,8 @@ document.querySelectorAll('#vistaInformes [data-inf]').forEach(b=> b.onclick = (
   document.getElementById('aumPanel').classList.toggle('col-hidden', asisTipo!=='aumentos');
   if(asisTipo==='aumentos'){ document.querySelectorAll('#vistaInformes [data-inf]').forEach(x=> x.classList.toggle('active', x===b)); cargarAumentos(); return; }
   document.querySelectorAll('#asisModo button').forEach(x=> x.classList.toggle('on', x.dataset.modo==='p'));
-  document.getElementById('asisModo').classList.toggle('col-hidden', asisTipo!=='sueroterapia');
+  document.getElementById('asisModo').classList.toggle('col-hidden', !ASIS_CON_MODO[asisTipo]);
+  if(ASIS_CON_MODO[asisTipo]){ document.getElementById('asisModoP').textContent = ASIS_CON_MODO[asisTipo][0]; document.getElementById('asisModoR').textContent = ASIS_CON_MODO[asisTipo][1]; }
   document.querySelectorAll('#vistaInformes [data-inf]').forEach(x=> x.classList.toggle('active', x===b));
   cargarAsistencias();
 });
@@ -10358,7 +10361,7 @@ function renderAsistencias(){
   const meses = Object.keys(asisData.meses).sort().filter(m=> m>=d && m<=h);
   const est = asisEstilos();
   const slotsSel = asisSel ? (asisSel.slot!=null ? [asisSel.slot] : est.find(e=> e.nombre===asisSel.estilo).slots) : asisData.slots.map((_, i)=> i);
-  const renta = asisTipo==='sueroterapia' && asisModo==='r';
+  const renta = !!ASIS_CON_MODO[asisTipo] && asisModo==='r' && !!asisData.mesesRenta;
   const SRC = renta ? asisData.mesesRenta : asisData.meses;
   const tot = meses.map(m=> slotsSel.reduce((a, i)=> a + ((SRC[m]||[])[i]||0), 0));
   const fmtV = v=> renta ? (Math.abs(v) >= 1e6 ? '$' + (v/1e6).toLocaleString('es-AR', {maximumFractionDigits:2}) + ' M' : '$' + Math.round(v/1000).toLocaleString('es-AR') + 'k') : Math.round(v).toLocaleString('es-AR');
@@ -10383,7 +10386,7 @@ function renderAsistencias(){
   const nombreSel = asisSel ? (asisSel.slot!=null ? slotNom(asisSel.slot) : asisSel.estilo) : '';
   document.getElementById('asisTit').textContent = T.tit;
   document.getElementById('asisSub').innerHTML = (asisSel ? `Mostrando <b>${escHtml(nombreSel)}</b><button id="asisVerTodas">ver todo</button> · ` : T.todas + ' · ')
-    + (renta ? `Renta Ummana: ${fmtTot(tot.reduce((a,b)=> a+b, 0))} en el período` : `${tot.reduce((a,b)=> a+b, 0).toLocaleString('es-AR')} ${T.unidad} en el período`);
+    + (renta ? `${ASIS_CON_MODO[asisTipo][2]}: ${fmtTot(tot.reduce((a,b)=> a+b, 0))} en el período` : `${tot.reduce((a,b)=> a+b, 0).toLocaleString('es-AR')} ${T.unidad} en el período`);
   const vt = document.getElementById('asisVerTodas'); if(vt) vt.onclick = e=>{ e.stopPropagation(); asisSel = null; renderAsistencias(); };
   // Sueroterapia: botones Mañana / Tarde dentro del cuadro de barras, abajo a la izquierda
   const filt = document.getElementById('asisFiltros');
