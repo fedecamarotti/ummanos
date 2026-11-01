@@ -4766,6 +4766,7 @@ async function generarPNGReporteDiario(filas, fechaISO, sesiones){
 
   let inPesosEf=0, outPesosEf=0, inUsdEf=0, outUsdEf=0;
   let inPesosMp=0, outPesosMp=0, inPesosTransf=0, outPesosTransf=0;
+  const usdOtros = {};   // dólares por Mercado Pago / transferencia / tarjeta (no entran a la caja física)
   const pagosProfesionales = [];
   filas.forEach(m=>{
     const esGasto = esGastoMov(m);
@@ -4777,9 +4778,11 @@ async function generarPNGReporteDiario(filas, fechaISO, sesiones){
       if(p.medio==="efectivo"){
         if(monP==="USD"){ esGasto ? outUsdEf+=vP : inUsdEf+=vP; }
         else { esGasto ? outPesosEf+=vP : inPesosEf+=vP; }
-      } else if(p.medio==="mp" && monP!=="USD"){
+      } else if(monP==="USD"){
+        const o = usdOtros[p.medio] = usdOtros[p.medio] || {in:0, out:0}; esGasto ? o.out+=vP : o.in+=vP;
+      } else if(p.medio==="mp"){
         esGasto ? outPesosMp+=vP : inPesosMp+=vP;
-      } else if(p.medio==="transferencia" && monP!=="USD"){
+      } else if(p.medio==="transferencia"){
         esGasto ? outPesosTransf+=vP : inPesosTransf+=vP;
       }
     });
@@ -4816,6 +4819,7 @@ async function generarPNGReporteDiario(filas, fechaISO, sesiones){
         <tr><td class="left">Efectivo USD</td><td style="color:#2f7a2f;font-weight:700;">US$ ${inUsdEf.toLocaleString('es-AR')}</td><td style="color:#a13a3a;font-weight:700;">US$ ${outUsdEf.toLocaleString('es-AR')}</td></tr>
         <tr><td class="left">Mercado Pago</td><td style="color:#2f7a2f;font-weight:700;">$${inPesosMp.toLocaleString('es-AR')}</td><td style="color:#a13a3a;font-weight:700;">$${outPesosMp.toLocaleString('es-AR')}</td></tr>
         <tr><td class="left">Transferencia</td><td style="color:#2f7a2f;font-weight:700;">$${inPesosTransf.toLocaleString('es-AR')}</td><td style="color:#a13a3a;font-weight:700;">$${outPesosTransf.toLocaleString('es-AR')}</td></tr>
+        ${Object.entries(usdOtros).map(([medio, o])=> `<tr><td class="left">${escHtml(medioLabelDe(medio, 'USD'))} USD</td><td style="color:#2f7a2f;font-weight:700;">US$ ${o.in.toLocaleString('es-AR')}</td><td style="color:#a13a3a;font-weight:700;">US$ ${o.out.toLocaleString('es-AR')}</td></tr>`).join('')}
       </tbody>
     </table>
   `;
