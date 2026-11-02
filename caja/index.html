@@ -4208,7 +4208,7 @@ document.getElementById('btnNuevo').onclick = ()=>{
   modalTitle.textContent = "Nuevo movimiento";
   btnGuardarMov.textContent = "Guardar movimiento";
   btnEliminar.classList.add('col-hidden');
-  document.getElementById('inpFechaMovimiento').value = hoyISO();
+  document.getElementById('inpFechaMovimiento').value = hoyISO(); document.getElementById('inpFechaMovimiento').max = hoyISO();
   document.getElementById('selIndica').innerHTML = INDICA_OPCIONES.map(o=> `<option>${o}</option>`).join('');
   overlay.classList.add('show');
   cargarStockCremasForm();
@@ -4291,7 +4291,7 @@ function resetModal(){
   setJornada(false);
   document.getElementById('jornadaWrap').classList.add('col-hidden');
   bloquearFechaMovimiento(false);
-  document.getElementById('inpFechaMovimiento').value = hoyISO();
+  document.getElementById('inpFechaMovimiento').value = hoyISO(); document.getElementById('inpFechaMovimiento').max = hoyISO();
   selPaciente.value = "";
   document.getElementById('inpDestinatario').value = "";
   document.getElementById('campoPacienteIngreso').classList.remove('col-hidden');
@@ -4507,6 +4507,10 @@ btnGuardarMov.onclick = async ()=>{
   }
   const fechaISO = document.getElementById('inpFechaMovimiento').value || hoyISO();
   if(!document.getElementById('inpFechaMovimiento').value){ alert("Elegí una fecha."); return; }
+  if(modo!=='editar'){
+    if(fechaISO > hoyISO()){ alert("No se pueden cargar movimientos con fecha posterior a hoy."); return; }
+    if(fechaISO < hoyISO() && !confirm(`ATENCIÓN: está cargando un movimiento con fecha ${ecFecha(fechaISO)}, que no es la fecha de hoy (${ecFecha(hoyISO())}).\n\n¿Está seguro de continuar?`)) return;
+  }
   const fechaDisplay = isoToDisplay(fechaISO);
   const codigo = CODIGO_POR_CONCEPTO[selProfesional.value+"||"+selConcepto.value] || "";
   const pendienteDeuda = tieneDeudaPendiente(pagos);
