@@ -426,6 +426,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .pf-area .barra i{display:block;height:7px;background:#c9b183;border-radius:4px;}
   .pf-total{margin-top:12px;font-size:11px;color:var(--muted);}
   .pf-btn-hist{width:100%;margin-top:10px;}
+  .pf-google{display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fffcf5;font-size:12px;font-weight:600;cursor:pointer;} .pf-google input{width:16px;height:16px;accent-color:var(--accent);margin:0;}
   .pf-unif{margin:12px 0 0;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fbf6ea;}
   .pf-unif-fila{display:flex;gap:8px;align-items:center;margin-top:6px;} .pf-unif-fila .ac-wrap{flex:1;}
   .pf-unif-fila input{width:100%;}
@@ -1784,6 +1785,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <button class="s-tab" data-msub="pacientes"><span class="t-largo">Pacientes/alumnos</span><span class="t-corto">Pacientes</span></button>
         <button class="s-tab col-hidden" data-msub="pago" id="mSubPago"><span class="t-largo">Calcular pago prof.</span><span class="t-corto">Pago prof.</span></button>
         <button class="s-tab" data-msub="reporte"><span class="t-largo">Reporte diario</span><span class="t-corto">Reporte</span></button>
+        <button class="s-tab col-hidden" data-msub="backup" id="mSubBackup">Back up</button>
         <button class="s-tab s-tab-badge" data-msub="deudores">Deudores <span class="badge-count col-hidden" id="mSubDeudoresN">0</span></button>
       </div>
       <div></div>
@@ -2626,6 +2628,22 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   </div>
 </div>
 
+<!-- ============ MODAL: BACK UP DEL MES (Fede y Pedro) ============ -->
+<div class="overlay" id="overlayBackup">
+  <div class="modal">
+    <button class="close-x" id="closeBackup">✕</button>
+    <h2>Back up del mes</h2>
+    <div class="modal-sub">Descargá todos los movimientos diarios del mes elegido.</div>
+    <div class="field"><label>Mes</label><input type="month" id="bkMes"></div>
+    <div class="hint" id="bkInfo" style="padding:4px 0 0"></div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelBackup">Cerrar</button>
+      <button class="btn" id="bkPdf">⬇ PDF</button>
+      <button class="btn btn-primary" id="bkExcel">⬇ Excel</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ MODAL: EXPORTAR ESTADO DE CUENTA (deudores) ============ -->
 <div class="overlay" id="overlayEstadoCuenta">
   <div class="modal wide">
@@ -2769,6 +2787,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
             <div id="pfAreas"></div>
           </div>
           <button type="button" class="btn pf-btn-hist" id="pfBtnHist">🧾 Historial</button>
+          <label class="pf-google col-hidden" id="pfGoogleWrap"><input type="checkbox" id="pfGoogle"> Avisado Google</label>
         </div>
       </div>
       <div class="pf-unif col-hidden" id="pfUnifBox">
@@ -3352,6 +3371,7 @@ function aplicarRolUI(){
   tabs.classList.remove('col-hidden');
   document.getElementById('movSubTabs').classList.remove('col-hidden');
   document.getElementById('mSubCajas').classList.toggle('col-hidden', !esAdmin);
+  document.getElementById('mSubBackup').classList.toggle('col-hidden', !esAdmin);
   // Recepcionistas: "Calcular pago prof." como botón y sin Menú (todo lo que usan está en los botones)
   document.getElementById('mSubPago').classList.toggle('col-hidden', esAdmin);
   document.getElementById('menuWrap').classList.toggle('col-hidden', !esAdmin);
@@ -3972,11 +3992,14 @@ function agregarFilaPago(monto, medio, cobradoPor, extra){
   // Excepción: un movimiento viejo cargado como transferencia cobrada por Ummana
   // conserva su valor al editarlo, para no cambiarlo sin querer.
   const legadoTransfUmmana = medio === 'transferencia' && cobradoPor === 'ummana';
-  function opcionesQuien(soloProfesional, valor){
+  // Mercado Pago: siempre lo cobra Ummana (única opción). Un movimiento viejo de MP cobrado por el profesional conserva su valor al editarlo.
+  const legadoMpProf = medio === 'mp' && cobradoPor === 'profesional';
+  function opcionesQuien(soloProfesional, valor, soloUmmana){
     selQuien.innerHTML = soloProfesional
       ? `<option value="profesional">Cobra el profesional</option>`
+      : soloUmmana ? `<option value="ummana">Cobra Ummana</option>`
       : `<option value="ummana">Cobra Ummana</option><option value="profesional">Cobra el profesional</option>`;
-    selQuien.value = soloProfesional ? 'profesional' : (valor==='profesional' ? 'profesional' : 'ummana');
+    selQuien.value = soloProfesional ? 'profesional' : soloUmmana ? 'ummana' : (valor==='profesional' ? 'profesional' : 'ummana');
   }
   function sincronizarQuienSegunMedio(inicial){
     if(selMedio.value === 'debe'){
@@ -3987,13 +4010,15 @@ function agregarFilaPago(monto, medio, cobradoPor, extra){
     selQuien.disabled = false;
     if(selMedio.value === 'transferencia' && !(inicial && legadoTransfUmmana)){
       opcionesQuien(true);
+    } else if(selMedio.value === 'mp' && !(inicial && legadoMpProf)){
+      opcionesQuien(false, 'ummana', true);
     } else {
       // al cambiar el medio se respeta lo que ya estaba elegido (si eligió "Cobra el profesional" antes del medio)
       opcionesQuien(false, inicial ? cobradoPor : quienElegido);
     }
   }
   let quienElegido = cobradoPor === 'profesional' ? 'profesional' : 'ummana';
-  selQuien.addEventListener('change', ()=>{ if(!selQuien.disabled && selMedio.value!=='transferencia') quienElegido = selQuien.value; });
+  selQuien.addEventListener('change', ()=>{ if(!selQuien.disabled && selMedio.value!=='transferencia' && selMedio.value!=='mp') quienElegido = selQuien.value; });
   selMedio.addEventListener('change', ()=> sincronizarQuienSegunMedio(false));
   sincronizarQuienSegunMedio(true);
   row.querySelector('.btn-quitar').onclick = ()=>{ row.remove(); recalcularPagos(); };
@@ -4597,6 +4622,78 @@ document.getElementById('deuBuscar').addEventListener('input', renderDeudores);
 attachAutocomplete(document.getElementById('deuBuscar'), ()=> [...new Set(movimientosDeuda.map(d=> d.pac))].sort());
 document.getElementById('deuLimpiar').onclick = ()=>{ document.getElementById('deuBuscar').value = ''; renderDeudores(); };
 
+/* ---- Back up del mes (Fede y Pedro): todos los movimientos diarios del mes en Excel o PDF ---- */
+const overlayBackup = document.getElementById('overlayBackup');
+function abrirBackup(){
+  if(!(currentUser && currentUser.rol==='admin')) return;
+  document.getElementById('bkMes').value = `${mesActual.year}-${String(mesActual.month).padStart(2,'0')}`;
+  document.getElementById('bkMes').max = hoyISO().slice(0,7);
+  document.getElementById('bkInfo').textContent = '';
+  overlayBackup.classList.add('show');
+}
+['closeBackup','cancelBackup'].forEach(id=> document.getElementById(id).onclick = ()=> overlayBackup.classList.remove('show'));
+async function bkMovimientos(){
+  const ym = document.getElementById('bkMes').value;
+  if(!ym){ alert('Elegí el mes.'); return null; }
+  let [y,m] = ym.split('-').map(Number); const ini = `${ym}-01`; m++; if(m>12){ m=1; y++; }
+  const fin = `${y}-${String(m).padStart(2,'0')}-01`;
+  document.getElementById('bkInfo').textContent = 'Buscando movimientos…';
+  const snap = await db.collection('movimientos').where('fechaISO','>=', ini).where('fechaISO','<', fin).orderBy('fechaISO','asc').get();
+  const ms = (x)=> x && x.toMillis ? x.toMillis() : 0;
+  const lista = snap.docs.map(d=> ({id:d.id, ...d.data()})).sort((a,b)=> a.fechaISO.localeCompare(b.fechaISO) || ms(a.creadoEn)-ms(b.creadoEn));
+  document.getElementById('bkInfo').textContent = `${lista.length} ${lista.length===1?'movimiento':'movimientos'} en el mes.`;
+  return {ym, lista};
+}
+function bkFilas(lista){
+  const fh = ts=> ts && ts.toDate ? fechaHoraCorta(ts.toDate()) : '';
+  return lista.map(m=> ({
+    'Fecha': ecFecha(m.fechaISO), 'Tipo': esGastoMov(m) ? 'Egreso' : 'Ingreso', 'Paciente / Destinatario': m.pac||'',
+    'Profesional / Área': m.prof||'', 'Código': m.codigo||'', 'Concepto': m.concepto||'', 'Notas': (m.notas||'') + (m.jornada ? ' (JORNADA)' : ''),
+    'Moneda': m.moneda==='USD' ? 'USD' : '$', 'Total': (Number(m.valor)||0) * (esGastoMov(m) ? -1 : 1),
+    'Medio de pago': medioDisplayText(m), 'Cobró': cobroTextoPlano(m), 'Cargado por': (m.creadoPor||'') + (m.creadoEn ? ` (${fh(m.creadoEn)})` : ''),
+  }));
+}
+const bkNombreMes = ym=> { const [y,m] = ym.split('-'); return `${MESES[+m-1]} ${y}`; };
+document.getElementById('bkExcel').onclick = async ()=>{
+  const btn = document.getElementById('bkExcel'); btn.disabled = true;
+  try{
+    const r = await bkMovimientos(); if(!r) return;
+    if(!r.lista.length){ alert('No hay movimientos en ese mes.'); return; }
+    const ws = XLSX.utils.json_to_sheet(bkFilas(r.lista));
+    ws['!cols'] = [10,8,28,24,8,32,30,7,12,24,18,26].map(w=> ({wch:w}));
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Movimientos');
+    XLSX.writeFile(wb, `backup-movimientos-${r.ym}.xlsx`);
+  }catch(e){ alert('No se pudo generar el Excel: ' + e.message); }
+  finally{ btn.disabled = false; }
+};
+document.getElementById('bkPdf').onclick = async ()=>{
+  const btn = document.getElementById('bkPdf'); btn.disabled = true;
+  try{
+    const r = await bkMovimientos(); if(!r) return;
+    if(!r.lista.length){ alert('No hay movimientos en ese mes.'); return; }
+    const filas = bkFilas(r.lista);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({orientation:'landscape', unit:'pt', format:'a4'});
+    doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(58,47,28);
+    doc.text(limpiarTextoPDF(`Back up de movimientos - ${bkNombreMes(r.ym)}`), 30, 34);
+    doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(122,106,72);
+    doc.text(limpiarTextoPDF(`Exportado por ${nombreCortoUsuario(currentUser ? currentUser.nombre : '')} (${fechaHoraCorta(new Date())}) - ${filas.length} movimientos`), 30, 48);
+    const cols = ['Fecha','Tipo','Paciente / Destinatario','Profesional / Área','Código','Concepto','Notas','Total','Medio de pago','Cobró','Cargado por'];
+    doc.autoTable({
+      startY: 60, margin:{left:30, right:30},
+      head: [cols.map(limpiarTextoPDF)],
+      body: filas.map(f=> cols.map(c=> limpiarTextoPDF(c==='Total' ? fmtMonto(Math.abs(f.Total), f.Moneda==='USD'?'USD':'$') : String(f[c]??'')))),
+      styles: {font:'helvetica', fontSize:6.8, cellPadding:3, textColor:[36,38,43], lineColor:[231,225,210], lineWidth:0.4},
+      headStyles: {fillColor:[182,154,98], textColor:255, fontStyle:'bold', fontSize:7},
+      alternateRowStyles: {fillColor:[251,248,240]},
+      columnStyles: {0:{cellWidth:48}, 1:{cellWidth:38}, 4:{cellWidth:34}, 7:{halign:'right', cellWidth:58}},
+      didParseCell: c=>{ if(c.section==='body' && c.column.index===7){ c.cell.styles.fontStyle='bold'; c.cell.styles.textColor = filas[c.row.index].Tipo==='Egreso' ? [161,58,58] : [47,122,47]; } },
+    });
+    doc.save(`backup-movimientos-${r.ym}.pdf`);
+  }catch(e){ alert('No se pudo generar el PDF: ' + e.message); }
+  finally{ btn.disabled = false; }
+};
+
 /* ---- Estado de cuenta en PDF para mandarle al deudor (el concepto se puede corregir solo para el PDF) ---- */
 const overlayEstadoCuenta = document.getElementById('overlayEstadoCuenta');
 let ecDeudas = [];
@@ -4709,7 +4806,7 @@ function renderDeudores(){
   if(totalPesos>0) resumen.innerHTML += `<div class="chip">Total en $ : $${totalPesos.toLocaleString('es-AR')}</div>`;
   if(totalUsd>0) resumen.innerHTML += `<div class="chip">Total en USD : US$ ${totalUsd.toLocaleString('es-AR')}</div>`;
   if(!pendientes.length){ lista.innerHTML = `<div class="empty-state">${document.getElementById('deuBuscar').value.trim() ? 'Sin deudas para esa búsqueda.' : 'No hay deudas pendientes 🎉'}</div>`; return; }
-  lista.innerHTML = pendientes.slice().sort((a,b)=> (a.pac||'').localeCompare(b.pac||'') || (a.fechaISO||'').localeCompare(b.fechaISO||'')).map(m=>`
+  lista.innerHTML = pendientes.slice().sort((a,b)=> (b.fechaISO||'').localeCompare(a.fechaISO||'') || (a.pac||'').localeCompare(b.pac||'')).map(m=>`
     <div class="deuda-row">
       <div class="deuda-info">
         <span class="nom">${m.pac}</span>
@@ -8241,6 +8338,8 @@ function abrirFichaPaciente(id){
   const nuevo = !p;
   if(typeof pfMostrarHist==='function') pfMostrarHist(false);
   document.getElementById('pfBtnHist').classList.toggle('col-hidden', nuevo);
+  document.getElementById('pfGoogleWrap').classList.toggle('col-hidden', nuevo);
+  document.getElementById('pfGoogle').checked = !!(p && p.avisadoGoogle);
   document.getElementById('pfNombre').textContent = nuevo ? 'Nuevo paciente' : (p.nombreCompleto || `${p.apellido}, ${p.nombre}`);
   document.getElementById('pfEditarNombre').classList.toggle('col-hidden', nuevo);
   document.getElementById('pfNombreCampos').classList.toggle('col-hidden', !nuevo);
@@ -8463,6 +8562,13 @@ document.getElementById('pfUnifOk').onclick = async ()=>{
   }catch(e){ alert('No se pudo unificar: ' + e.message); }
   btn.disabled = false; btn.textContent = 'Unificar';
 };
+// "Avisado Google": casilla interna, se guarda apenas se toca
+document.getElementById('pfGoogle').addEventListener('change', async e=>{
+  if(!pfPaciente) return;
+  const v = e.target.checked;
+  try{ await db.collection('pacientes').doc(pfPaciente.id).update({avisadoGoogle: v}); pfPaciente.avisadoGoogle = v; }
+  catch(err){ e.target.checked = !v; alert('No se pudo guardar: ' + err.message); }
+});
 // Nombres de pacientes en Movimientos: se pueden tocar para abrir la ficha
 document.getElementById('tbody').addEventListener('click', e=>{
   const el = e.target.closest('.pac-link'); if(el) abrirFichaPacientePorNombre(el.dataset.pac);
@@ -10160,7 +10266,7 @@ async function pasarNotasAMayus(){
 /* =====================================================================
    ALERTAS — campana arriba a la derecha (colección "alertas")
    ===================================================================== */
-const AL_RESP = [['ESTEFANIA','Estefanía Medina'],['ORIANA','Oriana Medina'],['TIARA','Tiara Medina']];
+const AL_RESP = [['ESTEFANIA','Stephanie Medina'],['ORIANA','Oriana Medina'],['TIARA','Tiara Medina']];
 const AL_RESP_FORM = [...AL_RESP, ['TODAS','Todas']];
 let alPend = [], alHechas = null, unsubAl = null, unsubAlHechas = null;
 let alVista = 'pend';          // 'pend' | 'hechas'
@@ -10176,7 +10282,7 @@ function alMia(){
   return null;
 }
 const alEsAdmin = ()=> currentUser && currentUser.rol === 'admin';
-const alLabel = r=> r==='ESTEFANIA' ? 'ESTEFANIA' : (r || '');
+const alLabel = r=> r==='ESTEFANIA' ? 'STEPHANIE' : (r || '');
 // Una alerta para "TODAS" le aparece a las tres aunque esté filtrado su nombre
 const alDeResp = (a, f)=> !f || a.responsable===f || a.responsable==='TODAS';
 // Alertas creadas por Fede o Pedro: las recepcionistas no las pueden editar ni eliminar
@@ -10373,6 +10479,7 @@ document.querySelectorAll('#movSubTabs [data-msub]').forEach(b=> b.onclick = ()=
   else if(sub==='deudores') document.getElementById('btnDeudores').click();
   else if(sub==='pago') document.getElementById('btnPagoProfesional').click();
   else if(sub==='reporte') document.getElementById('btnReporteDiario').click();
+  else if(sub==='backup') abrirBackup();
   else if(sub==='nuevo') document.getElementById('btnNuevo').click();
 });
 
