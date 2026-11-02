@@ -925,6 +925,15 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
 
   .deudores-summary{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
   .deudores-summary .chip{background:#fdeeee;border:1px solid #f3d3d3;color:#a13a3a;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;}
+  .deu-bar{display:flex;gap:8px;margin:0 0 12px;} .deu-bar .ac-wrap{flex:1;} .deu-bar input{width:100%;}
+  .ec-pac{font-size:12px;color:var(--muted);margin:0 0 10px;} .ec-pac b{color:var(--text);font-size:14px;}
+  .ec-tabla{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .ec-tabla th{background:#f3ead3;color:#6b5530;padding:8px 10px;font-size:10px;letter-spacing:.4px;text-transform:uppercase;text-align:center;}
+  .ec-tabla th.left{text-align:left;} .ec-tabla td{padding:6px 10px;border-bottom:1px solid #efe6d2;text-align:center;}
+  .ec-tabla td:last-child{text-align:right;font-weight:600;} .ec-tabla th:last-child{text-align:right;}
+  .ec-tabla input{width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:8px;background:#fff;font:inherit;}
+  .ec-ed{color:var(--accent);text-transform:none;letter-spacing:0;font-weight:600;margin-left:4px;}
+  .ec-tot{text-align:right;font-weight:800;margin:12px 0 4px;}
   .deuda-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;}
   .deuda-info{display:flex;flex-direction:column;gap:2px;}
   .deuda-info .nom{font-weight:700;font-size:12.5px;}
@@ -2604,10 +2613,31 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <button class="close-x" id="closeDeudores">✕</button>
     <h2>Deudores</h2>
     <div class="modal-sub">Movimientos con saldo pendiente ("Debe"). Para saldar una deuda, cargá un nuevo movimiento de esa persona y marcá la deuda que se está saldando.</div>
+    <div class="deu-bar">
+      <div class="ac-wrap"><input type="text" id="deuBuscar" placeholder="Buscar deudor…" autocomplete="off" data-ac-libre></div>
+      <button type="button" class="btn" id="deuLimpiar" title="Limpiar">✕</button>
+      <button type="button" class="btn btn-primary" id="deuExportar">⬇ Exportar PDF</button>
+    </div>
     <div class="deudores-summary" id="deudoresResumen"></div>
     <div id="deudoresLista"></div>
     <div class="modal-actions">
       <button class="btn" id="cerrarDeudores">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: EXPORTAR ESTADO DE CUENTA (deudores) ============ -->
+<div class="overlay" id="overlayEstadoCuenta">
+  <div class="modal wide">
+    <button class="close-x" id="closeEstadoCuenta">✕</button>
+    <h2>Exportar estado de cuenta</h2>
+    <div class="modal-sub">Revisá y corregí el concepto si hace falta. Los cambios son solo para este PDF: no modifican la caja.</div>
+    <div class="ec-pac">Paciente: <b id="ecPac"></b></div>
+    <table class="ec-tabla"><thead><tr><th style="width:110px">Fecha</th><th class="left" style="text-align:left">Concepto <span class="ec-ed">✎ editable</span></th><th style="width:120px">Importe</th></tr></thead><tbody id="ecBody"></tbody></table>
+    <div class="ec-tot" id="ecTot"></div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelEstadoCuenta">Cancelar</button>
+      <button class="btn btn-primary" id="descargarEstadoCuenta">⬇ Descargar PDF</button>
     </div>
   </div>
 </div>
@@ -3407,7 +3437,7 @@ function iniciarListeners(){
       const m = {id:d.id, ...d.data()};
       pagosDe(m).forEach((p, idx)=>{
         if(p.medio==="debe" && !p.saldada){
-          movimientosDeuda.push({movId:m.id, idx, pac:m.pac, prof:m.prof, concepto:m.concepto, notas:m.notas, fechaDisplay:m.fechaDisplay, moneda:m.moneda, valor:p.valor});
+          movimientosDeuda.push({movId:m.id, idx, pac:m.pac, prof:m.prof, concepto:m.concepto, notas:m.notas, fechaDisplay:m.fechaDisplay, fechaISO:m.fechaISO, moneda:m.moneda, valor:p.valor});
         }
       });
     });
@@ -4558,7 +4588,96 @@ btnGuardarMov.onclick = async ()=>{
    DEUDORES
    ===================================================================== */
 const overlayDeudores = document.getElementById('overlayDeudores');
-document.getElementById('btnDeudores').onclick = ()=>{ renderDeudores(); overlayDeudores.classList.add('show'); };
+document.getElementById('btnDeudores').onclick = ()=>{ document.getElementById('deuBuscar').value = ''; renderDeudores(); overlayDeudores.classList.add('show'); };
+document.getElementById('deuBuscar').addEventListener('input', renderDeudores);
+attachAutocomplete(document.getElementById('deuBuscar'), ()=> [...new Set(movimientosDeuda.map(d=> d.pac))].sort());
+document.getElementById('deuLimpiar').onclick = ()=>{ document.getElementById('deuBuscar').value = ''; renderDeudores(); };
+
+/* ---- Estado de cuenta en PDF para mandarle al deudor (el concepto se puede corregir solo para el PDF) ---- */
+const overlayEstadoCuenta = document.getElementById('overlayEstadoCuenta');
+let ecDeudas = [];
+const ecFecha = iso => { const [y,m,d] = (iso||'').split('-'); return d ? `${d}/${m}/${y}` : ''; };
+document.getElementById('deuExportar').onclick = ()=>{
+  const lista = deuFiltradas();
+  const nombres = [...new Set(lista.map(d=> d.pac))];
+  if(!document.getElementById('deuBuscar').value.trim() || nombres.length !== 1){
+    alert(nombres.length ? 'Buscá y elegí un solo deudor para exportar su estado de cuenta.' : 'No hay deudas para exportar.'); return;
+  }
+  ecDeudas = lista.slice().sort((a,b)=> (a.fechaISO||'').localeCompare(b.fechaISO||''));
+  document.getElementById('ecPac').textContent = nombres[0];
+  document.getElementById('ecBody').innerHTML = ecDeudas.map((d,i)=> `<tr><td>${ecFecha(d.fechaISO) || escHtml(d.fechaDisplay||'')}</td><td><input type="text" data-ec="${i}" value="${escHtml(mayus(d.concepto||''))}"></td><td>${fmtMonto(d.valor, d.moneda)}</td></tr>`).join('');
+  document.getElementById('ecTot').innerHTML = ecTotales().map(([mon,v])=> `Total adeudado${ecTotales().length>1 ? ' en ' + (mon==='USD'?'USD':'$') : ''}: ${fmtMonto(v, mon)}`).join('<br>');
+  overlayEstadoCuenta.classList.add('show');
+};
+function ecTotales(){
+  const t = {}; ecDeudas.forEach(d=>{ const k = d.moneda==='USD' ? 'USD' : '$'; t[k] = (t[k]||0) + (Number(d.valor)||0); });
+  return Object.entries(t).sort((a,b)=> a[0]==='$' ? -1 : 1);
+}
+['closeEstadoCuenta','cancelEstadoCuenta'].forEach(id=> document.getElementById(id).onclick = ()=> overlayEstadoCuenta.classList.remove('show'));
+let ecLogo = null;
+async function ecLogoData(){
+  if(ecLogo) return ecLogo;
+  try{
+    const im = await new Promise((ok, mal)=>{ const i = new Image(); i.onload = ()=> ok(i); i.onerror = mal; i.src = 'images/logo.png'; });
+    const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
+    c.getContext('2d').drawImage(im, 0, 0);
+    ecLogo = {url: c.toDataURL('image/png'), w: im.naturalWidth, h: im.naturalHeight};
+  }catch(e){ ecLogo = null; }
+  return ecLogo;
+}
+document.getElementById('descargarEstadoCuenta').onclick = async ()=>{
+  const btn = document.getElementById('descargarEstadoCuenta'); btn.disabled = true;
+  try{
+    const conceptos = [...document.querySelectorAll('#ecBody input[data-ec]')].map(i=> mayus(i.value.trim()));
+    const pac = document.getElementById('ecPac').textContent;
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({unit:'pt', format:'a4'});
+    const W = doc.internal.pageSize.getWidth(), M = 50;
+    const ORO = [182,154,98], TXT = [58,47,28], GRIS = [122,106,72];
+    let y = 52;
+    const logo = await ecLogoData();
+    if(logo){ const h = 30, w = h * logo.w / logo.h; doc.addImage(logo.url, 'PNG', M, y, w, h); }
+    y += 46;
+    doc.setDrawColor(...ORO); doc.setLineWidth(1.6); doc.line(M, y, W-M, y);
+    y += 40;
+    doc.setFont('helvetica','bold'); doc.setFontSize(19); doc.setTextColor(...TXT);
+    doc.text('ESTADO DE CUENTA', M, y);
+    const tw = doc.getTextWidth('ESTADO DE CUENTA');
+    const h = new Date(); const hoy = `${h.getDate()}/${h.getMonth()+1}/${String(h.getFullYear()).slice(2)}`;
+    doc.setFont('helvetica','italic'); doc.setFontSize(11); doc.setTextColor(...GRIS);
+    doc.text(`(al ${hoy})`, M + tw + 8, y);
+    y += 22;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10.5); doc.setTextColor(...GRIS); doc.text('Paciente:', M, y);
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(...TXT); doc.text(limpiarTextoPDF(pac), M + doc.getTextWidth('Paciente:') + 5, y);
+    y += 20;
+    doc.autoTable({
+      startY: y, margin:{left:M, right:M},
+      head: [['FECHA','CONCEPTO','IMPORTE']],
+      body: ecDeudas.map((d,i)=> [ecFecha(d.fechaISO) || d.fechaDisplay || '', limpiarTextoPDF(conceptos[i] || mayus(d.concepto||'')), limpiarTextoPDF(fmtMonto(d.valor, d.moneda))]),
+      theme: 'plain',
+      styles: {font:'helvetica', fontSize:10, textColor:TXT, cellPadding:{top:9, bottom:9, left:10, right:10}, lineColor:[239,230,210], lineWidth:{bottom:0.8}},
+      headStyles: {fillColor:[243,234,211], textColor:[107,85,48], fontStyle:'bold', fontSize:8.5, lineWidth:0},
+      columnStyles: {0:{cellWidth:90}, 1:{textColor:GRIS}, 2:{halign:'right', cellWidth:110}},
+      didParseCell: c=>{ if(c.section==='head' && c.column.index===2) c.cell.styles.halign = 'right'; },
+    });
+    y = doc.lastAutoTable.finalY + 18;
+    ecTotales().forEach(([mon, v], i, arr)=>{
+      const lbl = 'TOTAL ADEUDADO' + (arr.length>1 ? (mon==='USD' ? ' EN USD' : ' EN $') : '');
+      const val = limpiarTextoPDF(fmtMonto(v, mon));
+      doc.setFont('helvetica','bold'); doc.setFontSize(13); const vw = doc.getTextWidth(val);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); const lw = doc.getTextWidth(lbl);
+      const bw = vw + lw + 44, bx = W - M - bw;
+      doc.setFillColor(...TXT); doc.roundedRect(bx, y, bw, 30, 5, 5, 'F');
+      doc.setTextColor(255,255,255); doc.text(lbl, bx + 15, y + 19);
+      doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.text(val, W - M - 15 - vw, y + 20);
+      y += 38;
+    });
+    const archivo = `estado-de-cuenta-${pac.replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()}.pdf`;
+    mostrarPreviewPDF(doc, archivo);
+    overlayEstadoCuenta.classList.remove('show');
+  }catch(e){ alert('No se pudo generar el PDF: ' + e.message); }
+  btn.disabled = false;
+};
 document.getElementById('closeDeudores').onclick = ()=> overlayDeudores.classList.remove('show');
 document.getElementById('cerrarDeudores').onclick = ()=> overlayDeudores.classList.remove('show');
 
@@ -4572,8 +4691,12 @@ function renderDeudoresCount(){
   document.getElementById('menuDot').classList.toggle('col-hidden', !pendientes.length);
   if(vistaActual==='conta' && typeof renderConta==='function') renderConta();   // por "Deuda Victoria"
 }
+function deuFiltradas(){
+  const q = document.getElementById('deuBuscar').value.trim();
+  return q ? movimientosDeuda.filter(d=> contiene(d.pac, q)) : movimientosDeuda;
+}
 function renderDeudores(){
-  const pendientes = movimientosDeuda;
+  const pendientes = deuFiltradas();
   const resumen = document.getElementById('deudoresResumen');
   const lista = document.getElementById('deudoresLista');
   const totalPesos = pendientes.filter(m=>m.moneda==="$").reduce((a,m)=>a+m.valor,0);
@@ -4581,8 +4704,8 @@ function renderDeudores(){
   resumen.innerHTML = "";
   if(totalPesos>0) resumen.innerHTML += `<div class="chip">Total en $ : $${totalPesos.toLocaleString('es-AR')}</div>`;
   if(totalUsd>0) resumen.innerHTML += `<div class="chip">Total en USD : US$ ${totalUsd.toLocaleString('es-AR')}</div>`;
-  if(!pendientes.length){ lista.innerHTML = '<div class="empty-state">No hay deudas pendientes 🎉</div>'; return; }
-  lista.innerHTML = pendientes.map(m=>`
+  if(!pendientes.length){ lista.innerHTML = `<div class="empty-state">${document.getElementById('deuBuscar').value.trim() ? 'Sin deudas para esa búsqueda.' : 'No hay deudas pendientes 🎉'}</div>`; return; }
+  lista.innerHTML = pendientes.slice().sort((a,b)=> (a.pac||'').localeCompare(b.pac||'') || (a.fechaISO||'').localeCompare(b.fechaISO||'')).map(m=>`
     <div class="deuda-row">
       <div class="deuda-info">
         <span class="nom">${m.pac}</span>
