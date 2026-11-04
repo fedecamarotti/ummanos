@@ -3344,7 +3344,11 @@ function actualizarMesLabel(){
   document.getElementById('mesNext').disabled = esMesActualReal;
   const ym = `${mesActual.year}-${String(mesActual.month).padStart(2,'0')}`;
   document.getElementById('mesMigrado').classList.toggle('col-hidden', !(ym >= MIGRADO_DESDE && ym <= MIGRADO_HASTA));
+  // Caja grande arranca en noviembre 2026: no se puede ir más atrás
+  let enGrande = false; try{ enGrande = movSub==='grande'; }catch(_){}
+  document.getElementById('mesPrev').disabled = enGrande && ym <= CG_DESDE;
 }
+const CG_DESDE = '2026-11';
 document.getElementById('mesPrev').onclick = ()=>{
   mesActual.month--; if(mesActual.month<1){ mesActual.month=12; mesActual.year--; }
   actualizarMesLabel(); suscribirMovimientos();
@@ -3726,7 +3730,7 @@ function renderCajaGrande(){
   if(!hoja) return;
   if(cgDatos.grande==null || cgDatos.guarda==null){ hoja.innerHTML = '<div class="empty-state">Cargando…</div>'; return; }
   const ms = x=> x && x.toMillis ? x.toMillis() : 0;
-  const porId = {}; [...cgDatos.grande, ...cgDatos.guarda].forEach(m=>{ if(esCajaGrande(m) || esGuardaEnGrande(m)) porId[m.id] = m; });
+  const porId = {}; [...cgDatos.grande, ...cgDatos.guarda].forEach(m=>{ if((m.fechaISO||'') >= CG_DESDE + '-01' && (esCajaGrande(m) || esGuardaEnGrande(m))) porId[m.id] = m; });
   const todos = Object.values(porId).sort((a,b)=> (a.fechaISO||'').localeCompare(b.fechaISO||'') || ms(a.creadoEn)-ms(b.creadoEn));
   const ini = mesInicioISO(), fin = mesFinISO();
   const total = {'$':0, USD:0}, alInicio = {'$':0, USD:0};
@@ -9887,7 +9891,13 @@ function mostrarSubMov(sub){
   document.getElementById('cpPanel').classList.toggle('col-hidden', sub!=='prueba');
   document.getElementById('dvPanel').classList.toggle('col-hidden', sub!=='deriv');
   document.getElementById('cgPanel').classList.toggle('col-hidden', sub!=='grande');
-  if(sub==='grande'){ suscribirCajaGrande(); renderCajaGrande(); }
+  if(sub==='grande'){
+    if(`${mesActual.year}-${String(mesActual.month).padStart(2,'0')}` < CG_DESDE){
+      const [y,m] = CG_DESDE.split('-').map(Number); mesActual = {year:y, month:m}; suscribirMovimientos();
+    }
+    suscribirCajaGrande(); renderCajaGrande();
+  }
+  actualizarMesLabel();
   if(sub==='prueba'){ suscribirClasesPrueba(); renderClasesPrueba(); }
   if(sub==='deriv'){ suscribirDerivaciones(); renderDerivaciones(); }
 }
