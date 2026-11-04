@@ -2249,7 +2249,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
           <button type="button" data-tipo="ingreso" class="active">ING</button>
           <button type="button" data-tipo="egreso">EGR</button>
         </div></div>
-        <div><label>Caja</label>
+        <div id="movCajaWrap"><label>Caja</label>
         <div class="tipo-toggle chico caja-toggle" id="movCaja">
           <button type="button" data-caja="chica" class="active">CHICA</button>
           <button type="button" data-caja="grande">GRANDE</button>
@@ -3402,6 +3402,11 @@ function aplicarRolUI(){
   document.getElementById('mSubCajas').classList.toggle('col-hidden', !esAdmin);
   document.getElementById('mSubBackup').classList.toggle('col-hidden', !esAdmin);
   document.getElementById('mSubGrande').classList.toggle('col-hidden', !esAdmin);
+  // Recepcionistas: Tipo como antes (Ingreso / Egreso) y sin selector de caja (siempre CHICA). Fede y Pedro: ING / EGR + CAJA
+  document.getElementById('movCajaWrap').classList.toggle('col-hidden', !esAdmin);
+  document.getElementById('movTipo').classList.toggle('chico', esAdmin);
+  document.querySelector('#movTipo [data-tipo="ingreso"]').textContent = esAdmin ? 'ING' : 'Ingreso';
+  document.querySelector('#movTipo [data-tipo="egreso"]').textContent = esAdmin ? 'EGR' : 'Egreso';
   // Recepcionistas: "Calcular pago prof." como botón y sin Menú (todo lo que usan está en los botones)
   document.getElementById('mSubPago').classList.toggle('col-hidden', esAdmin);
   document.getElementById('menuWrap').classList.toggle('col-hidden', !esAdmin);
