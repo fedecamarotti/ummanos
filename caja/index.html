@@ -303,6 +303,17 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .t-corto{display:none;}
   /* ---------- Clases de prueba ---------- */
   .cp-panel{flex:1;min-height:0;display:flex;flex-direction:column;}
+  .cg-saldos{display:flex;gap:10px;flex-wrap:wrap;margin:10px 28px 0;flex:none;}
+  .cg-chip{background:#fffcf5;border:1px solid var(--border);border-radius:12px;padding:9px 16px;font-size:12px;color:var(--muted);font-weight:600;}
+  .cg-chip b{display:block;font-size:19px;color:var(--text);margin-top:2px;}
+  .cg-tabla{width:100%;border-collapse:collapse;font-size:12px;}
+  .cg-tabla th{background:#f3ead3;color:#6b5530;font-size:10px;letter-spacing:.4px;text-transform:uppercase;padding:7px 8px;text-align:center;}
+  .cg-tabla td{padding:7px 8px;border-bottom:1px solid #efe6d2;text-align:center;}
+  .cg-tabla td.izq{text-align:left;} .cg-tabla td.ing{color:#2f7a2f;font-weight:700;} .cg-tabla td.egr{color:#a13a3a;font-weight:700;} .cg-tabla td.sal{font-weight:700;}
+  .cg-tabla tr.cg-ini td{background:#fbf6ea;font-style:italic;color:var(--muted);}
+  .cg-tabla .cg-auto{font-size:9.5px;color:var(--muted);font-style:italic;}
+  .cg-mon{font-weight:800;font-size:13px;margin:0;padding:12px 12px 8px;}
+  .cg-nota{font-size:10.5px;color:var(--muted);margin:0 28px 10px;flex:none;}
   .cp-arriba{display:grid;grid-template-columns:1fr 190px;gap:12px;margin:10px 28px 0;flex:none;}
   .cp-card{background:#fffcf5;border:1px solid var(--border);border-radius:12px;padding:8px 12px;min-width:0;}
   .cp-tit{font-size:9.5px;font-weight:700;color:#9c8250;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
@@ -536,6 +547,10 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .tipo-toggle button{border:none;background:#fdfbf2;padding:8px 18px;font-size:12.5px;font-weight:600;color:var(--text);}
   .tipo-toggle button.active[data-tipo="ingreso"]{background:#2f7a2f;color:#fff;}
   .tipo-toggle button.active[data-tipo="egreso"]{background:#a13a3a;color:#fff;}
+  .tipo-caja{display:flex;gap:12px;} .tipo-toggle.chico button{padding:8px 12px;font-size:12px;letter-spacing:.3px;}
+  .caja-toggle button.active{background:var(--accent);color:#fff;}
+  .caja-toggle button.active[data-caja="grande"]{background:#3a2f1c;}
+  .tag-grande{font-style:normal;font-weight:700;font-size:9px;color:#fff;background:#3a2f1c;border-radius:4px;padding:1px 5px;margin-left:4px;white-space:nowrap;}
   .s-items-head, .s-item{display:grid;grid-template-columns:minmax(0,1fr) 62px 112px 100px 32px;gap:8px;align-items:center;}
   .s-items-head.compra, .s-item.compra{grid-template-columns:minmax(0,1fr) 54px 54px 128px 96px 86px 32px;}
   .s-item .si-sc{min-width:0;}
@@ -1785,6 +1800,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <button class="s-tab" data-msub="pacientes"><span class="t-largo">Pacientes/alumnos</span><span class="t-corto">Pacientes</span></button>
         <button class="s-tab col-hidden" data-msub="pago" id="mSubPago"><span class="t-largo">Calcular pago prof.</span><span class="t-corto">Pago prof.</span></button>
         <button class="s-tab" data-msub="reporte"><span class="t-largo">Reporte diario</span><span class="t-corto">Reporte</span></button>
+        <button class="s-tab col-hidden" data-msub="grande" id="mSubGrande">Caja grande</button>
         <button class="s-tab col-hidden" data-msub="backup" id="mSubBackup">Back up</button>
         <button class="s-tab s-tab-badge" data-msub="deudores">Deudores <span class="badge-count col-hidden" id="mSubDeudoresN">0</span></button>
       </div>
@@ -1869,6 +1885,12 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
           <tbody id="cpBody"></tbody>
         </table>
       </div>
+    </div>
+    <!-- ============ CAJA GRANDE (subsección de Movimientos, Fede y Pedro) ============ -->
+    <div class="cp-panel col-hidden" id="cgPanel">
+      <div class="cg-saldos" id="cgSaldos"></div>
+      <div class="cg-nota" style="margin-top:8px">Cuenta solo el efectivo. Suman: los ingresos cargados en CAJA GRANDE y los egresos de caja chica “GUARDA EN CAJA GRANDE”. Restan: los egresos cargados en CAJA GRANDE (los “GUARDA EN CAJA CHICA” pasan a la caja chica).</div>
+      <div class="sheet-wrap cp-hoja" id="cgHoja"></div>
     </div>
     <!-- ============ DERIVACIONES (subsección de Movimientos) ============ -->
     <div class="cp-panel col-hidden" id="dvPanel">
@@ -2221,12 +2243,17 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <label>Fecha</label>
         <input type="date" id="inpFechaMovimiento">
       </div>
-      <div class="field">
-        <label>Tipo</label>
-        <div class="tipo-toggle" id="movTipo">
-          <button type="button" data-tipo="ingreso" class="active">Ingreso</button>
-          <button type="button" data-tipo="egreso">Egreso</button>
-        </div>
+      <div class="field tipo-caja">
+        <div><label>Tipo</label>
+        <div class="tipo-toggle chico" id="movTipo">
+          <button type="button" data-tipo="ingreso" class="active">ING</button>
+          <button type="button" data-tipo="egreso">EGR</button>
+        </div></div>
+        <div><label>Caja</label>
+        <div class="tipo-toggle chico caja-toggle" id="movCaja">
+          <button type="button" data-caja="chica" class="active">CHICA</button>
+          <button type="button" data-caja="grande">GRANDE</button>
+        </div></div>
       </div>
     </div>
 
@@ -3323,12 +3350,14 @@ document.getElementById('mesPrev').onclick = ()=>{
   actualizarMesLabel(); suscribirMovimientos();
   if(movSub==='prueba'){ suscribirClasesPrueba(); renderClasesPrueba(); }
   if(movSub==='deriv'){ suscribirDerivaciones(); renderDerivaciones(); }
+  if(movSub==='grande') renderCajaGrande();
 };
 document.getElementById('mesNext').onclick = ()=>{
   mesActual.month++; if(mesActual.month>12){ mesActual.month=1; mesActual.year++; }
   actualizarMesLabel(); suscribirMovimientos();
   if(movSub==='prueba'){ suscribirClasesPrueba(); renderClasesPrueba(); }
   if(movSub==='deriv'){ suscribirDerivaciones(); renderDerivaciones(); }
+  if(movSub==='grande') renderCajaGrande();
 };
 actualizarMesLabel();
 
@@ -3372,6 +3401,7 @@ function aplicarRolUI(){
   document.getElementById('movSubTabs').classList.remove('col-hidden');
   document.getElementById('mSubCajas').classList.toggle('col-hidden', !esAdmin);
   document.getElementById('mSubBackup').classList.toggle('col-hidden', !esAdmin);
+  document.getElementById('mSubGrande').classList.toggle('col-hidden', !esAdmin);
   // Recepcionistas: "Calcular pago prof." como botón y sin Menú (todo lo que usan está en los botones)
   document.getElementById('mSubPago').classList.toggle('col-hidden', esAdmin);
   document.getElementById('menuWrap').classList.toggle('col-hidden', !esAdmin);
@@ -3626,7 +3656,7 @@ function renderTabla(){
       <td${esViejoCatalogo(m,'prof') ? ' class="mig-viejo"' : ''}>${m.prof}</td>
       <td class="codigo">${m.codigo||""}</td>
       <td class="concepto${esViejoCatalogo(m,'concepto') ? ' mig-viejo' : ''}">${m.concepto}</td>
-      <td class="notas" title="${(m.notas||"").replace(/"/g,'&quot;')}${m.jornada?' (JORNADA)':''}">${m.notas||""}${m.jornada ? `${m.notas ? ' ' : ''}<i class="tag-jornada">(JORNADA)</i>` : ''}</td>
+      <td class="notas" title="${(m.notas||"").replace(/"/g,'&quot;')}${m.jornada?' (JORNADA)':''}">${m.notas||""}${m.jornada ? `${m.notas ? ' ' : ''}<i class="tag-jornada">(JORNADA)</i>` : ''}${esCajaGrande(m) ? '<i class="tag-grande">CAJA GRANDE</i>' : ''}</td>
       <td class="total ${m.valor==0 ? '' : (esGasto?'egreso':'ingreso')}">${fmtTotal(m)}</td>
       <td class="badges-cell">${medioBadgesHTML(m)}</td>
       <td class="concepto">${cobroBadgesHTML(m)}</td>
@@ -3663,7 +3693,63 @@ function renderTotalesCaja(filas){
    ===================================================================== */
 
 // Neto en efectivo (ingresos - egresos) que impacta en la caja física para un movimiento.
+// ---- Caja chica / Caja grande ----
+const esCajaGrande = m => m && m.caja === 'grande';
+const conceptoNorm = m => normBusqueda((m && m.concepto) || '').replace(/\s+/g,' ').trim();
+// Egreso de caja chica "GUARDA EN CAJA GRANDE": sale de la chica y entra a la grande
+const esGuardaEnGrande = m => !esCajaGrande(m) && esGastoMov(m) && conceptoNorm(m) === 'guarda en caja grande';
+// Egreso de caja grande "GUARDA EN CAJA CHICA": sale de la grande y entra a la chica
+const esGuardaEnChica = m => esCajaGrande(m) && esGastoMov(m) && conceptoNorm(m) === 'guarda en caja chica';
+// Lo que mueve un movimiento en la caja grande, por moneda (solo efectivo)
+function netoCajaGrande(m){
+  const suma = esCajaGrande(m) ? (esGastoMov(m) ? -1 : 1) : (esGuardaEnGrande(m) ? 1 : 0);
+  const out = {};
+  if(!suma) return out;
+  pagosDe(m).forEach(p=>{ if(p.medio!=="efectivo") return; const k = pagoMoneda(m, p)==='USD' ? 'USD' : '$'; out[k] = (out[k]||0) + suma * pagoMontoReal(p); });
+  return out;
+}
+let cgDatos = {grande:null, guarda:null}, cgUnsub = [];
+function suscribirCajaGrande(){
+  if(cgUnsub.length) return;
+  const mapa = snap=> snap.docs.map(d=> ({id:d.id, ...d.data()}));
+  const err = e=>{ document.getElementById('cgHoja').innerHTML = `<div class="empty-state" style="color:#a13a3a">No se pudo leer la caja grande: ${escHtml(e.message)}</div>`; };
+  cgUnsub.push(db.collection('movimientos').where('caja','==','grande').onSnapshot(sn=>{ cgDatos.grande = mapa(sn); renderCajaGrande(); }, err));
+  cgUnsub.push(db.collection('movimientos').where('concepto','==','GUARDA EN CAJA GRANDE').onSnapshot(sn=>{ cgDatos.guarda = mapa(sn); renderCajaGrande(); }, err));
+}
+function renderCajaGrande(){
+  const hoja = document.getElementById('cgHoja'), saldos = document.getElementById('cgSaldos');
+  if(!hoja) return;
+  if(cgDatos.grande==null || cgDatos.guarda==null){ hoja.innerHTML = '<div class="empty-state">Cargando…</div>'; return; }
+  const ms = x=> x && x.toMillis ? x.toMillis() : 0;
+  const porId = {}; [...cgDatos.grande, ...cgDatos.guarda].forEach(m=>{ if(esCajaGrande(m) || esGuardaEnGrande(m)) porId[m.id] = m; });
+  const todos = Object.values(porId).sort((a,b)=> (a.fechaISO||'').localeCompare(b.fechaISO||'') || ms(a.creadoEn)-ms(b.creadoEn));
+  const ini = mesInicioISO(), fin = mesFinISO();
+  const total = {'$':0, USD:0}, alInicio = {'$':0, USD:0};
+  todos.forEach(m=>{ const n = netoCajaGrande(m); Object.keys(n).forEach(k=>{ total[k] += n[k]; if((m.fechaISO||'') < ini) alInicio[k] += n[k]; }); });
+  const delMes = todos.filter(m=> m.fechaISO >= ini && m.fechaISO < fin);
+  saldos.innerHTML = `<div class="cg-chip">Saldo actual en $<b>${fmtMonto(total['$'],'$')}</b></div>`
+    + `<div class="cg-chip">Saldo actual en USD<b>${fmtMonto(total.USD,'USD')}</b></div>`;
+  const monedas = ['$','USD'].filter(k=> k==='$' || alInicio[k] || delMes.some(m=> netoCajaGrande(m)[k]));
+  hoja.innerHTML = monedas.map(k=>{
+    let saldo = alInicio[k];
+    const filas = delMes.filter(m=> netoCajaGrande(m)[k]).map(m=>{
+      const v = netoCajaGrande(m)[k]; saldo += v;
+      const auto = esGuardaEnGrande(m) ? '<div class="cg-auto">desde caja chica</div>' : '';
+      const quien = m.creadoPor ? nombreCortoUsuario(m.creadoPor) : '';
+      return `<tr><td>${ecFecha(m.fechaISO)}</td><td class="izq">${escHtml(m.pac||'')} · ${escHtml(m.concepto||'')}${m.notas ? ' · ' + escHtml(m.notas) : ''}${auto}</td><td>${escHtml(quien)}</td>`
+        + `<td class="ing">${v>0 ? fmtMonto(v,k) : ''}</td><td class="egr">${v<0 ? fmtMonto(-v,k) : ''}</td><td class="sal">${fmtMonto(saldo,k)}</td></tr>`;
+    }).join('');
+    return `<div class="cg-mon">${k==='USD' ? 'Dólares (USD)' : 'Pesos ($)'} · ${MESES[mesActual.month-1]} ${mesActual.year}</div>
+      <table class="cg-tabla"><thead><tr><th style="width:90px">Fecha</th><th>Detalle</th><th style="width:110px">Cargado por</th><th style="width:120px">Ingreso</th><th style="width:120px">Egreso</th><th style="width:130px">Saldo</th></tr></thead>
+      <tbody><tr class="cg-ini"><td></td><td class="izq">Saldo al inicio del mes</td><td></td><td></td><td></td><td>${fmtMonto(alInicio[k],k)}</td></tr>${filas || '<tr><td colspan="6" class="empty-state">Sin movimientos de caja grande este mes.</td></tr>'}</tbody></table>`;
+  }).join('');
+}
 function netoEfectivoMovimiento(m){
+  if(esCajaGrande(m)){
+    // lo de caja grande no toca la caja chica, salvo lo que se pasa de la grande a la chica
+    if(!esGuardaEnChica(m)) return 0;
+    return pagosDe(m).filter(p=> p.medio==="efectivo" && pagoMoneda(m, p)==="$").reduce((a,p)=> a + pagoMontoReal(p), 0);
+  }
   const esGasto = esGastoMov(m);
   let neto = 0;
   pagosDe(m).filter(p=>p.medio==="efectivo" && pagoMoneda(m, p)==="$").forEach(p=>{   // solo los pesos en efectivo
@@ -4175,6 +4261,14 @@ function actualizarConceptosDesdeProfesional(){
 }
 attachAutocomplete(selConcepto, ()=> conceptosDisponiblesActual.map(c=>c.concepto));
 
+// Caja: CHICA (la del cierre diario, por defecto) o GRANDE (seguimiento aparte, ver "Caja grande")
+let movCaja = 'chica';
+function setMovCaja(c){
+  movCaja = c==='grande' ? 'grande' : 'chica';
+  document.querySelectorAll('#movCaja button').forEach(b=> b.classList.toggle('active', b.dataset.caja===movCaja));
+}
+document.querySelectorAll('#movCaja button').forEach(b=> b.onclick = ()=> setMovCaja(b.dataset.caja));
+
 // Jornada: solo ingresos de profesionales con nombre propio ("APELLIDO, NOMBRE")
 let movJornada = false;
 function setJornada(v){
@@ -4281,6 +4375,7 @@ function abrirEdicion(id){
 
   inpValor.value = Number(m.valor).toLocaleString('es-AR');
   setJornada(!!m.jornada && !document.getElementById('jornadaWrap').classList.contains('col-hidden'));
+  setMovCaja(m.caja);
   { const ind = (cremasExtra[m.id] && cremasExtra[m.id].indica) || m.indicaCrema || 'PARTICULAR';
     document.getElementById('selIndica').innerHTML = [...new Set([...INDICA_OPCIONES, ind])].map(o=> `<option ${o===ind?'selected':''}>${o}</option>`).join('');
     actualizarIndicaVisible(); }
@@ -4313,7 +4408,7 @@ function bloquearFechaMovimiento(bloquear){
 function resetModal(){
   montoAutoSync = null;
   document.getElementById('indicaWrap').classList.add('col-hidden');
-  setJornada(false);
+  setJornada(false); setMovCaja('chica');
   document.getElementById('jornadaWrap').classList.add('col-hidden');
   bloquearFechaMovimiento(false);
   document.getElementById('inpFechaMovimiento').value = hoyISO(); document.getElementById('inpFechaMovimiento').max = hoyISO();
@@ -4546,7 +4641,7 @@ btnGuardarMov.onclick = async ()=>{
     const cambios = {
       pac: pacValor, prof: selProfesional.value, concepto: selConcepto.value, codigo,
       notas: document.getElementById('inpNotas').value, moneda: monedaSel, valor: valorNum,
-      pagos, tieneDeudaPendiente: pendienteDeuda, jornada: movJornada,
+      pagos, tieneDeudaPendiente: pendienteDeuda, jornada: movJornada, caja: movCaja,
       actualizadoEn: firebase.firestore.FieldValue.serverTimestamp(),
     };
     if(!document.getElementById('indicaWrap').classList.contains('col-hidden')) cambios.indicaCrema = document.getElementById('selIndica').value || 'PARTICULAR';
@@ -4564,7 +4659,7 @@ btnGuardarMov.onclick = async ()=>{
     const nuevoRef = await db.collection('movimientos').add({
       fechaISO, fechaDisplay, pac: pacValor, prof: selProfesional.value,
       concepto: selConcepto.value, codigo, notas: document.getElementById('inpNotas').value,
-      moneda: monedaSel, valor: valorNum, pagos, tieneDeudaPendiente: pendienteDeuda, jornada: movJornada,
+      moneda: monedaSel, valor: valorNum, pagos, tieneDeudaPendiente: pendienteDeuda, jornada: movJornada, caja: movCaja,
       ...(!document.getElementById('indicaWrap').classList.contains('col-hidden') ? {indicaCrema: document.getElementById('selIndica').value || 'PARTICULAR'} : {}),
       creadoPor: currentUser.nombre, creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
       cajaId: cajaActual ? cajaActual.id : 'SIN_CAJA',
@@ -4837,7 +4932,7 @@ document.getElementById('generarReporteFecha').onclick = async ()=>{
       db.collection('movimientos').where('fechaISO','==', fechaISO).orderBy('creadoEn','asc').get(),
       db.collection('cajaSesiones').where('fechaISO','==', fechaISO).get(),
     ]);
-    const filas = snapMov.docs.map(d=>({id:d.id, ...d.data()})).filter(noMigrado);
+    const filas = snapMov.docs.map(d=>({id:d.id, ...d.data()})).filter(noMigrado).filter(m=> !esCajaGrande(m) || esGuardaEnChica(m));   // el reporte es de la caja chica
     if(!filas.length){ alert("No hay movimientos cargados en esa fecha."); return; }
     const sesiones = snapCaja.docs.map(d=> d.data())
       .sort((a,b)=> (a.abiertaEn?.toMillis()||0) - (b.abiertaEn?.toMillis()||0));
@@ -4993,7 +5088,8 @@ async function generarPNGReporteDiario(filas, fechaISO, sesiones){
   const usdOtros = {};   // dólares por Mercado Pago / transferencia / tarjeta (no entran a la caja física)
   const pagosProfesionales = [];
   filas.forEach(m=>{
-    const esGasto = esGastoMov(m);
+    if(esCajaGrande(m) && !esGuardaEnChica(m)) return;   // caja grande: no es plata de la caja chica
+    const esGasto = esGastoMov(m) && !esGuardaEnChica(m);
     if(/honorario/i.test(m.concepto||"")) pagosProfesionales.push(m);
     pagosDe(m).forEach(p=>{
       // Igual que en "Cerrar caja": si lo cobró el profesional directo, esa plata nunca entró a nuestra caja física.
@@ -5213,7 +5309,7 @@ async function refreshPagoPreview(){
     const snap = await db.collection('movimientos').where('fechaISO','==', fechaISO).where('prof','==', prof).orderBy('creadoEn','asc').get();
     const todos = snap.docs.map(d=> d.data()).filter(noMigrado);
     pagoJornadaExcluidos = todos.filter(m=> m.jornada).length;
-    pagoMovsActuales = todos.filter(m=> !m.jornada);   // lo de jornada se liquida aparte a fin de mes
+    pagoMovsActuales = todos.filter(m=> !m.jornada && !esCajaGrande(m));   // caja grande no entra en el pago del día   // lo de jornada se liquida aparte a fin de mes
   }catch(e){
     preview.innerHTML = `<div class="empty-state">Error al buscar: ${e.message}</div>`;
     btnExp.disabled = true; return;
@@ -9782,9 +9878,11 @@ let cpLista = null, unsubCp = null, cpMesSuscripto = null, cpPendiente = false;
 function mostrarSubMov(sub){
   movSub = sub;
   document.querySelectorAll('#movSubTabs [data-msub]').forEach(x=> x.classList.toggle('active', x.dataset.msub===sub));
-  document.getElementById('panelContainer').classList.toggle('col-hidden', sub==='prueba' || sub==='deriv');
+  document.getElementById('panelContainer').classList.toggle('col-hidden', sub==='prueba' || sub==='deriv' || sub==='grande');
   document.getElementById('cpPanel').classList.toggle('col-hidden', sub!=='prueba');
   document.getElementById('dvPanel').classList.toggle('col-hidden', sub!=='deriv');
+  document.getElementById('cgPanel').classList.toggle('col-hidden', sub!=='grande');
+  if(sub==='grande'){ suscribirCajaGrande(); renderCajaGrande(); }
   if(sub==='prueba'){ suscribirClasesPrueba(); renderClasesPrueba(); }
   if(sub==='deriv'){ suscribirDerivaciones(); renderDerivaciones(); }
 }
@@ -10473,7 +10571,7 @@ function suscribirDvContactos(){
 
 document.querySelectorAll('#movSubTabs [data-msub]').forEach(b=> b.onclick = ()=>{
   const sub = b.dataset.msub;
-  if(sub==='diarios' || sub==='prueba' || sub==='deriv'){ mostrarSubMov(sub); return; }
+  if(sub==='diarios' || sub==='prueba' || sub==='deriv' || sub==='grande'){ mostrarSubMov(sub); return; }
   if(sub==='cajas') document.getElementById('btnCajas').click();
   else if(sub==='pacientes') document.getElementById('btnPacientes').click();
   else if(sub==='deudores') document.getElementById('btnDeudores').click();
