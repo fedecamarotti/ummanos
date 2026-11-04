@@ -3439,10 +3439,88 @@ function suscribirMovimientos(){
     });
 }
 
+/* ---- PACIENTES con ahorro de lecturas ----
+   Antes, cada vez que alguien abría la caja se leían TODOS los pacientes (~1.900 lecturas por apertura,
+   más del 80% del consumo de Firebase). Ahora:
+   · La lista completa se lee una sola vez por día en cada compu y se guarda en el navegador.
+   · Después solo se escuchan los pacientes que cambian (los que tienen "modificadoEn" posterior a esa lectura).
+   Por eso TODA escritura en "pacientes" tiene que llevar ...marcaPac() (y para borrar, usar borrarPaciente()). */
+const PAC_CACHE_KEY = 'ummanaPacientesCache_v1';
+const marcaPac = ()=> ({ modificadoEn: firebase.firestore.FieldValue.serverTimestamp() });
+async function borrarPaciente(id){
+  // Primero se marca (así las otras compus se enteran por su escucha) y después se borra
+  await db.collection('pacientes').doc(id).update(marcaPac());
+  await db.collection('pacientes').doc(id).delete();
+}
+function pacSerializar(lista){
+  return JSON.stringify(lista, function(k, v){
+    const orig = this[k];
+    return (orig instanceof firebase.firestore.Timestamp) ? {__ts: [orig.seconds, orig.nanoseconds]} : v;
+  });
+}
+function pacDeserializar(txt){
+  return JSON.parse(txt, (k, v)=> (v && Array.isArray(v.__ts)) ? new firebase.firestore.Timestamp(v.__ts[0], v.__ts[1]) : v);
+}
+function pacLeerCache(){
+  try{
+    const raw = localStorage.getItem(PAC_CACHE_KEY);
+    if(!raw) return null;
+    const c = pacDeserializar(raw);
+    if(!c || c.proyecto !== firebaseConfig.projectId || c.dia !== hoyISO() || !Array.isArray(c.docs) || !c.docs.length) return null;
+    return c;
+  }catch(_){ return null; }
+}
+// Devuelve una función para cortar la escucha (igual que onSnapshot)
+function suscribirPacientes(alCambiar){
+  let cortado = false, unsubDelta = null, unsubCompleto = null;
+  const entregar = (lista)=>{
+    if(cortado) return;
+    lista = lista.filter(p=> 'apellido' in p)   // igual que orderBy('apellido'): sin apellido no aparece
+      .sort((a,b)=>{ const x = String(a.apellido??''), y = String(b.apellido??''); return x<y ? -1 : x>y ? 1 : 0; });
+    alCambiar(lista.filter(p=> !p.fusionadoCon));   // los duplicados unificados quedan ocultos
+  };
+  // Plan B: si algo de lo nuevo falla, se vuelve a la escucha completa de siempre
+  const planB = (motivo)=>{
+    if(cortado || unsubCompleto) return;
+    console.warn('Pacientes: se usa la lectura completa', motivo);
+    if(unsubDelta){ unsubDelta(); unsubDelta = null; }
+    unsubCompleto = db.collection('pacientes').orderBy('apellido').onSnapshot(snap=>{
+      entregar(snap.docs.map(d=> ({id:d.id, ...d.data()})));
+    });
+  };
+  const escucharCambios = (base, marca)=>{
+    const porId = new Map(base.map(p=> [p.id, p]));
+    entregar([...porId.values()]);
+    const borrados = new Set();
+    unsubDelta = db.collection('pacientes').where('modificadoEn','>', marca).onSnapshot(snap=>{
+      snap.docChanges().forEach(ch=>{ if(ch.type==='removed') borrados.add(ch.doc.id); else borrados.delete(ch.doc.id); });
+      const m = new Map(porId);
+      snap.docs.forEach(d=> m.set(d.id, {id:d.id, ...d.data()}));
+      borrados.forEach(id=> m.delete(id));
+      entregar([...m.values()]);
+    }, err=> planB(err));
+  };
+  const cache = pacLeerCache();
+  if(cache){
+    escucharCambios(cache.docs, cache.marca || firebase.firestore.Timestamp.fromMillis(0));
+  } else {
+    db.collection('pacientes').orderBy('apellido').get().then(snap=>{
+      if(cortado) return;
+      const docs = snap.docs.map(d=> ({id:d.id, ...d.data()}));
+      let marca = firebase.firestore.Timestamp.fromMillis(0);
+      docs.forEach(p=>{ if(p.modificadoEn instanceof firebase.firestore.Timestamp && p.modificadoEn.toMillis() > marca.toMillis()) marca = p.modificadoEn; });
+      try{ localStorage.setItem(PAC_CACHE_KEY, pacSerializar({proyecto: firebaseConfig.projectId, dia: hoyISO(), marca, docs})); }
+      catch(e){ console.warn('Pacientes: no se pudo guardar la copia local', e); }
+      escucharCambios(docs, marca);
+    }).catch(err=> planB(err));
+  }
+  return ()=>{ cortado = true; if(unsubDelta) unsubDelta(); if(unsubCompleto) unsubCompleto(); };
+}
+
 function iniciarListeners(){
   // Pacientes
-  unsubPacientes = db.collection('pacientes').orderBy('apellido').onSnapshot(snap=>{
-    pacientesFullList = snap.docs.map(d=> ({id:d.id, ...d.data()})).filter(p=> !p.fusionadoCon);   // los duplicados unificados quedan ocultos
+  unsubPacientes = suscribirPacientes(lista=>{
+    pacientesFullList = lista;
     pacienteRegistry = pacientesFullList.map(p=> p.nombreCompleto);
     if(!pausaRenderPaneles && overlayPacientes.classList.contains('show')) renderPacientesBusqueda();
     if(vistaActual==='movimientos') renderTabla();   // para que los nombres se puedan tocar y abran la ficha
@@ -4508,7 +4586,7 @@ document.getElementById('guardarPaciente').onclick = async ()=>{
     dni: document.getElementById('npDni').value.trim(),
     medioLlegada: document.getElementById('npMedio').value,
     referidoPor: document.getElementById('npMedio').value==='REFERIDO' ? mayus(document.getElementById('npReferido').value.trim()) : '',
-    creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
+    creadoEn: firebase.firestore.FieldValue.serverTimestamp(), ...marcaPac(),
   });
   selPaciente.value = nombreCompleto;
   document.getElementById('cardNuevoPaciente').classList.add('col-hidden');
@@ -6799,8 +6877,8 @@ function mostrarPortal(){
   if(puedeCargarSueros()){
     suscribirSueros();
     if(!unsubPortalPac){
-      unsubPortalPac = db.collection('pacientes').orderBy('apellido').onSnapshot(snap=>{
-        pacientesFullList = snap.docs.map(d=> ({id:d.id, ...d.data()})).filter(p=> !p.fusionadoCon);   // los duplicados unificados quedan ocultos
+      unsubPortalPac = suscribirPacientes(lista=>{
+        pacientesFullList = lista;
         pacienteRegistry = pacientesFullList.map(p=> p.nombreCompleto);
       });
     }
@@ -7024,7 +7102,7 @@ document.getElementById('hcGuardar').onclick = async ()=>{
     await db.collection('historiasSueros').doc(hcPaciente.id).set(datos, {merge:true});
     const fnac = document.getElementById('hcFnac').value;
     if(fnac !== fnacISO(hcPaciente.fnac)){
-      await db.collection('pacientes').doc(hcPaciente.id).update({fnac});
+      await db.collection('pacientes').doc(hcPaciente.id).update({fnac, ...marcaPac()});
       hcPaciente.fnac = fnac;
     }
     cerrarFichaHC(); pacVista('lista');   // vuelve a la lista de pacientes
@@ -7985,7 +8063,7 @@ document.getElementById('btnMigrarMayus').onclick = async ()=>{
       });
       for(let i=0; i<cambios.length; i+=400){
         const lote = db.batch();
-        cambios.slice(i, i+400).forEach(([ref, upd])=> lote.update(ref, upd));
+        cambios.slice(i, i+400).forEach(([ref, upd])=> lote.update(ref, col==='pacientes' ? {...upd, ...marcaPac()} : upd));
         await lote.commit();
         info.textContent = `Actualizando ${col}… ${Math.min(i+400, cambios.length)}/${cambios.length}`;
       }
@@ -8008,10 +8086,11 @@ async function importarEnLotes(coleccion, filas){
     const lote = db.batch();
     filas.slice(i, i+CHUNK).forEach(dato=>{
       const ref = db.collection(coleccion).doc();
-      lote.set(ref, dato);
+      lote.set(ref, coleccion==='pacientes' ? {...dato, ...marcaPac()} : dato);
     });
     await lote.commit();
   }
+  if(coleccion==='pacientes'){ try{ localStorage.removeItem(PAC_CACHE_KEY); }catch(_){} }   // la próxima apertura vuelve a leer la lista completa
 }
 
 async function vaciarColeccion(coleccion){
@@ -8046,7 +8125,7 @@ document.getElementById('btnCorregirFechas').onclick = async ()=>{
   });
   for(let i=0; i<pendientes.length; i+=CHUNK){
     const lote = db.batch();
-    pendientes.slice(i, i+CHUNK).forEach(p=> lote.update(p.ref, {fnac: p.fnac}));
+    pendientes.slice(i, i+CHUNK).forEach(p=> lote.update(p.ref, {fnac: p.fnac, ...marcaPac()}));
     await lote.commit();
     corregidos += Math.min(CHUNK, pendientes.length - i);
   }
@@ -8581,13 +8660,13 @@ document.getElementById('pfGuardar').onclick = async ()=>{
   btn.disabled = true; btn.textContent = 'Guardando…';
   try{
     if(nuevo){
-      const ref = await db.collection('pacientes').add({...datos, creadoEn: firebase.firestore.FieldValue.serverTimestamp()});
+      const ref = await db.collection('pacientes').add({...datos, creadoEn: firebase.firestore.FieldValue.serverTimestamp(), ...marcaPac()});
       if(!pacientesFullList.some(x=> x.id===ref.id)) pacientesFullList.push({id: ref.id, ...datos});
       pacienteRegistry = pacientesFullList.map(x=> x.nombreCompleto);
       pfPaciente = pacientesFullList.find(x=> x.id===ref.id);
       abrirFichaPaciente(ref.id);
     } else {
-      await db.collection('pacientes').doc(pfPaciente.id).update(datos);
+      await db.collection('pacientes').doc(pfPaciente.id).update({...datos, ...marcaPac()});
       Object.assign(pfPaciente, datos);
       document.getElementById('pfNombre').textContent = datos.nombreCompleto;
       document.getElementById('pfNombreCampos').classList.add('col-hidden');
@@ -8602,7 +8681,7 @@ document.getElementById('pfGuardar').onclick = async ()=>{
 document.getElementById('pfEliminar').onclick = async ()=>{
   if(!pfPaciente || !confirm("¿Eliminar este paciente? Esta acción no se puede deshacer. No borra los movimientos ya cargados con su nombre.")) return;
   try{
-    await db.collection('pacientes').doc(pfPaciente.id).delete();
+    await borrarPaciente(pfPaciente.id);
     pfPaciente = null;
     pacVistaPanel('lista'); renderPacientesBusqueda();
   }catch(e){ alert("No se pudo eliminar: " + e.message); }
@@ -8635,7 +8714,7 @@ async function unificarPacientes(destino, dup){
   // Datos del paciente: lo que falte en el que queda se completa con lo del duplicado
   const completar = {};
   ['telefono','email','fnac','dni','medioLlegada','referidoPor'].forEach(k=>{ if(!destino[k] && dup[k]) completar[k] = dup[k]; });
-  if(Object.keys(completar).length){ await db.collection('pacientes').doc(destino.id).update(completar); Object.assign(destino, completar); }
+  if(Object.keys(completar).length){ await db.collection('pacientes').doc(destino.id).update({...completar, ...marcaPac()}); Object.assign(destino, completar); }
   // Ficha de sueros: si el duplicado tenía y el que queda no, se copia (la del duplicado no se borra)
   try{
     const [hDup, hDes] = await Promise.all([db.collection('historiasSueros').doc(dup.id).get(), db.collection('historiasSueros').doc(destino.id).get()]);
@@ -8647,7 +8726,7 @@ async function unificarPacientes(destino, dup){
       if(Object.keys(merge).length) await db.collection('historiasSueros').doc(destino.id).set(merge, {merge:true});
     }
   }catch(e){ console.warn('Ficha de sueros no unificada', e); }
-  await db.collection('pacientes').doc(dup.id).update({fusionadoCon: destino.id, fusionadoEn: firebase.firestore.FieldValue.serverTimestamp(), fusionadoPor: currentUser ? currentUser.nombre : ''});
+  await db.collection('pacientes').doc(dup.id).update({fusionadoCon: destino.id, fusionadoEn: firebase.firestore.FieldValue.serverTimestamp(), fusionadoPor: currentUser ? currentUser.nombre : '', ...marcaPac()});
   pacientesFullList = pacientesFullList.filter(x=> x.id!==dup.id);
   pacienteRegistry = pacientesFullList.map(x=> x.nombreCompleto);
   return true;
@@ -8671,7 +8750,7 @@ document.getElementById('pfUnifOk').onclick = async ()=>{
 document.getElementById('pfGoogle').addEventListener('change', async e=>{
   if(!pfPaciente) return;
   const v = e.target.checked;
-  try{ await db.collection('pacientes').doc(pfPaciente.id).update({avisadoGoogle: v}); pfPaciente.avisadoGoogle = v; }
+  try{ await db.collection('pacientes').doc(pfPaciente.id).update({avisadoGoogle: v, ...marcaPac()}); pfPaciente.avisadoGoogle = v; }
   catch(err){ e.target.checked = !v; alert('No se pudo guardar: ' + err.message); }
 });
 // Nombres de pacientes en Movimientos: se pueden tocar para abrir la ficha
@@ -9469,7 +9548,7 @@ document.getElementById('pNpGuardar').onclick = async ()=>{
   if(existente){ alert("Ese paciente ya existe. Se abre su ficha."); document.getElementById('pNuevoPacCard').classList.add('col-hidden'); abrirFichaHC(existente.id); return; }
   const btn = document.getElementById('pNpGuardar'); btn.disabled = true;
   try{
-    const datos = { apellido: ape, nombre: nom, nombreCompleto, creadoEn: firebase.firestore.FieldValue.serverTimestamp() };
+    const datos = { apellido: ape, nombre: nom, nombreCompleto, creadoEn: firebase.firestore.FieldValue.serverTimestamp(), ...marcaPac() };
     if(fnac) datos.fnac = fnac;
     const ref = await db.collection('pacientes').add(datos);
     document.getElementById('pNuevoPacCard').classList.add('col-hidden');
