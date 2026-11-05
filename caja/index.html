@@ -303,7 +303,10 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .t-corto{display:none;}
   /* ---------- Clases de prueba ---------- */
   .cp-panel{flex:1;min-height:0;display:flex;flex-direction:column;}
-  .cg-saldos{display:flex;gap:10px;flex-wrap:wrap;margin:10px 28px 0;flex:none;}
+  .cg-saldos{display:flex;gap:18px;flex-wrap:wrap;margin:10px 28px 0;flex:none;align-items:flex-end;}
+  .cg-grupo{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;position:relative;padding-top:18px;}
+  .cg-gtit{position:absolute;top:0;left:2px;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--accent-dk);white-space:nowrap;} .cg-gtit span{font-weight:500;text-transform:none;letter-spacing:0;color:var(--muted);}
+  .cg-chip small{font-size:11px;color:var(--muted);}
   .cg-chip{background:#fffcf5;border:1px solid var(--border);border-radius:12px;padding:9px 16px;font-size:12px;color:var(--muted);font-weight:600;}
   .cg-chip b{display:block;font-size:19px;color:var(--text);margin-top:2px;}
   .cg-tabla{width:100%;border-collapse:collapse;font-size:12px;}
@@ -1889,7 +1892,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <!-- ============ CAJA GRANDE (subsección de Movimientos, Fede y Pedro) ============ -->
     <div class="cp-panel col-hidden" id="cgPanel">
       <div class="cg-saldos" id="cgSaldos"></div>
-      <div class="cg-nota" style="margin-top:8px">Cuenta solo el efectivo. Suman: los ingresos cargados en CAJA GRANDE y los egresos de caja chica “GUARDA EN CAJA GRANDE”. Restan: los egresos cargados en CAJA GRANDE (los “GUARDA EN CAJA CHICA” pasan a la caja chica).</div>
+      <div class="cg-nota" style="margin-top:8px">Efectivo: suman los ingresos cargados en CAJA GRANDE y los “GUARDA EN CAJA GRANDE” de caja chica; restan los egresos cargados en CAJA GRANDE. Mercado Pago: todo lo cobrado y pagado por MP, de las dos planillas. Desde noviembre 2026.</div>
       <div class="sheet-wrap cp-hoja" id="cgHoja"></div>
     </div>
     <!-- ============ DERIVACIONES (subsección de Movimientos) ============ -->
@@ -2201,6 +2204,10 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <label>Monto inicial en efectivo ($)</label>
       <input type="text" id="inpAperturaMonto" inputmode="numeric" placeholder="0">
     </div>
+    <div class="field">
+      <label>Monto inicial en dólares (USD) <span class="opt" id="aperturaUsdSug"></span></label>
+      <input type="text" id="inpAperturaUsd" inputmode="numeric" placeholder="0">
+    </div>
     <div class="warn-banner col-hidden" id="aperturaWarning"></div>
     <div class="modal-actions">
       <button class="btn" id="cancelApertura">Cancelar</button>
@@ -2222,6 +2229,10 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <div class="field">
       <label>Monto real contado en caja ($)</label>
       <input type="text" id="inpCierreMonto" inputmode="numeric" placeholder="0">
+    </div>
+    <div class="field">
+      <label>Dólares contados en caja (USD) <span class="opt" id="cierreUsdEsp"></span></label>
+      <input type="text" id="inpCierreUsd" inputmode="numeric" placeholder="0">
     </div>
     <div class="warn-banner col-hidden" id="cierreWarning"></div>
     <div class="modal-actions">
@@ -3064,6 +3075,7 @@ let movimientosHoy = [];      // espejo local de los movimientos de HOY, sin imp
 let movimientosDeuda = [];    // espejo local de todas las deudas pendientes, de cualquier fecha (deudores)
 let cajaActual = null;        // doc de la sesión de caja abierta (o null)
 let ultimoCierre = null;      // último cierre registrado (para sugerir la próxima apertura)
+let ultimoCierreUsd = null;   // ídem, en dólares
 
 function excelSerialToISODate(valor){
   const n = Number(valor);
@@ -3596,6 +3608,7 @@ function iniciarListeners(){
       // buscamos el último cierre para sugerir la próxima apertura
       const ult = await db.collection('cajaSesiones').orderBy('cerradaEn','desc').limit(1).get();
       ultimoCierre = ult.empty ? null : ult.docs[0].data().montoContado;
+      ultimoCierreUsd = ult.empty ? null : (ult.docs[0].data().montoContadoUsd ?? null);
     }
     actualizarEstadoCaja();
   });
@@ -3717,6 +3730,7 @@ function contiene(campo, texto){
 }
 
 function pasaFiltros(m){
+  if(esCajaGrande(m)) return false;   // lo de caja grande se ve solo en "Caja grande"
   if(filtroFecha.value && !contiene(m.fechaDisplay, filtroFecha.value)) return false;
   if(filtroPaciente.value && !contiene(m.pac, filtroPaciente.value)) return false;
   if(filtroProfesional.value && !contiene(m.prof, filtroProfesional.value)) return false;
@@ -3788,59 +3802,87 @@ const conceptoNorm = m => normBusqueda((m && m.concepto) || '').replace(/\s+/g,'
 const esGuardaEnGrande = m => !esCajaGrande(m) && esGastoMov(m) && conceptoNorm(m) === 'guarda en caja grande';
 // Egreso de caja grande "GUARDA EN CAJA CHICA": sale de la grande y entra a la chica
 const esGuardaEnChica = m => esCajaGrande(m) && esGastoMov(m) && conceptoNorm(m) === 'guarda en caja chica';
-// Lo que mueve un movimiento en la caja grande, por moneda (solo efectivo)
+// Lo que mueve un movimiento en la caja grande: efectivo $ / USD y Mercado Pago (MP es todo caja grande)
 function netoCajaGrande(m){
-  const suma = esCajaGrande(m) ? (esGastoMov(m) ? -1 : 1) : (esGuardaEnGrande(m) ? 1 : 0);
   const out = {};
-  if(!suma) return out;
-  pagosDe(m).forEach(p=>{ if(p.medio!=="efectivo") return; const k = pagoMoneda(m, p)==='USD' ? 'USD' : '$'; out[k] = (out[k]||0) + suma * pagoMontoReal(p); });
+  const add = (k, v)=>{ if(v) out[k] = (out[k]||0) + v; };
+  const gasto = esGastoMov(m);
+  // efectivo: lo cargado en CAJA GRANDE y lo que la chica manda con "GUARDA EN CAJA GRANDE"
+  const sEf = esCajaGrande(m) ? (gasto ? -1 : 1) : (esGuardaEnGrande(m) ? 1 : 0);
+  pagosDe(m).forEach(p=>{
+    const v = pagoMontoReal(p);
+    if(p.medio==="efectivo"){ if(sEf) add(pagoMoneda(m, p)==='USD' ? 'USD' : '$', sEf * v); return; }
+    if(p.medio==="mp"){
+      if(!gasto && p.cobradoPor==="profesional") return;   // si lo cobró el profesional, no entró a nuestro MP
+      add(pagoMoneda(m, p)==='USD' ? 'MPUSD' : 'MP', gasto ? -v : v);
+    }
+  });
   return out;
 }
-let cgDatos = {grande:null, guarda:null}, cgUnsub = [];
+let cgDatos = {movs:null}, cgUnsub = [];
 function suscribirCajaGrande(){
   if(cgUnsub.length) return;
-  const mapa = snap=> snap.docs.map(d=> ({id:d.id, ...d.data()}));
   const err = e=>{ document.getElementById('cgHoja').innerHTML = `<div class="empty-state" style="color:#a13a3a">No se pudo leer la caja grande: ${escHtml(e.message)}</div>`; };
-  cgUnsub.push(db.collection('movimientos').where('caja','==','grande').onSnapshot(sn=>{ cgDatos.grande = mapa(sn); renderCajaGrande(); }, err));
-  cgUnsub.push(db.collection('movimientos').where('concepto','==','GUARDA EN CAJA GRANDE').onSnapshot(sn=>{ cgDatos.guarda = mapa(sn); renderCajaGrande(); }, err));
+  // todo desde el inicio de la caja grande (noviembre 2026): lo cargado en GRANDE, los "guarda" y los Mercado Pago de caja chica
+  cgUnsub.push(db.collection('movimientos').where('fechaISO','>=', CG_DESDE + '-01').onSnapshot(sn=>{
+    cgDatos.movs = sn.docs.map(d=> ({id:d.id, ...d.data()})).filter(noMigrado); renderCajaGrande();
+  }, err));
+  cajaChicaSaldo().then(renderCajaGrande);
+}
+// Saldo actual de caja chica: si hay una caja abierta, lo esperado hasta ahora; si no, lo contado en el último cierre
+let cgChica = null;
+async function cajaChicaSaldo(){
+  try{
+    if(cajaActual) cgChica = {pesos: await calcularEsperadoCaja(), usd: await calcularEsperadoCaja('USD'), abierta:true};
+    else {
+      const ult = await db.collection('cajaSesiones').orderBy('cerradaEn','desc').limit(1).get();
+      const c = ult.empty ? null : ult.docs[0].data();
+      cgChica = c ? {pesos: Number(c.montoContado)||0, usd: c.montoContadoUsd!=null ? Number(c.montoContadoUsd) : null, abierta:false} : null;
+    }
+  }catch(e){ cgChica = null; }
 }
 function renderCajaGrande(){
   const hoja = document.getElementById('cgHoja'), saldos = document.getElementById('cgSaldos');
   if(!hoja) return;
-  if(cgDatos.grande==null || cgDatos.guarda==null){ hoja.innerHTML = '<div class="empty-state">Cargando…</div>'; return; }
+  if(cgDatos.movs==null){ hoja.innerHTML = '<div class="empty-state">Cargando…</div>'; return; }
   const ms = x=> x && x.toMillis ? x.toMillis() : 0;
-  const porId = {}; [...cgDatos.grande, ...cgDatos.guarda].forEach(m=>{ if((m.fechaISO||'') >= CG_DESDE + '-01' && (esCajaGrande(m) || esGuardaEnGrande(m))) porId[m.id] = m; });
-  const todos = Object.values(porId).sort((a,b)=> (a.fechaISO||'').localeCompare(b.fechaISO||'') || ms(a.creadoEn)-ms(b.creadoEn));
+  const todos = cgDatos.movs.filter(m=> Object.keys(netoCajaGrande(m)).length)
+    .sort((a,b)=> (a.fechaISO||'').localeCompare(b.fechaISO||'') || ms(a.creadoEn)-ms(b.creadoEn));
   const ini = mesInicioISO(), fin = mesFinISO();
-  const total = {'$':0, USD:0}, alInicio = {'$':0, USD:0};
-  todos.forEach(m=>{ const n = netoCajaGrande(m); Object.keys(n).forEach(k=>{ total[k] += n[k]; if((m.fechaISO||'') < ini) alInicio[k] += n[k]; }); });
+  const total = {}, alInicio = {};
+  todos.forEach(m=>{ const n = netoCajaGrande(m); Object.keys(n).forEach(k=>{ total[k] = (total[k]||0) + n[k]; if((m.fechaISO||'') < ini) alInicio[k] = (alInicio[k]||0) + n[k]; }); });
   const delMes = todos.filter(m=> m.fechaISO >= ini && m.fechaISO < fin);
-  saldos.innerHTML = `<div class="cg-chip">Saldo actual en $<b>${fmtMonto(total['$'],'$')}</b></div>`
-    + `<div class="cg-chip">Saldo actual en USD<b>${fmtMonto(total.USD,'USD')}</b></div>`;
-  const monedas = ['$','USD'].filter(k=> k==='$' || alInicio[k] || delMes.some(m=> netoCajaGrande(m)[k]));
-  hoja.innerHTML = monedas.map(k=>{
-    let saldo = alInicio[k];
+  const chip = (t, v)=> `<div class="cg-chip">${t}<b>${v}</b></div>`;
+  saldos.innerHTML = `<div class="cg-grupo"><div class="cg-gtit">Caja grande</div>`
+    + chip('Saldo actual en $', fmtMonto(total['$']||0,'$')) + chip('Saldo actual en USD', fmtMonto(total.USD||0,'USD'))
+    + chip('Saldo actual MP', fmtMonto(total.MP||0,'$') + (total.MPUSD ? ` <small>+ ${fmtMonto(total.MPUSD,'USD')}</small>` : '')) + `</div>`
+    + `<div class="cg-grupo"><div class="cg-gtit">Caja chica${cgChica ? (cgChica.abierta ? ' <span>(caja abierta, esperado ahora)</span>' : ' <span>(último cierre)</span>') : ''}</div>`
+    + (cgChica ? chip('Efectivo $', fmtMonto(cgChica.pesos,'$')) + chip('Efectivo USD', cgChica.usd==null ? '—' : fmtMonto(cgChica.usd,'USD')) : '<div class="cg-chip">Sin datos</div>') + `</div>`;
+  const SECC = [['$','Efectivo en pesos ($)','$'], ['USD','Efectivo en dólares (USD)','USD'], ['MP','Mercado Pago','$'], ['MPUSD','Mercado Pago en dólares','USD']];
+  hoja.innerHTML = SECC.filter(([k])=> k==='$' || k==='USD' || k==='MP' || alInicio[k] || delMes.some(m=> netoCajaGrande(m)[k])).map(([k, tit, mon])=>{
+    let saldo = alInicio[k]||0;
     const filas = delMes.filter(m=> netoCajaGrande(m)[k]).map(m=>{
       const v = netoCajaGrande(m)[k]; saldo += v;
-      const auto = esGuardaEnGrande(m) ? '<div class="cg-auto">desde caja chica</div>' : '';
+      const origen = esCajaGrande(m) ? '' : `<div class="cg-auto">desde caja chica${(k==='MP'||k==='MPUSD') ? ' (Mercado Pago)' : ''}</div>`;
       const quien = m.creadoPor ? nombreCortoUsuario(m.creadoPor) : '';
-      return `<tr><td>${ecFecha(m.fechaISO)}</td><td class="izq">${escHtml(m.pac||'')} · ${escHtml(m.concepto||'')}${m.notas ? ' · ' + escHtml(m.notas) : ''}${auto}</td><td>${escHtml(quien)}</td>`
-        + `<td class="ing">${v>0 ? fmtMonto(v,k) : ''}</td><td class="egr">${v<0 ? fmtMonto(-v,k) : ''}</td><td class="sal">${fmtMonto(saldo,k)}</td></tr>`;
+      return `<tr><td>${ecFecha(m.fechaISO)}</td><td class="izq">${escHtml(m.pac||'')} · ${escHtml(m.concepto||'')}${m.notas ? ' · ' + escHtml(m.notas) : ''}${origen}</td><td>${escHtml(quien)}</td>`
+        + `<td class="ing">${v>0 ? fmtMonto(v,mon) : ''}</td><td class="egr">${v<0 ? fmtMonto(-v,mon) : ''}</td><td class="sal">${fmtMonto(saldo,mon)}</td></tr>`;
     }).join('');
-    return `<div class="cg-mon">${k==='USD' ? 'Dólares (USD)' : 'Pesos ($)'} · ${MESES[mesActual.month-1]} ${mesActual.year}</div>
+    return `<div class="cg-mon">${tit} · ${MESES[mesActual.month-1]} ${mesActual.year}</div>
       <table class="cg-tabla"><thead><tr><th style="width:90px">Fecha</th><th>Detalle</th><th style="width:110px">Cargado por</th><th style="width:120px">Ingreso</th><th style="width:120px">Egreso</th><th style="width:130px">Saldo</th></tr></thead>
-      <tbody><tr class="cg-ini"><td></td><td class="izq">Saldo al inicio del mes</td><td></td><td></td><td></td><td>${fmtMonto(alInicio[k],k)}</td></tr>${filas || '<tr><td colspan="6" class="empty-state">Sin movimientos de caja grande este mes.</td></tr>'}</tbody></table>`;
+      <tbody><tr class="cg-ini"><td></td><td class="izq">Saldo al inicio del mes</td><td></td><td></td><td></td><td>${fmtMonto(alInicio[k]||0,mon)}</td></tr>${filas || '<tr><td colspan="6" class="empty-state">Sin movimientos este mes.</td></tr>'}</tbody></table>`;
   }).join('');
 }
-function netoEfectivoMovimiento(m){
+function netoEfectivoMovimiento(m, mon){
+  mon = mon || '$';
   if(esCajaGrande(m)){
     // lo de caja grande no toca la caja chica, salvo lo que se pasa de la grande a la chica
     if(!esGuardaEnChica(m)) return 0;
-    return pagosDe(m).filter(p=> p.medio==="efectivo" && pagoMoneda(m, p)==="$").reduce((a,p)=> a + pagoMontoReal(p), 0);
+    return pagosDe(m).filter(p=> p.medio==="efectivo" && pagoMoneda(m, p)===mon).reduce((a,p)=> a + pagoMontoReal(p), 0);
   }
   const esGasto = esGastoMov(m);
   let neto = 0;
-  pagosDe(m).filter(p=>p.medio==="efectivo" && pagoMoneda(m, p)==="$").forEach(p=>{   // solo los pesos en efectivo
+  pagosDe(m).filter(p=>p.medio==="efectivo" && pagoMoneda(m, p)===mon).forEach(p=>{   // efectivo de la moneda pedida ($ o USD)
     // Si lo cobró el profesional directamente, esa plata nunca entró a nuestra caja física.
     if(!esGasto && p.cobradoPor === "profesional") return;
     const v = pagoMontoReal(p);
@@ -3904,15 +3946,15 @@ async function movimientosParaSesiones(sesiones){
   movs.forEach(m=>{ if(borradas.has(m.cajaId)) m._cajaBorrada = true; });
   return movs;
 }
-function netoPorSesion(movs, sesiones){
+function netoPorSesion(movs, sesiones, mon){
   const neto = {};
   movs.forEach(m=>{
     const ses = sesionDeMovimiento(m, sesiones);
-    if(ses) neto[ses.id] = (neto[ses.id]||0) + netoEfectivoMovimiento(m);
+    if(ses) neto[ses.id] = (neto[ses.id]||0) + netoEfectivoMovimiento(m, mon);
   });
   return neto;
 }
-async function netoEfectivoDeSesion(sesionId, sesion){
+async function netoEfectivoDeSesion(sesionId, sesion, mon){
   if(!sesion.abiertaEn) return 0;
   // Todas las cajas de ese día, para repartir bien los movimientos viejos
   const snapDia = await db.collection('cajaSesiones').where('fechaISO','==', sesion.fechaISO).get();
@@ -3920,10 +3962,11 @@ async function netoEfectivoDeSesion(sesionId, sesion){
   if(!sesiones.some(c=>c.id===sesionId)) sesiones.push({id:sesionId, ...sesion});
   const movs = await movimientosParaSesiones(sesiones.filter(c=>c.id===sesionId));
   // también los viejos de ese día que pudieran caer en esta caja
-  return netoPorSesion(movs, sesiones)[sesionId] || 0;
+  return netoPorSesion(movs, sesiones, mon)[sesionId] || 0;
 }
-async function calcularEsperadoCaja(){
+async function calcularEsperadoCaja(mon){
   if(!cajaActual) return 0;
+  if(mon==='USD') return (Number(cajaActual.aperturaMontoUsd)||0) + await netoEfectivoDeSesion(cajaActual.id, cajaActual, 'USD');
   return cajaActual.aperturaMonto + await netoEfectivoDeSesion(cajaActual.id, cajaActual);
 }
 
@@ -4010,6 +4053,9 @@ function abrirModalApertura(){
   const sugerido = ultimoCierre !== null ? ultimoCierre : 0;
   inpAperturaMonto.value = sugerido.toLocaleString('es-AR');
   document.getElementById('inpFechaApertura').value = hoyISO();
+  const sugUsd = ultimoCierreUsd !== null ? Number(ultimoCierreUsd) : 0;
+  document.getElementById('inpAperturaUsd').value = sugUsd.toLocaleString('es-AR');
+  document.getElementById('aperturaUsdSug').textContent = ultimoCierreUsd !== null ? `(último cierre: US$ ${sugUsd.toLocaleString('es-AR')})` : '';
   document.getElementById('aperturaSugeridaTxt').textContent = ultimoCierre !== null
     ? `Sugerido según el último cierre: $${ultimoCierre.toLocaleString('es-AR')}`
     : "No hay un cierre anterior registrado — ingresá el monto real con el que arrancás.";
@@ -4025,18 +4071,22 @@ inpAperturaMonto.addEventListener('input', ()=>{
   document.getElementById('aperturaWarning').classList.add('col-hidden');
   document.getElementById('confirmarApertura').textContent = "Abrir caja";
 });
+document.getElementById('inpAperturaUsd').addEventListener('input', e=>{ formatearInputMonto(e.target); document.getElementById('aperturaWarning').classList.add('col-hidden'); document.getElementById('confirmarApertura').textContent = "Abrir caja"; });
 document.getElementById('confirmarApertura').onclick = async ()=>{
   const monto = Number(inpAperturaMonto.value.replace(/\D/g,""));
+  const montoUsd = Number(document.getElementById('inpAperturaUsd').value.replace(/\D/g,"")) || 0;
   if(inpAperturaMonto.value==="" || isNaN(monto)){ alert("Ingresá un monto de apertura."); return; }
   const fechaElegida = document.getElementById('inpFechaApertura').value;
   if(!fechaElegida){ alert("Elegí una fecha para esta caja."); return; }
 
   const diferenciaApertura = ultimoCierre !== null ? (monto - ultimoCierre) : 0;
+  const diferenciaAperturaUsd = ultimoCierreUsd !== null ? (montoUsd - Number(ultimoCierreUsd)) : 0;
   const warn = document.getElementById('aperturaWarning');
-  if(diferenciaApertura !== 0 && warn.classList.contains('col-hidden')){
-    warn.textContent = diferenciaApertura > 0
-      ? `⚠️ Estás abriendo con $${diferenciaApertura.toLocaleString('es-AR')} de más respecto del último cierre ($${ultimoCierre.toLocaleString('es-AR')}). Revisá antes de continuar.`
-      : `⚠️ Estás abriendo con $${Math.abs(diferenciaApertura).toLocaleString('es-AR')} de menos respecto del último cierre ($${ultimoCierre.toLocaleString('es-AR')}). Revisá antes de continuar.`;
+  if((diferenciaApertura !== 0 || diferenciaAperturaUsd !== 0) && warn.classList.contains('col-hidden')){
+    const partes = [];
+    if(diferenciaApertura) partes.push(`${diferenciaApertura > 0 ? 'de más' : 'de menos'}: $${Math.abs(diferenciaApertura).toLocaleString('es-AR')} (último cierre $${ultimoCierre.toLocaleString('es-AR')})`);
+    if(diferenciaAperturaUsd) partes.push(`${diferenciaAperturaUsd > 0 ? 'de más' : 'de menos'}: US$ ${Math.abs(diferenciaAperturaUsd).toLocaleString('es-AR')} (último cierre US$ ${Number(ultimoCierreUsd).toLocaleString('es-AR')})`);
+    warn.textContent = `⚠️ Estás abriendo con una diferencia respecto del último cierre — ${partes.join(' · ')}. Revisá antes de continuar.`;
     warn.classList.remove('col-hidden');
     document.getElementById('confirmarApertura').textContent = "Abrir caja de todos modos";
     return;
@@ -4044,8 +4094,8 @@ document.getElementById('confirmarApertura').onclick = async ()=>{
 
   await db.collection('cajaSesiones').add({
     fechaISO: fechaElegida, recepcionista: currentUser.nombre,
-    aperturaMonto: monto, abiertaEn: firebase.firestore.FieldValue.serverTimestamp(),
-    diferenciaApertura,
+    aperturaMonto: monto, aperturaMontoUsd: montoUsd, abiertaEn: firebase.firestore.FieldValue.serverTimestamp(),
+    diferenciaApertura, diferenciaAperturaUsd,
     cerradaEn: null, montoContado: null, esperadoCierre: null, diferencia: null,
   });
   overlayApertura.classList.remove('show');
@@ -4057,7 +4107,7 @@ const inpCierreMonto = document.getElementById('inpCierreMonto');
 async function abrirModalCierre(){
   document.getElementById('cierreEsperadoTxt').textContent = `Monto esperado en caja: calculando…`;
   document.getElementById('inpFechaCierre').value = cajaActual.fechaISO;
-  inpCierreMonto.value = "";
+  inpCierreMonto.value = ""; document.getElementById('inpCierreUsd').value = "";
   document.getElementById('cierreWarning').classList.add('col-hidden');
   document.getElementById('confirmarCierre').textContent = "Cerrar caja";
   overlayCierre.classList.add('show');
@@ -4066,8 +4116,11 @@ async function abrirModalCierre(){
 async function recalcularEsperadoCierre(){
   const fecha = document.getElementById('inpFechaCierre').value;
   const esperado = await calcularEsperadoCaja();
-  document.getElementById('cierreEsperadoTxt').textContent = `Monto esperado en caja: $${esperado.toLocaleString('es-AR')}`;
+  const esperadoUsd = await calcularEsperadoCaja('USD');
+  document.getElementById('cierreEsperadoTxt').textContent = `Monto esperado en caja: $${esperado.toLocaleString('es-AR')} y US$ ${esperadoUsd.toLocaleString('es-AR')}`;
   inpCierreMonto.value = esperado.toLocaleString('es-AR');
+  document.getElementById('inpCierreUsd').value = esperadoUsd.toLocaleString('es-AR');
+  document.getElementById('cierreUsdEsp').textContent = `(esperado: US$ ${esperadoUsd.toLocaleString('es-AR')})`;
   document.getElementById('cierreWarning').classList.add('col-hidden');
   document.getElementById('confirmarCierre').textContent = "Cerrar caja";
 }
@@ -4080,18 +4133,23 @@ inpCierreMonto.addEventListener('input', ()=>{
   document.getElementById('cierreWarning').classList.add('col-hidden');
   document.getElementById('confirmarCierre').textContent = "Cerrar caja";
 });
+document.getElementById('inpCierreUsd').addEventListener('input', e=>{ formatearInputMonto(e.target); document.getElementById('cierreWarning').classList.add('col-hidden'); document.getElementById('confirmarCierre').textContent = "Cerrar caja"; });
 document.getElementById('confirmarCierre').onclick = async ()=>{
   const contado = Number(inpCierreMonto.value.replace(/\D/g,""));
+  const contadoUsd = Number(document.getElementById('inpCierreUsd').value.replace(/\D/g,"")) || 0;
   if(inpCierreMonto.value==="" || isNaN(contado)){ alert("Ingresá el monto real contado en caja."); return; }
   const fechaCierre = document.getElementById('inpFechaCierre').value || cajaActual.fechaISO;
   const esperado = await calcularEsperadoCaja();
+  const esperadoUsd = await calcularEsperadoCaja('USD');
   const diferencia = contado - esperado;
+  const diferenciaUsd = contadoUsd - esperadoUsd;
   const warn = document.getElementById('cierreWarning');
 
-  if(diferencia !== 0 && warn.classList.contains('col-hidden')){
-    warn.textContent = diferencia > 0
-      ? `⚠️ Hay $${diferencia.toLocaleString('es-AR')} de más respecto de lo esperado ($${esperado.toLocaleString('es-AR')}). Revisá antes de cerrar.`
-      : `⚠️ Faltan $${Math.abs(diferencia).toLocaleString('es-AR')} respecto de lo esperado ($${esperado.toLocaleString('es-AR')}). Revisá antes de cerrar.`;
+  if((diferencia !== 0 || diferenciaUsd !== 0) && warn.classList.contains('col-hidden')){
+    const partes = [];
+    if(diferencia) partes.push(diferencia > 0 ? `hay $${diferencia.toLocaleString('es-AR')} de más (esperado $${esperado.toLocaleString('es-AR')})` : `faltan $${Math.abs(diferencia).toLocaleString('es-AR')} (esperado $${esperado.toLocaleString('es-AR')})`);
+    if(diferenciaUsd) partes.push(diferenciaUsd > 0 ? `hay US$ ${diferenciaUsd.toLocaleString('es-AR')} de más (esperado US$ ${esperadoUsd.toLocaleString('es-AR')})` : `faltan US$ ${Math.abs(diferenciaUsd).toLocaleString('es-AR')} (esperado US$ ${esperadoUsd.toLocaleString('es-AR')})`);
+    warn.textContent = `⚠️ ${partes.join(' · ')}. Revisá antes de cerrar.`;
     warn.classList.remove('col-hidden');
     document.getElementById('confirmarCierre').textContent = "Cerrar caja de todos modos";
     return;
@@ -4102,6 +4160,7 @@ document.getElementById('confirmarCierre').onclick = async ()=>{
     cerradaEn: firebase.firestore.FieldValue.serverTimestamp(),
     cerradaPor: currentUser.nombre,
     montoContado: contado, esperadoCierre: esperado, diferencia,
+    montoContadoUsd: contadoUsd, esperadoCierreUsd: esperadoUsd, diferenciaUsd,
   });
   overlayCierre.classList.remove('show');
 };
@@ -4841,7 +4900,7 @@ async function bkMovimientos(){
 function bkFilas(lista){
   const fh = ts=> ts && ts.toDate ? fechaHoraCorta(ts.toDate()) : '';
   return lista.map(m=> ({
-    'Fecha': ecFecha(m.fechaISO), 'Tipo': esGastoMov(m) ? 'Egreso' : 'Ingreso', 'Paciente / Destinatario': m.pac||'',
+    'Fecha': ecFecha(m.fechaISO), 'Caja': esCajaGrande(m) ? 'GRANDE' : 'CHICA', 'Tipo': esGastoMov(m) ? 'Egreso' : 'Ingreso', 'Paciente / Destinatario': m.pac||'',
     'Profesional / Área': m.prof||'', 'Código': m.codigo||'', 'Concepto': m.concepto||'', 'Notas': (m.notas||'') + (m.jornada ? ' (JORNADA)' : ''),
     'Moneda': m.moneda==='USD' ? 'USD' : '$', 'Total': (Number(m.valor)||0) * (esGastoMov(m) ? -1 : 1),
     'Medio de pago': medioDisplayText(m), 'Cobró': cobroTextoPlano(m), 'Cargado por': (m.creadoPor||'') + (m.creadoEn ? ` (${fh(m.creadoEn)})` : ''),
@@ -4854,7 +4913,7 @@ document.getElementById('bkExcel').onclick = async ()=>{
     const r = await bkMovimientos(); if(!r) return;
     if(!r.lista.length){ alert('No hay movimientos en ese mes.'); return; }
     const ws = XLSX.utils.json_to_sheet(bkFilas(r.lista));
-    ws['!cols'] = [10,8,28,24,8,32,30,7,12,24,18,26].map(w=> ({wch:w}));
+    ws['!cols'] = [10,8,8,28,24,8,32,30,7,12,24,18,26].map(w=> ({wch:w}));
     const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Movimientos');
     XLSX.writeFile(wb, `backup-movimientos-${r.ym}.xlsx`);
   }catch(e){ alert('No se pudo generar el Excel: ' + e.message); }
@@ -4872,7 +4931,7 @@ document.getElementById('bkPdf').onclick = async ()=>{
     doc.text(limpiarTextoPDF(`Back up de movimientos - ${bkNombreMes(r.ym)}`), 30, 34);
     doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(122,106,72);
     doc.text(limpiarTextoPDF(`Exportado por ${nombreCortoUsuario(currentUser ? currentUser.nombre : '')} (${fechaHoraCorta(new Date())}) - ${filas.length} movimientos`), 30, 48);
-    const cols = ['Fecha','Tipo','Paciente / Destinatario','Profesional / Área','Código','Concepto','Notas','Total','Medio de pago','Cobró','Cargado por'];
+    const cols = ['Fecha','Caja','Tipo','Paciente / Destinatario','Profesional / Área','Código','Concepto','Notas','Total','Medio de pago','Cobró','Cargado por'];
     doc.autoTable({
       startY: 60, margin:{left:30, right:30},
       head: [cols.map(limpiarTextoPDF)],
@@ -4880,8 +4939,8 @@ document.getElementById('bkPdf').onclick = async ()=>{
       styles: {font:'helvetica', fontSize:6.8, cellPadding:3, textColor:[36,38,43], lineColor:[231,225,210], lineWidth:0.4},
       headStyles: {fillColor:[182,154,98], textColor:255, fontStyle:'bold', fontSize:7},
       alternateRowStyles: {fillColor:[251,248,240]},
-      columnStyles: {0:{cellWidth:48}, 1:{cellWidth:38}, 4:{cellWidth:34}, 7:{halign:'right', cellWidth:58}},
-      didParseCell: c=>{ if(c.section==='body' && c.column.index===7){ c.cell.styles.fontStyle='bold'; c.cell.styles.textColor = filas[c.row.index].Tipo==='Egreso' ? [161,58,58] : [47,122,47]; } },
+      columnStyles: {0:{cellWidth:48}, 1:{cellWidth:40}, 2:{cellWidth:38}, 5:{cellWidth:34}, 8:{halign:'right', cellWidth:58}},
+      didParseCell: c=>{ if(c.section==='body' && c.column.index===8){ c.cell.styles.fontStyle='bold'; c.cell.styles.textColor = filas[c.row.index].Tipo==='Egreso' ? [161,58,58] : [47,122,47]; } },
     });
     doc.save(`backup-movimientos-${r.ym}.pdf`);
   }catch(e){ alert('No se pudo generar el PDF: ' + e.message); }
@@ -8318,7 +8377,9 @@ async function cargarCajas(){
 
     // Movimientos cargados durante las cajas del mes, asignados a cada caja
     const sesiones = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(c=>c.abiertaEn);
-    const netoPorCaja = netoPorSesion(await movimientosParaSesiones(sesiones), sesiones);
+    const movsSes = await movimientosParaSesiones(sesiones);
+    const netoPorCaja = netoPorSesion(movsSes, sesiones);
+    const netoPorCajaUsd = netoPorSesion(movsSes, sesiones, 'USD');
 
     // Último cierre anterior al mes (ordenado por fecha y hora de apertura)
     const previas = snapPrev.docs.map(d=>d.data())
@@ -8341,6 +8402,9 @@ async function cargarCajas(){
       // Diferencia de cierre: contado vs. (apertura + neto en efectivo de ESTA caja)
       const esperado = apertura + (netoPorCaja[d.id]||0);
       const difCierre = cerrada ? Number(c.montoContado) - esperado : 0;
+      const conUsd = c.aperturaMontoUsd != null;   // cajas abiertas desde que se cuentan dólares
+      const esperadoUsd = (Number(c.aperturaMontoUsd)||0) + (netoPorCajaUsd[d.id]||0);
+      const difCierreUsd = conUsd && cerrada && c.montoContadoUsd != null ? Number(c.montoContadoUsd) - esperadoUsd : 0;
 
       cajasCache[d.id] = {...c, _cierreAnterior: cierreAnterior};
       if(cerrada) cierreAnterior = Number(c.montoContado);
@@ -8356,6 +8420,7 @@ async function cargarCajas(){
         if(difApertura) difHTML += `<div style="${rojo}">${fmtDif(difApertura)}</div><div style="font-size:9px;color:#a13a3a;">en la apertura</div>`;
         if(difCierre)   difHTML += `<div style="${rojo}">${fmtDif(difCierre)}</div><div style="font-size:9px;color:#a13a3a;">en el cierre</div>`;
       }
+      if(difCierreUsd) difHTML = (difHTML.includes('—') || difHTML.includes('$0') ? '' : difHTML) + `<div style="${rojo}">${difCierreUsd>0?'+':'-'}US$ ${Math.abs(difCierreUsd).toLocaleString('es-AR')}</div><div style="font-size:9px;color:#a13a3a;">en el cierre (USD)</div>`;
 
       return `
         <tr>
@@ -8364,8 +8429,8 @@ async function cargarCajas(){
             <div>${isoToDisplay(c.fechaISO)}</div>
             <div style="font-size:9.5px;color:var(--muted);font-weight:400;">${horaApertura}${horaCierre ? ' - '+horaCierre : ''}</div>
           </td>
-          <td>$${apertura.toLocaleString('es-AR')}</td>
-          <td>${cerrada ? '$'+Number(c.montoContado).toLocaleString('es-AR') : '—'}</td>
+          <td>$${apertura.toLocaleString('es-AR')}${conUsd ? `<div style="font-size:10px;color:var(--muted)">US$ ${Number(c.aperturaMontoUsd).toLocaleString('es-AR')}</div>` : ''}</td>
+          <td>${cerrada ? '$'+Number(c.montoContado).toLocaleString('es-AR') : '—'}${cerrada && c.montoContadoUsd != null ? `<div style="font-size:10px;color:var(--muted)">US$ ${Number(c.montoContadoUsd).toLocaleString('es-AR')}</div>` : ''}</td>
           <td>${difHTML}</td>
           <td class="editcol"><button class="editbtn" title="Editar" onclick="abrirEdicionCaja('${d.id}')">&#9998;</button></td>
         </tr>
@@ -9986,7 +10051,7 @@ function mostrarSubMov(sub){
     if(`${mesActual.year}-${String(mesActual.month).padStart(2,'0')}` < CG_DESDE){
       const [y,m] = CG_DESDE.split('-').map(Number); mesActual = {year:y, month:m}; suscribirMovimientos();
     }
-    suscribirCajaGrande(); renderCajaGrande();
+    suscribirCajaGrande(); renderCajaGrande(); cajaChicaSaldo().then(renderCajaGrande);
   }
   actualizarMesLabel();
   if(sub==='prueba'){ suscribirClasesPrueba(); renderClasesPrueba(); }
