@@ -5209,7 +5209,7 @@ document.getElementById('descargarEstadoCuenta').onclick = async ()=>{
   try{
     const conceptos = [...document.querySelectorAll('#ecBody input[data-ec]')].map(i=> mayus(i.value.trim()));
     const pac = document.getElementById('ecPac').textContent;
-    const totales = ecTotales().map(([mon, v], i, arr)=> ({lbl: 'TOTAL ADEUDADO' + (arr.length>1 ? (mon==='USD' ? ' EN USD' : ' EN $') : ''), val: fmtMonto(v, mon), tipo:'total'}));
+    const totales = ecTotales().map(([mon, v], i, arr)=> ({lbl: 'TOTAL' + (arr.length>1 ? (mon==='USD' ? ' EN USD' : ' EN $') : ''), val: fmtMonto(v, mon), tipo:'total'}));
     const doc = await pdfFormatoUmmana({
       titulo: 'CUENTA CORRIENTE',
       datos: [['PACIENTE', pac, true], ['FECHA', ecFecha(hoyISO())]],
