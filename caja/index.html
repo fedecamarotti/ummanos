@@ -1795,7 +1795,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <div class="s-tabs col-hidden" id="movSubTabs" role="tablist" aria-label="Movimientos">
         <button class="s-tab active" data-msub="diarios" role="tab"><span class="t-largo">Movimientos diarios</span><span class="t-corto">Diarios</span></button>
         <button class="s-tab s-tab-badge" data-msub="prueba"><span class="t-largo">Clases de prueba</span><span class="t-corto">Prueba</span> <span class="badge-count col-hidden" id="mSubPruebaN" title="Contactos vencidos">0</span></button>
-        <button class="s-tab s-tab-badge" data-msub="deriv"><span class="t-largo">Derivaciones</span><span class="t-corto">Deriv.</span> <span class="badge-count col-hidden" id="mSubDerivN" title="Contactos vencidos">0</span></button>
+        <button class="s-tab s-tab-badge col-hidden" data-msub="deriv" title="Oculto por ahora (no se usa)"><span class="t-largo">Derivaciones</span><span class="t-corto">Deriv.</span> <span class="badge-count col-hidden" id="mSubDerivN" title="Contactos vencidos">0</span></button>
         <button class="s-tab" data-msub="cajas" id="mSubCajas">Cajas</button>
         <button class="s-tab" data-msub="pacientes"><span class="t-largo">Pacientes/alumnos</span><span class="t-corto">Pacientes</span></button>
         <button class="s-tab col-hidden" data-msub="pago" id="mSubPago"><span class="t-largo">Calcular pago prof.</span><span class="t-corto">Pago prof.</span></button>
@@ -3581,7 +3581,8 @@ function iniciarListeners(){
     renderDeudoresCount();
   });
   suscribirCpContactos();
-  suscribirDvContactos();
+  const DERIVACIONES_ACTIVAS = false;   // botón Derivaciones oculto por ahora: no se leen sus alarmas
+  if(DERIVACIONES_ACTIVAS) suscribirDvContactos();
   pasarNotasAMayus();
   suscribirAlertas();
 
