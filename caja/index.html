@@ -3857,7 +3857,8 @@ const tsMs = ts => ts && ts.toMillis ? ts.toMillis() : null;
 //   (igual que el reporte diario). Si ese día hubo varias, la que estaba abierta
 //   cuando se cargó; si se cargó fuera de todos los horarios, la más cercana en el tiempo.
 function sesionDeMovimiento(m, sesiones){
-  if(m.cajaId) return sesiones.find(c=> c.id === m.cajaId) || null;
+  // si la caja con la que se cargó fue eliminada, se reparte como un movimiento viejo (por fecha y hora)
+  if(m.cajaId && !m._cajaBorrada) return sesiones.find(c=> c.id === m.cajaId) || null;
   const delDia = sesiones.filter(c=> c.fechaISO === m.fechaISO && c.abiertaEn);
   if(!delDia.length) return null;
   if(delDia.length === 1) return delDia[0];
@@ -3873,6 +3874,7 @@ function sesionDeMovimiento(m, sesiones){
 }
 // Trae los movimientos que pueden pertenecer a un conjunto de cajas:
 // los viejos por fecha y los nuevos por cajaId / hora de carga.
+const cajaExisteCache = {};
 async function movimientosParaSesiones(sesiones){
   const conApertura = sesiones.filter(c=>c.abiertaEn);
   if(!conApertura.length) return [];
@@ -3890,7 +3892,16 @@ async function movimientosParaSesiones(sesiones){
   const porId = {};
   snapFecha.docs.forEach(d=> porId[d.id] = d.data());
   snapNuevos.docs.forEach(d=> porId[d.id] = d.data());
-  return Object.values(porId).filter(noMigrado);
+  const movs = Object.values(porId).filter(noMigrado);
+  // Movimientos de cajas que ya no existen (eliminadas desde el panel Cajas): se marcan para repartirlos por fecha
+  const ids = [...new Set(movs.map(m=> m.cajaId).filter(id=> id && id!=='SIN_CAJA' && !sesiones.some(c=> c.id===id)))];
+  const borradas = new Set();
+  await Promise.all(ids.map(async id=>{
+    if(!(id in cajaExisteCache)){ try{ cajaExisteCache[id] = (await db.collection('cajaSesiones').doc(id).get()).exists; }catch(e){ cajaExisteCache[id] = true; } }
+    if(!cajaExisteCache[id]) borradas.add(id);
+  }));
+  movs.forEach(m=>{ if(borradas.has(m.cajaId)) m._cajaBorrada = true; });
+  return movs;
 }
 function netoPorSesion(movs, sesiones){
   const neto = {};
