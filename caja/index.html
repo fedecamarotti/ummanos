@@ -5088,7 +5088,7 @@ async function pdfFormatoUmmana(opts){
     });
   }
   // pie de contacto en todas las páginas
-  const contactos = [['ic-mail','info@ummana.ar'],['ic-wa','11 3920-8108'],['ic-pin','M. Castro 1125, Banfield'],['ic-ig','somos.ummana'],['ic-web','ummana.ar']];
+  const contactos = opts.contacto ? opts.contacto.map(c=> [c.ic, c.t]) : UMM_CONTACTO;
   const icons = await Promise.all(contactos.map(([ic])=> ummImg(`images/${ic}.png`)));
   doc.setFont(F,'normal'); doc.setFontSize(8);
   const anchos = contactos.map(([,t])=> 15 + doc.getTextWidth(t)), gap = 16, total = anchos.reduce((a,b)=> a+b, 0) + gap * (contactos.length - 1);
@@ -5150,6 +5150,9 @@ function abrirPresupuesto(){
   overlayPresupuesto.classList.add('show');
 }
 ['closePresupuesto','cancelPresupuesto'].forEach(id=> document.getElementById(id).onclick = ()=> overlayPresupuesto.classList.remove('show'));
+// Textos que quedan "congelados" en cada presupuesto guardado: si mañana cambian, los viejos se siguen viendo como se enviaron
+const PR_OBSERVACIONES = [{t:'Presupuesto válido por 15 días desde el envío del mismo.', b:true}, {t:'Los valores de las cotizaciones se ajustarán por IPC.'}];
+const UMM_CONTACTO = [['ic-mail','info@ummana.ar'],['ic-wa','11 3920-8108'],['ic-pin','M. Castro 1125, Banfield'],['ic-ig','somos.ummana'],['ic-web','ummana.ar']];
 // Arma el PDF de un presupuesto a partir de sus datos (se usa al crearlo y al volver a abrirlo desde la ficha)
 async function pdfPresupuesto(pr){
   const tot = [{lbl:'Subtotal', val: fmtMonto(pr.subtotal, pr.moneda), tipo:'sub'}];
@@ -5163,7 +5166,8 @@ async function pdfPresupuesto(pr){
     columnStyles: {1:{halign:'center', cellWidth:44}, 2:{halign:'right', cellWidth:90}, 3:{halign:'right', cellWidth:95}},
     totales: tot,
     notas: pr.notas || '',
-    observaciones: [{t:'Presupuesto válido por 15 días desde el envío del mismo.', b:true}, {t:'Los valores de las cotizaciones se ajustarán por IPC.'}],
+    observaciones: pr.observaciones || PR_OBSERVACIONES,
+    contacto: pr.contacto,
   });
   return {doc, archivo: `presupuesto-${pr.paciente.replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()}-${pr.fechaISO}.pdf`};
 }
@@ -5178,7 +5182,8 @@ document.getElementById('descargarPresupuesto').onclick = async ()=>{
   try{
     // se guardan solo los datos (no el PDF): ocupa ~1 KB por presupuesto
     const pr = {paciente: pac, profesional: prof, fechaISO: fecha, moneda: prMon, items: d.items,
-      subtotal: d.sub, descuento: d.desc, descuentoLbl: d.descLbl, total: d.total, notas: mayus(document.getElementById('prNotas').value.trim())};
+      subtotal: d.sub, descuento: d.desc, descuentoLbl: d.descLbl, total: d.total, notas: mayus(document.getElementById('prNotas').value.trim()),
+      observaciones: PR_OBSERVACIONES, contacto: UMM_CONTACTO.map(([ic, t])=> ({ic, t}))};
     const {doc, archivo} = await pdfPresupuesto(pr);
     try{
       await db.collection('presupuestos').add({...pr, creadoPor: currentUser ? currentUser.nombre : '', creadoEn: firebase.firestore.FieldValue.serverTimestamp()});
