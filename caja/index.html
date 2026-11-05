@@ -551,8 +551,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .tipo-toggle button.active[data-tipo="ingreso"]{background:#2f7a2f;color:#fff;}
   .tipo-toggle button.active[data-tipo="egreso"]{background:#a13a3a;color:#fff;}
   .tipo-caja{display:flex;gap:12px;} .tipo-toggle.chico button{padding:8px 12px;font-size:12px;letter-spacing:.3px;}
-  .caja-toggle button.active{background:var(--accent);color:#fff;}
-  .caja-toggle button.active[data-caja="grande"]{background:#3a2f1c;}
+  .cartel-grande{background:#3a2f1c;color:#fff;font-weight:800;font-size:12px;letter-spacing:.6px;border-radius:8px;padding:9px 14px;white-space:nowrap;}
   .tag-grande{font-style:normal;font-weight:700;font-size:9px;color:#fff;background:#3a2f1c;border-radius:4px;padding:1px 5px;margin-left:4px;white-space:nowrap;}
   .s-items-head, .s-item{display:grid;grid-template-columns:minmax(0,1fr) 62px 112px 100px 32px;gap:8px;align-items:center;}
   .s-items-head.compra, .s-item.compra{grid-template-columns:minmax(0,1fr) 54px 54px 128px 96px 86px 32px;}
@@ -2259,11 +2258,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
           <button type="button" data-tipo="ingreso" class="active">ING</button>
           <button type="button" data-tipo="egreso">EGR</button>
         </div></div>
-        <div id="movCajaWrap"><label>Caja</label>
-        <div class="tipo-toggle chico caja-toggle" id="movCaja">
-          <button type="button" data-caja="chica" class="active">CHICA</button>
-          <button type="button" data-caja="grande">GRANDE</button>
-        </div></div>
+        <div id="movCajaWrap" class="col-hidden"><label>&nbsp;</label>
+        <div class="cartel-grande">CAJA GRANDE</div></div>
       </div>
     </div>
 
@@ -3418,7 +3414,6 @@ function aplicarRolUI(){
   document.getElementById('mSubBackup').classList.toggle('col-hidden', !esAdmin);
   document.getElementById('mSubGrande').classList.toggle('col-hidden', !esAdmin);
   // Recepcionistas: Tipo como antes (Ingreso / Egreso) y sin selector de caja (siempre CHICA). Fede y Pedro: ING / EGR + CAJA
-  document.getElementById('movCajaWrap').classList.toggle('col-hidden', !esAdmin);
   document.getElementById('movTipo').classList.toggle('chico', esAdmin);
   document.querySelector('#movTipo [data-tipo="ingreso"]').textContent = esAdmin ? 'ING' : 'Ingreso';
   document.querySelector('#movTipo [data-tipo="egreso"]').textContent = esAdmin ? 'EGR' : 'Egreso';
@@ -4420,11 +4415,11 @@ attachAutocomplete(selConcepto, ()=> conceptosDisponiblesActual.map(c=>c.concept
 
 // Caja: CHICA (la del cierre diario, por defecto) o GRANDE (seguimiento aparte, ver "Caja grande")
 let movCaja = 'chica';
+// La caja la define desde dónde se carga: el "+" de Caja grande carga en GRANDE; el de movimientos diarios, en CHICA
 function setMovCaja(c){
   movCaja = c==='grande' ? 'grande' : 'chica';
-  document.querySelectorAll('#movCaja button').forEach(b=> b.classList.toggle('active', b.dataset.caja===movCaja));
+  document.getElementById('movCajaWrap').classList.toggle('col-hidden', movCaja!=='grande');
 }
-document.querySelectorAll('#movCaja button').forEach(b=> b.onclick = ()=> setMovCaja(b.dataset.caja));
 
 // Jornada: solo ingresos de profesionales con nombre propio ("APELLIDO, NOMBRE")
 let movJornada = false;
@@ -4481,6 +4476,7 @@ document.getElementById('btnNuevo').onclick = ()=>{
   if(soloLectura()){ alert("Para cargar movimientos hay que abrir caja."); return; }
   if(!cajaActual && !esFede()){ alert("La caja se encuentra cerrada, no se pueden cargar movimientos."); return; }
   modo = 'nuevo'; editingId = null; document.getElementById('movCargadoPor').classList.add('col-hidden');
+  setMovCaja(movSub==='grande' ? 'grande' : 'chica');
   modalTitle.textContent = "Nuevo movimiento";
   btnGuardarMov.textContent = "Guardar movimiento";
   btnEliminar.classList.add('col-hidden');
@@ -4565,7 +4561,7 @@ function bloquearFechaMovimiento(bloquear){
 function resetModal(){
   montoAutoSync = null;
   document.getElementById('indicaWrap').classList.add('col-hidden');
-  setJornada(false); setMovCaja('chica');
+  setJornada(false); setMovCaja(movSub==='grande' ? 'grande' : 'chica');
   document.getElementById('jornadaWrap').classList.add('col-hidden');
   bloquearFechaMovimiento(false);
   document.getElementById('inpFechaMovimiento').value = hoyISO(); document.getElementById('inpFechaMovimiento').max = hoyISO();
