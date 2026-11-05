@@ -440,6 +440,12 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .pf-area .barra i{display:block;height:7px;background:#c9b183;border-radius:4px;}
   .pf-total{margin-top:12px;font-size:11px;color:var(--muted);}
   .pf-btn-hist{width:100%;margin-top:10px;}
+  .pf-pres{margin-top:10px;border:1px solid var(--border);border-radius:10px;background:#fffcf5;padding:8px 10px;}
+  .pf-pres-tit{font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--accent-dk);margin-bottom:4px;}
+  .pf-pres-it{display:flex;align-items:center;gap:8px;padding:6px 2px;border-top:1px solid #efe6d2;font-size:11.5px;cursor:pointer;}
+  .pf-pres-it:first-child{border-top:none;} .pf-pres-it:hover{background:#f6efdd;}
+  .pf-pres-it .f{color:var(--muted);width:70px;flex:none;} .pf-pres-it .d{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;} .pf-pres-it .t{font-weight:700;white-space:nowrap;}
+  .pf-pres-vacio{font-size:11px;color:var(--muted);padding:4px 2px;}
   .pf-google{display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fffcf5;font-size:12px;font-weight:600;cursor:pointer;} .pf-google input{width:16px;height:16px;accent-color:var(--accent);margin:0;}
   .pf-unif{margin:12px 0 0;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fbf6ea;}
   .pf-unif-fila{display:flex;gap:8px;align-items:center;margin-top:6px;} .pf-unif-fila .ac-wrap{flex:1;}
@@ -2866,6 +2872,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
           </div>
           <button type="button" class="btn pf-btn-hist" id="pfBtnHist">🧾 Historial</button>
           <label class="pf-google col-hidden" id="pfGoogleWrap"><input type="checkbox" id="pfGoogle"> Avisado Google</label>
+          <div class="pf-pres col-hidden" id="pfPres"><div class="pf-pres-tit">Presupuestos</div><div id="pfPresLista"></div></div>
         </div>
       </div>
       <div class="pf-unif col-hidden" id="pfUnifBox">
@@ -5143,6 +5150,23 @@ function abrirPresupuesto(){
   overlayPresupuesto.classList.add('show');
 }
 ['closePresupuesto','cancelPresupuesto'].forEach(id=> document.getElementById(id).onclick = ()=> overlayPresupuesto.classList.remove('show'));
+// Arma el PDF de un presupuesto a partir de sus datos (se usa al crearlo y al volver a abrirlo desde la ficha)
+async function pdfPresupuesto(pr){
+  const tot = [{lbl:'Subtotal', val: fmtMonto(pr.subtotal, pr.moneda), tipo:'sub'}];
+  if(pr.descuento) tot.push({lbl: pr.descuentoLbl, val: '-' + fmtMonto(pr.descuento, pr.moneda), tipo:'desc'});
+  tot.push({lbl:'TOTAL', val: fmtMonto(pr.total, pr.moneda), tipo:'total'});
+  const doc = await pdfFormatoUmmana({
+    titulo: 'PRESUPUESTO',
+    datos: [['PACIENTE', pr.paciente, true], ['FECHA', ecFecha(pr.fechaISO)], ['DR / DRA', pr.profesional || '-']],
+    head: ['Detalle','Cant.','Valor','Subtotal'],
+    body: pr.items.map(i=> [i.det, String(i.cant), fmtMonto(i.val, pr.moneda), fmtMonto(i.cant * i.val, pr.moneda)]),
+    columnStyles: {1:{halign:'center', cellWidth:44}, 2:{halign:'right', cellWidth:90}, 3:{halign:'right', cellWidth:95}},
+    totales: tot,
+    notas: pr.notas || '',
+    observaciones: [{t:'Presupuesto válido por 15 días desde el envío del mismo.', b:true}, {t:'Los valores de las cotizaciones se ajustarán por IPC.'}],
+  });
+  return {doc, archivo: `presupuesto-${pr.paciente.replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()}-${pr.fechaISO}.pdf`};
+}
 document.getElementById('descargarPresupuesto').onclick = async ()=>{
   const pac = mayus(document.getElementById('prPac').value.trim()), prof = mayus(document.getElementById('prProf').value.trim());
   const fecha = document.getElementById('prFecha').value;
@@ -5152,24 +5176,36 @@ document.getElementById('descargarPresupuesto').onclick = async ()=>{
   if(d.items.some(i=> !i.det || !i.val)){ alert('Cada tratamiento necesita detalle y valor.'); return; }
   const btn = document.getElementById('descargarPresupuesto'); btn.disabled = true;
   try{
-    const tot = [{lbl:'Subtotal', val: fmtMonto(d.sub, prMon), tipo:'sub'}];
-    if(d.desc) tot.push({lbl: d.descLbl, val: '-' + fmtMonto(d.desc, prMon), tipo:'desc'});
-    tot.push({lbl:'TOTAL', val: fmtMonto(d.total, prMon), tipo:'total'});
-    const doc = await pdfFormatoUmmana({
-      titulo: 'PRESUPUESTO',
-      datos: [['PACIENTE', pac, true], ['FECHA', ecFecha(fecha)], ['DR / DRA', prof || '-']],
-      head: ['Detalle','Cant.','Valor','Subtotal'],
-      body: d.items.map(i=> [i.det, String(i.cant), fmtMonto(i.val, prMon), fmtMonto(i.cant * i.val, prMon)]),
-      columnStyles: {1:{halign:'center', cellWidth:44}, 2:{halign:'right', cellWidth:90}, 3:{halign:'right', cellWidth:95}},
-      totales: tot,
-      notas: document.getElementById('prNotas').value,
-      observaciones: [{t:'Presupuesto válido por 15 días desde el envío del mismo.', b:true}, {t:'Los valores de las cotizaciones se ajustarán por IPC.'}],
-    });
-    mostrarPreviewPDF(doc, `presupuesto-${pac.replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()}-${fecha}.pdf`);
+    // se guardan solo los datos (no el PDF): ocupa ~1 KB por presupuesto
+    const pr = {paciente: pac, profesional: prof, fechaISO: fecha, moneda: prMon, items: d.items,
+      subtotal: d.sub, descuento: d.desc, descuentoLbl: d.descLbl, total: d.total, notas: mayus(document.getElementById('prNotas').value.trim())};
+    const {doc, archivo} = await pdfPresupuesto(pr);
+    try{
+      await db.collection('presupuestos').add({...pr, creadoPor: currentUser ? currentUser.nombre : '', creadoEn: firebase.firestore.FieldValue.serverTimestamp()});
+    }catch(e){ alert('El PDF se generó, pero el presupuesto no se pudo guardar en la ficha del paciente: ' + e.message); }
+    mostrarPreviewPDF(doc, archivo);
     overlayPresupuesto.classList.remove('show');
   }catch(e){ alert('No se pudo generar el PDF: ' + e.message); }
   btn.disabled = false;
 };
+// Ficha del paciente: lista de sus presupuestos (se leen solo al abrir la ficha)
+let pfPresDatos = [];
+async function cargarPresupuestosFicha(nombre){
+  const lista = document.getElementById('pfPresLista');
+  lista.innerHTML = '<div class="pf-pres-vacio">Cargando…</div>';
+  try{
+    const snap = await db.collection('presupuestos').where('paciente','==', nombre).get();
+    pfPresDatos = snap.docs.map(d=> ({id:d.id, ...d.data()})).sort((a,b)=> (b.fechaISO||'').localeCompare(a.fechaISO||''));
+    lista.innerHTML = pfPresDatos.length ? pfPresDatos.map((p,i)=> `<div class="pf-pres-it" data-pr="${i}" title="Abrir PDF"><span class="f">${ecFecha(p.fechaISO)}</span><span class="d">${escHtml(p.items.map(x=> x.det).join(' + '))}${p.profesional ? ' · ' + escHtml(p.profesional) : ''}</span><span class="t">${fmtMonto(p.total, p.moneda)}</span></div>`).join('')
+      : '<div class="pf-pres-vacio">Sin presupuestos.</div>';
+  }catch(e){ lista.innerHTML = `<div class="pf-pres-vacio">No se pudieron leer los presupuestos.</div>`; }
+}
+document.getElementById('pfPresLista').addEventListener('click', async e=>{
+  const it = e.target.closest('.pf-pres-it'); if(!it) return;
+  const pr = pfPresDatos[+it.dataset.pr]; if(!pr) return;
+  try{ const {doc, archivo} = await pdfPresupuesto(pr); mostrarPreviewPDF(doc, archivo); }
+  catch(err){ alert('No se pudo generar el PDF: ' + err.message); }
+});
 
 /* ---- Estado de cuenta en PDF para mandarle al deudor (el concepto se puede corregir solo para el PDF) ---- */
 const overlayEstadoCuenta = document.getElementById('overlayEstadoCuenta');
@@ -8793,6 +8829,8 @@ function abrirFichaPaciente(id){
   document.getElementById('pfBtnHist').classList.toggle('col-hidden', nuevo);
   document.getElementById('pfGoogleWrap').classList.toggle('col-hidden', nuevo);
   document.getElementById('pfGoogle').checked = !!(p && p.avisadoGoogle);
+  document.getElementById('pfPres').classList.toggle('col-hidden', nuevo);
+  if(!nuevo) cargarPresupuestosFicha(p.nombreCompleto);
   document.getElementById('pfNombre').textContent = nuevo ? 'Nuevo paciente' : (p.nombreCompleto || `${p.apellido}, ${p.nombre}`);
   document.getElementById('pfEditarNombre').classList.toggle('col-hidden', nuevo);
   document.getElementById('pfNombreCampos').classList.toggle('col-hidden', !nuevo);
