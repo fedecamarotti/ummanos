@@ -952,6 +952,13 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .ec-tabla input{width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:8px;background:#fff;font:inherit;}
   .ec-ed{color:var(--accent);text-transform:none;letter-spacing:0;font-weight:600;margin-left:4px;}
   .ec-tot{text-align:right;font-weight:800;margin:12px 0 4px;}
+  .pr-cab,.pr-fila{display:grid;grid-template-columns:1fr 64px 130px 34px;gap:6px;align-items:center;}
+  .pr-cab{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;padding:0 2px;}
+  .pr-fila{margin-bottom:6px;} .pr-fila input{width:100%;} .pr-fila .pr-cant{text-align:center;} .pr-fila .pr-val{text-align:right;}
+  .pr-tot{text-align:right;font-size:12px;color:var(--muted);line-height:1.7;margin:4px 0 2px;} .pr-tot b{color:var(--text);font-size:16px;}
+  #overlayPresupuesto .ac-wrap{width:100%;}
+  #prNotas,#ecNotas{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:10px;background:#fff;font:inherit;font-size:13px;resize:vertical;}
+  #prMoneda button.active{background:var(--accent);color:#fff;}
   .deuda-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;}
   .deuda-info{display:flex;flex-direction:column;gap:2px;}
   .deuda-info .nom{font-weight:700;font-size:12.5px;}
@@ -1800,6 +1807,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <button class="s-tab s-tab-badge col-hidden" data-msub="deriv" title="Oculto por ahora (no se usa)"><span class="t-largo">Derivaciones</span><span class="t-corto">Deriv.</span> <span class="badge-count col-hidden" id="mSubDerivN" title="Contactos vencidos">0</span></button>
         <button class="s-tab" data-msub="cajas" id="mSubCajas">Cajas</button>
         <button class="s-tab" data-msub="pacientes"><span class="t-largo">Pacientes/alumnos</span><span class="t-corto">Pacientes</span></button>
+        <button class="s-tab" data-msub="presupuesto"><span class="t-largo">Presupuestos</span><span class="t-corto">Presup.</span></button>
         <button class="s-tab col-hidden" data-msub="pago" id="mSubPago"><span class="t-largo">Calcular pago prof.</span><span class="t-corto">Pago prof.</span></button>
         <button class="s-tab" data-msub="reporte"><span class="t-largo">Reporte diario</span><span class="t-corto">Reporte</span></button>
         <button class="s-tab col-hidden" data-msub="grande" id="mSubGrande">Caja grande</button>
@@ -2677,15 +2685,52 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   </div>
 </div>
 
+<!-- ============ MODAL: PRESUPUESTO ============ -->
+<div class="overlay" id="overlayPresupuesto">
+  <div class="modal wide">
+    <button class="close-x" id="closePresupuesto">✕</button>
+    <h2>Nuevo presupuesto</h2>
+    <div class="modal-sub">Completá los datos y descargá el PDF para enviarle al paciente.</div>
+    <div class="row">
+      <div class="field"><label>Fecha</label><input type="date" id="prFecha"></div>
+      <div class="field"><label>Moneda</label>
+        <div class="tipo-toggle" id="prMoneda"><button type="button" data-mon="$" class="active">$</button><button type="button" data-mon="USD">USD</button></div></div>
+    </div>
+    <div class="field"><label>Paciente</label><div class="ac-wrap"><input type="text" id="prPac" placeholder="Escribí para buscar…" autocomplete="off" data-ac-libre></div></div>
+    <div class="field"><label>Profesional (Dr / Dra)</label><div class="ac-wrap"><input type="text" id="prProf" placeholder="Escribí para buscar…" autocomplete="off"></div></div>
+    <div class="field"><label>Tratamientos</label>
+      <div class="pr-cab"><span>Detalle</span><span>Cant.</span><span>Valor</span><span></span></div>
+      <div id="prItems"></div>
+      <button type="button" class="btn" id="prAgregar" style="margin-top:4px">+ Agregar tratamiento</button>
+    </div>
+    <div class="field"><label>Descuento <span class="opt">(uno solo, no son acumulativos)</span></label>
+      <select id="prDesc">
+        <option value="">Sin descuento</option>
+        <option value="10|Efectivo 10%">Efectivo 10%</option>
+        <option value="20|Protocolo + de 1 sesión 20%">Protocolo + de 1 sesión 20%</option>
+        <option value="20|Jornada de tratamientos 20%">Jornada de tratamientos 20%</option>
+        <option value="40|Ummanos 40%">Ummanos 40%</option>
+        <option value="40|Familia 40%">Familia 40%</option>
+      </select></div>
+    <div class="field"><label>Notas <span class="opt">(opcional, aparece arriba de Observaciones)</span></label><textarea id="prNotas" rows="2" maxlength="400"></textarea></div>
+    <div class="pr-tot" id="prTot"></div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelPresupuesto">Cancelar</button>
+      <button class="btn btn-primary" id="descargarPresupuesto">⬇ Descargar PDF</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ MODAL: EXPORTAR ESTADO DE CUENTA (deudores) ============ -->
 <div class="overlay" id="overlayEstadoCuenta">
   <div class="modal wide">
     <button class="close-x" id="closeEstadoCuenta">✕</button>
-    <h2>Exportar estado de cuenta</h2>
+    <h2>Exportar cuenta corriente</h2>
     <div class="modal-sub">Revisá y corregí el concepto si hace falta. Los cambios son solo para este PDF: no modifican la caja.</div>
     <div class="ec-pac">Paciente: <b id="ecPac"></b></div>
     <table class="ec-tabla"><thead><tr><th style="width:110px">Fecha</th><th class="left" style="text-align:left">Concepto <span class="ec-ed">✎ editable</span></th><th style="width:120px">Importe</th></tr></thead><tbody id="ecBody"></tbody></table>
     <div class="ec-tot" id="ecTot"></div>
+    <div class="field" style="margin-top:8px"><label>Notas <span class="opt">(opcional)</span></label><textarea id="ecNotas" rows="2" maxlength="400"></textarea></div>
     <div class="modal-actions">
       <button class="btn" id="cancelEstadoCuenta">Cancelar</button>
       <button class="btn btn-primary" id="descargarEstadoCuenta">⬇ Descargar PDF</button>
@@ -4940,6 +4985,177 @@ document.getElementById('bkPdf').onclick = async ()=>{
   finally{ btn.disabled = false; }
 };
 
+/* ---- Formato de PDF Ummana (presupuestos y cuentas corrientes): logo con hoja, tarjeta de datos, tabla, notas, observaciones y contacto ---- */
+const UMM_VERDE = [178,177,156], UMM_VERDE_OSC = [143,142,120], UMM_TXT = [61,61,51];
+const ummImgCache = {};
+async function ummImg(src){
+  if(ummImgCache[src] !== undefined) return ummImgCache[src];
+  try{
+    const im = await new Promise((ok, mal)=>{ const i = new Image(); i.onload = ()=> ok(i); i.onerror = mal; i.src = src; });
+    const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; c.getContext('2d').drawImage(im, 0, 0);
+    ummImgCache[src] = {url: c.toDataURL('image/png'), w: im.naturalWidth, h: im.naturalHeight};
+  }catch(e){ ummImgCache[src] = null; }
+  return ummImgCache[src];
+}
+// opts: {titulo, datos:[[etiqueta, valor]], head, body, columnStyles, totales:[{lbl, val, tipo:'sub'|'desc'|'total'}], notas, observaciones:[{t, b}]}
+async function pdfFormatoUmmana(opts){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = 42;
+  const T = s=> limpiarTextoPDF(s);
+  // logo
+  const logo = await ummImg('images/logo-hoja.png');
+  const LH = 100, LW = logo ? LH * logo.w / logo.h : 80;
+  if(logo) doc.addImage(logo.url, 'PNG', M, 40, LW, LH);
+  // tarjeta de datos
+  const cx = M + LW + 24, cw = W - M - cx, rh = 22, hh = 22, ch = hh + rh * opts.datos.length, cy = 40 + Math.max(0, (LH - ch) / 2);
+  doc.setFillColor(...UMM_VERDE); doc.roundedRect(cx, cy, cw, hh + 6, 6, 6, 'F'); doc.rect(cx, cy + hh - 2, cw, 8, 'F');
+  doc.setDrawColor(...UMM_VERDE); doc.setLineWidth(1.2); doc.roundedRect(cx, cy, cw, ch, 6, 6, 'S');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setCharSpace(2);
+  doc.text(T(opts.titulo), cx + 12, cy + 15); doc.setCharSpace(0);
+  opts.datos.forEach(([k, v, negrita], i)=>{
+    const y = cy + hh + rh * i;
+    if(i){ doc.setDrawColor(236,235,227); doc.setLineWidth(0.6); doc.line(cx + 1, y, cx + cw - 1, y); }
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...UMM_VERDE); doc.text(T(k), cx + 12, y + 14);
+    doc.setFont('helvetica', negrita ? 'bold' : 'normal'); doc.setFontSize(10); doc.setTextColor(...UMM_TXT); doc.text(T(v), cx + 92, y + 14.5);
+  });
+  // tabla
+  let y = Math.max(40 + LH, cy + ch) + 22;
+  doc.autoTable({
+    startY: y, margin:{left:M, right:M, bottom:70},
+    head: [opts.head.map(T)], body: opts.body.map(f=> f.map(T)),
+    theme: 'plain',
+    styles: {font:'helvetica', fontSize:9.5, textColor:UMM_TXT, cellPadding:{top:7, bottom:7, left:7, right:7}},
+    headStyles: {fillColor:UMM_VERDE, textColor:255, fontStyle:'bold', fontSize:8.5},
+    alternateRowStyles: {fillColor:[247,247,242]},
+    columnStyles: opts.columnStyles || {},
+    didParseCell: c=>{ const cs = (opts.columnStyles||{})[c.column.index]; if(c.section==='head' && cs && cs.halign) c.cell.styles.halign = cs.halign; },
+  });
+  y = doc.lastAutoTable.finalY + 12;
+  const nuevaPagSi = alto=>{ if(y + alto > H - 80){ doc.addPage(); y = 50; } };
+  // totales
+  const tx = W - M - 250;
+  (opts.totales||[]).forEach(t=>{
+    nuevaPagSi(30);
+    if(t.tipo==='total'){
+      doc.setDrawColor(...UMM_VERDE); doc.setLineWidth(2); doc.line(tx, y, W - M, y); y += 17;
+      doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(...UMM_TXT);
+    } else {
+      doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(...(t.tipo==='desc' ? UMM_VERDE_OSC : UMM_TXT));
+    }
+    doc.text(T(t.lbl), tx + 6, y); doc.text(T(t.val), W - M - 6, y, {align:'right'});
+    y += t.tipo==='total' ? 22 : 16;
+  });
+  const etiqueta = txt=>{ nuevaPagSi(40); y += 10; doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...UMM_VERDE); doc.setCharSpace(1); doc.text(txt, M, y); doc.setCharSpace(0); y += 7; };
+  // notas
+  if(opts.notas && opts.notas.trim()){
+    etiqueta('NOTAS');
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
+    const lineas = doc.splitTextToSize(T(opts.notas.trim()), W - 2*M - 26);
+    const bh = lineas.length * 13 + 14; nuevaPagSi(bh);
+    doc.setFillColor(247,247,242); doc.rect(M, y, W - 2*M, bh, 'F'); doc.setFillColor(...UMM_VERDE); doc.rect(M, y, 3, bh, 'F');
+    doc.setTextColor(...UMM_TXT); doc.text(lineas, M + 14, y + 16); y += bh + 6;
+  }
+  // observaciones
+  if(opts.observaciones && opts.observaciones.length){
+    etiqueta('OBSERVACIONES');
+    opts.observaciones.forEach(o=>{
+      nuevaPagSi(16); y += 6;
+      doc.setFillColor(...UMM_TXT); doc.circle(M + 4, y - 3, 1.3, 'F');
+      doc.setFont('helvetica', o.b ? 'bold' : 'normal'); doc.setFontSize(8.5); doc.setTextColor(...UMM_TXT); doc.text(T(o.t), M + 12, y); y += 8;
+    });
+  }
+  // pie de contacto en todas las páginas
+  const contactos = [['ic-mail','info@ummana.ar'],['ic-wa','11 3920-8108'],['ic-pin','M. Castro 1125, Banfield'],['ic-ig','somos.ummana'],['ic-web','ummana.ar']];
+  const icons = await Promise.all(contactos.map(([ic])=> ummImg(`images/${ic}.png`)));
+  doc.setFont('helvetica','normal'); doc.setFontSize(8);
+  const anchos = contactos.map(([,t])=> 15 + doc.getTextWidth(t)), gap = 16, total = anchos.reduce((a,b)=> a+b, 0) + gap * (contactos.length - 1);
+  for(let pg = 1; pg <= doc.getNumberOfPages(); pg++){
+    doc.setPage(pg);
+    const py = H - 44;
+    doc.setDrawColor(217,216,204); doc.setLineWidth(0.8); doc.line(M, py - 14, W - M, py - 14);
+    let x = (W - total) / 2;
+    contactos.forEach(([, t], i)=>{
+      if(icons[i]) doc.addImage(icons[i].url, 'PNG', x, py - 8, 11, 11);
+      doc.setTextColor(...UMM_VERDE_OSC); doc.text(t, x + 15, py + 0.5); x += anchos[i] + gap;
+    });
+  }
+  return doc;
+}
+
+/* ---- Presupuestos (todas las cuentas) ---- */
+const overlayPresupuesto = document.getElementById('overlayPresupuesto');
+let prMon = '$';
+function prSetMon(m){ prMon = m; document.querySelectorAll('#prMoneda button').forEach(b=> b.classList.toggle('active', b.dataset.mon===m)); prRecalc(); }
+document.querySelectorAll('#prMoneda button').forEach(b=> b.onclick = ()=> prSetMon(b.dataset.mon));
+attachAutocomplete(document.getElementById('prPac'), ()=> pacienteRegistry);
+attachAutocomplete(document.getElementById('prProf'), ()=> todosLosNombresDeProfesionales());
+function prAgregarFila(){
+  const d = document.createElement('div'); d.className = 'pr-fila';
+  d.innerHTML = `<div class="ac-wrap"><input type="text" class="pr-det" placeholder="Tratamiento" autocomplete="off" data-ac-libre></div><input type="text" class="pr-cant" inputmode="numeric" value="1"><input type="text" class="pr-val" inputmode="numeric" placeholder="0"><button type="button" class="btn-quitar" title="Quitar">✕</button>`;
+  document.getElementById('prItems').appendChild(d);
+  attachAutocomplete(d.querySelector('.pr-det'), ()=>{
+    const prof = mayus(document.getElementById('prProf').value.trim());
+    return [...new Set((CONCEPTOS[prof] || []).filter(c=> (c.tipo||'ingreso')!=='egreso').map(c=> c.concepto))];
+  });
+  d.querySelector('.pr-val').addEventListener('input', e=>{ formatearInputMonto(e.target); prRecalc(); });
+  d.querySelector('.pr-cant').addEventListener('input', e=>{ e.target.value = e.target.value.replace(/\D/g,''); prRecalc(); });
+  d.querySelector('.btn-quitar').onclick = ()=>{ d.remove(); if(!document.querySelector('#prItems .pr-fila')) prAgregarFila(); prRecalc(); };
+}
+document.getElementById('prAgregar').onclick = prAgregarFila;
+document.getElementById('prDesc').onchange = prRecalc;
+function prDatos(){
+  const items = [...document.querySelectorAll('#prItems .pr-fila')].map(f=> ({
+    det: mayus(f.querySelector('.pr-det').value.trim()),
+    cant: Number(f.querySelector('.pr-cant').value) || 1,
+    val: Number(f.querySelector('.pr-val').value.replace(/\D/g,'')) || 0,
+  })).filter(i=> i.det || i.val);
+  const sub = items.reduce((a,i)=> a + i.cant * i.val, 0);
+  const [pct, lbl] = (document.getElementById('prDesc').value || '').split('|');
+  const desc = pct ? Math.round(sub * Number(pct) / 100) : 0;
+  return {items, sub, desc, descLbl: lbl || '', total: sub - desc};
+}
+function prRecalc(){
+  const d = prDatos();
+  document.getElementById('prTot').innerHTML = d.items.length
+    ? `Subtotal ${fmtMonto(d.sub, prMon)}${d.desc ? ` · ${escHtml(d.descLbl)}: −${fmtMonto(d.desc, prMon)}` : ''}<br>Total <b>${fmtMonto(d.total, prMon)}</b>` : '';
+}
+function abrirPresupuesto(){
+  document.getElementById('prFecha').value = hoyISO();
+  ['prPac','prProf','prNotas'].forEach(id=> document.getElementById(id).value = '');
+  document.getElementById('prDesc').value = '';
+  document.getElementById('prItems').innerHTML = ''; prAgregarFila(); prSetMon('$');
+  overlayPresupuesto.classList.add('show');
+}
+['closePresupuesto','cancelPresupuesto'].forEach(id=> document.getElementById(id).onclick = ()=> overlayPresupuesto.classList.remove('show'));
+document.getElementById('descargarPresupuesto').onclick = async ()=>{
+  const pac = mayus(document.getElementById('prPac').value.trim()), prof = mayus(document.getElementById('prProf').value.trim());
+  const fecha = document.getElementById('prFecha').value;
+  const d = prDatos();
+  if(!pac){ alert('Completá el paciente.'); return; }
+  if(!d.items.length){ alert('Agregá al menos un tratamiento.'); return; }
+  if(d.items.some(i=> !i.det || !i.val)){ alert('Cada tratamiento necesita detalle y valor.'); return; }
+  const btn = document.getElementById('descargarPresupuesto'); btn.disabled = true;
+  try{
+    const tot = [{lbl:'Subtotal', val: fmtMonto(d.sub, prMon), tipo:'sub'}];
+    if(d.desc) tot.push({lbl: d.descLbl, val: '-' + fmtMonto(d.desc, prMon), tipo:'desc'});
+    tot.push({lbl:'TOTAL', val: fmtMonto(d.total, prMon), tipo:'total'});
+    const doc = await pdfFormatoUmmana({
+      titulo: 'PRESUPUESTO',
+      datos: [['PACIENTE', pac, true], ['FECHA', ecFecha(fecha)], ['DR / DRA', prof || '-']],
+      head: ['Detalle','Cant.','Valor','Subtotal'],
+      body: d.items.map(i=> [i.det, String(i.cant), fmtMonto(i.val, prMon), fmtMonto(i.cant * i.val, prMon)]),
+      columnStyles: {1:{halign:'center', cellWidth:44}, 2:{halign:'right', cellWidth:90}, 3:{halign:'right', cellWidth:95}},
+      totales: tot,
+      notas: document.getElementById('prNotas').value,
+      observaciones: [{t:'Presupuesto válido por 15 días desde el envío del mismo.', b:true}, {t:'Los valores de las cotizaciones se ajustarán por IPC.'}],
+    });
+    mostrarPreviewPDF(doc, `presupuesto-${pac.replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()}-${fecha}.pdf`);
+    overlayPresupuesto.classList.remove('show');
+  }catch(e){ alert('No se pudo generar el PDF: ' + e.message); }
+  btn.disabled = false;
+};
+
 /* ---- Estado de cuenta en PDF para mandarle al deudor (el concepto se puede corregir solo para el PDF) ---- */
 const overlayEstadoCuenta = document.getElementById('overlayEstadoCuenta');
 let ecDeudas = [];
@@ -4952,6 +5168,7 @@ document.getElementById('deuExportar').onclick = ()=>{
   }
   ecDeudas = lista.slice().sort((a,b)=> (a.fechaISO||'').localeCompare(b.fechaISO||''));
   document.getElementById('ecPac').textContent = nombres[0];
+  document.getElementById('ecNotas').value = '';
   document.getElementById('ecBody').innerHTML = ecDeudas.map((d,i)=> `<tr><td>${ecFecha(d.fechaISO) || escHtml(d.fechaDisplay||'')}</td><td><input type="text" data-ec="${i}" value="${escHtml(mayus(d.concepto||''))}"></td><td>${fmtMonto(d.valor, d.moneda)}</td></tr>`).join('');
   document.getElementById('ecTot').innerHTML = ecTotales().map(([mon,v])=> `Total adeudado${ecTotales().length>1 ? ' en ' + (mon==='USD'?'USD':'$') : ''}: ${fmtMonto(v, mon)}`).join('<br>');
   overlayEstadoCuenta.classList.add('show');
@@ -4977,50 +5194,17 @@ document.getElementById('descargarEstadoCuenta').onclick = async ()=>{
   try{
     const conceptos = [...document.querySelectorAll('#ecBody input[data-ec]')].map(i=> mayus(i.value.trim()));
     const pac = document.getElementById('ecPac').textContent;
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({unit:'pt', format:'a4'});
-    const W = doc.internal.pageSize.getWidth(), M = 50;
-    const ORO = [182,154,98], TXT = [58,47,28], GRIS = [122,106,72];
-    let y = 52;
-    const logo = await ecLogoData();
-    if(logo){ const h = 30, w = h * logo.w / logo.h; doc.addImage(logo.url, 'PNG', M, y, w, h); }
-    y += 46;
-    doc.setDrawColor(...ORO); doc.setLineWidth(1.6); doc.line(M, y, W-M, y);
-    y += 40;
-    doc.setFont('helvetica','bold'); doc.setFontSize(19); doc.setTextColor(...TXT);
-    doc.text('ESTADO DE CUENTA', M, y);
-    const tw = doc.getTextWidth('ESTADO DE CUENTA');
-    const h = new Date(); const hoy = `${h.getDate()}/${h.getMonth()+1}/${String(h.getFullYear()).slice(2)}`;
-    doc.setFont('helvetica','italic'); doc.setFontSize(11); doc.setTextColor(...GRIS);
-    doc.text(`(al ${hoy})`, M + tw + 8, y);
-    y += 22;
-    doc.setFont('helvetica','normal'); doc.setFontSize(10.5); doc.setTextColor(...GRIS); doc.text('Paciente:', M, y);
-    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(...TXT); doc.text(limpiarTextoPDF(pac), M + doc.getTextWidth('Paciente:') + 5, y);
-    y += 20;
-    doc.autoTable({
-      startY: y, margin:{left:M, right:M},
-      head: [['FECHA','CONCEPTO','IMPORTE']],
-      body: ecDeudas.map((d,i)=> [ecFecha(d.fechaISO) || d.fechaDisplay || '', limpiarTextoPDF(conceptos[i] || mayus(d.concepto||'')), limpiarTextoPDF(fmtMonto(d.valor, d.moneda))]),
-      theme: 'plain',
-      styles: {font:'helvetica', fontSize:10, textColor:TXT, cellPadding:{top:9, bottom:9, left:10, right:10}, lineColor:[239,230,210], lineWidth:{bottom:0.8}},
-      headStyles: {fillColor:[243,234,211], textColor:[107,85,48], fontStyle:'bold', fontSize:8.5, lineWidth:0},
-      columnStyles: {0:{cellWidth:90}, 1:{textColor:GRIS}, 2:{halign:'right', cellWidth:110}},
-      didParseCell: c=>{ if(c.section==='head' && c.column.index===2) c.cell.styles.halign = 'right'; },
+    const totales = ecTotales().map(([mon, v], i, arr)=> ({lbl: 'TOTAL ADEUDADO' + (arr.length>1 ? (mon==='USD' ? ' EN USD' : ' EN $') : ''), val: fmtMonto(v, mon), tipo:'total'}));
+    const doc = await pdfFormatoUmmana({
+      titulo: 'CUENTA CORRIENTE',
+      datos: [['PACIENTE', pac, true], ['FECHA', ecFecha(hoyISO())]],
+      head: ['Fecha','Concepto','Importe'],
+      body: ecDeudas.map((d,i)=> [ecFecha(d.fechaISO) || d.fechaDisplay || '', conceptos[i] || mayus(d.concepto||''), fmtMonto(d.valor, d.moneda)]),
+      columnStyles: {0:{cellWidth:80}, 2:{halign:'right', cellWidth:110}},
+      totales,
+      notas: document.getElementById('ecNotas').value,
     });
-    y = doc.lastAutoTable.finalY + 18;
-    ecTotales().forEach(([mon, v], i, arr)=>{
-      const lbl = 'TOTAL ADEUDADO' + (arr.length>1 ? (mon==='USD' ? ' EN USD' : ' EN $') : '');
-      const val = limpiarTextoPDF(fmtMonto(v, mon));
-      doc.setFont('helvetica','bold'); doc.setFontSize(13); const vw = doc.getTextWidth(val);
-      doc.setFont('helvetica','normal'); doc.setFontSize(9); const lw = doc.getTextWidth(lbl);
-      const bw = vw + lw + 44, bx = W - M - bw;
-      doc.setFillColor(...TXT); doc.roundedRect(bx, y, bw, 30, 5, 5, 'F');
-      doc.setTextColor(255,255,255); doc.text(lbl, bx + 15, y + 19);
-      doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.text(val, W - M - 15 - vw, y + 20);
-      y += 38;
-    });
-    const archivo = `estado-de-cuenta-${pac.replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()}.pdf`;
-    mostrarPreviewPDF(doc, archivo);
+    mostrarPreviewPDF(doc, `cuenta-corriente-${pac.replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()}.pdf`);
     overlayEstadoCuenta.classList.remove('show');
   }catch(e){ alert('No se pudo generar el PDF: ' + e.message); }
   btn.disabled = false;
@@ -10742,6 +10926,7 @@ document.querySelectorAll('#movSubTabs [data-msub]').forEach(b=> b.onclick = ()=
   else if(sub==='pago') document.getElementById('btnPagoProfesional').click();
   else if(sub==='reporte') document.getElementById('btnReporteDiario').click();
   else if(sub==='backup') abrirBackup();
+  else if(sub==='presupuesto') abrirPresupuesto();
   else if(sub==='nuevo') document.getElementById('btnNuevo').click();
 });
 
