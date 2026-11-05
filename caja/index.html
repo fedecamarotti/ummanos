@@ -3795,14 +3795,16 @@ const conceptoNorm = m => normBusqueda((m && m.concepto) || '').replace(/\s+/g,'
 // Egreso de caja chica "GUARDA EN CAJA GRANDE": sale de la chica y entra a la grande
 const esGuardaEnGrande = m => !esCajaGrande(m) && esGastoMov(m) && conceptoNorm(m) === 'guarda en caja grande';
 // Egreso de caja grande "GUARDA EN CAJA CHICA": sale de la grande y entra a la chica
-const esGuardaEnChica = m => esCajaGrande(m) && esGastoMov(m) && conceptoNorm(m) === 'guarda en caja chica';
+// Ingreso de caja chica "INGRESO CAMBIO DE CAJA GRANDE" (antes "INGRESO CAMBIO"): entra a la chica y sale de la grande
+const esCambioDeGrande = m => !esCajaGrande(m) && !esGastoMov(m) && ['ingreso cambio de caja grande','ingreso cambio'].includes(conceptoNorm(m));
 // Lo que mueve un movimiento en la caja grande: efectivo $ / USD y Mercado Pago (MP es todo caja grande)
 function netoCajaGrande(m){
   const out = {};
   const add = (k, v)=>{ if(v) out[k] = (out[k]||0) + v; };
   const gasto = esGastoMov(m);
   // efectivo: lo cargado en CAJA GRANDE y lo que la chica manda con "GUARDA EN CAJA GRANDE"
-  const sEf = esCajaGrande(m) ? (gasto ? -1 : 1) : (esGuardaEnGrande(m) ? 1 : 0);
+  // y resta el "INGRESO CAMBIO DE CAJA GRANDE" (plata que la grande le pasa a la chica)
+  const sEf = esCajaGrande(m) ? (gasto ? -1 : 1) : (esGuardaEnGrande(m) ? 1 : (esCambioDeGrande(m) ? -1 : 0));
   pagosDe(m).forEach(p=>{
     const v = pagoMontoReal(p);
     if(p.medio==="efectivo"){ if(sEf) add(pagoMoneda(m, p)==='USD' ? 'USD' : '$', sEf * v); return; }
@@ -3857,7 +3859,7 @@ function renderCajaGrande(){
     let saldo = alInicio[k]||0;
     const filas = delMes.filter(m=> netoCajaGrande(m)[k]).map(m=>{
       const v = netoCajaGrande(m)[k]; saldo += v;
-      const origen = esCajaGrande(m) ? '' : `<div class="cg-auto">desde caja chica${(k==='MP'||k==='MPUSD') ? ' (Mercado Pago)' : ''}</div>`;
+      const origen = esCajaGrande(m) ? '' : `<div class="cg-auto">${(k==='$'||k==='USD') && esCambioDeGrande(m) ? 'cambio para caja chica' : 'desde caja chica'}${(k==='MP'||k==='MPUSD') ? ' (Mercado Pago)' : ''}</div>`;
       const quien = m.creadoPor ? nombreCortoUsuario(m.creadoPor) : '';
       return `<tr><td>${ecFecha(m.fechaISO)}</td><td class="izq">${escHtml(m.pac||'')} · ${escHtml(m.concepto||'')}${m.notas ? ' · ' + escHtml(m.notas) : ''}${origen}</td><td>${escHtml(quien)}</td>`
         + `<td class="ing">${v>0 ? fmtMonto(v,mon) : ''}</td><td class="egr">${v<0 ? fmtMonto(-v,mon) : ''}</td><td class="sal">${fmtMonto(saldo,mon)}</td></tr>`;
@@ -3869,11 +3871,7 @@ function renderCajaGrande(){
 }
 function netoEfectivoMovimiento(m, mon){
   mon = mon || '$';
-  if(esCajaGrande(m)){
-    // lo de caja grande no toca la caja chica, salvo lo que se pasa de la grande a la chica
-    if(!esGuardaEnChica(m)) return 0;
-    return pagosDe(m).filter(p=> p.medio==="efectivo" && pagoMoneda(m, p)===mon).reduce((a,p)=> a + pagoMontoReal(p), 0);
-  }
+  if(esCajaGrande(m)) return 0;   // lo cargado en caja grande no toca la caja chica
   const esGasto = esGastoMov(m);
   let neto = 0;
   pagosDe(m).filter(p=>p.medio==="efectivo" && pagoMoneda(m, p)===mon).forEach(p=>{   // efectivo de la moneda pedida ($ o USD)
@@ -5085,7 +5083,7 @@ document.getElementById('generarReporteFecha').onclick = async ()=>{
       db.collection('movimientos').where('fechaISO','==', fechaISO).orderBy('creadoEn','asc').get(),
       db.collection('cajaSesiones').where('fechaISO','==', fechaISO).get(),
     ]);
-    const filas = snapMov.docs.map(d=>({id:d.id, ...d.data()})).filter(noMigrado).filter(m=> !esCajaGrande(m) || esGuardaEnChica(m));   // el reporte es de la caja chica
+    const filas = snapMov.docs.map(d=>({id:d.id, ...d.data()})).filter(noMigrado).filter(m=> !esCajaGrande(m));   // el reporte es de la caja chica
     if(!filas.length){ alert("No hay movimientos cargados en esa fecha."); return; }
     const sesiones = snapCaja.docs.map(d=> d.data())
       .sort((a,b)=> (a.abiertaEn?.toMillis()||0) - (b.abiertaEn?.toMillis()||0));
@@ -5241,8 +5239,8 @@ async function generarPNGReporteDiario(filas, fechaISO, sesiones){
   const usdOtros = {};   // dólares por Mercado Pago / transferencia / tarjeta (no entran a la caja física)
   const pagosProfesionales = [];
   filas.forEach(m=>{
-    if(esCajaGrande(m) && !esGuardaEnChica(m)) return;   // caja grande: no es plata de la caja chica
-    const esGasto = esGastoMov(m) && !esGuardaEnChica(m);
+    if(esCajaGrande(m)) return;   // caja grande: no es plata de la caja chica
+    const esGasto = esGastoMov(m);
     if(/honorario/i.test(m.concepto||"")) pagosProfesionales.push(m);
     pagosDe(m).forEach(p=>{
       // Igual que en "Cerrar caja": si lo cobró el profesional directo, esa plata nunca entró a nuestra caja física.
