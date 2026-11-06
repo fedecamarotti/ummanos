@@ -303,15 +303,25 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .t-corto{display:none;}
   /* ---------- Clases de prueba ---------- */
   .cp-panel{flex:1;min-height:0;display:flex;flex-direction:column;}
-  .cg-saldos{display:flex;gap:18px;flex-wrap:wrap;margin:10px 28px 0;flex:none;align-items:flex-end;}
+  .cg-saldos{display:flex;gap:6px;flex-wrap:wrap;margin:10px 28px 0;flex:none;align-items:center;}
+  .cg-pill{background:#fffcf5;border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;} .cg-pill b{color:var(--text);margin-left:5px;}
+  .cg-sep{width:1px;height:18px;background:var(--border);margin:0 6px;}
+  .cg-hoja{flex:1;min-height:0;overflow:auto;padding:12px 0 20px;}
+  .cg-cuadro{margin:0 28px 16px !important;} .cg-cuadro table{width:100%;table-layout:fixed;}
+  .cg-tabla thead th.cg-tit{color:var(--text);font-weight:800;text-align:left;}
+  .cg-tabla td.left{text-align:left;}
+  .cg-vacio{color:var(--muted);font-style:italic;padding:8px !important;}
   .cg-grupo{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;position:relative;padding-top:18px;}
   .cg-gtit{position:absolute;top:0;left:2px;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--accent-dk);white-space:nowrap;} .cg-gtit span{font-weight:500;text-transform:none;letter-spacing:0;color:var(--muted);}
   .cg-chip small{font-size:11px;color:var(--muted);}
   .cg-chip{background:#fffcf5;border:1px solid var(--border);border-radius:12px;padding:9px 16px;font-size:12px;color:var(--muted);font-weight:600;}
   .cg-chip b{display:block;font-size:19px;color:var(--text);margin-top:2px;}
   .cg-tabla{width:100%;border-collapse:collapse;font-size:12px;}
-  .cg-tabla th{background:#f3ead3;color:#6b5530;font-size:10px;letter-spacing:.4px;text-transform:uppercase;padding:7px 8px;text-align:center;}
-  .cg-tabla td{padding:7px 8px;border-bottom:1px solid #efe6d2;text-align:center;}
+  .cg-tabla th{background:#f4eeda;color:var(--muted);font-size:9.5px;letter-spacing:.4px;text-transform:uppercase;padding:8px 9px;text-align:center;font-weight:700;}
+  .cg-tabla th.left{text-align:left;}
+  .cg-tabla td{padding:6px 9px;border-bottom:1px solid var(--border);text-align:center;font-size:10.5px;}
+  .cg-tabla tbody tr:last-child td{border-bottom:none;}
+  .cg-auto{color:var(--muted);font-style:italic;font-size:9.5px;}
   .cg-tabla td.izq{text-align:left;} .cg-tabla td.ing{color:#2f7a2f;font-weight:700;} .cg-tabla td.egr{color:#a13a3a;font-weight:700;} .cg-tabla td.sal{font-weight:700;}
   .cg-tabla tr.cg-ini td{background:#fbf6ea;font-style:italic;color:var(--muted);}
   .cg-tabla .cg-auto{font-size:9.5px;color:var(--muted);font-style:italic;}
@@ -1905,7 +1915,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <!-- ============ CAJA GRANDE (subsección de Movimientos, Fede y Pedro) ============ -->
     <div class="cp-panel col-hidden" id="cgPanel">
       <div class="cg-saldos" id="cgSaldos"></div>
-      <div class="sheet-wrap cp-hoja" id="cgHoja"></div>
+      <div id="cgHoja" class="cg-hoja"></div>
     </div>
     <!-- ============ DERIVACIONES (subsección de Movimientos) ============ -->
     <div class="cp-panel col-hidden" id="dvPanel">
@@ -3900,25 +3910,26 @@ function renderCajaGrande(){
   const total = {}, alInicio = {};
   todos.forEach(m=>{ const n = netoCajaGrande(m); Object.keys(n).forEach(k=>{ total[k] = (total[k]||0) + n[k]; if((m.fechaISO||'') < ini) alInicio[k] = (alInicio[k]||0) + n[k]; }); });
   const delMes = todos.filter(m=> m.fechaISO >= ini && m.fechaISO < fin);
-  const chip = (t, v)=> `<div class="cg-chip">${t}<b>${v}</b></div>`;
-  saldos.innerHTML = `<div class="cg-grupo"><div class="cg-gtit">Caja grande</div>`
-    + chip('Saldo actual en $', fmtMonto(total['$']||0,'$')) + chip('Saldo actual en USD', fmtMonto(total.USD||0,'USD'))
-    + chip('Saldo actual MP', fmtMonto(total.MP||0,'$') + (total.MPUSD ? ` <small>+ ${fmtMonto(total.MPUSD,'USD')}</small>` : '')) + `</div>`
-    + `<div class="cg-grupo"><div class="cg-gtit">Caja chica${cgChica ? (cgChica.abierta ? ' <span>(caja abierta, esperado ahora)</span>' : ' <span>(último cierre)</span>') : ''}</div>`
-    + (cgChica ? chip('Efectivo $', fmtMonto(cgChica.pesos,'$')) + chip('Efectivo USD', cgChica.usd==null ? '—' : fmtMonto(cgChica.usd,'USD')) : '<div class="cg-chip">Sin datos</div>') + `</div>`;
-  const SECC = [['$','Efectivo en pesos ($)','$'], ['USD','Efectivo en dólares (USD)','USD'], ['MP','Mercado Pago','$'], ['MPUSD','Mercado Pago en dólares','USD']];
-  hoja.innerHTML = SECC.filter(([k])=> k==='$' || k==='USD' || k==='MP' || alInicio[k] || delMes.some(m=> netoCajaGrande(m)[k])).map(([k, tit, mon])=>{
+  const pill = (t, v, tip)=> `<span class="cg-pill"${tip ? ` title="${tip}"` : ''}>${t}<b>${v}</b></span>`;
+  saldos.innerHTML = pill('Grande $', fmtMonto(total['$']||0,'$')) + pill('Grande USD', fmtMonto(total.USD||0,'USD'))
+    + pill('MP', fmtMonto(total.MP||0,'$')) + (total.MPUSD ? pill('MP USD', fmtMonto(total.MPUSD,'USD')) : '')
+    + '<span class="cg-sep"></span>'
+    + (cgChica ? pill('Chica $', fmtMonto(cgChica.pesos,'$'), cgChica.abierta ? 'Caja abierta: lo esperado ahora' : 'Último cierre')
+               + pill('Chica USD', cgChica.usd==null ? '—' : fmtMonto(cgChica.usd,'USD'), cgChica.abierta ? 'Caja abierta: lo esperado ahora' : 'Último cierre')
+             : pill('Caja chica', '—'));
+  const SECC = [['$','EFECTIVO $','$'], ['USD','EFECTIVO USD','USD'], ['MP','MERCADO PAGO','$'], ['MPUSD','MERCADO PAGO USD','USD']];
+  hoja.innerHTML = SECC.filter(([k])=> k!=='MPUSD' || alInicio[k] || delMes.some(m=> netoCajaGrande(m)[k])).map(([k, tit, mon])=>{
     let saldo = alInicio[k]||0;
     const filas = delMes.filter(m=> netoCajaGrande(m)[k]).map(m=>{
       const v = netoCajaGrande(m)[k]; saldo += v;
-      const origen = esCajaGrande(m) ? '' : `<div class="cg-auto">${(k==='$'||k==='USD') && esCambioDeGrande(m) ? 'cambio para caja chica' : 'desde caja chica'}${(k==='MP'||k==='MPUSD') ? ' (Mercado Pago)' : ''}</div>`;
+      const origen = esCajaGrande(m) ? '' : ` <span class="cg-auto">(${(k==='$'||k==='USD') && esCambioDeGrande(m) ? 'a caja chica' : 'desde caja chica'})</span>`;
       const quien = m.creadoPor ? nombreCortoUsuario(m.creadoPor) : '';
-      return `<tr><td>${ecFecha(m.fechaISO)}</td><td class="izq">${escHtml(m.pac||'')} · ${escHtml(m.concepto||'')}${m.notas ? ' · ' + escHtml(m.notas) : ''}${origen}</td><td>${escHtml(quien)}</td>`
+      return `<tr><td>${ecFecha(m.fechaISO).slice(0,5)}</td><td class="left">${escHtml(m.pac||'')} · ${escHtml(m.concepto||'')}${m.notas ? ' · ' + escHtml(m.notas) : ''}${origen}</td><td>${escHtml(quien)}</td>`
         + `<td class="ing">${v>0 ? fmtMonto(v,mon) : ''}</td><td class="egr">${v<0 ? fmtMonto(-v,mon) : ''}</td><td class="sal">${fmtMonto(saldo,mon)}</td></tr>`;
     }).join('');
-    return `<div class="cg-mon">${tit} · ${MESES[mesActual.month-1]} ${mesActual.year}</div>
-      <table class="cg-tabla"><thead><tr><th style="width:90px">Fecha</th><th>Detalle</th><th style="width:110px">Cargado por</th><th style="width:120px">Ingreso</th><th style="width:120px">Egreso</th><th style="width:130px">Saldo</th></tr></thead>
-      <tbody><tr class="cg-ini"><td></td><td class="izq">Saldo al inicio del mes</td><td></td><td></td><td></td><td>${fmtMonto(alInicio[k]||0,mon)}</td></tr>${filas || '<tr><td colspan="6" class="empty-state">Sin movimientos este mes.</td></tr>'}</tbody></table>`;
+    return `<div class="sheet-wrap cg-cuadro"><table class="cg-tabla"><colgroup><col style="width:64px"><col><col style="width:100px"><col style="width:130px"><col style="width:130px"><col style="width:140px"></colgroup>
+      <thead><tr><th>Fecha</th><th class="left cg-tit">${tit}</th><th>Cargó</th><th>Ingreso</th><th>Egreso</th><th>Saldo</th></tr></thead>
+      <tbody>${filas || `<tr><td colspan="6" class="cg-vacio">Sin movimientos este mes · saldo ${fmtMonto(saldo,mon)}</td></tr>`}</tbody></table></div>`;
   }).join('');
 }
 function netoEfectivoMovimiento(m, mon){
