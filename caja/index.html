@@ -310,6 +310,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .cg-cuadro{margin:0 28px 16px !important;} .cg-cuadro table{width:100%;table-layout:fixed;}
   .cg-tabla thead th.cg-tit{color:var(--text);font-weight:800;text-align:left;}
   .cg-tabla td.left{text-align:left;}
+  .cg-tabla td.editcol{padding:2px 4px;} .cg-tabla .editbtn{padding:2px 6px;line-height:1;}
   .cg-vacio{color:var(--muted);font-style:italic;padding:8px !important;}
   .cg-grupo{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;position:relative;padding-top:18px;}
   .cg-gtit{position:absolute;top:0;left:2px;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--accent-dk);white-space:nowrap;} .cg-gtit span{font-weight:500;text-transform:none;letter-spacing:0;color:var(--muted);}
@@ -3924,12 +3925,12 @@ function renderCajaGrande(){
       const v = netoCajaGrande(m)[k]; saldo += v;
       const origen = esCajaGrande(m) ? '' : ` <span class="cg-auto">(${(k==='$'||k==='USD') && esCambioDeGrande(m) ? 'a caja chica' : 'desde caja chica'})</span>`;
       const quien = m.creadoPor ? nombreCortoUsuario(m.creadoPor) : '';
-      return `<tr><td>${ecFecha(m.fechaISO).slice(0,5)}</td><td class="left">${escHtml(m.pac||'')} · ${escHtml(m.concepto||'')}${m.notas ? ' · ' + escHtml(m.notas) : ''}${origen}</td><td>${escHtml(quien)}</td>`
+      return `<tr><td class="editcol"><button class="editbtn" title="Editar" onclick="abrirEdicion('${m.id}')">&#9998;</button></td><td>${ecFecha(m.fechaISO).slice(0,5)}</td><td class="left">${escHtml(m.pac||'')} · ${escHtml(m.concepto||'')}${m.notas ? ' · ' + escHtml(m.notas) : ''}${origen}</td><td>${escHtml(quien)}</td>`
         + `<td class="ing">${v>0 ? fmtMonto(v,mon) : ''}</td><td class="egr">${v<0 ? fmtMonto(-v,mon) : ''}</td><td class="sal">${fmtMonto(saldo,mon)}</td></tr>`;
     }).join('');
-    return `<div class="sheet-wrap cg-cuadro"><table class="cg-tabla"><colgroup><col style="width:64px"><col><col style="width:100px"><col style="width:130px"><col style="width:130px"><col style="width:140px"></colgroup>
-      <thead><tr><th>Fecha</th><th class="left cg-tit">${tit}</th><th>Cargó</th><th>Ingreso</th><th>Egreso</th><th>Saldo</th></tr></thead>
-      <tbody>${filas || `<tr><td colspan="6" class="cg-vacio">Sin movimientos este mes · saldo ${fmtMonto(saldo,mon)}</td></tr>`}</tbody></table></div>`;
+    return `<div class="sheet-wrap cg-cuadro"><table class="cg-tabla"><colgroup><col style="width:34px"><col style="width:64px"><col><col style="width:100px"><col style="width:130px"><col style="width:130px"><col style="width:140px"></colgroup>
+      <thead><tr><th></th><th>Fecha</th><th class="left cg-tit">${tit}</th><th>Cargó</th><th>Ingreso</th><th>Egreso</th><th>Saldo</th></tr></thead>
+      <tbody>${filas || `<tr><td colspan="7" class="cg-vacio">Sin movimientos este mes · saldo ${fmtMonto(saldo,mon)}</td></tr>`}</tbody></table></div>`;
   }).join('');
 }
 function netoEfectivoMovimiento(m, mon){
@@ -4552,7 +4553,8 @@ function nombreCortoUsuario(n){ const p = String(n||'').trim().split(/[\s,]+/)[0
 function fechaHoraCorta(d){ const z = x=> String(x).padStart(2,'0'); return `${z(d.getDate())}/${z(d.getMonth()+1)}, ${z(d.getHours())}:${z(d.getMinutes())} hs`; }
 function abrirEdicion(id){
   if(soloLectura()){ alert("Para editar movimientos hay que abrir caja."); return; }
-  const m = movimientos.find(x=>x.id===id);
+  let m = movimientos.find(x=>x.id===id);
+  if(!m && cgDatos.movs){ m = cgDatos.movs.find(x=> x.id===id); if(m) movimientos.push(m); }   // desde Caja grande
   if(!m) return;
   modo = 'editar'; editingId = id;
   setMovTipo(tipoConcepto(m.prof, m.concepto), false);
