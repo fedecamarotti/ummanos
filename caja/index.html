@@ -10445,6 +10445,7 @@ document.querySelectorAll('#fedeTabs [data-ir]').forEach(b=> b.onclick = ()=>{
    y tratamientos y manda a recepción por WhatsApp lo que hay que cobrar.
    El valor de cada tratamiento se guarda en su concepto (campo "valor").
    ===================================================================== */
+const TR_WA_RECEPCION = '5491139208108';   // WhatsApp de Ummana (11 3920-8108)
 let trSel = [];   // [{concepto, valor}]
 let trEditando = null;
 document.getElementById('trDesc').innerHTML = document.getElementById('prDesc').innerHTML;
@@ -10529,7 +10530,7 @@ document.getElementById('trEnviar').onclick = ()=>{
   const lineas = [pac, '', ...trSel.map(x=> `${x.concepto} - ${fmtMonto(x.valor,'$')}`)];
   if(d.desc) lineas.push(`DESCUENTO - ${fmtMonto(d.desc,'$')}`);
   lineas.push('', `Total a abonar: ${fmtMonto(d.total,'$')}`);
-  window.open('https://wa.me/?text=' + encodeURIComponent(lineas.join('\n')), '_blank');
+  window.open(`https://wa.me/${TR_WA_RECEPCION}?text=` + encodeURIComponent(lineas.join('\n')), '_blank');
 };
 
 /* =====================================================================
