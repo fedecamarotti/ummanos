@@ -976,7 +976,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .pr-tot{text-align:right;font-size:12px;color:var(--muted);line-height:1.7;margin:4px 0 2px;} .pr-tot b{color:var(--text);font-size:16px;}
   #overlayPresupuesto .ac-wrap{width:100%;}
   #prNotas,#ecNotas{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:10px;background:#fff;font:inherit;font-size:13px;resize:vertical;}
-  #prMoneda button.active{background:var(--accent);color:#fff;}
+  #prMoneda button.active,#prTotModo button.active{background:var(--accent);color:#fff;}
+  .pr-totmodo{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:6px;font-size:12px;color:var(--muted);}
   .deuda-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;}
   .deuda-info{display:flex;flex-direction:column;gap:2px;}
   .deuda-info .nom{font-weight:700;font-size:12.5px;}
@@ -2732,6 +2733,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <option value="40|Familia 40%">Familia 40%</option>
       </select></div>
     <div class="field"><label>Notas <span class="opt">(opcional, aparece arriba de Observaciones)</span></label><textarea id="prNotas" rows="2" maxlength="400"></textarea></div>
+    <div class="pr-totmodo">Total
+      <div class="tipo-toggle" id="prTotModo"><button type="button" data-tm="1" class="active">Sumar total</button><button type="button" data-tm="0">Sin total (son opciones)</button></div></div>
     <div class="pr-tot" id="prTot"></div>
     <div class="modal-actions">
       <button class="btn" id="cancelPresupuesto">Cancelar</button>
@@ -5152,6 +5155,9 @@ async function pdfFormatoUmmana(opts){
 /* ---- Presupuestos (todas las cuentas) ---- */
 const overlayPresupuesto = document.getElementById('overlayPresupuesto');
 let prMon = '$';
+let prConTotal = true;
+function prSetTotModo(v){ prConTotal = v; document.querySelectorAll('#prTotModo button').forEach(b=> b.classList.toggle('active', (b.dataset.tm==='1')===v)); prRecalc(); }
+document.querySelectorAll('#prTotModo button').forEach(b=> b.onclick = ()=> prSetTotModo(b.dataset.tm==='1'));
 function prSetMon(m){ prMon = m; document.querySelectorAll('#prMoneda button').forEach(b=> b.classList.toggle('active', b.dataset.mon===m)); prRecalc(); }
 document.querySelectorAll('#prMoneda button').forEach(b=> b.onclick = ()=> prSetMon(b.dataset.mon));
 attachAutocomplete(document.getElementById('prPac'), ()=> pacienteRegistry);
@@ -5183,6 +5189,12 @@ function prDatos(){
 }
 function prRecalc(){
   const d = prDatos();
+  if(!prConTotal){
+    const pct = Number((document.getElementById('prDesc').value || '').split('|')[0]) || 0;
+    document.getElementById('prTot').innerHTML = d.items.length
+      ? `Sin total: cada tratamiento es una opción${pct ? `<br>${escHtml(d.descLbl)} se aplica a cada opción` : ''}` : '';
+    return;
+  }
   document.getElementById('prTot').innerHTML = d.items.length
     ? `Subtotal ${fmtMonto(d.sub, prMon)}${d.desc ? ` · ${escHtml(d.descLbl)}: −${fmtMonto(d.desc, prMon)}` : ''}<br>Total <b>${fmtMonto(d.total, prMon)}</b>` : '';
 }
@@ -5190,7 +5202,7 @@ function abrirPresupuesto(){
   document.getElementById('prFecha').value = hoyISO();
   ['prPac','prProf','prNotas'].forEach(id=> document.getElementById(id).value = '');
   document.getElementById('prDesc').value = '';
-  document.getElementById('prItems').innerHTML = ''; prAgregarFila(); prSetMon('$');
+  document.getElementById('prItems').innerHTML = ''; prAgregarFila(); prSetTotModo(true); prSetMon('$');
   overlayPresupuesto.classList.add('show');
 }
 ['closePresupuesto','cancelPresupuesto'].forEach(id=> document.getElementById(id).onclick = ()=> overlayPresupuesto.classList.remove('show'));
@@ -5199,6 +5211,7 @@ const PR_OBSERVACIONES = [{t:'Presupuesto válido por 15 días desde el envío d
 const UMM_CONTACTO = [['ic-mail','info@ummana.ar'],['ic-wa','11 3920-8108'],['ic-pin','M. Castro 1125, Banfield'],['ic-ig','somos.ummana'],['ic-web','ummana.ar']];
 // Arma el PDF de un presupuesto a partir de sus datos (se usa al crearlo y al volver a abrirlo desde la ficha)
 async function pdfPresupuesto(pr){
+  if(pr.sinTotal) return pdfPresupuestoOpciones(pr);
   const tot = [{lbl:'Subtotal', val: fmtMonto(pr.subtotal, pr.moneda), tipo:'sub'}];
   if(pr.descuento) tot.push({lbl: pr.descuentoLbl, val: '-' + fmtMonto(pr.descuento, pr.moneda), tipo:'desc'});
   tot.push({lbl:'TOTAL', val: fmtMonto(pr.total, pr.moneda), tipo:'total'});
@@ -5209,6 +5222,29 @@ async function pdfPresupuesto(pr){
     body: pr.items.map(i=> [i.det, String(i.cant), fmtMonto(i.val, pr.moneda), fmtMonto(i.cant * i.val, pr.moneda)]),
     columnStyles: {1:{halign:'center', cellWidth:44}, 2:{halign:'right', cellWidth:90}, 3:{halign:'right', cellWidth:95}},
     totales: tot,
+    notas: pr.notas || '',
+    observaciones: pr.observaciones || PR_OBSERVACIONES,
+    contacto: pr.contacto,
+  });
+  return {doc, archivo: `presupuesto-${pr.paciente.replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()}-${pr.fechaISO}.pdf`};
+}
+// Variante "sin total": cada fila es una opción distinta, no se suman. Si hay descuento se muestra el valor con descuento de cada opción.
+async function pdfPresupuestoOpciones(pr){
+  const pct = pr.descuentoPct || 0;
+  const head = ['Opción','Cant.','Valor','Subtotal'];
+  if(pct) head.push(pr.descuentoLbl);
+  const body = pr.items.map(i=>{
+    const sub = i.cant * i.val, f = [i.det, String(i.cant), fmtMonto(i.val, pr.moneda), fmtMonto(sub, pr.moneda)];
+    if(pct) f.push(fmtMonto(sub - Math.round(sub * pct / 100), pr.moneda));
+    return f;
+  });
+  const columnStyles = pct
+    ? {1:{halign:'center', cellWidth:38}, 2:{halign:'right', cellWidth:78}, 3:{halign:'right', cellWidth:82}, 4:{halign:'right', cellWidth:92, fontStyle:'bold'}}
+    : {1:{halign:'center', cellWidth:44}, 2:{halign:'right', cellWidth:90}, 3:{halign:'right', cellWidth:95, fontStyle:'bold'}};
+  const doc = await pdfFormatoUmmana({
+    titulo: 'PRESUPUESTO',
+    datos: [['PACIENTE', pr.paciente, true], ['FECHA', ecFecha(pr.fechaISO)], ['DR / DRA', pr.profesional || '-']],
+    head, body, columnStyles, totales: [],
     notas: pr.notas || '',
     observaciones: pr.observaciones || PR_OBSERVACIONES,
     contacto: pr.contacto,
@@ -5226,7 +5262,9 @@ document.getElementById('descargarPresupuesto').onclick = async ()=>{
   try{
     // se guardan solo los datos (no el PDF): ocupa ~1 KB por presupuesto
     const pr = {paciente: pac, profesional: prof, fechaISO: fecha, moneda: prMon, items: d.items,
-      subtotal: d.sub, descuento: d.desc, descuentoLbl: d.descLbl, total: d.total, notas: mayus(document.getElementById('prNotas').value.trim()),
+      subtotal: d.sub, descuento: d.desc, descuentoLbl: d.descLbl, total: d.total,
+      ...(prConTotal ? {} : {sinTotal: true, descuentoPct: Number((document.getElementById('prDesc').value || '').split('|')[0]) || 0}),
+      notas: mayus(document.getElementById('prNotas').value.trim()),
       observaciones: PR_OBSERVACIONES, contacto: UMM_CONTACTO.map(([ic, t])=> ({ic, t}))};
     const {doc, archivo} = await pdfPresupuesto(pr);
     try{
@@ -5245,7 +5283,7 @@ async function cargarPresupuestosFicha(nombre){
   try{
     const snap = await db.collection('presupuestos').where('paciente','==', nombre).get();
     pfPresDatos = snap.docs.map(d=> ({id:d.id, ...d.data()})).sort((a,b)=> (b.fechaISO||'').localeCompare(a.fechaISO||''));
-    lista.innerHTML = pfPresDatos.length ? pfPresDatos.map((p,i)=> `<div class="pf-pres-it" data-pr="${i}" title="Abrir PDF"><span class="f">${ecFecha(p.fechaISO)}${p.profesional ? ' · ' + escHtml(p.profesional) : ''}</span><span class="t">${fmtMonto(p.total, p.moneda)}</span><span class="d">${escHtml(p.items.map(x=> x.det).join(' + '))}</span></div>`).join('')
+    lista.innerHTML = pfPresDatos.length ? pfPresDatos.map((p,i)=> `<div class="pf-pres-it" data-pr="${i}" title="Abrir PDF"><span class="f">${ecFecha(p.fechaISO)}${p.profesional ? ' · ' + escHtml(p.profesional) : ''}</span><span class="t">${p.sinTotal ? `${p.items.length} opciones` : fmtMonto(p.total, p.moneda)}</span><span class="d">${escHtml(p.items.map(x=> x.det).join(' + '))}</span></div>`).join('')
       : '<div class="pf-pres-vacio">Sin presupuestos.</div>';
   }catch(e){ lista.innerHTML = `<div class="pf-pres-vacio">No se pudieron leer los presupuestos.</div>`; }
 }
