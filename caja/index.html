@@ -452,7 +452,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .pf-area .barra i{display:block;height:7px;background:#c9b183;border-radius:4px;}
   .pf-total{margin-top:12px;font-size:11px;color:var(--muted);}
   .pf-btn-hist{width:100%;margin-top:10px;}
-  .pf-pres{margin-top:10px;border:1px solid var(--border);border-radius:10px;background:#fffcf5;padding:8px 10px;}
+  .pf-pres{margin-top:6px;border:1px solid var(--border);border-radius:10px;background:#fffcf5;padding:4px 10px;}
   .pf-pres-tit{font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--accent-dk);margin-bottom:4px;}
   .pf-pres-it{display:grid;grid-template-columns:1fr auto;gap:1px 10px;padding:7px 4px;border-top:1px solid #efe6d2;font-size:11.5px;cursor:pointer;}
   .pf-pres-it:first-child{border-top:none;} .pf-pres-it:hover{background:#f6efdd;}
@@ -2867,6 +2867,10 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <div class="pf-hist-res" id="pfHistRes"></div>
         <div id="pfHistLista"></div>
       </div>
+      <div class="pf-hist col-hidden" id="pfPresVista">
+        <div class="pf-areas-tit">Presupuestos enviados</div>
+        <div id="pfPresLista" class="pf-pres"></div>
+      </div>
       <div class="pf-cuerpo">
         <div class="pf-datos">
           <div class="field"><label>Teléfono</label><input type="tel" id="pfTelefono"></div>
@@ -2884,7 +2888,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
           </div>
           <button type="button" class="btn pf-btn-hist" id="pfBtnHist">🧾 Historial</button>
           <label class="pf-google col-hidden" id="pfGoogleWrap"><input type="checkbox" id="pfGoogle"> Avisado Google</label>
-          <div class="pf-pres col-hidden" id="pfPres"><div class="pf-pres-tit">Presupuestos</div><div id="pfPresLista"></div></div>
+          <button type="button" class="btn pf-btn-hist col-hidden" id="pfPres">📄 Presupuestos enviados</button>
         </div>
       </div>
       <div class="pf-unif col-hidden" id="pfUnifBox">
@@ -8849,7 +8853,6 @@ function abrirFichaPaciente(id){
   document.getElementById('pfGoogleWrap').classList.toggle('col-hidden', nuevo);
   document.getElementById('pfGoogle').checked = !!(p && p.avisadoGoogle);
   document.getElementById('pfPres').classList.toggle('col-hidden', nuevo);
-  if(!nuevo) cargarPresupuestosFicha(p.nombreCompleto);
   document.getElementById('pfNombre').textContent = nuevo ? 'Nuevo paciente' : (p.nombreCompleto || `${p.apellido}, ${p.nombre}`);
   document.getElementById('pfEditarNombre').classList.toggle('col-hidden', nuevo);
   document.getElementById('pfNombreCampos').classList.toggle('col-hidden', !nuevo);
@@ -8915,10 +8918,19 @@ let pfHistMovs = [], pfHistFiltro = null;
 function pfMostrarHist(si){
   document.getElementById('pacVistaFicha').classList.toggle('ver-hist', si);
   document.getElementById('pfHist').classList.toggle('col-hidden', !si);
+  document.getElementById('pfPresVista').classList.add('col-hidden');
   document.getElementById('pfVolverFicha').classList.toggle('col-hidden', !si);
   overlayPacientes.scrollTop = 0;
 }
 document.getElementById('pfVolverFicha').onclick = ()=> pfMostrarHist(false);
+// Presupuestos enviados: se abren en la misma ventana, con "volver" a la ficha
+document.getElementById('pfPres').onclick = ()=>{
+  if(!pfPaciente) return;
+  pfMostrarHist(true);
+  document.getElementById('pfHist').classList.add('col-hidden');
+  document.getElementById('pfPresVista').classList.remove('col-hidden');
+  cargarPresupuestosFicha(pfPaciente.nombreCompleto);
+};
 document.getElementById('pfBtnHist').onclick = async ()=>{
   if(!pfPaciente) return;
   pfHistFiltro = null; pfHistMovs = [];
