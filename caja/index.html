@@ -976,11 +976,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .pr-tot{text-align:right;font-size:12px;color:var(--muted);line-height:1.7;margin:4px 0 2px;} .pr-tot b{color:var(--text);font-size:16px;}
   #overlayPresupuesto .ac-wrap{width:100%;}
   #prNotas,#ecNotas{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:10px;background:#fff;font:inherit;font-size:13px;resize:vertical;}
-  #cajasLista td.caja-nota{cursor:pointer;max-width:240px;text-align:left;white-space:normal;}
-  #cajasLista td.caja-nota:hover{background:#fbf6ea;}
-  .cn-txt{font-size:11px;line-height:1.35;white-space:pre-wrap;word-break:break-word;}
-  .cn-por{font-size:9.5px;color:var(--muted);margin-top:2px;}
-  .cn-add{font-size:10.5px;color:var(--muted);}
+  .editbtn.cn-ojo{color:var(--accent-dk);opacity:1;display:inline-flex;align-items:center;justify-content:center;}
   #prMoneda button.active,#prTotModo button.active{background:var(--accent);color:#fff;}
   .pr-totmodo{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:6px;font-size:12px;color:var(--muted);}
   .deuda-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;}
@@ -8766,9 +8762,9 @@ async function cargarCajas(){
           <td>$${apertura.toLocaleString('es-AR')}${conUsd ? `<div style="font-size:10px;color:var(--muted)">US$ ${Number(c.aperturaMontoUsd).toLocaleString('es-AR')}</div>` : ''}</td>
           <td>${cerrada ? '$'+Number(c.montoContado).toLocaleString('es-AR') : '—'}${cerrada && c.montoContadoUsd != null ? `<div style="font-size:10px;color:var(--muted)">US$ ${Number(c.montoContadoUsd).toLocaleString('es-AR')}</div>` : ''}</td>
           <td>${difHTML}</td>
-          <td class="caja-nota" onclick="abrirNotaCaja('${d.id}')" title="${c.notaAdmin ? 'Editar nota' : 'Agregar nota'}">${c.notaAdmin
-            ? `<div class="cn-txt">${escHtml(c.notaAdmin)}</div><div class="cn-por">${escHtml(c.notaPor||'')}${c.notaEn && c.notaEn.toDate ? ' · ' + c.notaEn.toDate().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}) : ''}</div>`
-            : '<span class="cn-add">📝 Agregar</span>'}</td>
+          <td class="editcol">${c.notaAdmin
+            ? `<button class="editbtn cn-ojo" title="Ver / editar nota" onclick="abrirNotaCaja('${d.id}')"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button>`
+            : `<button class="editbtn" title="Agregar nota" onclick="abrirNotaCaja('${d.id}')">&#9998;</button>`}</td>
           <td class="editcol"><button class="editbtn" title="Editar" onclick="abrirEdicionCaja('${d.id}')">&#9998;</button></td>
         </tr>
       `;
@@ -8797,6 +8793,7 @@ function abrirNotaCaja(id){
   notaCajaId = id;
   document.getElementById('ncSub').textContent = `${c.recepcionista||''} · ${isoToDisplay(c.fechaISO)}`;
   document.getElementById('ncTexto').value = c.notaAdmin || '';
+  if(c.notaAdmin) document.getElementById('ncSub').textContent += ` — nota de ${c.notaPor||''}${c.notaEn && c.notaEn.toDate ? ' el ' + c.notaEn.toDate().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}) : ''}`;
   overlayNotaCaja.classList.add('show');
   setTimeout(()=> document.getElementById('ncTexto').focus(), 50);
 }
