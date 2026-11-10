@@ -10499,6 +10499,8 @@ document.getElementById('trLista').addEventListener('click', e=>{
   else {
     if(!c || !c.valor){ alert('Este tratamiento no tiene valor. Tocá "Sin valor" para cargarlo.'); return; }
     trSel.push({concepto: con, valor: c.valor});
+    // se limpia el buscador para seguir escribiendo el próximo
+    const bus = document.getElementById('trBuscar'); bus.value = ''; bus.focus();
   }
   trRender();
 });
