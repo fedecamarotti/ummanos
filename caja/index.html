@@ -976,6 +976,11 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .pr-tot{text-align:right;font-size:12px;color:var(--muted);line-height:1.7;margin:4px 0 2px;} .pr-tot b{color:var(--text);font-size:16px;}
   #overlayPresupuesto .ac-wrap{width:100%;}
   #prNotas,#ecNotas{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:10px;background:#fff;font:inherit;font-size:13px;resize:vertical;}
+  #cajasLista td.caja-nota{cursor:pointer;max-width:240px;text-align:left;white-space:normal;}
+  #cajasLista td.caja-nota:hover{background:#fbf6ea;}
+  .cn-txt{font-size:11px;line-height:1.35;white-space:pre-wrap;word-break:break-word;}
+  .cn-por{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .cn-add{font-size:10.5px;color:var(--muted);}
   #prMoneda button.active,#prTotModo button.active{background:var(--accent);color:#fff;}
   .pr-totmodo{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:6px;font-size:12px;color:var(--muted);}
   .deuda-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;}
@@ -2800,6 +2805,20 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <div id="cajasLista"></div>
     <div class="modal-actions">
       <button class="btn" id="cerrarCajas">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: NOTA DE CAJA (admin) ============ -->
+<div class="overlay" id="overlayNotaCaja">
+  <div class="modal">
+    <button class="close-x" id="closeNotaCaja">✕</button>
+    <h2>Nota de la caja</h2>
+    <div class="modal-sub" id="ncSub"></div>
+    <div class="field"><label>Nota <span class="opt">(solo la ven los administradores)</span></label><textarea id="ncTexto" rows="4" maxlength="1000" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:10px;background:#fff;font:inherit;font-size:13px;resize:vertical;"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelNotaCaja">Cancelar</button>
+      <button class="btn btn-primary" id="guardarNotaCaja">Guardar</button>
     </div>
   </div>
 </div>
@@ -8747,6 +8766,9 @@ async function cargarCajas(){
           <td>$${apertura.toLocaleString('es-AR')}${conUsd ? `<div style="font-size:10px;color:var(--muted)">US$ ${Number(c.aperturaMontoUsd).toLocaleString('es-AR')}</div>` : ''}</td>
           <td>${cerrada ? '$'+Number(c.montoContado).toLocaleString('es-AR') : '—'}${cerrada && c.montoContadoUsd != null ? `<div style="font-size:10px;color:var(--muted)">US$ ${Number(c.montoContadoUsd).toLocaleString('es-AR')}</div>` : ''}</td>
           <td>${difHTML}</td>
+          <td class="caja-nota" onclick="abrirNotaCaja('${d.id}')" title="${c.notaAdmin ? 'Editar nota' : 'Agregar nota'}">${c.notaAdmin
+            ? `<div class="cn-txt">${escHtml(c.notaAdmin)}</div><div class="cn-por">${escHtml(c.notaPor||'')}${c.notaEn && c.notaEn.toDate ? ' · ' + c.notaEn.toDate().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}) : ''}</div>`
+            : '<span class="cn-add">📝 Agregar</span>'}</td>
           <td class="editcol"><button class="editbtn" title="Editar" onclick="abrirEdicionCaja('${d.id}')">&#9998;</button></td>
         </tr>
       `;
@@ -8755,7 +8777,7 @@ async function cargarCajas(){
       <div class="sheet-wrap" style="margin:0;">
         <table style="width:100%;">
           <thead>
-            <tr><th class="left">Nombre</th><th>Fecha</th><th>Apertura</th><th>Cierre</th><th>Diferencia</th><th></th></tr>
+            <tr><th class="left">Nombre</th><th>Fecha</th><th>Apertura</th><th>Cierre</th><th>Diferencia</th><th>Nota</th><th></th></tr>
           </thead>
           <tbody>${filas}</tbody>
         </table>
@@ -8767,6 +8789,32 @@ async function cargarCajas(){
 }
 
 let cajasCache = {};
+// Notas internas por caja (Fede y Pedro): se guardan en la misma sesión de caja
+const overlayNotaCaja = document.getElementById('overlayNotaCaja');
+let notaCajaId = null;
+function abrirNotaCaja(id){
+  const c = cajasCache[id]; if(!c) return;
+  notaCajaId = id;
+  document.getElementById('ncSub').textContent = `${c.recepcionista||''} · ${isoToDisplay(c.fechaISO)}`;
+  document.getElementById('ncTexto').value = c.notaAdmin || '';
+  overlayNotaCaja.classList.add('show');
+  setTimeout(()=> document.getElementById('ncTexto').focus(), 50);
+}
+window.abrirNotaCaja = abrirNotaCaja;
+['closeNotaCaja','cancelNotaCaja'].forEach(id=> document.getElementById(id).onclick = ()=> overlayNotaCaja.classList.remove('show'));
+document.getElementById('guardarNotaCaja').onclick = async ()=>{
+  if(!notaCajaId) return;
+  const txt = mayus(document.getElementById('ncTexto').value.trim());
+  const btn = document.getElementById('guardarNotaCaja'); btn.disabled = true;
+  try{
+    await db.collection('cajaSesiones').doc(notaCajaId).update(txt
+      ? {notaAdmin: txt, notaPor: currentUser.nombre, notaEn: firebase.firestore.FieldValue.serverTimestamp()}
+      : {notaAdmin: firebase.firestore.FieldValue.delete(), notaPor: firebase.firestore.FieldValue.delete(), notaEn: firebase.firestore.FieldValue.delete()});
+    overlayNotaCaja.classList.remove('show');
+    cargarCajas();
+  }catch(e){ alert('No se pudo guardar la nota: ' + e.message); }
+  btn.disabled = false;
+};
 const overlayEditarCaja = document.getElementById('overlayEditarCaja');
 let editandoCajaId = null;
 
