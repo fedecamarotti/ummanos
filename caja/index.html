@@ -3297,8 +3297,10 @@ menuDropdown.querySelectorAll('.menu-links button').forEach(b=> b.addEventListen
 
 /* ---------- Vista previa (solo lectura con la caja cerrada) ---------- */
 let vistaPrevia = false;
+// Recepcionistas: solo cargan/editan movimientos con SU caja abierta (la que abrió otra la pueden ver, no tocar)
+const cajaDeOtra = ()=> !!currentUser && currentUser.rol !== 'admin' && !!cajaActual && cajaActual.recepcionista !== currentUser.nombre;
 function soloLectura(){
-  return !!currentUser && currentUser.rol !== 'admin' && !cajaActual;
+  return !!currentUser && currentUser.rol !== 'admin' && (!cajaActual || cajaDeOtra());
 }
 function toggleVistaPrevia(){
   vistaPrevia = !vistaPrevia;
@@ -4058,14 +4060,14 @@ function actualizarEstadoCaja(){
     el.title = `Abrió la caja: ${cajaActual.recepcionista}`;
     btn.textContent = "Cerrar caja";
     btn.disabled = !esQuienAbrio;
-    hint.textContent = esQuienAbrio ? "" : `La caja la abrió ${cajaActual.recepcionista} — solo ella puede cerrarla desde su usuario.`;
-    btnNuevo.disabled = false;
+    hint.textContent = esQuienAbrio ? "" : `La caja la abrió ${cajaActual.recepcionista} — solo ella puede cargar movimientos y cerrarla.`;
+    btnNuevo.disabled = false;   // si no es su caja, al tocarlo avisa
     gate.classList.remove('show');
     content.classList.remove('panel-blur');
     vistaPrevia = false;
     btnPrev.classList.add('col-hidden');
     banner.classList.add('col-hidden');
-    document.body.classList.remove('modo-lectura');
+    document.body.classList.toggle('modo-lectura', !esQuienAbrio);   // sin lápices si la caja es de otra
   } else {
     el.classList.add('closed');
     el.querySelector('span').innerHTML = ultimoCierre!==null
@@ -4540,7 +4542,7 @@ attachAutocomplete(selProfesional, ()=> profesionalesDelTipo());
 selProfesional.addEventListener('input', actualizarConceptosDesdeProfesional);
 
 document.getElementById('btnNuevo').onclick = ()=>{
-  if(soloLectura()){ alert("Para cargar movimientos hay que abrir caja."); return; }
+  if(soloLectura()){ alert(cajaDeOtra() ? `La caja la abrió ${cajaActual.recepcionista}: solo ella puede cargar movimientos. Cuando la cierre, abrí la tuya.` : "Para cargar movimientos hay que abrir caja."); return; }
   if(!cajaActual && !esFede()){ alert("La caja se encuentra cerrada, no se pueden cargar movimientos."); return; }
   modo = 'nuevo'; editingId = null; document.getElementById('movCargadoPor').classList.add('col-hidden');
   setMovCaja(movSub==='grande' ? 'grande' : 'chica');
@@ -4557,7 +4559,7 @@ document.getElementById('btnNuevo').onclick = ()=>{
 function nombreCortoUsuario(n){ const p = String(n||'').trim().split(/[\s,]+/)[0] || ''; return p ? p.charAt(0).toUpperCase() + p.slice(1).toLowerCase() : ''; }
 function fechaHoraCorta(d){ const z = x=> String(x).padStart(2,'0'); return `${z(d.getDate())}/${z(d.getMonth()+1)}, ${z(d.getHours())}:${z(d.getMinutes())} hs`; }
 function abrirEdicion(id){
-  if(soloLectura()){ alert("Para editar movimientos hay que abrir caja."); return; }
+  if(soloLectura()){ alert(cajaDeOtra() ? `La caja la abrió ${cajaActual.recepcionista}: solo ella puede editar movimientos.` : "Para editar movimientos hay que abrir caja."); return; }
   let m = movimientos.find(x=>x.id===id);
   if(!m && cgDatos.movs){ m = cgDatos.movs.find(x=> x.id===id); if(m) movimientos.push(m); }   // desde Caja grande
   if(!m) return;
