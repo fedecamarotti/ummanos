@@ -977,6 +977,27 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   #overlayPresupuesto .ac-wrap{width:100%;}
   #prNotas,#ecNotas{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:10px;background:#fff;font:inherit;font-size:13px;resize:vertical;}
   .editbtn.cn-ojo{color:var(--accent-dk);opacity:1;display:inline-flex;align-items:center;justify-content:center;}
+  .tr-wrap{max-width:480px;margin:0 auto;padding:6px 4px 30px;}
+  .tr-tit{text-align:center;font-size:16px;letter-spacing:.5px;text-transform:uppercase;margin:6px 0 4px;}
+  .tr-lab{margin:16px 2px 6px;font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+  .tr-inp{width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font:inherit;font-size:13px;font-weight:600;}
+  .tr-bus{border-radius:24px;margin-bottom:10px;font-weight:400;}
+  .tr-item{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 10px 10px 16px;margin-bottom:8px;}
+  .tr-item.sel{border-color:#b8d8a8;}
+  .tr-item .n{flex:1;font-weight:700;font-size:12.5px;line-height:1.3;}
+  .tr-item .p{color:var(--accent-dk);font-weight:700;font-size:13px;margin-top:3px;cursor:pointer;}
+  .tr-item .p.sin{color:#a13a3a;font-weight:600;font-size:11px;}
+  .tr-item .p input{width:110px;padding:4px 8px;border:1px solid var(--border);border-radius:8px;font:inherit;font-size:13px;}
+  .tr-mas{width:36px;height:36px;border-radius:50%;border:none;background:var(--accent);color:#fff;font-size:22px;font-weight:700;flex:none;line-height:1;}
+  .tr-mas.ok{background:#eef6ea;border:1.5px solid #7fb069;color:#4f8a3a;font-size:16px;}
+  .tr-card{background:#fff;border:1px solid var(--border);border-radius:12px;}
+  .tr-real{display:flex;align-items:center;gap:10px;padding:10px 14px;} .tr-real+.tr-real{border-top:1px solid #f0e8d6;}
+  .tr-real .n{flex:1;font-weight:700;font-size:12px;} .tr-real .v{font-weight:700;}
+  .tr-real button{border:none;background:none;color:#a13a3a;font-weight:700;font-size:14px;padding:2px 4px;}
+  .tr-tot{margin-top:16px;padding:12px 16px;line-height:1.9;font-size:13px;}
+  .tr-tot div{display:flex;justify-content:space-between;gap:12px;} .tr-tot .d{color:#a13a3a;} .tr-tot .t{border-top:1px solid #f0e8d6;margin-top:4px;padding-top:6px;font-weight:700;font-size:15px;}
+  .tr-enviar{width:100%;margin-top:16px;border:none;background:#25d366;color:#fff;font-weight:700;font-size:15px;border-radius:26px;padding:15px;display:flex;gap:8px;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(37,211,102,.35);}
+  .tr-vacio{color:var(--muted);text-align:center;padding:14px;font-size:12px;}
   #prMoneda button.active,#prTotModo button.active{background:var(--accent);color:#fff;}
   .pr-totmodo{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:6px;font-size:12px;color:var(--muted);}
   .deuda-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;}
@@ -1844,6 +1865,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <button class="s-tab" data-ir="cremas" role="tab"><span class="t-largo">Cremas/Col./Geles</span><span class="t-corto">Cremas</span></button>
       <button class="s-tab" data-ir="informes" role="tab">Informes</button>
       <button class="s-tab" data-ir="conta" role="tab"><span class="t-largo">Victoria contabilidad</span><span class="t-corto">Victoria</span></button>
+      <button class="s-tab" data-ir="trat" role="tab">Tratamientos</button>
     </div>
 
     <div class="panel-container" id="panelContainer">
@@ -2174,6 +2196,29 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       </div>
     </div>
    </div><!-- /#vistaConta -->
+
+   <!-- ============ TRATAMIENTOS DEL DÍA (prueba, solo Fede) ============ -->
+   <div class="vista col-hidden" id="vistaTrat">
+    <div class="fede-nav col-hidden"></div>
+    <div class="tr-wrap">
+      <h2 class="tr-tit">Tratamientos del día</h2>
+      <div class="tr-lab">Profesional</div>
+      <div class="ac-wrap"><input type="text" id="trProf" class="tr-inp" placeholder="Escribí para buscar…" autocomplete="off"></div>
+      <div class="tr-lab">Paciente</div>
+      <div class="ac-wrap"><input type="text" id="trPac" class="tr-inp" placeholder="Escribí para buscar…" autocomplete="off" data-ac-libre></div>
+      <div class="tr-lab">Tratamientos</div>
+      <input type="text" id="trBuscar" class="tr-inp tr-bus" placeholder="🔍 Buscar tratamiento…" autocomplete="off" data-no-mayus>
+      <div id="trLista"></div>
+      <div id="trRealizadosBox" class="col-hidden">
+        <div class="tr-lab" id="trRealizadosLab">Realizados hoy</div>
+        <div class="tr-card" id="trRealizados"></div>
+      </div>
+      <div class="tr-lab">Descuento</div>
+      <select id="trDesc" class="tr-inp"></select>
+      <div class="tr-card tr-tot" id="trTot"></div>
+      <button class="tr-enviar" id="trEnviar"><svg viewBox="0 0 24 24" width="18" height="18" fill="#fff"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1-.2.3-.8.9-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.7.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.3zM12 21.8c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4C2.7 15.6 2.2 13.8 2.2 12 2.2 6.6 6.6 2.2 12 2.2S21.8 6.6 21.8 12 17.4 21.8 12 21.8zm0-21.6C5.5.2.2 5.5.2 12c0 2.1.5 4.1 1.6 5.9L.2 23.8l6.1-1.6c1.7.9 3.7 1.4 5.7 1.4 6.5 0 11.8-5.3 11.8-11.8S18.5.2 12 .2z"/></svg> Enviar a recepción</button>
+    </div>
+   </div><!-- /#vistaTrat -->
 
    <!-- ============ INFORMES (por ahora, solo los botones; se van a definir) ============ -->
    <div class="vista col-hidden" id="vistaInformes">
@@ -3494,7 +3539,7 @@ function aplicarRolUI(){
   document.getElementById('sBtnPacientes').classList.toggle('col-hidden', !esAdminSueros());
   // Fila de secciones arriba y los botones de cada sección debajo (cada uno ve solo lo que tiene acceso)
   const tabs = document.getElementById('fedeTabs');
-  const verTab = {movimientos:true, sueros:esAdminSueros(), cremas:esFede(), informes:esAdmin, conta:esFede()};
+  const verTab = {movimientos:true, sueros:esAdminSueros(), cremas:esFede(), informes:esAdmin, conta:esFede(), trat:esFede()};
   tabs.querySelectorAll('[data-ir]').forEach(b=> b.classList.toggle('col-hidden', !verTab[b.dataset.ir]));
   tabs.classList.toggle('una-sola', Object.values(verTab).filter(Boolean).length===1);
   tabs.classList.remove('col-hidden');
@@ -3629,13 +3674,14 @@ function iniciarListeners(){
     snap.docs.forEach(d=>{
       const c = d.data();
       if(!CONCEPTOS[c.profesional]) CONCEPTOS[c.profesional] = [];
-      CONCEPTOS[c.profesional].push({concepto: c.concepto, codigo: c.codigo||"", tipo: c.tipo||"ingreso", detObligatorio: !!c.detObligatorio});
+      CONCEPTOS[c.profesional].push({id: d.id, concepto: c.concepto, codigo: c.codigo||"", tipo: c.tipo||"ingreso", detObligatorio: !!c.detObligatorio, valor: c.valor!=null ? Number(c.valor) : null});
       CODIGO_POR_CONCEPTO[c.profesional+"||"+c.concepto] = c.codigo||"";
       TIPO_POR_CONCEPTO[c.profesional+"||"+c.concepto] = c.tipo||"ingreso";
     });
     poblarProfesionalesUI();
     actualizarCampoPacienteSegunTipo();
     renderTabla();
+    if(vistaActual==='trat') trRender();
     if(!pausaRenderPaneles && overlayConceptos.classList.contains('show')) renderConceptosBusqueda();
   });
 
@@ -5971,12 +6017,13 @@ function consumosDeIngreso(m){
 }
 
 function mostrarVista(v){
-  if((v==='sueros' && !esAdminSueros()) || ((v==="cremas" || v==='conta') && !esFede()) || (v==='informes' && currentUser.rol!=='admin')) return;
+  if((v==='sueros' && !esAdminSueros()) || ((v==="cremas" || v==='conta' || v==='trat') && !esFede()) || (v==='informes' && currentUser.rol!=='admin')) return;
   vistaActual = v;
   document.getElementById('vistaMovimientos').classList.toggle('col-hidden', v!=='movimientos');
   document.getElementById('vistaSueros').classList.toggle('col-hidden', v!=='sueros');
   document.getElementById('vistaCremas').classList.toggle('col-hidden', v!=='cremas');
   document.getElementById('vistaConta').classList.toggle('col-hidden', v!=='conta');
+  document.getElementById('vistaTrat').classList.toggle('col-hidden', v!=='trat');
   document.getElementById('vistaInformes').classList.toggle('col-hidden', v!=='informes');
   document.getElementById('btnNuevo').classList.add('col-hidden');
   document.getElementById('btnVistaMovimientos').classList.toggle('activo', v==='movimientos');
@@ -5986,7 +6033,7 @@ function mostrarVista(v){
   // La fila de secciones queda siempre arriba; los botones de cada sección van debajo, más chicos
   if(esUsuarioCaja()){
     const tabs = document.getElementById('fedeTabs');
-    const destino = document.querySelector(`#${({movimientos:'vistaMovimientos', sueros:'vistaSueros', cremas:'vistaCremas', conta:'vistaConta', informes:'vistaInformes'})[v]} > .fede-nav`);
+    const destino = document.querySelector(`#${({movimientos:'vistaMovimientos', sueros:'vistaSueros', cremas:'vistaCremas', conta:'vistaConta', informes:'vistaInformes', trat:'vistaTrat'})[v]} > .fede-nav`);
     destino.classList.remove('col-hidden'); destino.appendChild(tabs);
     tabs.querySelectorAll('[data-ir]').forEach(b=> b.classList.toggle('active', b.dataset.ir===v));
     document.body.classList.add('fede-nav-on');
@@ -5994,6 +6041,7 @@ function mostrarVista(v){
   if(v==='sueros'){ suscribirSueros(); if(sTabActual==='resumen') sResAlMesActual(); renderSueros(); }
   if(v==='cremas'){ suscribirCremas(); cremasVentas = null; renderCremas(); }
   if(v==='conta'){ suscribirConta(); renderConta(); }
+  if(v==='trat') trRender();
   if(v==='informes') cargarAsistencias();
 }
 document.getElementById('btnVistaMovimientos').onclick = ()=> mostrarVista('movimientos');
@@ -10389,8 +10437,100 @@ document.getElementById('vcBtnPDF').onclick = ()=>{
 
 document.querySelectorAll('#fedeTabs [data-ir]').forEach(b=> b.onclick = ()=>{
   const ir = b.dataset.ir;
-  if(ir==='sueros' || ir==='cremas' || ir==='movimientos' || ir==='conta' || ir==='informes') mostrarVista(ir);
+  if(ir==='sueros' || ir==='cremas' || ir==='movimientos' || ir==='conta' || ir==='informes' || ir==='trat') mostrarVista(ir);
 });
+
+/* =====================================================================
+   TRATAMIENTOS DEL DÍA (prueba en el usuario de Fede): el profesional elige paciente
+   y tratamientos y manda a recepción por WhatsApp lo que hay que cobrar.
+   El valor de cada tratamiento se guarda en su concepto (campo "valor").
+   ===================================================================== */
+let trSel = [];   // [{concepto, valor}]
+let trEditando = null;
+document.getElementById('trDesc').innerHTML = document.getElementById('prDesc').innerHTML;
+attachAutocomplete(document.getElementById('trProf'), ()=> Object.keys(CONCEPTOS).sort((a,b)=> a.localeCompare(b,'es')), ()=>{ trSel = []; trRender(); });
+attachAutocomplete(document.getElementById('trPac'), ()=> pacienteRegistry);
+document.getElementById('trProf').addEventListener('input', ()=>{ trSel = []; trRender(); });
+document.getElementById('trBuscar').addEventListener('input', trRenderLista);
+document.getElementById('trDesc').onchange = trRenderTotal;
+function trConceptos(){
+  const prof = mayus(document.getElementById('trProf').value.trim());
+  return (CONCEPTOS[prof] || []).filter(c=> (c.tipo||'ingreso')!=='egreso');
+}
+function trRender(){ trRenderLista(); trRenderRealizados(); trRenderTotal(); }
+function trRenderLista(){
+  const cont = document.getElementById('trLista');
+  if(!document.getElementById('trProf').value.trim()){ cont.innerHTML = '<div class="tr-vacio">Elegí el profesional para ver sus tratamientos.</div>'; return; }
+  const q = document.getElementById('trBuscar').value.trim();
+  const lista = trConceptos().filter(c=> !q || contiene(c.concepto, q));
+  if(!lista.length){ cont.innerHTML = '<div class="tr-vacio">No hay tratamientos.</div>'; return; }
+  cont.innerHTML = lista.map(c=>{
+    const sel = trSel.some(x=> x.concepto===c.concepto);
+    const precio = trEditando===c.id
+      ? `<input type="text" inputmode="numeric" class="tr-val-inp" data-id="${c.id}" value="${c.valor ? c.valor.toLocaleString('es-AR') : ''}" placeholder="Valor">`
+      : (c.valor ? fmtMonto(c.valor,'$') : 'Sin valor · tocá para cargar');
+    return `<div class="tr-item${sel ? ' sel' : ''}"><div class="n">${escHtml(c.concepto)}<div class="p${c.valor || trEditando===c.id ? '' : ' sin'}" data-editar="${c.id}" title="Tocá para cambiar el valor">${precio}</div></div>
+      <button type="button" class="tr-mas${sel ? ' ok' : ''}" data-con="${escHtml(c.concepto)}" title="${sel ? 'Quitar' : 'Agregar'}">${sel ? '✓' : '+'}</button></div>`;
+  }).join('');
+  const inp = cont.querySelector('.tr-val-inp');
+  if(inp){
+    inp.focus();
+    inp.addEventListener('input', ()=> formatearInputMonto(inp));
+    const guardar = async ()=>{
+      if(trEditando===null) return;
+      const id = trEditando; trEditando = null;
+      const val = Number(inp.value.replace(/\D/g,'')) || 0;
+      try{ await db.collection('conceptos').doc(id).update({valor: val || firebase.firestore.FieldValue.delete()}); }
+      catch(e){ alert('No se pudo guardar el valor: ' + e.message); }
+      trRenderLista();
+    };
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter') inp.blur(); if(e.key==='Escape'){ trEditando = null; trRenderLista(); } });
+    inp.addEventListener('blur', guardar);
+  }
+}
+document.getElementById('trLista').addEventListener('click', e=>{
+  const ed = e.target.closest('[data-editar]');
+  if(ed && !e.target.closest('input')){ trEditando = ed.dataset.editar; trRenderLista(); return; }
+  const b = e.target.closest('.tr-mas'); if(!b) return;
+  const con = b.dataset.con, c = trConceptos().find(x=> x.concepto===con);
+  if(trSel.some(x=> x.concepto===con)) trSel = trSel.filter(x=> x.concepto!==con);
+  else {
+    if(!c || !c.valor){ alert('Este tratamiento no tiene valor. Tocá "Sin valor" para cargarlo.'); return; }
+    trSel.push({concepto: con, valor: c.valor});
+  }
+  trRender();
+});
+function trRenderRealizados(){
+  document.getElementById('trRealizadosBox').classList.toggle('col-hidden', !trSel.length);
+  document.getElementById('trRealizadosLab').textContent = `Realizados hoy (${trSel.length})`;
+  document.getElementById('trRealizados').innerHTML = trSel.map((x,i)=> `<div class="tr-real"><div class="n">${escHtml(x.concepto)}</div><div class="v">${fmtMonto(x.valor,'$')}</div><button type="button" data-quitar="${i}" title="Quitar">✕</button></div>`).join('');
+}
+document.getElementById('trRealizados').addEventListener('click', e=>{
+  const b = e.target.closest('[data-quitar]'); if(!b) return;
+  trSel.splice(+b.dataset.quitar, 1); trRender();
+});
+function trCalculo(){
+  const sub = trSel.reduce((a,x)=> a + x.valor, 0);
+  const [pct, lbl] = (document.getElementById('trDesc').value || '').split('|');
+  const desc = pct ? Math.round(sub * Number(pct) / 100) : 0;
+  return {sub, desc, lbl: lbl||'', total: sub - desc};
+}
+function trRenderTotal(){
+  const d = trCalculo();
+  document.getElementById('trTot').innerHTML = `<div><span>Subtotal</span><span>${fmtMonto(d.sub,'$')}</span></div>`
+    + (d.desc ? `<div class="d"><span>Descuento (${escHtml(d.lbl)})</span><span>−${fmtMonto(d.desc,'$')}</span></div>` : '')
+    + `<div class="t"><span>Total a abonar</span><span>${fmtMonto(d.total,'$')}</span></div>`;
+}
+document.getElementById('trEnviar').onclick = ()=>{
+  const pac = mayus(document.getElementById('trPac').value.trim());
+  if(!pac){ alert('Completá el paciente.'); return; }
+  if(!trSel.length){ alert('Agregá al menos un tratamiento.'); return; }
+  const d = trCalculo();
+  const lineas = [pac, '', ...trSel.map(x=> `${x.concepto} - ${fmtMonto(x.valor,'$')}`)];
+  if(d.desc) lineas.push(`DESCUENTO - ${fmtMonto(d.desc,'$')}`);
+  lineas.push('', `Total a abonar: ${fmtMonto(d.total,'$')}`);
+  window.open('https://wa.me/?text=' + encodeURIComponent(lineas.join('\n')), '_blank');
+};
 
 /* =====================================================================
    CLASES DE PRUEBA — colección "clasesPrueba" (aparte de la caja)
