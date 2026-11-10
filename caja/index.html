@@ -1053,6 +1053,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .gate-card h2{margin:0 0 8px;font-size:16px;font-weight:700;}
   .gate-card p{margin:0 0 18px;font-size:12px;color:var(--muted);line-height:1.5;}
   .gate-card .btn-primary{padding:10px 22px;}
+  .gate-card .btn-primary:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(.4);}
 
   .lista-rows{
     max-height:480px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;
@@ -1881,8 +1882,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
 
       <div class="panel-gate" id="panelGate">
         <div class="gate-card">
-          <h2>Apertura de caja</h2>
-          <p>Abrí la caja con el monto inicial en efectivo para empezar a cargar movimientos.</p>
+          <h2 id="gateTit">Apertura de caja</h2>
+          <p id="gateTxt">Abrí la caja con el monto inicial en efectivo para empezar a cargar movimientos.</p>
           <div class="gate-actions">
             <button class="btn btn-primary" id="btnAbrirDesdeGate">Abrir caja</button>
             <button class="btn" id="btnVistaPreviaGate">Vista previa</button>
@@ -4033,6 +4034,16 @@ async function calcularEsperadoCaja(mon){
   return cajaActual.aperturaMonto + await netoEfectivoDeSesion(cajaActual.id, cajaActual);
 }
 
+// Cartel de entrada: con la caja de otra abierta, "Abrir caja" se ve apagado
+function gateModo(deOtra){
+  const b = document.getElementById('btnAbrirDesdeGate');
+  b.disabled = deOtra;
+  b.title = deOtra ? 'Ya hay una caja abierta' : '';
+  document.getElementById('gateTit').textContent = deOtra ? 'Caja abierta' : 'Apertura de caja';
+  document.getElementById('gateTxt').textContent = deOtra
+    ? `La caja la abrió ${cajaActual.recepcionista}. Podés entrar en vista previa; para cargar movimientos, esperá a que la cierre y abrí la tuya.`
+    : 'Abrí la caja con el monto inicial en efectivo para empezar a cargar movimientos.';
+}
 function actualizarEstadoCaja(){
   const el = document.getElementById('cajaStatus');
   const btn = document.getElementById('btnCierre');
@@ -4062,13 +4073,26 @@ function actualizarEstadoCaja(){
     btn.disabled = !esQuienAbrio;
     hint.textContent = esQuienAbrio ? "" : `La caja la abrió ${cajaActual.recepcionista} — solo ella puede cargar movimientos y cerrarla.`;
     btnNuevo.disabled = false;   // si no es su caja, al tocarlo avisa
-    gate.classList.remove('show');
-    content.classList.remove('panel-blur');
-    vistaPrevia = false;
-    btnPrev.classList.add('col-hidden');
-    banner.classList.add('col-hidden');
-    document.body.classList.toggle('modo-lectura', !esQuienAbrio);   // sin lápices si la caja es de otra
+    if(esQuienAbrio){
+      gate.classList.remove('show');
+      content.classList.remove('panel-blur');
+      vistaPrevia = false;
+      btnPrev.classList.add('col-hidden');
+      banner.classList.add('col-hidden');
+      document.body.classList.remove('modo-lectura', 'en-vista-previa');
+    } else {
+      // Caja de otra: al entrar se ve el cartel; "Abrir caja" queda apagado y solo se puede entrar en vista previa
+      gateModo(true);
+      btnPrev.classList.remove('col-hidden');
+      btnPrev.textContent = vistaPrevia ? "Salir de vista previa" : "Vista previa";
+      document.body.classList.toggle('en-vista-previa', vistaPrevia);
+      document.body.classList.add('modo-lectura');
+      banner.classList.toggle('col-hidden', !vistaPrevia);
+      gate.classList.toggle('show', !vistaPrevia);
+      content.classList.toggle('panel-blur', !vistaPrevia);
+    }
   } else {
+    gateModo(false);
     el.classList.add('closed');
     el.querySelector('span').innerHTML = ultimoCierre!==null
       ? `Caja cerrada · Último cierre $${ultimoCierre.toLocaleString('es-AR')}`
