@@ -438,7 +438,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .pf-editar-nombre{border:none;background:none;font-size:13px;opacity:.55;cursor:pointer;padding:4px;}
   .pf-editar-nombre:hover{opacity:1;}
   .pf-nombre-campos{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .pf-cuerpo{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+  .pf-cuerpo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;}
+  .pf-cuerpo > div{min-width:0;}
   .pf-datos .field{margin-bottom:10px;}
   .pf-datos .pf-vacio, .pf-ref .pf-vacio{background:#fdeeee;border-color:#f3d3d3;}   /* campo sin completar */
   .pf-ref{background:#fbf4e3;border:1px dashed #d8c69c;border-radius:8px;padding:8px 10px;margin-top:8px;}
@@ -453,9 +454,9 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .pf-btn-hist{width:100%;margin-top:10px;}
   .pf-pres{margin-top:10px;border:1px solid var(--border);border-radius:10px;background:#fffcf5;padding:8px 10px;}
   .pf-pres-tit{font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--accent-dk);margin-bottom:4px;}
-  .pf-pres-it{display:flex;align-items:center;gap:8px;padding:6px 2px;border-top:1px solid #efe6d2;font-size:11.5px;cursor:pointer;}
+  .pf-pres-it{display:grid;grid-template-columns:1fr auto;gap:1px 10px;padding:7px 4px;border-top:1px solid #efe6d2;font-size:11.5px;cursor:pointer;}
   .pf-pres-it:first-child{border-top:none;} .pf-pres-it:hover{background:#f6efdd;}
-  .pf-pres-it .f{color:var(--muted);width:70px;flex:none;} .pf-pres-it .d{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;} .pf-pres-it .t{font-weight:700;white-space:nowrap;}
+  .pf-pres-it .f{color:var(--muted);} .pf-pres-it .d{grid-column:1 / -1;min-width:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3;} .pf-pres-it .t{font-weight:700;white-space:nowrap;text-align:right;}
   .pf-pres-vacio{font-size:11px;color:var(--muted);padding:4px 2px;}
   .pf-google{display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fffcf5;font-size:12px;font-weight:600;cursor:pointer;} .pf-google input{width:16px;height:16px;accent-color:var(--accent);margin:0;}
   .pf-unif{margin:12px 0 0;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fbf6ea;}
@@ -5214,7 +5215,7 @@ async function cargarPresupuestosFicha(nombre){
   try{
     const snap = await db.collection('presupuestos').where('paciente','==', nombre).get();
     pfPresDatos = snap.docs.map(d=> ({id:d.id, ...d.data()})).sort((a,b)=> (b.fechaISO||'').localeCompare(a.fechaISO||''));
-    lista.innerHTML = pfPresDatos.length ? pfPresDatos.map((p,i)=> `<div class="pf-pres-it" data-pr="${i}" title="Abrir PDF"><span class="f">${ecFecha(p.fechaISO)}</span><span class="d">${escHtml(p.items.map(x=> x.det).join(' + '))}${p.profesional ? ' · ' + escHtml(p.profesional) : ''}</span><span class="t">${fmtMonto(p.total, p.moneda)}</span></div>`).join('')
+    lista.innerHTML = pfPresDatos.length ? pfPresDatos.map((p,i)=> `<div class="pf-pres-it" data-pr="${i}" title="Abrir PDF"><span class="f">${ecFecha(p.fechaISO)}${p.profesional ? ' · ' + escHtml(p.profesional) : ''}</span><span class="t">${fmtMonto(p.total, p.moneda)}</span><span class="d">${escHtml(p.items.map(x=> x.det).join(' + '))}</span></div>`).join('')
       : '<div class="pf-pres-vacio">Sin presupuestos.</div>';
   }catch(e){ lista.innerHTML = `<div class="pf-pres-vacio">No se pudieron leer los presupuestos.</div>`; }
 }
