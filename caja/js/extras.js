@@ -1348,16 +1348,29 @@ function venVar(act, ant){
   const v = (act/ant - 1)*100;
   return `<span class="${v>=0 ? 'ven-up' : 'ven-down'}">${v>=0?'+':''}${Math.round(v)}%</span>`;
 }
-function renderVentas(){
+// Los movimientos de cada mes se leen una sola vez por sesión (la caja solo tiene en memoria el mes que se está mirando)
+const venCache = {};
+async function venMovsMes(ym){
+  if(venCache[ym]) return venCache[ym];
+  const ini = ym + '-01', fin = venMesAnt(ym, -1) + '-01';
+  const snap = await db.collection('movimientos').where('fechaISO','>=', ini).where('fechaISO','<', fin).get();
+  const l = snap.docs.map(d=> ({id: d.id, ...d.data()}));
+  if(ym < hoyISO().slice(0,7)) venCache[ym] = l;   // los meses cerrados no cambian; el actual se vuelve a leer
+  return l;
+}
+async function renderVentas(){
   const selMes = document.getElementById('venMes');
-  const meses = [...new Set(movimientos.filter(esVentaInforme).map(m=> (m.fechaISO||'').slice(0,7)).filter(Boolean))].sort().reverse();
   const actual = hoyISO().slice(0,7);
-  if(!meses.includes(actual)) meses.unshift(actual);
+  const meses = []; for(let k=0; k<24; k++){ const m = venMesAnt(actual, k); if(m < '2025-01') break; meses.push(m); }
   const elegido = selMes.value || actual;
   selMes.innerHTML = meses.map(m=> `<option value="${m}" ${m===elegido?'selected':''}>${MESES[+m.slice(5)-1]} ${m.slice(0,4)}</option>`).join('');
   const nComp = Number(document.getElementById('venComp').value) || 3;
   const cols = []; for(let k=nComp; k>=1; k--) cols.push(venMesAnt(elegido, k)); cols.push(elegido);
   const enCols = new Set(cols);
+  document.getElementById('venKpis').innerHTML = '<div class="inf-proximamente" style="grid-column:1/-1">Cargando…</div>';
+  let movimientos;
+  try{ movimientos = (await Promise.all(cols.map(venMovsMes))).flat(); }
+  catch(e){ document.getElementById('venKpis').innerHTML = `<div class="inf-proximamente" style="grid-column:1/-1">No se pudieron leer los movimientos: ${escHtml(e.message)}</div>`; return; }
   // agrupar
   const porProf = {}, porTrat = {}, porDesc = {}, tot = {}, totUsd = {}, cant = {};
   cols.forEach(c=>{ tot[c] = 0; totUsd[c] = 0; cant[c] = 0; });

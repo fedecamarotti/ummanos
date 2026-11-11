@@ -7,9 +7,9 @@
 if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1)){
   var vp=document.querySelector('meta[name=viewport]'); if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0');
 }</script>
-<link rel="manifest" href="/manifest.webmanifest?v=2">
+<link rel="manifest" href="/manifest.webmanifest?v=202611112007">
 <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=2">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611112007">
 <meta name="theme-color" content="#fffcf5">
 <title>CAJA UMMANA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,7 +27,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<link rel="stylesheet" href="caja.css?v=202611111956">
+<link rel="stylesheet" href="caja.css?v=202611112007">
 </head>
 <body>
 
@@ -554,6 +554,13 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
           <tfoot id="tfootCaja" class="fila-totales"></tfoot>
         </table>
         </div>
+        <!-- Celular: los movimientos como tarjetas (la tabla se oculta) -->
+        <div class="mc-wrap" id="movCel">
+          <input type="text" class="mc-bus" id="mcBuscar" placeholder="Buscar paciente, concepto, profesional…" autocomplete="off" data-no-mayus>
+          <div class="mc-chips" id="mcChips"><button type="button" class="on" data-f="">Todos</button><button type="button" data-f="ing">Ingresos</button><button type="button" data-f="egr">Egresos</button><button type="button" data-f="deu">Con deuda</button></div>
+          <div id="mcLista"></div>
+          <div class="mc-tot" id="mcTot"></div>
+        </div>
       </div>
 
       <div class="panel-gate" id="panelGate">
@@ -880,7 +887,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <button class="s-tab" data-inf="packs">Bienestar - Packs</button>
         <button class="s-tab" data-inf="sueroterapia">Sueroterapia</button>
         <button class="s-tab" data-inf="aumentos">Aumentos</button>
-        <button class="s-tab" data-inf="ventas">Ventas</button>
+        <button class="s-tab col-hidden" data-inf="ventas" id="infTabVentas">Ventas</button>
         <button class="s-tab s-tab-inactivo" title="Próximamente">Informe mensual</button>
       </div>
       <div></div>
@@ -1828,11 +1835,11 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
 
 </div><!-- /#app -->
 
-<script src="js/base.js?v=202611111956"></script>
-<script src="js/caja.js?v=202611111956"></script>
-<script src="js/sueros.js?v=202611111956"></script>
-<script src="js/cremas.js?v=202611111956"></script>
-<script src="js/paneles.js?v=202611111956"></script>
-<script src="js/extras.js?v=202611111956"></script>
+<script src="js/base.js?v=202611112007"></script>
+<script src="js/caja.js?v=202611112007"></script>
+<script src="js/sueros.js?v=202611112007"></script>
+<script src="js/cremas.js?v=202611112007"></script>
+<script src="js/paneles.js?v=202611112007"></script>
+<script src="js/extras.js?v=202611112007"></script>
 </body>
 </html>

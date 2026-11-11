@@ -504,6 +504,7 @@ function aplicarRolUI(){
   document.getElementById('btnSueros').classList.toggle('col-hidden', !esAdminSueros());
   document.getElementById('btnCremas').classList.toggle('col-hidden', !esFede());
   document.getElementById('btnConta').classList.toggle('col-hidden', !esFede());
+  document.getElementById('infTabVentas').classList.toggle('col-hidden', !esFede());   // informe de ventas: por ahora solo Fede
   document.getElementById('sBtnPacientes').classList.toggle('col-hidden', !esAdminSueros());
   // Fila de secciones arriba y los botones de cada sección debajo (cada uno ve solo lo que tiene acceso)
   const tabs = document.getElementById('fedeTabs');
@@ -865,7 +866,65 @@ function renderTabla(){
   });
   renderTotalesCaja(movimientos.filter(pasaFiltros));
   renderDeudoresCount();
+  if(MQ_CEL.matches) renderMovCel();
 }
+
+/* ---- CELULAR: movimientos como tarjetas, con buscador, filtros rápidos y totales del día abajo ---- */
+const MQ_CEL = window.matchMedia('(max-width: 700px)');
+MQ_CEL.addEventListener('change', ()=>{ if(MQ_CEL.matches) renderMovCel(); });
+let mcFiltro = '';
+const DIAS_SEM = ['DOMINGO','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
+function renderMovCel(){
+  const lista = document.getElementById('mcLista'); if(!lista) return;
+  const q = document.getElementById('mcBuscar').value.trim();
+  const hoy = hoyISO();
+  const filas = movimientos.filter(m=>{
+    if(esCajaGrande(m)) return false;
+    const egr = esGastoMov(m);
+    if(mcFiltro==='ing' && egr) return false;
+    if(mcFiltro==='egr' && !egr) return false;
+    if(mcFiltro==='deu' && !m.tieneDeudaPendiente) return false;
+    if(q && !contiene([m.pac, m.concepto, m.prof, m.notas, m.fechaDisplay].join(' '), q)) return false;
+    return true;
+  }).slice().reverse();   // lo más nuevo arriba
+  if(!filas.length){ lista.innerHTML = `<div class="mc-vacio">${q || mcFiltro ? 'Sin movimientos para esa búsqueda.' : 'Todavía no hay movimientos este mes.'}</div>`; }
+  else {
+    const porDia = [];
+    filas.forEach(m=>{ const u = porDia[porDia.length-1]; if(u && u.f===m.fechaISO) u.l.push(m); else porDia.push({f: m.fechaISO, l: [m]}); });
+    lista.innerHTML = porDia.map(g=>{
+      const [y,mm,dd] = g.f.split('-').map(Number), dia = DIAS_SEM[new Date(y, mm-1, dd).getDay()];
+      return `<div class="mc-dia"><span>${g.f===hoy ? 'HOY · ' : ''}${dia} ${dd}/${mm}</span><span>${g.l.length} ${g.l.length===1 ? 'movimiento' : 'movimientos'}</span></div>` +
+        g.l.map(m=>{
+          const egr = esGastoMov(m);
+          const esPac = !egr && nombresPacientes.has(mayus(m.pac||''));
+          const tags = medioBadgesHTML(m)
+            + (m.descuentoLbl ? `<span class="badge mc-desc">${escHtml(m.descuentoLbl)}</span>` : '')
+            + (m.jornada ? '<span class="badge mc-desc">JORNADA</span>' : '');
+          return `<div class="mc-card">
+            <div class="mc-top"><div class="mc-txt"><div class="mc-pac">${esPac ? `<span class="pac-link" data-pac="${escHtml(m.pac)}">${escHtml(m.pac||'')}</span>` : escHtml(m.pac||'')}</div>
+              <div class="mc-con">${escHtml(m.concepto||'')}</div><div class="mc-pro">${escHtml(m.prof||'')}${m.notas ? ' · ' + escHtml(m.notas) : ''}</div></div>
+              <div class="mc-monto ${m.valor==0 ? '' : (egr ? 'egreso' : 'ingreso')}">${egr ? '−' : '+'}${fmtTotal(m)}</div></div>
+            <div class="mc-pie"><div class="mc-tags">${tags}</div>${m.migrado ? '' : `<button class="mc-lapiz" title="Editar" onclick="abrirEdicion('${m.id}')">${ico('lapiz')}</button>`}</div>
+          </div>`;
+        }).join('');
+    }).join('');
+  }
+  // pie: ingresos de hoy (en pesos) y efectivo esperado en la caja abierta
+  const ingHoy = movimientos.filter(m=> m.fechaISO===hoy && !esCajaGrande(m) && !esGastoMov(m) && m.moneda!=='USD').reduce((a,m)=> a + (Number(m.valor)||0), 0);
+  const tot = document.getElementById('mcTot');
+  tot.innerHTML = `<div><small>Ingresos de hoy</small><b>${fmtMonto(ingHoy,'$')}</b></div><div class="r"><small>Efectivo en caja</small><b id="mcEfec">${cajaActual ? '…' : '—'}</b></div>`;
+  if(cajaActual) calcularEsperadoCaja().then(v=>{ const e = document.getElementById('mcEfec'); if(e) e.textContent = fmtMonto(v,'$'); }).catch(()=>{});
+}
+document.getElementById('mcBuscar').addEventListener('input', renderMovCel);
+document.getElementById('mcChips').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  mcFiltro = b.dataset.f;
+  document.querySelectorAll('#mcChips button').forEach(x=> x.classList.toggle('on', x===b));
+  renderMovCel();
+});
+document.getElementById('mcLista').addEventListener('click', e=>{
+  const el = e.target.closest('.pac-link'); if(el) abrirFichaPacientePorNombre(el.dataset.pac);
+});
 
 // Fila "Totales": suma solo lo que queda a la vista con los filtros (egresos restan)
 function renderTotalesCaja(filas){
