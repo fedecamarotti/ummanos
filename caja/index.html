@@ -5370,7 +5370,7 @@ const UMM_CONTACTO = [['ic-mail','info@ummana.ar'],['ic-wa','11 3920-8108'],['ic
 async function pdfPresupuesto(pr){
   if(pr.sinTotal) return pdfPresupuestoOpciones(pr);
   const tot = [{lbl:'Subtotal', val: fmtMonto(pr.subtotal, pr.moneda), tipo:'sub'}];
-  if(pr.descuento) tot.push({lbl: pr.descuentoLbl, val: '-' + fmtMonto(pr.descuento, pr.moneda), tipo:'desc'});
+  if(pr.descuento) tot.push({lbl: 'Descuento', val: '-' + fmtMonto(pr.descuento, pr.moneda), tipo:'desc'});
   tot.push({lbl:'TOTAL', val: fmtMonto(pr.total, pr.moneda), tipo:'total'});
   const doc = await pdfFormatoUmmana({
     titulo: 'PRESUPUESTO',
@@ -5389,7 +5389,7 @@ async function pdfPresupuesto(pr){
 async function pdfPresupuestoOpciones(pr){
   const pct = pr.descuentoPct || 0;
   const head = ['Opción','Cant.','Valor','Subtotal'];
-  if(pct) head.push(pr.descuentoLbl);
+  if(pct) head.push('Con descuento');
   const body = pr.items.map(i=>{
     const sub = i.cant * i.val, f = [i.det, String(i.cant), fmtMonto(i.val, pr.moneda), fmtMonto(sub, pr.moneda)];
     if(pct) f.push(fmtMonto(pr.redondeo ? totalConDescuento(sub, pct, pr.moneda) : sub - Math.round(sub * pct / 100), pr.moneda));
