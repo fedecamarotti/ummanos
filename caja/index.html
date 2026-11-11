@@ -665,6 +665,11 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .s-caption-row{display:flex;justify-content:space-between;align-items:center;}
   .s-calc-info{margin-top:6px;padding:7px 12px;background:#eef5e8;border:1px solid #cfe3c0;border-radius:8px;color:#3d5a2c;font-weight:600;}
   .tabla-stock tr.s-critico td{background:#fbe3e1 !important;}
+  .tabla-stock td.s-cont-td{white-space:nowrap;}
+  .tabla-stock input.s-cont{width:58px;padding:4px 6px;text-align:center;border:1px solid var(--border);border-radius:7px;background:#fff;font:inherit;font-size:11px;}
+  .s-cont-ok,.s-cont-mal,.s-cont-esp{display:inline-block;width:18px;margin-left:5px;font-weight:800;font-size:13px;text-align:center;}
+  .s-cont-ok{color:#2f7a2f;} .s-cont-mal{color:#c0392b;}
+  .btn.s-cont-limpiar{padding:4px 10px;font-size:10.5px;}
   .tabla-stock tr.s-critico td:first-child{box-shadow:inset 3px 0 0 #c0392b;}
   .tabla-stock input.s-crit{width:58px;padding:3px 6px;font-size:11px;text-align:center;border:1px solid var(--border);border-radius:6px;background:#fdfbf2;}
   .tabla-stock input.s-crit:focus{outline:none;border-color:var(--accent);background:#fffcf5;}
@@ -2039,7 +2044,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
               <th><div class="th-search">Total</div></th>
               <th><div class="th-search">Stock</div></th>
               <th><div class="th-search" title="Si el stock llega a este número o menos, la fila se marca en rojo">Mín. crítico</div></th>
-              <th><div class="th-search" title="Stock ideal: Calcular compra muestra cuánto falta para llegar">Máx. crítico</div></th>
+              <th id="sThCont" class="col-hidden"><div class="th-search" title="Conteo manual: tiene que coincidir con el Stock">Cont</div></th>
               <th id="sThFaltan" class="col-hidden"><div class="th-search">Comprar</div></th>
               <th class="editcol"></th>
             </tr>
@@ -6138,11 +6143,15 @@ function suscribirSueros(){
     suerosStockInicial = d.exists ? d.data() : null;
     renderSueros(); renderPortalSueros();
   }, ()=>{});
+  const unsubCont = esFede() ? db.collection('sueros').doc('_conteo').onSnapshot(d=>{
+    suerosConteo = (d.exists && d.data().lista) || {};
+    if(sTabActual==='stock' && !document.activeElement.classList.contains('s-cont')) renderSueros();
+  }, ()=>{}) : ()=>{};
   const unsubCrit = db.collection('sueros').doc('_criticos').onSnapshot(d=>{
     suerosCriticos = (d.exists && d.data().lista) || {};
     if(sTabActual==='stock') renderSueros();
   }, ()=>{});
-  unsubSueros = ()=>{ unsubMovs(); unsubCfg(); unsubEx(); unsubOrden(); unsubCrit(); unsubIni(); };
+  unsubSueros = ()=>{ unsubMovs(); unsubCfg(); unsubEx(); unsubOrden(); unsubCrit(); unsubIni(); unsubCont(); };
 }
 
 /* ---- Mes y pestañas ---- */
@@ -6513,7 +6522,9 @@ function renderStock(){
   btnCalc.textContent = sCalcCompra ? '✓ Calcular compra' : '🧮 Calcular compra';
   btnCalc.classList.toggle('btn-primary', sCalcCompra);
   // Columnas (la de "Faltan" solo con Calcular compra)
-  document.getElementById('sStockCols').innerHTML = `<col><col style="width:116px"><col style="width:124px"><col style="width:80px"><col style="width:84px"><col style="width:84px">${sCalcCompra ? '<col style="width:90px">' : ''}<col style="width:56px">`;
+  const verCont = esFede();
+  document.getElementById('sThCont').classList.toggle('col-hidden', !verCont);
+  document.getElementById('sStockCols').innerHTML = `<col><col style="width:116px"><col style="width:124px"><col style="width:80px"><col style="width:84px">${verCont ? '<col style="width:104px">' : ''}${sCalcCompra ? '<col style="width:90px">' : ''}<col style="width:56px">`;
   document.getElementById('sThFaltan').classList.toggle('col-hidden', !sCalcCompra);
   // Filtro por proveedor: los insumos que alguna vez se le compraron (el kit, si le compraste algún componente)
   const selProv = document.getElementById('sStockProv');
@@ -6530,7 +6541,7 @@ function renderStock(){
   const lista = todos.filter(i=> (!q || contiene(i.insumo, q)) && (!delProv || delProv.has(i.insumo)));
   const body = document.getElementById('sStockBody');
   const foot = document.getElementById('sStockFoot');
-  const nCols = sCalcCompra ? 8 : 7;
+  const nCols = 6 + (sCalcCompra ? 1 : 0) + (esFede() ? 1 : 0);
   const guion = '<span class="pend">—</span>';
   if(!lista.length){
     body.innerHTML = `<tr><td colspan="${nCols}" class="empty-state">${todos.length ? 'No hay insumos con ese nombre.' : 'Todavía no hay insumos. Cargá una compra (egreso) para empezar el stock.'}</td></tr>`;
@@ -6555,6 +6566,14 @@ function renderStock(){
     if(puedeEditar) return `<td><input class="s-crit" data-k="${escAttr(i.insumo)}" data-campo="${campo}" inputmode="numeric" value="${v!=null && v!=='' ? v : ''}" placeholder="—"></td>`;
     return `<td>${v!=null && v!=='' ? Number(v).toLocaleString('es-AR') : guion}</td>`;
   };
+  // Conteo manual (solo Fede): al lado muestra ✓ si coincide con el stock o ✗ si no
+  const celdaCont = i=>{
+    if(!esFede()) return '';
+    const v = suerosConteo[i.insumo];
+    const hay = v!=null && v!=='';
+    const marca = !hay ? '' : (Number(v)===i.cant ? '<span class="s-cont-ok" title="Coincide">✓</span>' : `<span class="s-cont-mal" title="No coincide: el stock es ${i.cant.toLocaleString('es-AR')}">✗</span>`);
+    return `<td class="s-cont-td"><input class="s-cont" data-k="${escAttr(i.insumo)}" inputmode="numeric" value="${hay ? v : ''}" placeholder="—">${marca || '<span class="s-cont-esp"></span>'}</td>`;
+  };
   const faltanDe = i=>{
     const max = (suerosCriticos[i.insumo]||{}).max;
     if(max==null || max==='') return null;
@@ -6568,7 +6587,7 @@ function renderStock(){
     <tr>
       <td class="left" title="Suma de ${componentesVias().join(', ')}">${i.insumo}</td>
       <td>${i.valorUnit ? fmtPesos(i.valorUnit) : guion}</td>
-      <td>${guion}</td><td>${guion}</td><td>${guion}</td><td>${guion}</td>${sCalcCompra ? `<td>${guion}</td>` : ''}
+      <td>${guion}</td><td>${guion}</td><td>${guion}</td>${esFede() ? `<td>${guion}</td>` : ''}${sCalcCompra ? `<td>${guion}</td>` : ''}
       <td class="editcol">${ordCell(i) || '<button class="editbtn" style="visibility:hidden" tabindex="-1">&#9998;</button>'}</td>
     </tr>`;
     const min = (suerosCriticos[i.insumo]||{}).min;
@@ -6581,7 +6600,7 @@ function renderStock(){
       <td>${i.valorUnit ? fmtPesos(i.valorUnit) : guion}</td>
       <td class="${i.total<0?'neg':''}">${fmtPesos(i.total)}</td>
       <td class="${i.cant<0?'neg':''}" style="font-weight:700;">${i.cant.toLocaleString('es-AR')}</td>
-      ${celdaCrit(i,'min')}${celdaCrit(i,'max')}
+      ${celdaCrit(i,'min')}${celdaCont(i)}
       ${sCalcCompra ? `<td class="s-faltan">${f==null ? guion : (f>0 ? `<b>Faltan ${f.toLocaleString('es-AR')}</b>` : '<span class="ok">0</span>')}</td>` : ''}
       <td class="editcol">${ordCell(i) || `<button class="editbtn" title="Editar insumo" data-insumo="${escAttr(i.insumo)}">&#9998;</button>`}</td>
     </tr>`;
@@ -6594,6 +6613,19 @@ function renderStock(){
     inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } });
     inp.addEventListener('blur', ()=> guardarCritico(inp.dataset.k, inp.dataset.campo, inp.value));
   });
+  body.querySelectorAll('.s-cont').forEach(inp=>{
+    inp.addEventListener('input', ()=> inp.value = inp.value.replace(/[^\d-]/g,''));
+    inp.addEventListener('keydown', e=>{
+      if(e.key==='Enter'){   // Enter pasa al siguiente para contar rápido
+        e.preventDefault();
+        const todos = [...body.querySelectorAll('.s-cont')], j = todos.indexOf(inp);
+        sContSiguiente = todos[j+1] ? todos[j+1].dataset.k : null;
+        inp.blur();
+      }
+    });
+    inp.addEventListener('blur', ()=> guardarConteo(inp.dataset.k, inp.value));
+  });
+  if(sContSiguiente){ const sig = body.querySelector(`.s-cont[data-k="${CSS.escape(sContSiguiente)}"]`); sContSiguiente = null; if(sig){ sig.focus(); sig.select(); } }
   const sinKit = lista.filter(i=> !i.kit);
   const totVal = sinKit.reduce((a,i)=> a+i.total, 0);
   const totCant = sinKit.reduce((a,i)=> a+i.cant, 0);
@@ -6605,13 +6637,36 @@ function renderStock(){
       <td></td>
       <td>${fmtPesos(totVal)}</td>
       <td>${totCant.toLocaleString('es-AR')}</td>
-      <td></td><td></td>
+      <td></td>
+      ${esFede() ? '<td><button type="button" class="btn s-cont-limpiar" id="sContLimpiar" title="Borra toda la columna Cont">Limpiar</button></td>' : ''}
       ${sCalcCompra ? `<td title="Costo estimado al último precio: ${fmtPesos(costoCompra)}">${totFaltan.toLocaleString('es-AR')}</td>` : ''}
       <td></td>
     </tr>`;
+  const bl = document.getElementById('sContLimpiar');
+  if(bl) bl.onclick = async ()=>{
+    if(!Object.keys(suerosConteo).length) return;
+    if(!confirm('¿Limpiar toda la columna Cont?')) return;
+    suerosConteo = {}; renderStock();
+    try{ await db.collection('sueros').doc('_conteo').set({lista: {}}); }catch(e){ alert('No se pudo limpiar: ' + e.message); }
+  };
   document.getElementById('sCalcInfo').classList.toggle('col-hidden', !sCalcCompra);
   document.getElementById('sCalcInfo').innerHTML = sCalcCompra
     ? `Para llegar al máx. crítico faltan <b>${totFaltan.toLocaleString('es-AR')}</b> unidades · costo estimado (al último precio de compra): <b>${fmtPesos(costoCompra)}</b>` : '';
+}
+let suerosConteo = {};       // sueros/_conteo → { "INSUMO": n } (conteo manual de Fede)
+let sContSiguiente = null;
+async function guardarConteo(insumo, valor){
+  if(!esFede()) return;
+  const v = valor==='' || valor==='-' ? null : Number(valor);
+  const actual = suerosConteo[insumo];
+  if((actual==null) && v==null){ if(sContSiguiente) renderStock(); return; }
+  if(actual===v){ if(sContSiguiente) renderStock(); return; }
+  const nuevo = {...suerosConteo};
+  if(v==null) delete nuevo[insumo]; else nuevo[insumo] = v;
+  suerosConteo = nuevo;
+  renderStock();
+  try{ await db.collection('sueros').doc('_conteo').set({lista: nuevo}); }
+  catch(e){ alert("No se pudo guardar el conteo: " + e.message); }
 }
 async function guardarCritico(insumo, campo, valor){
   if(!esAdminSueros()) return;
