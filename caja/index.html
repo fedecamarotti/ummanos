@@ -977,7 +977,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   #overlayPresupuesto .ac-wrap{width:100%;}
   #prNotas,#ecNotas{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:10px;background:#fff;font:inherit;font-size:13px;resize:vertical;}
   .editbtn.cn-ojo{color:var(--accent-dk);opacity:1;display:inline-flex;align-items:center;justify-content:center;}
-  .tr-wrap{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px max(4px, calc((100% - 960px) / 2)) 40px;}
+  .tr-wrap{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px max(14px, calc((100% - 960px) / 2)) 40px;}
   .tr-tit{text-align:center;font-size:16px;letter-spacing:.5px;text-transform:uppercase;margin:6px 0 4px;}
   .tr-lab{margin:16px 2px 6px;font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
   .tr-inp{width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font:inherit;font-size:13px;font-weight:600;}
@@ -2763,7 +2763,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <div class="tipo-toggle" id="prMoneda"><button type="button" data-mon="$" class="active">$</button><button type="button" data-mon="USD">USD</button></div></div>
     </div>
     <div class="field"><label>Paciente</label><div class="ac-wrap"><input type="text" id="prPac" placeholder="Escribí para buscar…" autocomplete="off" data-ac-libre></div></div>
-    <div class="field"><label>Profesional (Dr / Dra)</label><div class="ac-wrap"><input type="text" id="prProf" placeholder="Escribí para buscar…" autocomplete="off"></div></div>
+    <div class="field"><label>Dr. Dra. / Área</label><div class="ac-wrap"><input type="text" id="prProf" placeholder="Escribí para buscar…" autocomplete="off"></div></div>
     <div class="field"><label>Tratamientos</label>
       <div class="pr-cab"><span>Detalle</span><span>Cant.</span><span>Valor</span><span></span></div>
       <div id="prItems"></div>
@@ -5278,7 +5278,7 @@ async function pdfPresupuesto(pr){
   tot.push({lbl:'TOTAL', val: fmtMonto(pr.total, pr.moneda), tipo:'total'});
   const doc = await pdfFormatoUmmana({
     titulo: 'PRESUPUESTO',
-    datos: [['PACIENTE', pr.paciente, true], ['FECHA', ecFecha(pr.fechaISO)], ['DR / DRA', pr.profesional || '-']],
+    datos: [['PACIENTE', pr.paciente, true], ['FECHA', ecFecha(pr.fechaISO)], ['DR. DRA. / ÁREA', pr.profesional || '-']],
     head: ['Detalle','Cant.','Valor','Subtotal'],
     body: pr.items.map(i=> [i.det, String(i.cant), fmtMonto(i.val, pr.moneda), fmtMonto(i.cant * i.val, pr.moneda)]),
     columnStyles: {1:{halign:'center', cellWidth:44}, 2:{halign:'right', cellWidth:90}, 3:{halign:'right', cellWidth:95}},
@@ -5304,7 +5304,7 @@ async function pdfPresupuestoOpciones(pr){
     : {1:{halign:'center', cellWidth:44}, 2:{halign:'right', cellWidth:90}, 3:{halign:'right', cellWidth:95, fontStyle:'bold'}};
   const doc = await pdfFormatoUmmana({
     titulo: 'PRESUPUESTO',
-    datos: [['PACIENTE', pr.paciente, true], ['FECHA', ecFecha(pr.fechaISO)], ['DR / DRA', pr.profesional || '-']],
+    datos: [['PACIENTE', pr.paciente, true], ['FECHA', ecFecha(pr.fechaISO)], ['DR. DRA. / ÁREA', pr.profesional || '-']],
     head, body, columnStyles, totales: [],
     notas: pr.notas || '',
     observaciones: pr.observaciones || PR_OBSERVACIONES,
