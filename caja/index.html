@@ -515,6 +515,23 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .asis-filtros button.on{background:#f3dfd5;border-color:#c0705a;font-weight:700;}
   .asis-filtros i{width:12px;height:3px;border-radius:2px;display:inline-block;}
   .asis-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px;}
+  .ven-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+  .ven-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;}
+  .ven-kpi{background:#fffcf5;border:1px solid var(--border);border-radius:14px;padding:12px 14px;}
+  .ven-kpi .l{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+  .ven-kpi .v{font-size:19px;font-weight:700;margin-top:4px;}
+  .ven-kpi .c{font-size:11px;margin-top:2px;color:var(--muted);}
+  .ven-card{margin-bottom:12px;} .ven-card .asis-tit{margin-bottom:8px;}
+  .ven-2col{display:grid;grid-template-columns:1.4fr 1fr;gap:12px;}
+  .ven-tabla{width:100%;border-collapse:collapse;font-size:11.5px;}
+  .ven-tabla th{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;padding:6px 8px;text-align:center;border-bottom:1px solid var(--border);}
+  .ven-tabla td{padding:6px 8px;border-bottom:1px solid #f0e8d6;text-align:right;white-space:nowrap;}
+  .ven-tabla td.l{text-align:left;white-space:normal;}
+  .ven-tabla td.sel{font-weight:700;background:#fbf6ea;}
+  .ven-tabla tfoot td{font-weight:700;border-top:2px solid var(--border);border-bottom:none;}
+  .ven-up{color:#2f7a2f;font-weight:700;} .ven-down{color:#a13a3a;font-weight:700;}
+  .ven-bar{height:6px;border-radius:3px;background:#d9c79c;margin-top:3px;}
+  .ven-sub{font-size:9.5px;color:var(--muted);}
   .asis-est{background:#fffcf5;border:1px solid var(--border);border-radius:12px;padding:9px 12px;cursor:pointer;min-width:0;}
   .asis-est:hover{border-color:#d9c9a3;}
   .asis-est.sel{border-color:#c0705a;background:#fbf0ea;}
@@ -1370,6 +1387,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     .pdf-fondo{max-height:calc(68vh / .82) !important;}
     #portal{min-height:calc(100vh / .82);}
     .asis-head{flex-direction:column;align-items:stretch;}
+    .ven-kpis{grid-template-columns:1fr 1fr;} .ven-2col{grid-template-columns:1fr;}
+    .ven-card{overflow-x:auto;}
     .asis-per{flex-wrap:wrap;justify-content:flex-start;row-gap:6px;}
     .asis-per select{padding:4px 4px;font-size:11.5px;}
     .asis-per{flex-wrap:wrap;gap:5px;}
@@ -2256,6 +2275,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <button class="s-tab" data-inf="packs">Bienestar - Packs</button>
         <button class="s-tab" data-inf="sueroterapia">Sueroterapia</button>
         <button class="s-tab" data-inf="aumentos">Aumentos</button>
+        <button class="s-tab" data-inf="ventas">Ventas</button>
         <button class="s-tab s-tab-inactivo" title="Próximamente">Informe mensual</button>
       </div>
       <div></div>
@@ -2282,6 +2302,19 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <div class="aum-ley"><span><i class="pag"></i>Valor hora pagado</span><span><i class="ipc"></i>Valor según IPC</span></div>
       </div>
       <div class="asis-nota col-hidden" id="aumNota"></div>
+    </div>
+    <div class="asis-panel col-hidden" id="venPanel">
+      <div class="ven-top">
+        <div class="asis-tit">Ventas y descuentos</div>
+        <div class="asis-per"><span>Mes</span><select id="venMes"></select><span>comparado con los</span><select id="venComp"><option value="3" selected>3 meses anteriores</option><option value="6">6 meses anteriores</option><option value="1">mes anterior</option></select></div>
+      </div>
+      <div class="ven-kpis" id="venKpis"></div>
+      <div class="asis-card ven-card"><div class="asis-tit">Ventas por profesional / área</div><div id="venProf"></div></div>
+      <div class="ven-2col">
+        <div class="asis-card ven-card"><div class="asis-tit">Tratamientos más vendidos</div><div id="venTrat"></div></div>
+        <div class="asis-card ven-card"><div class="asis-tit">Descuentos por motivo</div><div id="venDesc"></div></div>
+      </div>
+      <div class="asis-nota">Ventas = ingresos de la caja diaria (sin caja grande, sin saldos de deuda ni cambios de caja). Montos en pesos; si hubo ventas en dólares se muestran aparte. Los descuentos se registran desde el 11/11/2026: el monto descontado sale de comparar el valor de lista del concepto con lo cobrado.</div>
     </div>
    </div><!-- /#vistaInformes -->
   </div>
@@ -11682,6 +11715,9 @@ document.querySelectorAll('#vistaInformes [data-inf]').forEach(b=> b.onclick = (
   asisTipo = b.dataset.inf; asisSel = null; asisData = null; asisModo = 'p';
   document.getElementById('asisPanel').classList.toggle('col-hidden', asisTipo==='aumentos');
   document.getElementById('aumPanel').classList.toggle('col-hidden', asisTipo!=='aumentos');
+  document.getElementById('venPanel').classList.toggle('col-hidden', asisTipo!=='ventas');
+  document.getElementById('asisPanel').classList.toggle('col-hidden', asisTipo==='aumentos' || asisTipo==='ventas');
+  if(asisTipo==='ventas'){ document.querySelectorAll('#vistaInformes [data-inf]').forEach(x=> x.classList.toggle('active', x===b)); renderVentas(); return; }
   if(asisTipo==='aumentos'){ document.querySelectorAll('#vistaInformes [data-inf]').forEach(x=> x.classList.toggle('active', x===b)); cargarAumentos(); return; }
   document.querySelectorAll('#asisModo button').forEach(x=> x.classList.toggle('on', x.dataset.modo==='p'));
   document.getElementById('asisModo').classList.toggle('col-hidden', !ASIS_CON_MODO[asisTipo]);
@@ -11800,6 +11836,83 @@ function renderAsistencias(){
 }
 /* ---- Informes · Aumentos (valor hora secretaría vs IPC INDEC) — adminCharts/aumentos {valores:{'AAAA-MM':valor}, ipc:{'AAAA-MM':%}} ---- */
 let aumData = null;
+/* ---- Informe de VENTAS: por profesional, tratamientos más vendidos y descuentos por motivo, con comparación mensual ---- */
+function esVentaInforme(m){
+  if(!m || esGastoMov(m) || esCajaGrande(m) || m._cajaBorrada) return false;
+  if(m.saldaDeuda || (m.saldaDeudas||[]).length || /^salda deuda/i.test(m.concepto||'')) return false;
+  if(typeof esCambioDeGrande==='function' && esCambioDeGrande(m)) return false;
+  if(mayus(m.prof||'')==='CAJA DIARIA') return false;
+  return true;
+}
+const venMesLbl = ym=> { const [y,mm] = ym.split('-'); return `${MESES[+mm-1].slice(0,3)} ${y.slice(2)}`; };
+const venMesAnt = (ym, k)=> { const [y,mm] = ym.split('-').map(Number); const d = new Date(y, mm-1-k, 1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; };
+function venVar(act, ant){
+  if(!ant) return act ? '<span class="ven-up">nuevo</span>' : '<span class="ven-sub">—</span>';
+  const v = (act/ant - 1)*100;
+  return `<span class="${v>=0 ? 'ven-up' : 'ven-down'}">${v>=0?'+':''}${Math.round(v)}%</span>`;
+}
+function renderVentas(){
+  const selMes = document.getElementById('venMes');
+  const meses = [...new Set(movimientos.filter(esVentaInforme).map(m=> (m.fechaISO||'').slice(0,7)).filter(Boolean))].sort().reverse();
+  const actual = hoyISO().slice(0,7);
+  if(!meses.includes(actual)) meses.unshift(actual);
+  const elegido = selMes.value || actual;
+  selMes.innerHTML = meses.map(m=> `<option value="${m}" ${m===elegido?'selected':''}>${MESES[+m.slice(5)-1]} ${m.slice(0,4)}</option>`).join('');
+  const nComp = Number(document.getElementById('venComp').value) || 3;
+  const cols = []; for(let k=nComp; k>=1; k--) cols.push(venMesAnt(elegido, k)); cols.push(elegido);
+  const enCols = new Set(cols);
+  // agrupar
+  const porProf = {}, porTrat = {}, porDesc = {}, tot = {}, totUsd = {}, cant = {};
+  cols.forEach(c=>{ tot[c] = 0; totUsd[c] = 0; cant[c] = 0; });
+  movimientos.forEach(m=>{
+    if(!esVentaInforme(m)) return;
+    const ym = (m.fechaISO||'').slice(0,7); if(!enCols.has(ym)) return;
+    const v = Number(m.valor)||0, usd = m.moneda==='USD';
+    cant[ym]++;
+    if(usd){ totUsd[ym] += v; return; }   // los rankings van en pesos
+    tot[ym] += v;
+    const pf = m.prof || 'SIN ÁREA';
+    (porProf[pf] ||= {})[ym] = (porProf[pf][ym]||0) + v;
+    const tk = (m.concepto||'—') + '||' + pf;
+    const t = (porTrat[tk] ||= {});
+    t[ym] = t[ym] || {n:0, v:0}; t[ym].n++; t[ym].v += v;
+    if(m.descuentoPct){
+      const dk = m.descuentoLbl || `${m.descuentoPct}%`;
+      const d = (porDesc[dk] ||= {});
+      d[ym] = d[ym] || {n:0, v:0}; d[ym].n++;
+      if(m.valorLista && m.valorLista > v) d[ym].v += m.valorLista - v;
+    }
+  });
+  const ant = cols[cols.length-2];
+  const fmt = v=> v ? fmtMonto(v,'$') : '<span class="ven-sub">—</span>';
+  // KPIs
+  const descMes = Object.values(porDesc).reduce((a,d)=> a + ((d[elegido]||{}).v||0), 0);
+  const descN = Object.values(porDesc).reduce((a,d)=> a + ((d[elegido]||{}).n||0), 0);
+  const prom = cols.slice(0,-1).reduce((a,c)=> a + tot[c], 0) / Math.max(1, cols.length-1);
+  document.getElementById('venKpis').innerHTML = `
+    <div class="ven-kpi"><div class="l">Ventas del mes</div><div class="v">${fmtMonto(tot[elegido],'$')}</div><div class="c">${venVar(tot[elegido], tot[ant])} vs ${venMesLbl(ant)}${totUsd[elegido] ? ` · + ${fmtMonto(totUsd[elegido],'USD')}` : ''}</div></div>
+    <div class="ven-kpi"><div class="l">Promedio meses anteriores</div><div class="v">${fmtMonto(Math.round(prom),'$')}</div><div class="c">${venVar(tot[elegido], prom)} este mes contra el promedio</div></div>
+    <div class="ven-kpi"><div class="l">Movimientos de venta</div><div class="v">${cant[elegido].toLocaleString('es-AR')}</div><div class="c">${venVar(cant[elegido], cant[ant])} vs ${venMesLbl(ant)}</div></div>
+    <div class="ven-kpi"><div class="l">Descontado en el mes</div><div class="v">${fmtMonto(descMes,'$')}</div><div class="c">${descN} ${descN===1?'venta':'ventas'} con descuento</div></div>`;
+  // por profesional
+  const profs = Object.keys(porProf).sort((a,b)=> (porProf[b][elegido]||0) - (porProf[a][elegido]||0) || a.localeCompare(b,'es'));
+  const maxP = Math.max(1, ...profs.map(p=> porProf[p][elegido]||0));
+  document.getElementById('venProf').innerHTML = profs.length ? `<table class="ven-tabla"><thead><tr><th style="text-align:left">Profesional / área</th>${cols.map(c=> `<th>${venMesLbl(c)}</th>`).join('')}<th>vs ${venMesLbl(ant)}</th></tr></thead><tbody>
+    ${profs.map(p=> `<tr><td class="l">${escHtml(p)}<div class="ven-bar" style="width:${Math.round((porProf[p][elegido]||0)/maxP*100)}%"></div></td>${cols.map(c=> `<td class="${c===elegido?'sel':''}">${fmt(porProf[p][c])}</td>`).join('')}<td>${venVar(porProf[p][elegido]||0, porProf[p][ant]||0)}</td></tr>`).join('')}
+    </tbody><tfoot><tr><td class="l">TOTAL</td>${cols.map(c=> `<td>${fmt(tot[c])}</td>`).join('')}<td>${venVar(tot[elegido], tot[ant])}</td></tr></tfoot></table>` : '<div class="inf-proximamente">Sin ventas en este período.</div>';
+  // tratamientos (top 15 del mes elegido)
+  const trats = Object.keys(porTrat).filter(k=> porTrat[k][elegido]).sort((a,b)=> porTrat[b][elegido].v - porTrat[a][elegido].v).slice(0,15);
+  document.getElementById('venTrat').innerHTML = trats.length ? `<table class="ven-tabla"><thead><tr><th style="text-align:left">Tratamiento</th><th>Cant.</th><th>Monto</th><th>Cant. ${venMesLbl(ant)}</th></tr></thead><tbody>
+    ${trats.map((k,i)=>{ const [c, pf] = k.split('||'); const t = porTrat[k]; return `<tr><td class="l">${i+1}. ${escHtml(c)}<div class="ven-sub">${escHtml(pf)}</div></td><td>${t[elegido].n}</td><td class="sel">${fmtMonto(t[elegido].v,'$')}</td><td>${(t[ant]||{}).n || '<span class="ven-sub">—</span>'}</td></tr>`; }).join('')}
+    </tbody></table>` : '<div class="inf-proximamente">Sin ventas en este mes.</div>';
+  // descuentos por motivo
+  const descs = Object.keys(porDesc).filter(k=> cols.some(c=> porDesc[k][c])).sort((a,b)=> ((porDesc[b][elegido]||{}).v||0) - ((porDesc[a][elegido]||{}).v||0));
+  document.getElementById('venDesc').innerHTML = descs.length ? `<table class="ven-tabla"><thead><tr><th style="text-align:left">Motivo</th><th>Ventas</th><th>Descontado</th><th>${venMesLbl(ant)}</th></tr></thead><tbody>
+    ${descs.map(k=>{ const d = porDesc[k], a = d[elegido]||{n:0,v:0}, b = d[ant]||{n:0,v:0}; return `<tr><td class="l">${escHtml(k)}</td><td>${a.n || '<span class="ven-sub">—</span>'}</td><td class="sel">${fmt(a.v)}</td><td>${fmt(b.v)}</td></tr>`; }).join('')}
+    </tbody><tfoot><tr><td class="l">TOTAL</td><td>${descN}</td><td>${fmtMonto(descMes,'$')}</td><td>${fmt(Object.values(porDesc).reduce((x,d)=> x + ((d[ant]||{}).v||0), 0))}</td></tr></tfoot></table>` : '<div class="inf-proximamente">Todavía no hay ventas con descuento en este período.</div>';
+}
+['venMes','venComp'].forEach(id=> document.getElementById(id).addEventListener('change', renderVentas));
+
 async function cargarAumentos(){
   if(!aumData){
     try{ const d = await db.collection('adminCharts').doc('aumentos').get(); aumData = d.exists ? d.data() : null; }
