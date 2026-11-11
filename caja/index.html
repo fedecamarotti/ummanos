@@ -998,10 +998,14 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .pr-total-edit label{font-size:13px;font-weight:700;margin:0;}
   .pr-total-edit input{width:160px;text-align:right;font-size:16px;font-weight:700;padding:8px 12px;border:1px solid var(--border);border-radius:10px;}
   .pr-total-edit input::placeholder{color:#a9a294;font-weight:700;}
+  .ds-cab,.ds-fila{display:grid;grid-template-columns:1fr 70px 34px;gap:6px;align-items:center;}
+  .ds-cab{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;margin:12px 2px 4px;}
+  .ds-fila{margin-bottom:6px;} .ds-fila input{width:100%;} .ds-fila .ds-p{text-align:center;}
   .pr-fila{margin-bottom:6px;} .pr-fila input{width:100%;} .pr-fila .pr-cant{text-align:center;} .pr-fila .pr-val{text-align:right;}
   .pr-tot{text-align:right;font-size:12px;color:var(--muted);line-height:1.7;margin:4px 0 2px;} .pr-tot b{color:var(--text);font-size:16px;}
   #overlayPresupuesto .ac-wrap{width:100%;}
   #prNotas,#ecNotas{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:10px;background:#fff;font:inherit;font-size:13px;resize:vertical;}
+  .caja-explic{font-size:9.5px;font-style:italic;color:var(--text);max-width:170px;margin:3px auto 0;line-height:1.3;white-space:normal;}
   .editbtn.cn-ojo{color:var(--accent-dk);opacity:1;display:inline-flex;align-items:center;justify-content:center;}
   .tr-wrap{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px max(14px, calc((100% - 960px) / 2)) 40px;}
   .tr-tit{text-align:center;font-size:16px;letter-spacing:.5px;text-transform:uppercase;margin:6px 0 4px;}
@@ -1838,6 +1842,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
           <button class="btn" id="btnPacientes"><span class="side-icon"><i data-ico="pacientes"></i></span> Pacientes</button>
           <button class="btn col-hidden" id="btnProfesionalesPanel"><span class="side-icon"><i data-ico="profesionales"></i></span> Profesionales/Áreas</button>
           <button class="btn col-hidden" id="btnConceptosPanel"><span class="side-icon"><i data-ico="conceptos"></i></span> Conceptos</button>
+          <button class="btn col-hidden" id="btnDescuentosPanel"><span class="side-icon"><i data-ico="porcentaje"></i></span> Descuentos</button>
           <button class="btn col-hidden" id="btnProveedoresPanel"><span class="side-icon"><i data-ico="proveedores"></i></span> Proveedores</button>
           <button class="btn btn-deudores" id="btnDeudores"><span class="side-icon"><i data-ico="deudores"></i></span> Deudores <span class="badge-count col-hidden" id="deudoresCount">0</span></button>
           <button class="btn col-hidden" id="btnSueros"><span class="side-icon"><i data-ico="suero"></i></span> Sueros</button>
@@ -2328,6 +2333,10 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <input type="text" id="inpCierreUsd" inputmode="numeric" placeholder="0">
     </div>
     <div class="warn-banner col-hidden" id="cierreWarning"></div>
+    <div class="field col-hidden" id="cierreExplicWrap">
+      <label>Explicación de la diferencia <span class="opt">(obligatoria)</span></label>
+      <textarea id="cierreExplic" rows="2" maxlength="500" placeholder="Ej: faltó registrar un egreso de $5.000 de librería" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:10px;background:#fff;font:inherit;font-size:13px;resize:vertical;"></textarea>
+    </div>
     <div class="modal-actions">
       <button class="btn" id="cancelCierre">Cancelar</button>
       <button class="btn btn-primary" id="confirmarCierre">Cerrar caja</button>
@@ -2876,6 +2885,22 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   </div>
 </div>
 
+<!-- ============ MODAL: DESCUENTOS (admin) ============ -->
+<div class="overlay" id="overlayDescuentos">
+  <div class="modal">
+    <button class="close-x" id="closeDescuentos">✕</button>
+    <h2>Descuentos</h2>
+    <div class="modal-sub">Son los que aparecen en ventas, presupuestos y Tratamientos del día. El total con descuento se redondea para arriba de 5.000 en 5.000.</div>
+    <div class="ds-cab"><span>Nombre</span><span>%</span><span></span></div>
+    <div id="dsLista"></div>
+    <button type="button" class="btn" id="dsAgregar" style="margin-top:4px">+ Agregar descuento</button>
+    <div class="modal-actions">
+      <button class="btn" id="cancelDescuentos">Cancelar</button>
+      <button class="btn btn-primary" id="guardarDescuentos">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ MODAL: NOTA DE CAJA (admin) ============ -->
 <div class="overlay" id="overlayNotaCaja">
   <div class="modal">
@@ -3202,9 +3227,38 @@ const ICONOS = {
   link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
   buscar:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
   check:'<path d="M20 6 9 17l-5-5"/>',
+  porcentaje:'<path d="M19 5 5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>',
 };
 function ico(n){ return `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONOS[n] || ''}</svg>`; }
 document.querySelectorAll('i[data-ico]').forEach(el=> el.outerHTML = ico(el.dataset.ico));
+
+/* ---- Lista de descuentos (editable por administradores en Menú → Descuentos).
+   Se guarda en presupuestos/_descuentos (colección que ya existe: no hace falta cambiar las reglas). */
+const DESC_INICIALES = [{n:'EFECTIVO', p:10}, {n:'PROTOCOLO + DE 1 SESION', p:20}, {n:'JORNADA DE TRATAMIENTOS', p:20}, {n:'UMMANOS', p:40}, {n:'FAMILIA', p:40}];
+let descuentosLista = DESC_INICIALES.slice();
+const descEtiqueta = d=> `${d.n.charAt(0) + d.n.slice(1).toLowerCase()} ${d.p}%`;
+function refrescarSelectsDescuento(){
+  const escAttr = v=> String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'), escHtml = escAttr;   // (las globales se definen más abajo)
+  const html = '<option value="">Sin descuento</option>' + descuentosLista.map(d=> `<option value="${d.p}|${escAttr(descEtiqueta(d))}">${escHtml(descEtiqueta(d))}</option>`).join('');
+  ['prDesc','selDescMov','trDesc'].forEach(id=>{
+    const sel = document.getElementById(id); if(!sel) return;
+    const v = sel.value;
+    sel.innerHTML = html;
+    if(v){
+      if(![...sel.options].some(o=> o.value===v)) sel.insertAdjacentHTML('beforeend', `<option value="${escAttr(v)}">${escHtml(v.split('|')[1]||'')}</option>`);
+      sel.value = v;
+    }
+  });
+}
+let unsubDesc = null;
+function suscribirDescuentos(){
+  if(unsubDesc) unsubDesc();
+  unsubDesc = db.collection('presupuestos').doc('_descuentos').onSnapshot(d=>{
+    const l = d.exists && Array.isArray(d.data().lista) ? d.data().lista : null;
+    descuentosLista = l && l.length ? l : DESC_INICIALES.slice();
+    refrescarSelectsDescuento();
+  }, ()=>{});
+}
 
 const ummDlgCola = [];
 let ummDlgAbierto = false;
@@ -3636,6 +3690,7 @@ function aplicarRolUI(){
   document.getElementById('btnCajas').classList.toggle('col-hidden', !esAdmin);
   document.getElementById('btnProfesionalesPanel').classList.toggle('col-hidden', !esAdmin);
   document.getElementById('btnConceptosPanel').classList.toggle('col-hidden', !esAdmin);
+  document.getElementById('btnDescuentosPanel').classList.toggle('col-hidden', !esAdmin);
   document.getElementById('btnProveedoresPanel').classList.toggle('col-hidden', !esAdmin);
   document.getElementById('btnVistaMovimientos').classList.toggle('col-hidden', !esAdminSueros());
   document.getElementById('btnSueros').classList.toggle('col-hidden', !esAdminSueros());
@@ -3831,6 +3886,7 @@ function iniciarListeners(){
   if(DERIVACIONES_ACTIVAS) suscribirDvContactos();
   pasarNotasAMayus();
   suscribirAlertas();
+  suscribirDescuentos();
 
   // Sesión de caja abierta (si hay)
   unsubCajaAbierta = db.collection('cajaSesiones').where('cerradaEn','==', null).onSnapshot(async snap=>{
@@ -4360,11 +4416,16 @@ document.getElementById('confirmarApertura').onclick = async ()=>{
 const overlayCierre = document.getElementById('overlayCierre');
 const inpCierreMonto = document.getElementById('inpCierreMonto');
 
+function ocultarAvisoCierre(){
+  document.getElementById('cierreWarning').classList.add('col-hidden');
+  document.getElementById('cierreExplicWrap').classList.add('col-hidden');
+}
 async function abrirModalCierre(){
+  document.getElementById('cierreExplic').value = '';
   document.getElementById('cierreEsperadoTxt').textContent = `Monto esperado en caja: calculando…`;
   document.getElementById('inpFechaCierre').value = cajaActual.fechaISO;
   inpCierreMonto.value = ""; document.getElementById('inpCierreUsd').value = "";
-  document.getElementById('cierreWarning').classList.add('col-hidden');
+  ocultarAvisoCierre();
   document.getElementById('confirmarCierre').textContent = "Cerrar caja";
   overlayCierre.classList.add('show');
   await recalcularEsperadoCierre();
@@ -4377,7 +4438,7 @@ async function recalcularEsperadoCierre(){
   inpCierreMonto.value = esperado.toLocaleString('es-AR');
   document.getElementById('inpCierreUsd').value = esperadoUsd.toLocaleString('es-AR');
   document.getElementById('cierreUsdEsp').textContent = `(esperado: US$ ${esperadoUsd.toLocaleString('es-AR')})`;
-  document.getElementById('cierreWarning').classList.add('col-hidden');
+  ocultarAvisoCierre();
   document.getElementById('confirmarCierre').textContent = "Cerrar caja";
 }
 document.getElementById('inpFechaCierre').addEventListener('input', recalcularEsperadoCierre);
@@ -4386,10 +4447,10 @@ document.getElementById('cancelCierre').onclick = ()=> overlayCierre.classList.r
 inpCierreMonto.addEventListener('input', ()=>{
   let raw = inpCierreMonto.value.replace(/\D/g,"");
   inpCierreMonto.value = raw ? Number(raw).toLocaleString('es-AR') : "";
-  document.getElementById('cierreWarning').classList.add('col-hidden');
+  ocultarAvisoCierre();
   document.getElementById('confirmarCierre').textContent = "Cerrar caja";
 });
-document.getElementById('inpCierreUsd').addEventListener('input', e=>{ formatearInputMonto(e.target); document.getElementById('cierreWarning').classList.add('col-hidden'); document.getElementById('confirmarCierre').textContent = "Cerrar caja"; });
+document.getElementById('inpCierreUsd').addEventListener('input', e=>{ formatearInputMonto(e.target); ocultarAvisoCierre(); document.getElementById('confirmarCierre').textContent = "Cerrar caja"; });
 document.getElementById('confirmarCierre').onclick = async ()=>{
   const contado = Number(inpCierreMonto.value.replace(/\D/g,""));
   const contadoUsd = Number(document.getElementById('inpCierreUsd').value.replace(/\D/g,"")) || 0;
@@ -4407,7 +4468,15 @@ document.getElementById('confirmarCierre').onclick = async ()=>{
     if(diferenciaUsd) partes.push(diferenciaUsd > 0 ? `hay US$ ${diferenciaUsd.toLocaleString('es-AR')} de más (esperado US$ ${esperadoUsd.toLocaleString('es-AR')})` : `faltan US$ ${Math.abs(diferenciaUsd).toLocaleString('es-AR')} (esperado US$ ${esperadoUsd.toLocaleString('es-AR')})`);
     warn.innerHTML = ico('alerta') + ' ' + escHtml(`${partes.join(' · ')}. Revisá antes de cerrar.`);
     warn.classList.remove('col-hidden');
-    document.getElementById('confirmarCierre').textContent = "Cerrar caja de todos modos";
+    document.getElementById('cierreExplicWrap').classList.remove('col-hidden');
+    setTimeout(()=> document.getElementById('cierreExplic').focus(), 50);
+    document.getElementById('confirmarCierre').textContent = "Cerrar caja con diferencia";
+    return;
+  }
+  const explicacion = mayus(document.getElementById('cierreExplic').value.trim());
+  if((diferencia !== 0 || diferenciaUsd !== 0) && !explicacion){
+    alert('Escribí la explicación de la diferencia para poder cerrar la caja.');
+    document.getElementById('cierreExplic').focus();
     return;
   }
 
@@ -4417,6 +4486,7 @@ document.getElementById('confirmarCierre').onclick = async ()=>{
     cerradaPor: currentUser.nombre,
     montoContado: contado, esperadoCierre: esperado, diferencia,
     montoContadoUsd: contadoUsd, esperadoCierreUsd: esperadoUsd, diferenciaUsd,
+    ...(explicacion && (diferencia !== 0 || diferenciaUsd !== 0) ? {explicacionDiferencia: explicacion} : {}),
   });
   overlayCierre.classList.remove('show');
 };
@@ -4709,7 +4779,7 @@ function actualizarCampoPacienteSegunTipo(){
 selConcepto.addEventListener('input', actualizarCampoPacienteSegunTipo);
 selConcepto.addEventListener('input', ()=> sugerirTotalMov(true));
 selProfesional.addEventListener('input', ()=> setTimeout(()=> sugerirTotalMov(true), 0));
-document.getElementById('selDescMov').innerHTML = document.getElementById('prDesc').innerHTML;
+refrescarSelectsDescuento();
 document.getElementById('selDescMov').addEventListener('change', ()=> sugerirTotalMov(false));
 
 function poblarProfesionalesUI(){
@@ -9030,6 +9100,7 @@ async function cargarCajas(){
         if(difCierre)   difHTML += `<div style="${rojo}">${fmtDif(difCierre)}</div><div style="font-size:9px;color:#a13a3a;">en el cierre</div>`;
       }
       if(difCierreUsd) difHTML = (difHTML.includes('—') || difHTML.includes('$0') ? '' : difHTML) + `<div style="${rojo}">${difCierreUsd>0?'+':'-'}US$ ${Math.abs(difCierreUsd).toLocaleString('es-AR')}</div><div style="font-size:9px;color:#a13a3a;">en el cierre (USD)</div>`;
+      if(c.explicacionDiferencia) difHTML += `<div class="caja-explic" title="${escAttr(c.explicacionDiferencia)}">“${escHtml(c.explicacionDiferencia)}”</div>`;
 
       return `
         <tr>
@@ -9759,6 +9830,32 @@ document.getElementById('inpImportarProfesionales').addEventListener('change', a
 /* =====================================================================
    PANEL "CONCEPTOS" (admin) — área, código y concepto (en ese orden)
    ===================================================================== */
+const overlayDescuentos = document.getElementById('overlayDescuentos');
+function dsFila(d){
+  const f = document.createElement('div'); f.className = 'ds-fila';
+  f.innerHTML = `<input type="text" class="ds-n" value="${escAttr(d.n||'')}" placeholder="Ej: EFECTIVO"><input type="text" class="ds-p" inputmode="numeric" value="${d.p||''}" placeholder="10"><button type="button" class="btn-quitar" title="Quitar">✕</button>`;
+  f.querySelector('.ds-p').addEventListener('input', e=> e.target.value = e.target.value.replace(/\D/g,'').slice(0,2));
+  f.querySelector('.btn-quitar').onclick = ()=> f.remove();
+  document.getElementById('dsLista').appendChild(f);
+}
+document.getElementById('btnDescuentosPanel').onclick = ()=>{
+  document.getElementById('dsLista').innerHTML = '';
+  descuentosLista.forEach(dsFila);
+  overlayDescuentos.classList.add('show');
+};
+document.getElementById('dsAgregar').onclick = ()=>{ dsFila({}); const l = document.querySelectorAll('#dsLista .ds-n'); l[l.length-1].focus(); };
+['closeDescuentos','cancelDescuentos'].forEach(id=> document.getElementById(id).onclick = ()=> overlayDescuentos.classList.remove('show'));
+document.getElementById('guardarDescuentos').onclick = async ()=>{
+  const lista = [...document.querySelectorAll('#dsLista .ds-fila')].map(f=> ({n: mayus(f.querySelector('.ds-n').value.trim()), p: Number(f.querySelector('.ds-p').value)||0}))
+    .filter(d=> d.n || d.p);
+  if(lista.some(d=> !d.n || !d.p || d.p>=100)){ alert('Cada descuento necesita nombre y un porcentaje entre 1 y 99.'); return; }
+  const btn = document.getElementById('guardarDescuentos'); btn.disabled = true;
+  try{
+    await db.collection('presupuestos').doc('_descuentos').set({lista, actualizadoPor: currentUser.nombre, actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()});
+    overlayDescuentos.classList.remove('show');
+  }catch(e){ alert('No se pudieron guardar los descuentos: ' + e.message); }
+  btn.disabled = false;
+};
 const overlayConceptos = document.getElementById('overlayConceptos');
 const buscarConceptoInput = document.getElementById('buscarConceptoInput');
 let mostrarNuevoConcepto = false;
@@ -10701,7 +10798,7 @@ document.querySelectorAll('#fedeTabs [data-ir]').forEach(b=> b.onclick = ()=>{
 const TR_WA_RECEPCION = '5491139208108';   // WhatsApp de Ummana (11 3920-8108)
 let trSel = [];   // [{concepto, valor}]
 let trEditando = null;
-document.getElementById('trDesc').innerHTML = document.getElementById('prDesc').innerHTML;
+refrescarSelectsDescuento();
 attachAutocomplete(document.getElementById('trProf'), ()=> Object.keys(CONCEPTOS).sort((a,b)=> a.localeCompare(b,'es')), ()=>{ trSel = []; trRender(); });
 attachAutocomplete(document.getElementById('trPac'), ()=> pacienteRegistry);
 document.getElementById('trProf').addEventListener('input', ()=>{ trSel = []; trRender(); });
