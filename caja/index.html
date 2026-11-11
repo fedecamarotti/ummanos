@@ -980,6 +980,12 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .ec-tot{text-align:right;font-weight:800;margin:12px 0 4px;}
   .pr-cab,.pr-fila{display:grid;grid-template-columns:1fr 64px 130px 34px;gap:6px;align-items:center;}
   .pr-cab{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;padding:0 2px;}
+  .pr-fila .pr-fuera-tag{display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:9px;font-weight:700;color:var(--accent-dk);background:#f4eeda;border-radius:8px;padding:2px 6px;pointer-events:none;}
+  .pr-fila.libre .pr-fuera-tag{display:block;} .pr-fila.libre .pr-det{padding-right:92px;}
+  .pr-total-edit{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin:2px 0 4px;}
+  .pr-total-edit label{font-size:13px;font-weight:700;margin:0;}
+  .pr-total-edit input{width:160px;text-align:right;font-size:16px;font-weight:700;padding:8px 12px;border:1px solid var(--border);border-radius:10px;}
+  .pr-total-edit input::placeholder{color:#a9a294;font-weight:700;}
   .pr-fila{margin-bottom:6px;} .pr-fila input{width:100%;} .pr-fila .pr-cant{text-align:center;} .pr-fila .pr-val{text-align:right;}
   .pr-tot{text-align:right;font-size:12px;color:var(--muted);line-height:1.7;margin:4px 0 2px;} .pr-tot b{color:var(--text);font-size:16px;}
   #overlayPresupuesto .ac-wrap{width:100%;}
@@ -2789,6 +2795,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <div class="pr-totmodo">Total
       <div class="tipo-toggle" id="prTotModo"><button type="button" data-tm="1" class="active">Sumar total</button><button type="button" data-tm="0">Sin total (son opciones)</button></div></div>
     <div class="pr-tot" id="prTot"></div>
+    <div class="pr-total-edit" id="prTotalWrap"><label for="prTotalInp">Total</label><input type="text" id="prTotalInp" inputmode="numeric" placeholder="0" title="Sugerido según los tratamientos y el descuento. Podés escribir otro total."></div>
     <div class="modal-actions">
       <button class="btn" id="cancelPresupuesto">Cancelar</button>
       <button class="btn btn-primary" id="descargarPresupuesto">⬇ Descargar PDF</button>
@@ -3781,6 +3788,7 @@ function attachAutocomplete(input, getOptions, onPick, etiqueta){
     if(suppressOpen){ suppressOpen = false; return; }
     const q = normBusqueda(input.value.trim());
     opcionesActuales = getOptions().filter(o=> !q || normBusqueda(o).includes(q)).slice(0,40);
+    if(input.dataset.acSiempre && !opcionesActuales.includes(input.dataset.acSiempre)) opcionesActuales.push(input.dataset.acSiempre);
     indiceActivo = -1;
     if(!opcionesActuales.length && input.hasAttribute('data-ac-libre')){ dd.classList.remove('show'); return; }
     dd.innerHTML = opcionesActuales.length
@@ -5280,20 +5288,45 @@ function prSetMon(m){ prMon = m; document.querySelectorAll('#prMoneda button').f
 document.querySelectorAll('#prMoneda button').forEach(b=> b.onclick = ()=> prSetMon(b.dataset.mon));
 attachAutocomplete(document.getElementById('prPac'), ()=> pacienteRegistry);
 attachAutocomplete(document.getElementById('prProf'), ()=> todosLosNombresDeProfesionales());
+const PR_FUERA = 'TRATAMIENTO FUERA DE LISTA';
+function prConceptosProf(){
+  const prof = mayus(document.getElementById('prProf').value.trim());
+  const vistos = new Set();
+  return (CONCEPTOS[prof] || []).filter(c=> (c.tipo||'ingreso')!=='egreso' && !vistos.has(c.concepto) && vistos.add(c.concepto))
+    .sort((a,b)=> a.concepto.localeCompare(b.concepto,'es',{numeric:true}));
+}
 function prAgregarFila(){
   const d = document.createElement('div'); d.className = 'pr-fila';
-  d.innerHTML = `<div class="ac-wrap"><input type="text" class="pr-det" placeholder="Tratamiento" autocomplete="off" data-ac-libre></div><input type="text" class="pr-cant" inputmode="numeric" value="1"><input type="text" class="pr-val" inputmode="numeric" placeholder="0"><button type="button" class="btn-quitar" title="Quitar">✕</button>`;
+  d.innerHTML = `<div class="ac-wrap"><input type="text" class="pr-det" placeholder="Elegí el tratamiento…" autocomplete="off" data-ac-siempre="${PR_FUERA}"><span class="pr-fuera-tag">Fuera de lista</span></div><input type="text" class="pr-cant" inputmode="numeric" value="1"><input type="text" class="pr-val" inputmode="numeric" placeholder="0"><button type="button" class="btn-quitar" title="Quitar">✕</button>`;
   document.getElementById('prItems').appendChild(d);
-  attachAutocomplete(d.querySelector('.pr-det'), ()=>{
-    const prof = mayus(document.getElementById('prProf').value.trim());
-    return [...new Set((CONCEPTOS[prof] || []).filter(c=> (c.tipo||'ingreso')!=='egreso').map(c=> c.concepto))];
+  const det = d.querySelector('.pr-det');
+  // Fuera de lista: el casillero pasa a ser de texto libre (sin sugerencias)
+  const setLibre = v=>{
+    d.classList.toggle('libre', v);
+    if(v){ det.dataset.acSiempreBak = PR_FUERA; delete det.dataset.acSiempre; det.setAttribute('data-ac-libre',''); det.placeholder = 'Escribí el tratamiento…'; }
+    else { det.dataset.acSiempre = PR_FUERA; det.removeAttribute('data-ac-libre'); det.placeholder = 'Elegí el tratamiento…'; }
+  };
+  attachAutocomplete(det, ()=> d.classList.contains('libre') ? [] : prConceptosProf().map(c=> c.concepto), valor=>{
+    if(valor === PR_FUERA){ det.value = ''; setLibre(true); setTimeout(()=> det.focus(), 0); return; }
+    const c = prConceptosProf().find(x=> x.concepto===valor);
+    const val = d.querySelector('.pr-val');
+    if(c && c.valor && (c.valorMoneda||'$')===prMon){ val.value = Number(c.valor).toLocaleString('es-AR'); prRecalc(); }
   });
+  det.addEventListener('blur', ()=>{
+    setTimeout(()=>{
+      if(d.classList.contains('libre')){ if(!det.value.trim()) setLibre(false); return; }
+      // si no eligió de la lista, se borra: lo libre solo va por "Tratamiento fuera de lista"
+      if(det.value.trim() && !prConceptosProf().some(c=> c.concepto===mayus(det.value.trim()))){ det.value = ''; prRecalc(); }
+    }, 150);
+  });
+
   d.querySelector('.pr-val').addEventListener('input', e=>{ formatearInputMonto(e.target); prRecalc(); });
   d.querySelector('.pr-cant').addEventListener('input', e=>{ e.target.value = e.target.value.replace(/\D/g,''); prRecalc(); });
   d.querySelector('.btn-quitar').onclick = ()=>{ d.remove(); if(!document.querySelector('#prItems .pr-fila')) prAgregarFila(); prRecalc(); };
 }
 document.getElementById('prAgregar').onclick = prAgregarFila;
 document.getElementById('prDesc').onchange = prRecalc;
+document.getElementById('prTotalInp').addEventListener('input', e=>{ formatearInputMonto(e.target); prRecalc(); });
 function prDatos(){
   const items = [...document.querySelectorAll('#prItems .pr-fila')].map(f=> ({
     det: mayus(f.querySelector('.pr-det').value.trim()),
@@ -5302,11 +5335,15 @@ function prDatos(){
   })).filter(i=> i.det || i.val);
   const sub = items.reduce((a,i)=> a + i.cant * i.val, 0);
   const [pct, lbl] = (document.getElementById('prDesc').value || '').split('|');
-  const desc = sub - totalConDescuento(sub, pct, prMon);
-  return {items, sub, desc, descLbl: lbl || '', total: sub - desc};
+  const sugerido = totalConDescuento(sub, pct, prMon);
+  const escrito = document.getElementById('prTotalInp').value.replace(/\D/g,'');
+  const total = escrito ? Number(escrito) : sugerido;
+  const desc = sub - total;
+  return {items, sub, sugerido, desc: desc > 0 ? desc : 0, descLbl: desc > 0 ? (lbl || 'Descuento') : '', total};
 }
 function prRecalc(){
   const d = prDatos();
+  document.getElementById('prTotalWrap').classList.toggle('col-hidden', !prConTotal);
   if(!prConTotal){
     const pct = Number((document.getElementById('prDesc').value || '').split('|')[0]) || 0;
     document.getElementById('prTot').innerHTML = d.items.length
@@ -5314,12 +5351,14 @@ function prRecalc(){
     return;
   }
   document.getElementById('prTot').innerHTML = d.items.length
-    ? `Subtotal ${fmtMonto(d.sub, prMon)}${d.desc ? ` · ${escHtml(d.descLbl)}: −${fmtMonto(d.desc, prMon)}` : ''}<br>Total <b>${fmtMonto(d.total, prMon)}</b>` : '';
+    ? `Subtotal ${fmtMonto(d.sub, prMon)}${d.desc ? ` · ${escHtml(d.descLbl)}: −${fmtMonto(d.desc, prMon)}` : ''}` : '';
+  document.getElementById('prTotalInp').placeholder = d.items.length ? Number(d.sugerido).toLocaleString('es-AR') : '0';
 }
 function abrirPresupuesto(){
   document.getElementById('prFecha').value = hoyISO();
   ['prPac','prProf','prNotas'].forEach(id=> document.getElementById(id).value = '');
   document.getElementById('prDesc').value = '';
+  document.getElementById('prTotalInp').value = '';
   document.getElementById('prItems').innerHTML = ''; prAgregarFila(); prSetTotModo(true); prSetMon('$');
   overlayPresupuesto.classList.add('show');
 }
@@ -5376,6 +5415,9 @@ document.getElementById('descargarPresupuesto').onclick = async ()=>{
   if(!pac){ alert('Completá el paciente.'); return; }
   if(!d.items.length){ alert('Agregá al menos un tratamiento.'); return; }
   if(d.items.some(i=> !i.det || !i.val)){ alert('Cada tratamiento necesita detalle y valor.'); return; }
+  if([...document.querySelectorAll('#prItems .pr-fila:not(.libre) .pr-det')].some(i=> i.value.trim() && !prConceptosProf().some(c=> c.concepto===mayus(i.value.trim())))){
+    alert('Hay tratamientos que no están en la lista. Elegilos de la lista o usá "Tratamiento fuera de lista".'); return;
+  }
   const btn = document.getElementById('descargarPresupuesto'); btn.disabled = true;
   try{
     // se guardan solo los datos (no el PDF): ocupa ~1 KB por presupuesto
