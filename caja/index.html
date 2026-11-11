@@ -645,6 +645,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .tabla-stock td.neg{color:#a13a3a;}
   .cc-det-lbl{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;}
   .cc-det-lbl input{width:auto;accent-color:var(--accent);}
+  .fila-editable .cc-valor{flex:0 0 100px;text-align:right;} .fila-editable .cc-mon{flex:0 0 62px;}
   .p-cuenta{font-weight:700;color:var(--muted);}
   .deuda-ayuda{font-size:11px;color:var(--muted);margin-bottom:6px;}
   .tabla-stock tfoot .tot-cant{font-weight:500;color:var(--muted);font-size:10px;}
@@ -941,6 +942,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   select:focus, input:focus{outline:none;border-color:var(--accent);background:#fffcf5;}
   .row2{display:flex;gap:10px;}
   .row2 > div{flex:1;}
+  #selDescMov{width:100%;}
+  #inpValor.con-sugerido::placeholder{color:#a9a294;}
   .combo{display:flex;gap:6px;}
   .combo select{flex:1;}
   .addbtn{
@@ -2432,12 +2435,16 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     </div>
 
     <div class="row2">
-      <div class="field">
+      <div class="field" style="flex:0 0 auto;">
         <label>Moneda</label>
         <div class="currency-toggle">
           <button type="button" class="active" data-cur="$">$</button>
           <button type="button" data-cur="USD">USD</button>
         </div>
+      </div>
+      <div class="field" id="movDescWrap">
+        <label>Descuento</label>
+        <select id="selDescMov"></select>
       </div>
       <div class="field">
         <label>Total</label>
@@ -3674,7 +3681,7 @@ function iniciarListeners(){
     snap.docs.forEach(d=>{
       const c = d.data();
       if(!CONCEPTOS[c.profesional]) CONCEPTOS[c.profesional] = [];
-      CONCEPTOS[c.profesional].push({id: d.id, concepto: c.concepto, codigo: c.codigo||"", tipo: c.tipo||"ingreso", detObligatorio: !!c.detObligatorio, valor: c.valor!=null ? Number(c.valor) : null});
+      CONCEPTOS[c.profesional].push({id: d.id, concepto: c.concepto, codigo: c.codigo||"", tipo: c.tipo||"ingreso", detObligatorio: !!c.detObligatorio, valor: c.valor!=null ? Number(c.valor) : null, valorMoneda: c.valorMoneda==='USD' ? 'USD' : '$'});
       CODIGO_POR_CONCEPTO[c.profesional+"||"+c.concepto] = c.codigo||"";
       TIPO_POR_CONCEPTO[c.profesional+"||"+c.concepto] = c.tipo||"ingreso";
     });
@@ -4603,8 +4610,13 @@ function actualizarCampoPacienteSegunTipo(){
   } else {
     refreshDeudasPaciente();
   }
+  sugerirTotalMov(false);
 }
 selConcepto.addEventListener('input', actualizarCampoPacienteSegunTipo);
+selConcepto.addEventListener('input', ()=> sugerirTotalMov(true));
+selProfesional.addEventListener('input', ()=> setTimeout(()=> sugerirTotalMov(true), 0));
+document.getElementById('selDescMov').innerHTML = document.getElementById('prDesc').innerHTML;
+document.getElementById('selDescMov').addEventListener('change', ()=> sugerirTotalMov(false));
 
 function poblarProfesionalesUI(){
   actualizarConceptosDesdeProfesional();
@@ -4685,6 +4697,10 @@ function abrirEdicion(id){
   montoAutoSync = pagosIniciales.length===1 ? String(pagosIniciales[0].valor) : null;
 
   inpValor.value = Number(m.valor).toLocaleString('es-AR');
+  { const sd = document.getElementById('selDescMov');
+    sd.value = m.descuentoPct ? `${m.descuentoPct}|${m.descuentoLbl}` : '';
+    if(m.descuentoPct && sd.value === ''){ sd.insertAdjacentHTML('beforeend', `<option value="${m.descuentoPct}|${escHtml(m.descuentoLbl||'')}">${escHtml(m.descuentoLbl||'')}</option>`); sd.value = `${m.descuentoPct}|${m.descuentoLbl}`; }
+    sugerirTotalMov(false); }
   setJornada(!!m.jornada && !document.getElementById('jornadaWrap').classList.contains('col-hidden'));
   setMovCaja(m.caja);
   { const ind = (cremasExtra[m.id] && cremasExtra[m.id].indica) || m.indicaCrema || 'PARTICULAR';
@@ -4735,6 +4751,9 @@ function resetModal(){
   conceptosDisponiblesActual = [];
   document.getElementById('inpNotas').value = "";
   inpValor.value = "";
+  document.getElementById('selDescMov').value = "";
+  inpValor.placeholder = "0"; inpValor.classList.remove('con-sugerido');
+  document.getElementById('movDescWrap').classList.remove('col-hidden');
   document.querySelectorAll('.currency-toggle button').forEach(b=>b.classList.remove('active'));
   document.querySelector('.currency-toggle button[data-cur="$"]').classList.add('active');
   monedaSel = "$";
@@ -4857,6 +4876,7 @@ document.querySelectorAll('.currency-toggle button').forEach(btn=>{
     monedaSel = btn.dataset.cur;
     document.querySelectorAll('#pagosLista .pago-row').forEach(r=>{ if(r.dataset.sigue!=='0') r.querySelector('.pago-mon').value = monedaSel; });
     recalcularPagos();
+    sugerirTotalMov(false);
   };
 });
 let montoAutoSync = null; // último monto que autocompletamos en el primer pago, para saber si el usuario lo tocó
@@ -4890,7 +4910,13 @@ btnGuardarMov.onclick = async ()=>{
     return;
   }
   const valorNum = Number(inpValor.value.replace(/\D/g,""));
+  if(inpValor.value.trim() === "" && inpValor.classList.contains('con-sugerido')){ alert(`Escribí el total para confirmarlo (sugerido: ${monedaSel==='USD' ? 'USD ' : '$'}${inpValor.placeholder}).`); inpValor.focus(); return; }
   if(inpValor.value.trim() === "" || isNaN(valorNum)){ alert("Ingresá un total (puede ser 0)."); return; }
+  const dMov = egreso ? {pct:0, lbl:''} : descMovSel();
+  const cMov = conceptoCatActual();
+  const datosDesc = dMov.pct
+    ? {descuentoPct: dMov.pct, descuentoLbl: dMov.lbl, ...(cMov && cMov.valor && (cMov.valorMoneda||'$')===monedaSel ? {valorLista: cMov.valor} : {})}
+    : null;
 
   let pagos = leerPagosForm();
   if(!pagos) return;
@@ -4954,6 +4980,7 @@ btnGuardarMov.onclick = async ()=>{
       notas: document.getElementById('inpNotas').value, moneda: monedaSel, valor: valorNum,
       pagos, tieneDeudaPendiente: pendienteDeuda, jornada: movJornada, caja: movCaja,
       actualizadoEn: firebase.firestore.FieldValue.serverTimestamp(),
+      ...(datosDesc || {descuentoPct: firebase.firestore.FieldValue.delete(), descuentoLbl: firebase.firestore.FieldValue.delete(), valorLista: firebase.firestore.FieldValue.delete()}),
     };
     if(!document.getElementById('indicaWrap').classList.contains('col-hidden')) cambios.indicaCrema = document.getElementById('selIndica').value || 'PARTICULAR';
     await db.collection('movimientos').doc(editingId).update(cambios);
@@ -4971,6 +4998,7 @@ btnGuardarMov.onclick = async ()=>{
       fechaISO, fechaDisplay, pac: pacValor, prof: selProfesional.value,
       concepto: selConcepto.value, codigo, notas: document.getElementById('inpNotas').value,
       moneda: monedaSel, valor: valorNum, pagos, tieneDeudaPendiente: pendienteDeuda, jornada: movJornada, caja: movCaja,
+      ...(datosDesc || {}),
       ...(!document.getElementById('indicaWrap').classList.contains('col-hidden') ? {indicaCrema: document.getElementById('selIndica').value || 'PARTICULAR'} : {}),
       creadoPor: currentUser.nombre, creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
       cajaId: cajaActual ? cajaActual.id : 'SIN_CAJA',
@@ -5215,6 +5243,40 @@ async function pdfFormatoUmmana(opts){
 
 /* ---- Presupuestos (todas las cuentas) ---- */
 const overlayPresupuesto = document.getElementById('overlayPresupuesto');
+// Descuentos: el total con descuento se redondea SIEMPRE para arriba, de 5.000 en 5.000 (en USD, de 5 en 5).
+// Nunca supera el valor sin descuento.
+// ---- Valor sugerido en el movimiento: sale del concepto y se muestra en gris (placeholder);
+// la recepcionista lo tiene que escribir para confirmarlo.
+function conceptoCatActual(){
+  return (CONCEPTOS[selProfesional.value]||[]).find(c=> c.concepto===selConcepto.value) || null;
+}
+function descMovSel(){
+  const [pct, lbl] = (document.getElementById('selDescMov').value || '').split('|');
+  return {pct: Number(pct) || 0, lbl: lbl || ''};
+}
+function sugerirTotalMov(cambioConcepto){
+  const inp = document.getElementById('inpValor');
+  const egreso = movTipo==='egreso';
+  document.getElementById('movDescWrap').classList.toggle('col-hidden', egreso);
+  const c = egreso ? null : conceptoCatActual();
+  if(c && c.valor && cambioConcepto && !inp.value.trim() && monedaSel !== c.valorMoneda){
+    const b = document.querySelector(`#overlay .currency-toggle button[data-cur="${c.valorMoneda}"]`);
+    if(b){ b.click(); return; }   // el click vuelve a llamar a esta función
+  }
+  if(c && c.valor && monedaSel === (c.valorMoneda||'$')){
+    inp.placeholder = Number(totalConDescuento(c.valor, descMovSel().pct, monedaSel)).toLocaleString('es-AR');
+    inp.classList.add('con-sugerido');
+  } else {
+    inp.placeholder = '0';
+    inp.classList.remove('con-sugerido');
+  }
+}
+function totalConDescuento(base, pct, moneda){
+  base = Number(base) || 0; pct = Number(pct) || 0;
+  if(!pct || !base) return base;
+  const paso = moneda==='USD' ? 5 : 5000;
+  return Math.min(base, Math.ceil(base * (100 - pct) / 100 / paso) * paso);
+}
 let prMon = '$';
 let prConTotal = true;
 function prSetTotModo(v){ prConTotal = v; document.querySelectorAll('#prTotModo button').forEach(b=> b.classList.toggle('active', (b.dataset.tm==='1')===v)); prRecalc(); }
@@ -5245,7 +5307,7 @@ function prDatos(){
   })).filter(i=> i.det || i.val);
   const sub = items.reduce((a,i)=> a + i.cant * i.val, 0);
   const [pct, lbl] = (document.getElementById('prDesc').value || '').split('|');
-  const desc = pct ? Math.round(sub * Number(pct) / 100) : 0;
+  const desc = sub - totalConDescuento(sub, pct, prMon);
   return {items, sub, desc, descLbl: lbl || '', total: sub - desc};
 }
 function prRecalc(){
@@ -5296,7 +5358,7 @@ async function pdfPresupuestoOpciones(pr){
   if(pct) head.push(pr.descuentoLbl);
   const body = pr.items.map(i=>{
     const sub = i.cant * i.val, f = [i.det, String(i.cant), fmtMonto(i.val, pr.moneda), fmtMonto(sub, pr.moneda)];
-    if(pct) f.push(fmtMonto(sub - Math.round(sub * pct / 100), pr.moneda));
+    if(pct) f.push(fmtMonto(pr.redondeo ? totalConDescuento(sub, pct, pr.moneda) : sub - Math.round(sub * pct / 100), pr.moneda));
     return f;
   });
   const columnStyles = pct
@@ -5323,7 +5385,7 @@ document.getElementById('descargarPresupuesto').onclick = async ()=>{
   try{
     // se guardan solo los datos (no el PDF): ocupa ~1 KB por presupuesto
     const pr = {paciente: pac, profesional: prof, fechaISO: fecha, moneda: prMon, items: d.items,
-      subtotal: d.sub, descuento: d.desc, descuentoLbl: d.descLbl, total: d.total,
+      subtotal: d.sub, descuento: d.desc, descuentoLbl: d.descLbl, total: d.total, redondeo: true,
       ...(prConTotal ? {} : {sinTotal: true, descuentoPct: Number((document.getElementById('prDesc').value || '').split('|')[0]) || 0}),
       notas: mayus(document.getElementById('prNotas').value.trim()),
       observaciones: PR_OBSERVACIONES, contacto: UMM_CONTACTO.map(([ic, t])=> ({ic, t}))};
@@ -9549,7 +9611,7 @@ buscarConceptoInput.addEventListener('input', renderConceptosBusqueda);
 function todosLosConceptos(){
   const lista = [];
   Object.keys(CONCEPTOS).forEach(prof=>{
-    CONCEPTOS[prof].forEach(c=> lista.push({profesional: prof, concepto: c.concepto, codigo: c.codigo, tipo: c.tipo||"ingreso", detObligatorio: !!c.detObligatorio}));
+    CONCEPTOS[prof].forEach(c=> lista.push({id: c.id, profesional: prof, concepto: c.concepto, codigo: c.codigo, tipo: c.tipo||"ingreso", detObligatorio: !!c.detObligatorio, valor: c.valor, valorMoneda: c.valorMoneda||'$'}));
   });
   return lista.sort((a,b)=> a.profesional.localeCompare(b.profesional,'es') || (a.codigo||"").localeCompare(b.codigo||"",'es',{numeric:true}));
 }
@@ -9568,6 +9630,8 @@ function filaConceptoHTML(c, esNueva){
         <option value="egreso" ${c.tipo==='egreso'?'selected':''}>Egreso</option>
       </select>
       <label class="cc-det-lbl" title="Si está marcado, no se puede guardar un movimiento de este concepto sin detalle"><input type="checkbox" class="cc-det" ${c.detObligatorio?'checked':''}> Det.</label>
+      <select class="cc-mon" title="Moneda del valor sugerido"><option value="$" ${c.valorMoneda!=='USD'?'selected':''}>$</option><option value="USD" ${c.valorMoneda==='USD'?'selected':''}>USD</option></select>
+      <input type="text" class="cc-valor" inputmode="numeric" value="${c.valor ? Number(c.valor).toLocaleString('es-AR') : ''}" placeholder="Valor" title="Valor sugerido para los movimientos" oninput="formatearInputMonto(this)">
       <button class="btn-guardar-fila" onclick="${esNueva ? 'crearConceptoFila(this)' : 'guardarConceptoFila(this)'}">${esNueva ? "Crear" : "Guardar"}</button>
       ${esNueva ? "" : `<button class="btn-eliminar-fila" onclick="eliminarConceptoFila(this)" title="Eliminar">✕</button>`}
     </div>
@@ -9585,6 +9649,10 @@ function renderConceptosBusqueda(){
   cont.innerHTML = nuevaFila + lista.map(c=> filaConceptoHTML(c, false)).join('');
 }
 
+function valorConceptoFila(fila){
+  const v = Number(fila.querySelector('.cc-valor').value.replace(/\D/g,'')) || 0;
+  return {valor: v || null, valorMoneda: fila.querySelector('.cc-mon').value === 'USD' ? 'USD' : '$'};
+}
 async function crearConceptoFila(btn){
   const fila = btn.closest('.fila-editable');
   const profesional = fila.querySelector('.cc-profesional').value;
@@ -9596,7 +9664,8 @@ async function crearConceptoFila(btn){
   if(!concepto){ alert("El concepto no puede quedar vacío."); return; }
   btn.disabled = true; btn.textContent = "Creando…";
   try{
-    await db.collection('conceptos').add({profesional, concepto, codigo, tipo, detObligatorio});
+    const vv = valorConceptoFila(fila);
+    await db.collection('conceptos').add({profesional, concepto, codigo, tipo, detObligatorio, ...(vv.valor ? vv : {})});
     mostrarNuevoConcepto = false;
   }catch(e){
     alert("No se pudo crear: " + e.message);
@@ -9623,7 +9692,9 @@ async function guardarConceptoFila(btn){
       .where('concepto','==', conceptoOriginal)
       .limit(1).get();
     if(snap.empty){ throw new Error("No encontré el concepto original en la base."); }
-    await snap.docs[0].ref.update({profesional, concepto, codigo, tipo, detObligatorio});
+    const vv = valorConceptoFila(fila);
+    await snap.docs[0].ref.update({profesional, concepto, codigo, tipo, detObligatorio,
+      valor: vv.valor || firebase.firestore.FieldValue.delete(), valorMoneda: vv.valor ? vv.valorMoneda : firebase.firestore.FieldValue.delete()});
     fila.dataset.profesionalOriginal = profesional;
     fila.dataset.conceptoOriginal = concepto;
     btn.textContent = "¡Guardado!";
@@ -9661,6 +9732,8 @@ document.getElementById('btnExportarConceptos').onclick = ()=>{
     "Código": c.codigo || "",
     "Concepto": c.concepto,
     "Tipo": c.tipo==="egreso" ? "Egreso" : "Ingreso",
+    "Valor": c.valor || "",
+    "Moneda": c.valor ? (c.valorMoneda || "$") : "",
   }));
   const ws = XLSX.utils.json_to_sheet(filas);
   const wb = XLSX.utils.book_new();
@@ -9677,7 +9750,9 @@ document.getElementById('inpImportarConceptos').addEventListener('change', async
     const data = await file.arrayBuffer();
     const wb = XLSX.read(data);
     const filas = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-    let creados = 0, ignorados = 0;
+    let creados = 0, ignorados = 0, actualizados = 0;
+    const existentes = {};
+    todosLosConceptos().forEach(c=> existentes[c.profesional + '||' + c.concepto] = c);
     for(const fila of filas){
       const profesional = mayus((fila["Área"] || fila["Area"] || fila["Profesional"] || "").toString().trim());
       const codigo = mayus((fila["Código"] || fila["Codigo"] || "").toString().trim());
@@ -9685,10 +9760,21 @@ document.getElementById('inpImportarConceptos').addEventListener('change', async
       const tipoTxt = (fila["Tipo"] || "").toString().trim().toLowerCase();
       const tipo = tipoTxt.startsWith("egr") ? "egreso" : "ingreso";
       if(!profesional || !concepto){ ignorados++; continue; }
-      await db.collection('conceptos').add({profesional, concepto, codigo, tipo});
+      const valor = Number(String(fila["Valor"] ?? "").replace(/[^\d]/g,'')) || 0;
+      const valorMoneda = /usd|u\$s|dol/i.test(String(fila["Moneda"] || "")) ? 'USD' : '$';
+      const ya = existentes[profesional + '||' + concepto];
+      if(ya){
+        // ya existe: solo se actualiza su valor (no se duplica ni se tocan los demás datos)
+        if(ya.id && valor && (valor !== ya.valor || valorMoneda !== (ya.valorMoneda||'$'))){
+          await db.collection('conceptos').doc(ya.id).update({valor, valorMoneda}); actualizados++;
+        }
+        continue;
+      }
+      await db.collection('conceptos').add({profesional, concepto, codigo, tipo, ...(valor ? {valor, valorMoneda} : {})});
+      existentes[profesional + '||' + concepto] = {profesional, concepto};
       creados++;
     }
-    info.textContent = `Listo: ${creados} conceptos agregados` + (ignorados ? ` (se ignoraron ${ignorados} filas sin área o concepto)` : "") + `. Si algún nombre ya existía, quedó duplicado — revisalo en el panel.`;
+    info.textContent = `Listo: ${creados} conceptos agregados, ${actualizados} valores actualizados` + (ignorados ? ` (se ignoraron ${ignorados} filas sin área o concepto)` : "") + `.`;
   }catch(err){
     info.textContent = "Error al importar: " + err.message;
   }
@@ -10516,7 +10602,7 @@ document.getElementById('trRealizados').addEventListener('click', e=>{
 function trCalculo(){
   const sub = trSel.reduce((a,x)=> a + x.valor, 0);
   const [pct, lbl] = (document.getElementById('trDesc').value || '').split('|');
-  const desc = pct ? Math.round(sub * Number(pct) / 100) : 0;
+  const desc = sub - totalConDescuento(sub, pct, '$');
   return {sub, desc, lbl: lbl||'', total: sub - desc};
 }
 function trRenderTotal(){
