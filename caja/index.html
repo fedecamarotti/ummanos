@@ -1262,12 +1262,11 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     .tabla-stock td{overflow:hidden;text-overflow:ellipsis;}
     /* el nombre del insumo/producto queda fijo a la izquierda al deslizar */
     #sPanelStock .tabla-stock td:first-child, #sPanelStock .tabla-stock th:first-child,
-    #cPanelStock .tabla-stock td:nth-child(2), #cPanelStock .tabla-stock th:nth-child(2){position:sticky;left:0;z-index:1;background:#fffcf5;box-shadow:inset -1px 0 0 var(--border);}
-    #sPanelStock .tabla-stock th:first-child, #cPanelStock .tabla-stock th:nth-child(2){z-index:4;background:#f4eeda;}
-    #sPanelStock .tabla-stock tfoot td:first-child, #cPanelStock .tabla-stock tfoot td:nth-child(2){background:#f4eeda;z-index:3;}
+    #cPanelStock .tabla-stock td:first-child, #cPanelStock .tabla-stock th:first-child{position:sticky;left:0;z-index:1;background:#fffcf5;box-shadow:inset -1px 0 0 var(--border);}
+    #sPanelStock .tabla-stock th:first-child, #cPanelStock .tabla-stock th:first-child{z-index:4;background:#f4eeda;}
+    #sPanelStock .tabla-stock tfoot td:first-child, #cPanelStock .tabla-stock tfoot td:first-child{background:#f4eeda;z-index:3;}
     .tabla-stock tfoot td{z-index:2;}   /* el pie (totales) queda por encima de las filas fijas a la izquierda */
     #cPanelStock .tabla-stock tfoot td:first-child, #sPanelStock .tabla-stock tfoot td:first-child{position:sticky;left:0;bottom:0;z-index:3;}
-    #cPanelStock .tabla-stock tfoot td:nth-child(2){left:auto;}   /* en el pie la 2ª celda no es el producto (el título ocupa 3 columnas) */
     #sPanelStock .tabla-stock tr.s-critico td:first-child{background:#fbe3e1;}
     /* modal de sueros: cada insumo en dos/tres renglones */
     .s-items-head, .s-item{grid-template-columns:56px minmax(0,1fr) minmax(0,1fr) 32px;gap:6px;}
@@ -1885,7 +1884,6 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
             <col style="width:78px">
             <col style="width:17%">
             <col style="width:13%">
-            <col style="width:78px">
             <col style="width:21%">
             <col style="width:17%">
             <col style="width:104px">
@@ -1898,7 +1896,6 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
               <th><input type="text" class="th-search" id="filtroFecha" placeholder="Fecha" autocomplete="off"></th>
               <th><input type="text" class="th-search th-search-left" id="filtroPaciente" placeholder="Paciente/Alumno" autocomplete="off"></th>
               <th><input type="text" class="th-search" id="filtroProfesional" placeholder="Profesional" autocomplete="off"></th>
-              <th><input type="text" class="th-search" id="filtroCodigo" placeholder="Código" autocomplete="off"></th>
               <th><input type="text" class="th-search" id="filtroConcepto" placeholder="Concepto" autocomplete="off"></th>
               <th><input type="text" class="th-search" id="filtroNotas" placeholder="Notas/Detalle" autocomplete="off"></th>
               <th><input type="text" class="th-search" id="filtroTotal" placeholder="Total" autocomplete="off"></th>
@@ -2111,7 +2108,6 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
             <tr>
               <th><input type="text" class="th-search" id="cfFecha" placeholder="Fecha" autocomplete="off"></th>
               <th><input type="text" class="th-search th-search-left" id="cfPaciente" placeholder="Paciente" autocomplete="off"></th>
-              <th><input type="text" class="th-search" id="cfCodigo" placeholder="Código" autocomplete="off"></th>
               <th><input type="text" class="th-search" id="cfConcepto" placeholder="Concepto" autocomplete="off"></th>
               <th><div class="th-search">Cant.</div></th>
               <th><div class="th-search">Stock</div></th>
@@ -2136,10 +2132,9 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <div class="s-caption">Cremas: venta y costo en dólares. Colágenos y geles: costo en pesos.</div>
       <div class="sheet-wrap" style="flex:0 1 auto;width:calc(100% - 56px);max-width:900px;margin:6px auto 20px;">
         <table class="tabla-stock">
-          <colgroup><col style="width:90px"><col><col style="width:120px"><col style="width:120px"><col style="width:120px"><col style="width:80px"><col style="width:44px"></colgroup>
+          <colgroup><col><col style="width:120px"><col style="width:120px"><col style="width:120px"><col style="width:80px"><col style="width:44px"></colgroup>
           <thead>
             <tr>
-              <th><input type="text" class="th-search" id="cfsCodigo" placeholder="Código" autocomplete="off"></th>
               <th><input type="text" class="th-search th-search-left" id="cfStock" placeholder="Producto" autocomplete="off" style="padding-left:14px;"></th>
               <th><input type="text" class="th-search" id="cfsArea" placeholder="Área" autocomplete="off"></th>
               <th><input type="text" class="th-search" id="cfsVenta" placeholder="Venta USD" autocomplete="off"></th>
@@ -2487,7 +2482,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <table style="width:100%;">
       <thead>
         <tr>
-          <th>Fecha</th><th class="left">Paciente/Alumno</th><th>Profesional</th><th>Código</th>
+          <th>Fecha</th><th class="left">Paciente/Alumno</th><th>Profesional</th>
           <th>Concepto</th><th>Notas/Detalle</th><th>Total</th><th>Medio de pago</th><th>Cobró</th>
         </tr>
       </thead>
@@ -2520,7 +2515,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <table style="width:100%;">
       <thead>
         <tr>
-          <th>Fecha</th><th class="left">Paciente/Alumno</th><th>Profesional</th><th>Código</th>
+          <th>Fecha</th><th class="left">Paciente/Alumno</th><th>Profesional</th>
           <th>Concepto</th><th>Notas/Detalle</th><th>Total</th><th>Medio de pago</th><th>Cobró</th>
         </tr>
       </thead>
@@ -3012,7 +3007,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   <div class="modal" style="max-width:1000px;">
     <button class="close-x" id="closeConceptos">✕</button>
     <h2>Conceptos</h2>
-    <div class="modal-sub">Escribí para buscar por área, código o concepto. Definí acá si cada uno es ingreso o egreso — todo lo que no toques queda como Ingreso.</div>
+    <div class="modal-sub">Escribí para buscar por área o concepto. Definí acá si cada uno es ingreso o egreso — todo lo que no toques queda como Ingreso.</div>
     <div class="lista-toolbar">
       <input type="text" id="buscarConceptoInput" placeholder="Buscar…" autocomplete="off">
       <button class="addbtn" id="btnNuevoConcepto" title="Agregar concepto">+</button>
@@ -3585,7 +3580,7 @@ function suscribirMovimientos(){
       movimientos = snap.docs.map(d=> ({id:d.id, ...d.data()}));
       renderTabla();
     }, err=>{
-      tbody.innerHTML = `<tr><td colspan="10" style="padding:20px;text-align:left;color:#a13a3a;">
+      tbody.innerHTML = `<tr><td colspan="9" style="padding:20px;text-align:left;color:#a13a3a;">
         No se pudieron cargar los movimientos: ${err.message}
       </td></tr>`;
     });
@@ -3838,14 +3833,14 @@ function attachAutocomplete(input, getOptions, onPick, etiqueta){
 const filtroFecha = document.getElementById('filtroFecha');
 const filtroPaciente = document.getElementById('filtroPaciente');
 const filtroProfesional = document.getElementById('filtroProfesional');
-const filtroCodigo = document.getElementById('filtroCodigo');
+const filtroCodigo = {value:''};   // la columna Código ya no se usa
 const filtroConcepto = document.getElementById('filtroConcepto');
 const filtroNotas = document.getElementById('filtroNotas');
 const filtroTotal = document.getElementById('filtroTotal');
 const filtroMedio = document.getElementById('filtroMedio');
 const filtroCobro = document.getElementById('filtroCobro');
 
-const filtrosTabla = [filtroFecha, filtroPaciente, filtroProfesional, filtroCodigo, filtroConcepto, filtroNotas, filtroTotal, filtroMedio, filtroCobro];
+const filtrosTabla = [filtroFecha, filtroPaciente, filtroProfesional, filtroConcepto, filtroNotas, filtroTotal, filtroMedio, filtroCobro];
 filtrosTabla.forEach(f=> f.addEventListener('input', renderTabla));
 
 // Búsqueda de fechas estricta: "2/10" encuentra solo el 2/10 (no el 22/10); "3" solo los días 3; "/10" todo octubre.
@@ -3897,7 +3892,6 @@ function renderTabla(){
       <td>${m.fechaDisplay}</td>
       <td class="left">${esPac ? `<span class="pac-link" data-pac="${escHtml(m.pac)}" title="Ver ficha del paciente">${m.pac}</span>` : m.pac}</td>
       <td${esViejoCatalogo(m,'prof') ? ' class="mig-viejo"' : ''}>${m.prof}</td>
-      <td class="codigo">${m.codigo||""}</td>
       <td class="concepto${esViejoCatalogo(m,'concepto') ? ' mig-viejo' : ''}">${m.concepto}</td>
       <td class="notas" title="${(m.notas||"").replace(/"/g,'&quot;')}${m.jornada?' (JORNADA)':''}">${m.notas||""}${m.jornada ? `${m.notas ? ' ' : ''}<i class="tag-jornada">(JORNADA)</i>` : ''}${esCajaGrande(m) ? '<i class="tag-grande">CAJA GRANDE</i>' : ''}</td>
       <td class="total ${m.valor==0 ? '' : (esGasto?'egreso':'ingreso')}">${fmtTotal(m)}</td>
@@ -3925,7 +3919,7 @@ function renderTotalesCaja(filas){
   const cls = v => v<0 ? 'egreso' : (v>0 ? 'ingreso' : '');
   tf.innerHTML = `<tr>
     <td class="editcol"></td>
-    <td colspan="6" class="left">TOTALES <span class="tot-cant">(${filas.length} ${filas.length===1?'movimiento':'movimientos'})</span></td>
+    <td colspan="5" class="left">TOTALES <span class="tot-cant">(${filas.length} ${filas.length===1?'movimiento':'movimientos'})</span></td>
     <td class="total ${cls(pesos)}">${fmtMonto(pesos,'$')}${hayUsd ? `<div class="${cls(usd)}">${fmtMonto(usd,'USD')}</div>` : ''}</td>
     <td></td><td></td>
   </tr>`;
@@ -4504,11 +4498,7 @@ function leerPagosForm(){
 
 function ordenarConceptos(profesional, opts){
   const copia = opts.slice();
-  if((profesional||"").trim().toUpperCase() === "CREMAS"){
-    copia.sort((a,b)=> a.concepto.localeCompare(b.concepto, 'es'));
-  } else {
-    copia.sort((a,b)=> (a.codigo||"").localeCompare((b.codigo||""), 'es', {numeric:true, sensitivity:'base'}));
-  }
+  copia.sort((a,b)=> a.concepto.localeCompare(b.concepto, 'es', {numeric:true, sensitivity:'base'}));   // orden alfabético
   return copia;
 }
 
@@ -5087,7 +5077,7 @@ function bkFilas(lista){
   const fh = ts=> ts && ts.toDate ? fechaHoraCorta(ts.toDate()) : '';
   return lista.map(m=> ({
     'Fecha': ecFecha(m.fechaISO), 'Caja': esCajaGrande(m) ? 'GRANDE' : 'CHICA', 'Tipo': esGastoMov(m) ? 'Egreso' : 'Ingreso', 'Paciente / Destinatario': m.pac||'',
-    'Profesional / Área': m.prof||'', 'Código': m.codigo||'', 'Concepto': m.concepto||'', 'Notas': (m.notas||'') + (m.jornada ? ' (JORNADA)' : ''),
+    'Profesional / Área': m.prof||'', 'Concepto': m.concepto||'', 'Notas': (m.notas||'') + (m.jornada ? ' (JORNADA)' : ''),
     'Moneda': m.moneda==='USD' ? 'USD' : '$', 'Total': (Number(m.valor)||0) * (esGastoMov(m) ? -1 : 1),
     'Medio de pago': medioDisplayText(m), 'Cobró': cobroTextoPlano(m), 'Cargado por': (m.creadoPor||'') + (m.creadoEn ? ` (${fh(m.creadoEn)})` : ''),
   }));
@@ -5117,7 +5107,7 @@ document.getElementById('bkPdf').onclick = async ()=>{
     doc.text(limpiarTextoPDF(`Back up de movimientos - ${bkNombreMes(r.ym)}`), 30, 34);
     doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(122,106,72);
     doc.text(limpiarTextoPDF(`Exportado por ${nombreCortoUsuario(currentUser ? currentUser.nombre : '')} (${fechaHoraCorta(new Date())}) - ${filas.length} movimientos`), 30, 48);
-    const cols = ['Fecha','Caja','Tipo','Paciente / Destinatario','Profesional / Área','Código','Concepto','Notas','Total','Medio de pago','Cobró','Cargado por'];
+    const cols = ['Fecha','Caja','Tipo','Paciente / Destinatario','Profesional / Área','Concepto','Notas','Total','Medio de pago','Cobró','Cargado por'];
     doc.autoTable({
       startY: 60, margin:{left:30, right:30},
       head: [cols.map(limpiarTextoPDF)],
@@ -5125,8 +5115,8 @@ document.getElementById('bkPdf').onclick = async ()=>{
       styles: {font:'helvetica', fontSize:6.8, cellPadding:3, textColor:[36,38,43], lineColor:[231,225,210], lineWidth:0.4},
       headStyles: {fillColor:[182,154,98], textColor:255, fontStyle:'bold', fontSize:7},
       alternateRowStyles: {fillColor:[251,248,240]},
-      columnStyles: {0:{cellWidth:48}, 1:{cellWidth:40}, 2:{cellWidth:38}, 5:{cellWidth:34}, 8:{halign:'right', cellWidth:58}},
-      didParseCell: c=>{ if(c.section==='body' && c.column.index===8){ c.cell.styles.fontStyle='bold'; c.cell.styles.textColor = filas[c.row.index].Tipo==='Egreso' ? [161,58,58] : [47,122,47]; } },
+      columnStyles: {0:{cellWidth:48}, 1:{cellWidth:40}, 2:{cellWidth:38}, 7:{halign:'right', cellWidth:58}},
+      didParseCell: c=>{ if(c.section==='body' && c.column.index===7){ c.cell.styles.fontStyle='bold'; c.cell.styles.textColor = filas[c.row.index].Tipo==='Egreso' ? [161,58,58] : [47,122,47]; } },
     });
     doc.save(`backup-movimientos-${r.ym}.pdf`);
   }catch(e){ alert('No se pudo generar el PDF: ' + e.message); }
@@ -5668,7 +5658,6 @@ function construirFilaVisual(m){
       <td>${m.fechaDisplay}</td>
       <td class="left">${m.pac}</td>
       <td>${m.prof}</td>
-      <td class="codigo">${m.codigo||""}</td>
       <td class="concepto" style="white-space:normal;">${m.concepto}</td>
       <td class="notas" style="white-space:normal;overflow:visible;text-overflow:clip;max-width:220px;">${m.notas||""}</td>
       <td class="total ${totalClass}">${fmtTotal(m)}</td>
@@ -5769,19 +5758,18 @@ function generarPDFReporteDiario(filas, fechaISO, sesiones){
 
   // ---------- Tabla principal (mismo orden y columnas que la pantalla) ----------
   const body = filas.map(m=>[
-    m.fechaDisplay, m.pac, m.prof, m.codigo||"", m.concepto, m.notas||"",
+    m.fechaDisplay, m.pac, m.prof, m.concepto, m.notas||"",
     fmtTotal(m), medioDisplayText(m), cobroTextoPlano(m)
   ].map(limpiarTextoPDF));
   doc.autoTable({
     startY: 64,
-    head: [["Fecha","Paciente/Alumno","Profesional","Código","Concepto","Notas","Total","Medio de pago","Cobró"]],
+    head: [["Fecha","Paciente/Alumno","Profesional","Concepto","Notas","Total","Medio de pago","Cobró"]],
     body,
     styles:{font:'helvetica', fontSize:8, cellPadding:4.5, textColor:TEXTO, lineColor:[231,231,234], lineWidth:0.5},
     headStyles:{fillColor:MORADO, textColor:255, fontStyle:'bold', fontSize:8},
     alternateRowStyles:{fillColor:[250,250,252]},
-    columnStyles:{ 3:{cellWidth:42} },
     didParseCell: (data)=>{
-      if(data.section==='body' && data.column.index===6){
+      if(data.section==='body' && data.column.index===5){
         const m = filas[data.row.index];
         if(m.valor != 0){
           data.cell.styles.fontStyle = 'bold';
@@ -7952,7 +7940,7 @@ function suscribirCremas(){
     });
     renderCremas();
   }, err=>{
-    document.getElementById('cTbody').innerHTML = `<tr><td colspan="13" class="empty-state" style="color:#a13a3a;">No se pudieron cargar los datos de cremas: ${err.message}</td></tr>`;
+    document.getElementById('cTbody').innerHTML = `<tr><td colspan="12" class="empty-state" style="color:#a13a3a;">No se pudieron cargar los datos de cremas: ${err.message}</td></tr>`;
   });
 }
 // Movimientos del mes: si coincide con el mes de la tabla principal se usan esos (ya están en vivo);
@@ -8008,8 +7996,8 @@ document.getElementById('btnCremas').onclick = ()=> mostrarVista('cremas');
 document.getElementById('cMesPrev').onclick = ()=>{ mesCremas.month--; if(mesCremas.month<1){ mesCremas.month=12; mesCremas.year--; } cargarMovsCremas(); renderCremas(); };
 document.getElementById('cMesNext').onclick = ()=>{ mesCremas.month++; if(mesCremas.month>12){ mesCremas.month=1; mesCremas.year++; } cargarMovsCremas(); renderCremas(); };
 document.querySelectorAll('.c-tab[data-ctab]').forEach(b=> b.onclick = ()=>{ cTab = b.dataset.ctab; renderCremas(); });
-['cfFecha','cfPaciente','cfCodigo','cfConcepto','cfIndica'].forEach(id=> document.getElementById(id).addEventListener('input', renderCremas));
-['cfStock','cfsCodigo','cfsArea','cfsVenta','cfsCosto','cfsStock'].forEach(id=> document.getElementById(id).addEventListener('input', renderCremasStock));
+['cfFecha','cfPaciente','cfConcepto','cfIndica'].forEach(id=> document.getElementById(id).addEventListener('input', renderCremas));
+['cfStock','cfsArea','cfsVenta','cfsCosto','cfsStock'].forEach(id=> document.getElementById(id).addEventListener('input', renderCremasStock));
 
 function renderCremas(){
   if(vistaActual!=='cremas') return;
@@ -8068,10 +8056,10 @@ function renderCremasMovs(){
   const tabla = tb.closest('table');
   tabla.classList.toggle('c-pesos', !usd);
   document.getElementById('cCols').innerHTML = usd
-    ? '<col style="width:58px"><col style="width:15%"><col style="width:74px"><col><col style="width:44px"><col style="width:56px"><col style="width:84px"><col style="width:100px"><col style="width:150px"><col style="width:84px"><col style="width:84px"><col style="width:100px"><col style="width:56px"><col style="width:100px"><col style="width:110px">'
-    : '<col style="width:64px"><col style="width:18%"><col style="width:74px"><col><col style="width:44px"><col style="width:56px"><col style="width:110px"><col style="width:170px"><col style="width:110px"><col style="width:70px"><col style="width:100px"><col style="width:120px">';
+    ? '<col style="width:58px"><col style="width:15%"><col><col style="width:44px"><col style="width:56px"><col style="width:84px"><col style="width:100px"><col style="width:150px"><col style="width:84px"><col style="width:84px"><col style="width:100px"><col style="width:56px"><col style="width:100px"><col style="width:110px">'
+    : '<col style="width:64px"><col style="width:18%"><col><col style="width:44px"><col style="width:56px"><col style="width:110px"><col style="width:170px"><col style="width:110px"><col style="width:70px"><col style="width:100px"><col style="width:120px">';
   document.getElementById('cThCosto').textContent = usd ? 'Costo' : 'Costo';
-  const nCols = usd ? 15 : 12;
+  const nCols = usd ? 14 : 11;
   if(cremasVentas==null){ tb.innerHTML = `<tr><td colspan="${nCols}" class="empty-state">Cargando ventas…</td></tr>`; tf.innerHTML = ''; return; }
   const f = id => document.getElementById(id).value;
   const todas = ventasCremasTodas();
@@ -8083,7 +8071,6 @@ function renderCremasMovs(){
     const c = calcularCrema(m);
     return (!f('cfFecha') || contiene(isoToDisplay(m.fechaISO), f('cfFecha')))
       && (!f('cfPaciente') || contiene(m.pac, f('cfPaciente')))
-      && (!f('cfCodigo') || contiene(m.codigo, f('cfCodigo')))
       && (!f('cfConcepto') || contiene(m.concepto, f('cfConcepto')))
       && (!f('cfIndica') || contiene(c.indica, f('cfIndica')));
   };
@@ -8091,7 +8078,6 @@ function renderCremasMovs(){
     const p = prods[a.clave] || {};
     return (!f('cfFecha') || contiene(isoToDisplay(a.fechaISO), f('cfFecha')))
       && (!f('cfPaciente') || contiene((a.tipo==='retiro' ? 'RETIRO ' : 'INGRESO ') + (a.detalle||''), f('cfPaciente')))
-      && (!f('cfCodigo') || contiene(p.codigo||a.clave, f('cfCodigo')))
       && (!f('cfConcepto') || contiene(p.nombre||'', f('cfConcepto')))
       && !f('cfIndica');
   };
@@ -8121,7 +8107,6 @@ function renderCremasMovs(){
     return `<tr>
       <td>${isoToDisplay(m.fechaISO)}</td>
       <td class="left">${m.pac||''}</td>
-      <td class="codigo">${m.codigo||''}</td>
       <td class="concepto">${m.concepto||''}${sinStock ? ' <span class="c-aviso" title="Este producto no tiene precios en Stock">sin precio</span>' : ''}</td>
       <td class="c-cant">-1</td>
       ${celdaStock(m.id)}
@@ -8142,11 +8127,10 @@ function renderCremasMovs(){
     return `<tr class="c-ajuste ${ing ? 'ing' : 'ret'}">
       <td>${isoToDisplay(a.fechaISO)}</td>
       <td class="left">${ing ? 'INGRESO' : 'RETIRO'}${a.detalle ? ' · ' + a.detalle : ''}</td>
-      <td class="codigo">${p.codigo || a.clave}</td>
-      <td class="concepto">${p.nombre || ''}</td>
+      <td class="concepto">${p.nombre || p.codigo || a.clave}</td>
       <td class="c-cant">${ing ? '+' : '-'}${Number(a.cant).toLocaleString('es-AR')}</td>
       ${celdaStock(a.id)}
-      <td colspan="${nCols-7}"></td>
+      <td colspan="${nCols-6}"></td>
       <td><button class="c-linea-quitar" data-quitar-ajuste="${a.id}" title="Eliminar este ${ing ? 'ingreso' : 'retiro'}">✕</button></td>
     </tr>`;
   };
@@ -8401,8 +8385,7 @@ document.getElementById('cBtnStockIni').onclick = ()=>{
   const c = cremasInicial.cantidades || {};
   document.getElementById('csiLista').innerHTML = productosCremas().map(p=>`
     <div class="csi-fila" data-texto="${(p.codigo+' '+p.nombre).replace(/"/g,'&quot;')}">
-      <span class="codigo">${p.codigo}</span>
-      <span class="nom">${p.nombre}</span>
+      <span class="nom">${p.nombre || p.codigo}</span>
       <input type="text" inputmode="numeric" data-k="${p.clave.replace(/"/g,'&quot;')}" value="${c[p.clave]!=null && c[p.clave]!=='' ? c[p.clave] : ''}" placeholder="—">
     </div>`).join('') || '<div class="empty-state">No hay productos de cremas o colágenos en Conceptos.</div>';
   document.querySelectorAll('#csiLista input').forEach(inp=> inp.addEventListener('input', ()=> inp.value = inp.value.replace(/\D/g,'')));
@@ -8463,7 +8446,6 @@ function renderCremasStock(){
     const pesos = esColageno(p.prof);
     const stockPlano = (stockTxt(p.clave).txt || '').replace(/<[^>]*>/g,'');
     return (!q || contiene(p.codigo+' '+p.nombre, q))
-      && (!fv('cfsCodigo') || contiene(p.codigo, fv('cfsCodigo')))
       && (!fv('cfsArea') || contiene(p.prof, fv('cfsArea')))
       && (!fv('cfsVenta') || contiene(pesos ? '' : precioTxt(s.venta,'usd'), fv('cfsVenta')))
       && (!fv('cfsCosto') || contiene(precioTxt(s.costo, pesos ? 'ars' : 'usd'), fv('cfsCosto')))
@@ -8473,8 +8455,7 @@ function renderCremasStock(){
   tb.innerHTML = lista.map(p=>{
     const s = cremasStock[p.clave] || {};
     return `<tr>
-      <td class="codigo">${p.codigo}</td>
-      <td class="left">${p.nombre}</td>
+      <td class="left">${p.nombre || p.codigo}</td>
       <td class="codigo">${p.prof}</td>
       <td>${esColageno(p.prof) ? '<span class="pend">—</span>' : `<input class="c-precio" data-k="${p.clave.replace(/"/g,'&quot;')}" data-campo="venta" data-mon="usd" inputmode="decimal" value="${precioTxt(s.venta,'usd')}">`}</td>
       <td><input class="c-precio" data-k="${p.clave.replace(/"/g,'&quot;')}" data-campo="costo" data-mon="${esColageno(p.prof)?'ars':'usd'}" inputmode="decimal" value="${precioTxt(s.costo, esColageno(p.prof)?'ars':'usd')}"></td>
@@ -8497,7 +8478,7 @@ function renderCremasStock(){
   });
   const usd = v => 'USD ' + Math.round(v).toLocaleString('es-AR');
   document.getElementById('cStockFoot').innerHTML = `<tr>
-    <td colspan="3" class="left">TOTALES <span class="tot-cant">(${lista.length} ${lista.length===1?'producto':'productos'})</span></td>
+    <td colspan="2" class="left">TOTALES <span class="tot-cant">(${lista.length} ${lista.length===1?'producto':'productos'})</span></td>
     <td>${tVentaUsd ? usd(tVentaUsd) : '<span class="pend">—</span>'}</td>
     <td>${[tCostoUsd ? usd(tCostoUsd) : '', tCostoArs ? fmtPesos(tCostoArs) : ''].filter(Boolean).join('<br>') || '<span class="pend">—</span>'}</td>
     <td class="${tUnid<0?'neg':''}">${tUnid.toLocaleString('es-AR')}</td>
@@ -9668,17 +9649,16 @@ function todosLosConceptos(){
   Object.keys(CONCEPTOS).forEach(prof=>{
     CONCEPTOS[prof].forEach(c=> lista.push({id: c.id, profesional: prof, concepto: c.concepto, codigo: c.codigo, tipo: c.tipo||"ingreso", detObligatorio: !!c.detObligatorio, valor: c.valor, valorMoneda: c.valorMoneda||'$'}));
   });
-  return lista.sort((a,b)=> a.profesional.localeCompare(b.profesional,'es') || (a.codigo||"").localeCompare(b.codigo||"",'es',{numeric:true}));
+  return lista.sort((a,b)=> a.profesional.localeCompare(b.profesional,'es') || a.concepto.localeCompare(b.concepto,'es',{numeric:true, sensitivity:'base'}));
 }
 
 function filaConceptoHTML(c, esNueva){
   const opcionesProf = todosLosNombresDeProfesionales();
   return `
-    <div class="fila-editable" data-profesional-original="${c.profesional||''}" data-concepto-original="${c.concepto||''}">
+    <div class="fila-editable" data-profesional-original="${c.profesional||''}" data-concepto-original="${c.concepto||''}" data-codigo="${escAttr(c.codigo||'')}">
       <select class="col-chico cc-profesional">
         ${opcionesProf.map(p=>`<option value="${p}" ${p===c.profesional?'selected':''}>${p}</option>`).join('')}
       </select>
-      <input type="text" class="col-chico cc-codigo" value="${c.codigo||""}" placeholder="Código">
       <input type="text" class="col cc-concepto" value="${c.concepto||""}" placeholder="Concepto">
       <select class="col-chico cc-tipo">
         <option value="ingreso" ${c.tipo!=='egreso'?'selected':''}>Ingreso</option>
@@ -9712,7 +9692,7 @@ async function crearConceptoFila(btn){
   const fila = btn.closest('.fila-editable');
   const profesional = fila.querySelector('.cc-profesional').value;
   const concepto = fila.querySelector('.cc-concepto').value.trim();
-  const codigo = fila.querySelector('.cc-codigo').value.trim();
+  const codigo = fila.dataset.codigo || '';   // el código ya no se muestra: se conserva el que tenía
   const tipo = fila.querySelector('.cc-tipo').value;
   const detObligatorio = fila.querySelector('.cc-det').checked;
   if(!profesional){ alert("Elegí un profesional/área (creá uno primero en Profesionales/Áreas si no existe)."); return; }
@@ -9735,7 +9715,7 @@ async function guardarConceptoFila(btn){
   const conceptoOriginal = fila.dataset.conceptoOriginal;
   const profesional = fila.querySelector('.cc-profesional').value;
   const concepto = fila.querySelector('.cc-concepto').value.trim();
-  const codigo = fila.querySelector('.cc-codigo').value.trim();
+  const codigo = fila.dataset.codigo || '';   // el código ya no se muestra: se conserva el que tenía
   const tipo = fila.querySelector('.cc-tipo').value;
   const detObligatorio = fila.querySelector('.cc-det').checked;
   if(!concepto){ alert("El concepto no puede quedar vacío."); return; }
@@ -9784,7 +9764,6 @@ window.eliminarConceptoFila = eliminarConceptoFila;
 document.getElementById('btnExportarConceptos').onclick = ()=>{
   const filas = todosLosConceptos().map(c=> ({
     "Área": c.profesional,
-    "Código": c.codigo || "",
     "Concepto": c.concepto,
     "Tipo": c.tipo==="egreso" ? "Egreso" : "Ingreso",
     "Valor": c.valor || "",
@@ -10605,7 +10584,7 @@ function trRenderLista(){
   if(!document.getElementById('trProf').value.trim()){ cont.innerHTML = '<div class="tr-vacio">Elegí el profesional para ver sus tratamientos.</div>'; return; }
   const q = document.getElementById('trBuscar').value.trim();
   if(!q){ cont.innerHTML = ''; return; }   // sin búsqueda no se lista nada
-  const lista = trConceptos().filter(c=> !q || contiene(c.concepto, q));
+  const lista = trConceptos().filter(c=> !q || contiene(c.concepto, q)).sort((a,b)=> a.concepto.localeCompare(b.concepto,'es',{numeric:true}));
   if(!lista.length){ cont.innerHTML = '<div class="tr-vacio">No hay tratamientos.</div>'; return; }
   cont.innerHTML = lista.map(c=>{
     const sel = trSel.some(x=> x.concepto===c.concepto);
