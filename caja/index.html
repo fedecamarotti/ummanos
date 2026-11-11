@@ -6575,9 +6575,9 @@ function renderStock(){
     return `<td class="s-cont-td"><input class="s-cont" data-k="${escAttr(i.insumo)}" inputmode="numeric" value="${hay ? v : ''}" placeholder="—">${marca || '<span class="s-cont-esp"></span>'}</td>`;
   };
   const faltanDe = i=>{
-    const max = (suerosCriticos[i.insumo]||{}).max;
-    if(max==null || max==='') return null;
-    return Math.max(0, Number(max) - i.cant);
+    const min = (suerosCriticos[i.insumo]||{}).min;   // Calcular compra: cuánto falta para llegar al mínimo crítico
+    if(min==null || min==='') return null;
+    return Math.max(0, Number(min) - i.cant);
   };
   const ordCell = i=> sOrdenando
     ? `<span class="s-ord"><button title="Subir" data-sube="${escAttr(i.insumo)}">▲</button><button title="Bajar" data-baja="${escAttr(i.insumo)}">▼</button></span>`
@@ -6651,7 +6651,7 @@ function renderStock(){
   };
   document.getElementById('sCalcInfo').classList.toggle('col-hidden', !sCalcCompra);
   document.getElementById('sCalcInfo').innerHTML = sCalcCompra
-    ? `Para llegar al máx. crítico faltan <b>${totFaltan.toLocaleString('es-AR')}</b> unidades · costo estimado (al último precio de compra): <b>${fmtPesos(costoCompra)}</b>` : '';
+    ? `Para llegar al mín. crítico faltan <b>${totFaltan.toLocaleString('es-AR')}</b> unidades · costo estimado (al último precio de compra): <b>${fmtPesos(costoCompra)}</b>` : '';
 }
 let suerosConteo = {};       // sueros/_conteo → { "INSUMO": n } (conteo manual de Fede)
 let sContSiguiente = null;
