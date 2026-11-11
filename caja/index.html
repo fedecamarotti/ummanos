@@ -21,11 +21,11 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <!-- PDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
   :root{
@@ -152,7 +152,11 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .menu-dropdown.open .menu-links button:hover{background:#f0e8cf;transition-delay:0s;}
   .menu-links button:focus-visible, #btnMenu:focus-visible, .menu-close:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
   .menu-links .badge-count{position:static;margin-left:auto;}
-  .side-icon{display:inline-block;width:18px;text-align:center;}
+  .side-icon{display:inline-flex;width:18px;justify-content:center;color:var(--accent-dk);}
+  svg.ico{width:15px;height:15px;flex:none;vertical-align:-3px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+  .side-icon svg.ico{width:17px;height:17px;}
+  .p-boton .ic svg.ico{width:26px;height:26px;color:var(--accent-dk);stroke-width:1.6;}
+  #trBuscar{padding-left:38px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239c8250' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E") no-repeat 14px center/16px;}
   @media (max-width:640px){
     .menu-dropdown{left:auto;right:0;transform-origin:top right;}
   }
@@ -925,6 +929,14 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
   .hint:empty{display:none;}
 
   /* ---------- Modal ---------- */
+  .umm-dlg{position:fixed;inset:0;z-index:5000;background:rgba(36,38,43,.38);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .15s;}
+  .umm-dlg.show{opacity:1;}
+  .umm-dlg-card{background:#fffcf5;border:1px solid var(--border);border-radius:16px;box-shadow:0 18px 50px rgba(36,38,43,.25);max-width:420px;width:100%;padding:22px 22px 16px;transform:translateY(8px);transition:transform .15s;}
+  .umm-dlg.show .umm-dlg-card{transform:none;}
+  .umm-dlg-msg{font-size:13.5px;line-height:1.55;color:var(--text);word-break:break-word;}
+  .umm-dlg-acc{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;flex-wrap:wrap;}
+  .umm-dlg-acc .btn{min-width:96px;}
+  .umm-dlg-acc .btn:focus{outline:2px solid var(--accent);outline-offset:2px;}
   .overlay{
     position:fixed;inset:0;background:rgba(20,20,30,0.4);display:none;
     align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto;z-index:50;
@@ -1584,7 +1596,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <h2>Vista previa</h2>
       <span class="p-spacer"></span>
       <button class="btn" id="pdfCerrar">Cerrar</button>
-      <button class="btn btn-primary" id="pdfDescargar">⬇ Descargar PDF</button>
+      <button class="btn btn-primary" id="pdfDescargar"><i data-ico="descargar"></i> Descargar PDF</button>
     </div>
     <div class="pdf-fondo"><div class="pdf-escala" id="pdfEscala"><div class="pdf-hoja" id="pdfHoja"></div></div></div>
   </div>
@@ -1607,10 +1619,10 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <div class="p-sub">¿A dónde querés entrar?</div>
       <div class="p-botones">
         <a class="p-boton" href="https://ummanos.com.ar" target="_blank" rel="noopener">
-          <span class="ic">📖</span><span>Glosario<small>Planillas e información para profesionales</small></span>
+          <span class="ic"><i data-ico="glosario"></i></span><span>Glosario<small>Planillas e información para profesionales</small></span>
         </a>
         <button class="p-boton col-hidden" id="pIrSueros">
-          <span class="ic">💉</span><span>Sueroterapia<small>Cargar y consultar aplicaciones</small></span>
+          <span class="ic"><i data-ico="suero"></i></span><span>Sueroterapia<small>Cargar y consultar aplicaciones</small></span>
         </button>
       </div>
     </div>
@@ -1754,7 +1766,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
           </div>
           <div class="hc-acciones">
             <button class="btn" id="hcBtnNota">+ Nota</button>
-            <button class="btn btn-pdf" id="hcPDF" title="Vista previa de la ficha en PDF">📄 FICHA PDF</button>
+            <button class="btn btn-pdf" id="hcPDF" title="Vista previa de la ficha en PDF"><i data-ico="pdf"></i> FICHA PDF</button>
             <span class="hc-estado" id="hcEstado"></span>
             <button class="btn btn-primary" id="hcGuardar">Guardar ficha</button>
           </div>
@@ -1820,21 +1832,21 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
           <button class="menu-close" id="menuClose" title="Cerrar" aria-label="Cerrar menú">✕</button>
         </div>
         <div class="menu-links" id="sidebarLinks">
-          <a class="btn menu-inicio" href="../"><span class="side-icon">🏠</span> Inicio</a>
-          <button class="btn col-hidden" id="btnVistaMovimientos"><span class="side-icon">📒</span> Movimientos</button>
-          <button class="btn col-hidden" id="btnCajas"><span class="side-icon">🗳️</span> Cajas</button>
-          <button class="btn" id="btnPacientes"><span class="side-icon">🌱</span> Pacientes</button>
-          <button class="btn col-hidden" id="btnProfesionalesPanel"><span class="side-icon">👩🏻‍⚕️</span> Profesionales/Áreas</button>
-          <button class="btn col-hidden" id="btnConceptosPanel"><span class="side-icon">📋</span> Conceptos</button>
-          <button class="btn col-hidden" id="btnProveedoresPanel"><span class="side-icon">👨🏻‍💼</span> Proveedores</button>
-          <button class="btn btn-deudores" id="btnDeudores"><span class="side-icon">🕵🏻‍♂️</span> Deudores <span class="badge-count col-hidden" id="deudoresCount">0</span></button>
-          <button class="btn col-hidden" id="btnSueros"><span class="side-icon">💉</span> Sueros</button>
-          <button class="btn col-hidden" id="btnCremas"><span class="side-icon">🧴</span> Cremas/Col./Geles</button>
-          <button class="btn col-hidden" id="btnConta"><span class="side-icon">📘</span> Victoria contabilidad</button>
-          <button class="btn col-hidden" id="btnInformes"><span class="side-icon">📊</span> Informes</button>
-          <button class="btn col-hidden" id="btnReporteDiario"><span class="side-icon">🧾</span> Reporte diario</button>
-          <button class="btn" id="btnPagoProfesional"><span class="side-icon">🧮</span> Calcular pago profesional</button>
-          <button class="btn col-hidden" id="btnImportar"><span class="side-icon">⬆</span> Importar catálogo</button>
+          <a class="btn menu-inicio" href="../"><span class="side-icon"><i data-ico="inicio"></i></span> Inicio</a>
+          <button class="btn col-hidden" id="btnVistaMovimientos"><span class="side-icon"><i data-ico="lista"></i></span> Movimientos</button>
+          <button class="btn col-hidden" id="btnCajas"><span class="side-icon"><i data-ico="cajas"></i></span> Cajas</button>
+          <button class="btn" id="btnPacientes"><span class="side-icon"><i data-ico="pacientes"></i></span> Pacientes</button>
+          <button class="btn col-hidden" id="btnProfesionalesPanel"><span class="side-icon"><i data-ico="profesionales"></i></span> Profesionales/Áreas</button>
+          <button class="btn col-hidden" id="btnConceptosPanel"><span class="side-icon"><i data-ico="conceptos"></i></span> Conceptos</button>
+          <button class="btn col-hidden" id="btnProveedoresPanel"><span class="side-icon"><i data-ico="proveedores"></i></span> Proveedores</button>
+          <button class="btn btn-deudores" id="btnDeudores"><span class="side-icon"><i data-ico="deudores"></i></span> Deudores <span class="badge-count col-hidden" id="deudoresCount">0</span></button>
+          <button class="btn col-hidden" id="btnSueros"><span class="side-icon"><i data-ico="suero"></i></span> Sueros</button>
+          <button class="btn col-hidden" id="btnCremas"><span class="side-icon"><i data-ico="cremas"></i></span> Cremas/Col./Geles</button>
+          <button class="btn col-hidden" id="btnConta"><span class="side-icon"><i data-ico="conta"></i></span> Victoria contabilidad</button>
+          <button class="btn col-hidden" id="btnInformes"><span class="side-icon"><i data-ico="informes"></i></span> Informes</button>
+          <button class="btn col-hidden" id="btnReporteDiario"><span class="side-icon"><i data-ico="recibo"></i></span> Reporte diario</button>
+          <button class="btn" id="btnPagoProfesional"><span class="side-icon"><i data-ico="calc"></i></span> Calcular pago profesional</button>
+          <button class="btn col-hidden" id="btnImportar"><span class="side-icon"><i data-ico="subir"></i></span> Importar catálogo</button>
         </div>
       </div>
     </div>
@@ -1848,7 +1860,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
    <div class="vista" id="vistaMovimientos">
     <div class="fede-nav col-hidden"></div>
     <div class="hint" id="cajaHint"></div>
-    <div class="preview-banner col-hidden" id="previewBanner">👁 Vista previa: solo lectura</div>
+    <div class="preview-banner col-hidden" id="previewBanner"><i data-ico="ojo"></i> Vista previa: solo lectura</div>
     <div class="mov-bar" id="movBar">
       <div class="mes-selector">
         <button id="mesPrev" title="Mes anterior">◀</button>
@@ -1986,8 +1998,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <div style="justify-self:end;display:flex;gap:8px;">
         <button class="btn s-cfg-btn venc-alerta col-hidden" id="sBtnVenc"></button>
         <button class="btn s-cfg-btn s-solo-limitado" id="sBtnVolverPortal">← Aplicaciones</button>
-        <button class="btn s-cfg-btn" id="sBtnCfg" title="Sabrina, descuento y % de Gabriela">⚙ Valores fijos</button>
-        <button class="btn s-cfg-btn" id="sBtnExcep" title="Pacientes sin pago a Sabrina y/o Gabriela">⚑ Excepciones</button>
+        <button class="btn s-cfg-btn" id="sBtnCfg" title="Sabrina, descuento y % de Gabriela"><i data-ico="ajustes"></i> Valores fijos</button>
+        <button class="btn s-cfg-btn" id="sBtnExcep" title="Pacientes sin pago a Sabrina y/o Gabriela"><i data-ico="bandera"></i> Excepciones</button>
       </div>
     </div>
 
@@ -2031,8 +2043,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <span id="sStockCaption"></span>
         <div style="display:flex;gap:8px;align-items:center;">
           <select id="sStockProv" class="s-stock-prov" title="Ver el stock de un proveedor"></select>
-          <button type="button" class="btn s-cfg-btn s-solo-admin" id="sBtnStockIni" title="Conteo real al 1/10/2026">📦 Stock inicial 1/10</button>
-          <button type="button" class="btn s-cfg-btn" id="sBtnCalcCompra">🧮 Calcular compra</button>
+          <button type="button" class="btn s-cfg-btn s-solo-admin" id="sBtnStockIni" title="Conteo real al 1/10/2026"><i data-ico="paquete"></i> Stock inicial 1/10</button>
+          <button type="button" class="btn s-cfg-btn" id="sBtnCalcCompra"><i data-ico="calc"></i> Calcular compra</button>
           <button type="button" class="btn s-cfg-btn" id="sBtnOrdenar">↕ Ordenar</button>
         </div>
       </div>
@@ -2075,7 +2087,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
             <label>Hasta <input type="date" id="sResHasta"></label>
             <button type="button" class="btn s-cfg-btn" id="sResMes">Mes completo</button>
             <button type="button" class="btn s-cfg-btn" id="sResTodo" title="Desde el primer movimiento hasta hoy">Todo</button>
-            <button type="button" class="btn s-cfg-btn btn-pdf" id="infPDF" title="Vista previa en PDF">📄 PDF</button>
+            <button type="button" class="btn s-cfg-btn btn-pdf" id="infPDF" title="Vista previa en PDF"><i data-ico="pdf"></i> PDF</button>
           </div>
         </div>
         <div id="sResumen"></div>
@@ -2102,7 +2114,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
         <button class="btn s-cfg-btn col-hidden" id="cBtnPagados" title="Mostrar u ocultar lo que ya está pagado"></button>
         <button class="btn s-cfg-btn" id="cBtnAjuste" title="Stock que trae o se lleva el proveedor">⇅ Ingreso/retiro</button>
         <button class="btn s-cfg-btn col-hidden" id="cBtnLinea" title="Cierra las ventas pendientes con una fecha de pago">＋ Línea de pago</button>
-        <button class="btn s-cfg-btn" id="cBtnStockIni" title="Cargar el conteo inicial de cada producto">📦 Stock inicial</button>
+        <button class="btn s-cfg-btn" id="cBtnStockIni" title="Cargar el conteo inicial de cada producto"><i data-ico="paquete"></i> Stock inicial</button>
       </div>
     </div>
 
@@ -2168,8 +2180,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <div></div>
       <div style="justify-self:end;display:flex;gap:8px;">
         <button class="btn btn-primary s-cfg-btn" id="vcBtnNuevo">+ Nuevo movimiento</button>
-        <button class="btn s-cfg-btn" id="vcBtnDetalles">✏️ Modificar detalles</button>
-        <button class="btn s-cfg-btn" id="vcBtnPDF">📄 Exportar balance contable</button>
+        <button class="btn s-cfg-btn" id="vcBtnDetalles"><i data-ico="lapiz"></i> Modificar detalles</button>
+        <button class="btn s-cfg-btn" id="vcBtnPDF"><i data-ico="pdf"></i> Exportar balance contable</button>
       </div>
     </div>
     <div class="s-panel">
@@ -2216,7 +2228,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <div class="tr-lab">Paciente</div>
       <div class="ac-wrap"><input type="text" id="trPac" class="tr-inp" placeholder="Escribí para buscar…" autocomplete="off" data-ac-libre></div>
       <div class="tr-lab">Tratamientos</div>
-      <input type="text" id="trBuscar" class="tr-inp tr-bus" placeholder="🔍 Buscar tratamiento…" autocomplete="off" data-no-mayus>
+      <input type="text" id="trBuscar" class="tr-inp tr-bus" placeholder="Buscar tratamiento…" autocomplete="off" data-no-mayus>
       <div id="trLista"></div>
       <div id="trRealizadosBox" class="col-hidden">
         <div class="tr-lab" id="trRealizadosLab">Realizados hoy</div>
@@ -2738,7 +2750,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <div class="deu-bar">
       <div class="ac-wrap"><input type="text" id="deuBuscar" placeholder="Buscar deudor…" autocomplete="off" data-ac-libre></div>
       <button type="button" class="btn" id="deuLimpiar" title="Limpiar">✕</button>
-      <button type="button" class="btn btn-primary" id="deuExportar">⬇ Exportar PDF</button>
+      <button type="button" class="btn btn-primary" id="deuExportar"><i data-ico="descargar"></i> Exportar PDF</button>
     </div>
     <div class="deudores-summary" id="deudoresResumen"></div>
     <div id="deudoresLista"></div>
@@ -2758,8 +2770,8 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <div class="hint" id="bkInfo" style="padding:4px 0 0"></div>
     <div class="modal-actions">
       <button class="btn" id="cancelBackup">Cerrar</button>
-      <button class="btn" id="bkPdf">⬇ PDF</button>
-      <button class="btn btn-primary" id="bkExcel">⬇ Excel</button>
+      <button class="btn" id="bkPdf"><i data-ico="descargar"></i> PDF</button>
+      <button class="btn btn-primary" id="bkExcel"><i data-ico="descargar"></i> Excel</button>
     </div>
   </div>
 </div>
@@ -2798,7 +2810,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <div class="pr-total-edit" id="prTotalWrap"><label for="prTotalInp">Total</label><input type="text" id="prTotalInp" inputmode="numeric" placeholder="0" title="Sugerido según los tratamientos y el descuento. Podés escribir otro total."></div>
     <div class="modal-actions">
       <button class="btn" id="cancelPresupuesto">Cancelar</button>
-      <button class="btn btn-primary" id="descargarPresupuesto">⬇ Descargar PDF</button>
+      <button class="btn btn-primary" id="descargarPresupuesto"><i data-ico="descargar"></i> Descargar PDF</button>
     </div>
   </div>
 </div>
@@ -2815,7 +2827,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     <div class="field" style="margin-top:8px"><label>Notas <span class="opt">(opcional)</span></label><textarea id="ecNotas" rows="2" maxlength="400"></textarea></div>
     <div class="modal-actions">
       <button class="btn" id="cancelEstadoCuenta">Cancelar</button>
-      <button class="btn btn-primary" id="descargarEstadoCuenta">⬇ Descargar PDF</button>
+      <button class="btn btn-primary" id="descargarEstadoCuenta"><i data-ico="descargar"></i> Descargar PDF</button>
     </div>
   </div>
 </div>
@@ -2933,7 +2945,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
       <button class="btn hc-volver col-hidden" id="pfVolverFicha">← Ficha</button>
       <div class="pf-cabeza">
         <div class="pf-nombre" id="pfNombre"></div>
-        <button type="button" class="pf-editar-nombre" id="pfEditarNombre" title="Corregir apellido o nombre">✏️</button>
+        <button type="button" class="pf-editar-nombre" id="pfEditarNombre" title="Corregir apellido o nombre"><i data-ico="lapiz"></i></button>
       </div>
       <div class="pf-nombre-campos col-hidden" id="pfNombreCampos">
         <div class="field"><label>Apellido</label><input type="text" id="pfApellido"></div>
@@ -2964,9 +2976,9 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
             <div class="pf-areas-tit">Áreas de Ummana</div>
             <div id="pfAreas"></div>
           </div>
-          <button type="button" class="btn pf-btn-hist" id="pfBtnHist">🧾 Historial</button>
+          <button type="button" class="btn pf-btn-hist" id="pfBtnHist"><i data-ico="recibo"></i> Historial</button>
           <label class="pf-google col-hidden" id="pfGoogleWrap"><input type="checkbox" id="pfGoogle"> Avisado Google</label>
-          <button type="button" class="btn pf-btn-hist col-hidden" id="pfPres">📄 Presupuestos enviados</button>
+          <button type="button" class="btn pf-btn-hist col-hidden" id="pfPres"><i data-ico="pdf"></i> Presupuestos enviados</button>
         </div>
       </div>
       <div class="pf-unif col-hidden" id="pfUnifBox">
@@ -3140,7 +3152,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
     </div>
 
     <div class="modal-actions" style="border-top:none;padding-top:0;">
-      <button class="btn btn-pdf" id="btnPDFInforme" title="Vista previa en PDF">📄 PDF</button>
+      <button class="btn btn-pdf" id="btnPDFInforme" title="Vista previa en PDF"><i data-ico="pdf"></i> PDF</button>
       <button class="btn btn-primary" id="btnGenerarInforme">Generar</button>
     </div>
 
@@ -3154,6 +3166,85 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
 </div><!-- /#app -->
 
 <script>
+/* =====================================================================
+   AVISOS Y CONFIRMACIONES CON EL ESTILO DE UMMANA
+   (reemplazan las ventanitas grises del navegador: alert / confirm)
+   ===================================================================== */
+/* =====================================================================
+   ÍCONOS: un solo set de línea fina (en el color del texto / dorado), en vez de emojis.
+   En el HTML se escriben como <i data-ico="nombre"></i> y acá se convierten.
+   ===================================================================== */
+const ICONOS = {
+  glosario:'<path d="M2 4h6a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h7z"/>',
+  suero:'<path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/>',
+  pdf:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/>',
+  inicio:'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
+  lista:'<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/>',
+  cajas:'<rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/>',
+  pacientes:'<path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/>',
+  profesionales:'<path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6 6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6 6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/>',
+  conceptos:'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>',
+  proveedores:'<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+  deudores:'<circle cx="10" cy="7" r="4"/><path d="M10.3 15H7a4 4 0 0 0-4 4v2"/><circle cx="17" cy="17" r="3"/><path d="m21 21-1.9-1.9"/>',
+  cremas:'<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>',
+  conta:'<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>',
+  informes:'<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+  recibo:'<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/>',
+  calc:'<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8"/><path d="M16 14v4"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/>',
+  subir:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/>',
+  descargar:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
+  ojo:'<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  ajustes:'<path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>',
+  bandera:'<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/>',
+  paquete:'<path d="m7.5 4.3 9 5.2"/><path d="M21 8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/>',
+  lapiz:'<path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
+  alerta:'<path d="m21.7 18-8-14a2 2 0 0 0-3.5 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+  buscar:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+};
+function ico(n){ return `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONOS[n] || ''}</svg>`; }
+document.querySelectorAll('i[data-ico]').forEach(el=> el.outerHTML = ico(el.dataset.ico));
+
+const ummDlgCola = [];
+let ummDlgAbierto = false;
+function ummDlgHtml(msg){
+  return String(msg ?? '').replace(/[&<>"]/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])).replace(/\n/g,'<br>');
+}
+function ummDlgSiguiente(){
+  if(ummDlgAbierto || !ummDlgCola.length) return;
+  const {msg, botones, resolver} = ummDlgCola.shift();
+  ummDlgAbierto = true;
+  const previo = document.activeElement;
+  const ov = document.createElement('div');
+  ov.className = 'umm-dlg';
+  ov.innerHTML = `<div class="umm-dlg-card" role="alertdialog" aria-modal="true"><div class="umm-dlg-msg">${ummDlgHtml(msg)}</div>
+    <div class="umm-dlg-acc">${botones.map((b,i)=> `<button type="button" class="btn ${b.primario ? 'btn-primary' : ''}" data-i="${i}">${ummDlgHtml(b.txt)}</button>`).join('')}</div></div>`;
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=> ov.classList.add('show'));
+  const cerrar = valor=>{
+    document.removeEventListener('keydown', teclas, true);
+    ov.remove(); ummDlgAbierto = false;
+    if(previo && previo.focus && document.contains(previo)) try{ previo.focus({preventScroll:true}); }catch(_){}
+    resolver(valor);
+    ummDlgSiguiente();
+  };
+  const teclas = e=>{
+    if(e.key==='Escape'){ e.preventDefault(); e.stopImmediatePropagation(); const c = botones.find(b=> b.cancelar); cerrar(c ? c.valor : false); }
+    else if(e.key==='Enter'){ e.preventDefault(); e.stopImmediatePropagation(); cerrar(botones.find(b=> b.primario).valor); }
+  };
+  document.addEventListener('keydown', teclas, true);
+  ov.querySelectorAll('button').forEach(b=> b.onclick = ()=> cerrar(botones[+b.dataset.i].valor));
+  setTimeout(()=>{ const p = ov.querySelector('.btn-primary'); if(p) p.focus({preventScroll:true}); }, 30);
+}
+function ummAviso(msg){
+  return new Promise(res=>{ ummDlgCola.push({msg, botones: [{txt: 'Entendido', valor: true, primario: true, cancelar: true}], resolver: res}); ummDlgSiguiente(); });
+}
+function ummConfirm(msg, o = {}){
+  return new Promise(res=>{ ummDlgCola.push({msg, botones: [{txt: o.no || 'Cancelar', valor: false, cancelar: true}, {txt: o.si || 'Aceptar', valor: true, primario: true}], resolver: res}); ummDlgSiguiente(); });
+}
+window.alert = msg=> { ummAviso(msg); };
+
 /* =====================================================================
    CONFIGURACIÓN DE FIREBASE
    Reemplazá estos valores por los de tu proyecto de Firebase
@@ -4251,7 +4342,7 @@ document.getElementById('confirmarApertura').onclick = async ()=>{
     const partes = [];
     if(diferenciaApertura) partes.push(`${diferenciaApertura > 0 ? 'de más' : 'de menos'}: $${Math.abs(diferenciaApertura).toLocaleString('es-AR')} (último cierre $${ultimoCierre.toLocaleString('es-AR')})`);
     if(diferenciaAperturaUsd) partes.push(`${diferenciaAperturaUsd > 0 ? 'de más' : 'de menos'}: US$ ${Math.abs(diferenciaAperturaUsd).toLocaleString('es-AR')} (último cierre US$ ${Number(ultimoCierreUsd).toLocaleString('es-AR')})`);
-    warn.textContent = `⚠️ Estás abriendo con una diferencia respecto del último cierre — ${partes.join(' · ')}. Revisá antes de continuar.`;
+    warn.innerHTML = ico('alerta') + ' ' + escHtml(`Estás abriendo con una diferencia respecto del último cierre — ${partes.join(' · ')}. Revisá antes de continuar.`);
     warn.classList.remove('col-hidden');
     document.getElementById('confirmarApertura').textContent = "Abrir caja de todos modos";
     return;
@@ -4314,7 +4405,7 @@ document.getElementById('confirmarCierre').onclick = async ()=>{
     const partes = [];
     if(diferencia) partes.push(diferencia > 0 ? `hay $${diferencia.toLocaleString('es-AR')} de más (esperado $${esperado.toLocaleString('es-AR')})` : `faltan $${Math.abs(diferencia).toLocaleString('es-AR')} (esperado $${esperado.toLocaleString('es-AR')})`);
     if(diferenciaUsd) partes.push(diferenciaUsd > 0 ? `hay US$ ${diferenciaUsd.toLocaleString('es-AR')} de más (esperado US$ ${esperadoUsd.toLocaleString('es-AR')})` : `faltan US$ ${Math.abs(diferenciaUsd).toLocaleString('es-AR')} (esperado US$ ${esperadoUsd.toLocaleString('es-AR')})`);
-    warn.textContent = `⚠️ ${partes.join(' · ')}. Revisá antes de cerrar.`;
+    warn.innerHTML = ico('alerta') + ' ' + escHtml(`${partes.join(' · ')}. Revisá antes de cerrar.`);
     warn.classList.remove('col-hidden');
     document.getElementById('confirmarCierre').textContent = "Cerrar caja de todos modos";
     return;
@@ -4775,7 +4866,7 @@ function resetModal(){
 
 btnEliminar.onclick = async ()=>{
   if(editingId===null) return;
-  if(confirm("¿Está seguro de eliminar este registro? Esta opción no tiene vuelta atrás.")){
+  if(await ummConfirm("¿Está seguro de eliminar este registro? Esta opción no tiene vuelta atrás.")){
     try{
       const ref = db.collection('movimientos').doc(editingId);
       const snap = await ref.get();
@@ -4807,7 +4898,7 @@ btnEliminar.onclick = async ()=>{
 document.getElementById('btnAddPaciente').onclick = ()=> document.getElementById('cardNuevoPaciente').classList.remove('col-hidden');
 document.getElementById('cancelPaciente').onclick = ()=> document.getElementById('cardNuevoPaciente').classList.add('col-hidden');
 // Si falta teléfono, DNI, fecha de nacimiento o método de llegada, se avisa (y se puede seguir igual)
-function confirmarDatosFaltantes(d){
+async function confirmarDatosFaltantes(d){
   const falta = [];
   if(!String(d.tel||'').trim()) falta.push('teléfono');
   if(!String(d.dni||'').trim()) falta.push('DNI');
@@ -4815,14 +4906,14 @@ function confirmarDatosFaltantes(d){
   if(!String(d.medio||'').trim()) falta.push('método de llegada');
   if(!falta.length) return true;
   const lista = falta.length===1 ? falta[0] : falta.slice(0,-1).join(', ') + ' y ' + falta[falta.length-1];
-  return confirm(`¿Está seguro de que quiere cargar sin ${lista}?`);
+  return await ummConfirm(`¿Está seguro de que quiere cargar sin ${lista}?`);
 }
 document.getElementById('guardarPaciente').onclick = async ()=>{
   const ape = document.getElementById('npApellido').value.trim();
   const nom = document.getElementById('npNombre').value.trim();
   const tel = document.getElementById('npTelefono').value.trim();
   if(!ape || !nom){ alert("Apellido y nombre son obligatorios."); return; }
-  if(!confirmarDatosFaltantes({tel, dni: document.getElementById('npDni').value, fnac: document.getElementById('npFnac').value, medio: document.getElementById('npMedio').value})) return;
+  if(!await confirmarDatosFaltantes({tel, dni: document.getElementById('npDni').value, fnac: document.getElementById('npFnac').value, medio: document.getElementById('npMedio').value})) return;
   const nombreCompleto = `${ape.toUpperCase()}, ${nom}`;
   await db.collection('pacientes').add({
     apellido: ape.toUpperCase(), nombre: nom, nombreCompleto,
@@ -4961,7 +5052,7 @@ btnGuardarMov.onclick = async ()=>{
     const mismaMoneda = info.length===deudasASaldar.length && info.every(x=> (x.moneda||'$')===monedaSel);
     const suma = info.reduce((a,x)=> a + (Number(x.valor)||0), 0);
     if(mismaMoneda && valorNum < suma){
-      restoDeuda = confirm(`La deuda es de ${fmtMonto(suma, monedaSel)} y se pagan ${fmtMonto(valorNum, monedaSel)}.\n\n¿Queda debiendo ${fmtMonto(suma - valorNum, monedaSel)}?\n\nAceptar: la diferencia sigue como deuda.\nCancelar: se salda la deuda completa.`);
+      restoDeuda = await ummConfirm(`La deuda es de ${fmtMonto(suma, monedaSel)} y se pagan ${fmtMonto(valorNum, monedaSel)}.\n\n¿Queda debiendo ${fmtMonto(suma - valorNum, monedaSel)}?`, {si: 'Sí, queda debiendo', no: 'No, se salda completa'});
       if(restoDeuda) deudasASaldar.forEach(d=>{ const x = info.find(y=> y.movId===d.movId && y.idx===d.idx); d.valor = Number(x.valor)||0; });
     }
   }
@@ -4969,7 +5060,7 @@ btnGuardarMov.onclick = async ()=>{
   if(!document.getElementById('inpFechaMovimiento').value){ alert("Elegí una fecha."); return; }
   if(modo!=='editar'){
     if(fechaISO > hoyISO()){ alert("No se pueden cargar movimientos con fecha posterior a hoy."); return; }
-    if(fechaISO < hoyISO() && !confirm(`ATENCIÓN: está cargando un movimiento con fecha ${ecFecha(fechaISO)}, que no es la fecha de hoy (${ecFecha(hoyISO())}).\n\n¿Está seguro de continuar?`)) return;
+    if(fechaISO < hoyISO() && !await ummConfirm(`ATENCIÓN: está cargando un movimiento con fecha ${ecFecha(fechaISO)}, que no es la fecha de hoy (${ecFecha(hoyISO())}).\n\n¿Está seguro de continuar?`)) return;
   }
   const fechaDisplay = isoToDisplay(fechaISO);
   const codigo = CODIGO_POR_CONCEPTO[selProfesional.value+"||"+selConcepto.value] || "";
@@ -4977,7 +5068,7 @@ btnGuardarMov.onclick = async ()=>{
 
   let nuevoMovId = null;
   if(modo==='editar'){
-    if(!confirm("¿Está seguro de editar este registro? Esta opción no tiene vuelta atrás.")) return;
+    if(!await ummConfirm("¿Está seguro de editar este registro? Esta opción no tiene vuelta atrás.")) return;
     const cambios = {
       pac: pacValor, prof: selProfesional.value, concepto: selConcepto.value, codigo,
       notas: document.getElementById('inpNotas').value, moneda: monedaSel, valor: valorNum,
@@ -4994,7 +5085,7 @@ btnGuardarMov.onclick = async ()=>{
       try{
         const snapDia = await db.collection('cajaSesiones').where('fechaISO','==', fechaISO).get();
         const tieneCajaCerrada = snapDia.docs.some(d=> d.id !== cajaActual.id && d.data().cerradaEn);
-        if(tieneCajaCerrada && !confirm("Está cargando un movimiento en un día que ya tiene su caja cerrada, ¿está seguro de continuar?")) return;
+        if(tieneCajaCerrada && !await ummConfirm("Está cargando un movimiento en un día que ya tiene su caja cerrada, ¿está seguro de continuar?")) return;
       }catch(e){ console.error(e); }
     }
     const nuevoRef = await db.collection('movimientos').add({
@@ -5533,7 +5624,7 @@ function renderDeudores(){
   resumen.innerHTML = "";
   if(totalPesos>0) resumen.innerHTML += `<div class="chip">Total en $ : $${totalPesos.toLocaleString('es-AR')}</div>`;
   if(totalUsd>0) resumen.innerHTML += `<div class="chip">Total en USD : US$ ${totalUsd.toLocaleString('es-AR')}</div>`;
-  if(!pendientes.length){ lista.innerHTML = `<div class="empty-state">${document.getElementById('deuBuscar').value.trim() ? 'Sin deudas para esa búsqueda.' : 'No hay deudas pendientes 🎉'}</div>`; return; }
+  if(!pendientes.length){ lista.innerHTML = `<div class="empty-state">${document.getElementById('deuBuscar').value.trim() ? 'Sin deudas para esa búsqueda.' : 'No hay deudas pendientes.'}</div>`; return; }
   lista.innerHTML = pendientes.slice().sort((a,b)=> (b.fechaISO||'').localeCompare(a.fechaISO||'') || (a.pac||'').localeCompare(b.pac||'')).map(m=>`
     <div class="deuda-row">
       <div class="deuda-info">
@@ -6216,7 +6307,7 @@ function renderSueros(){
   const vv = vencimientosProximos();
   const bVenc = document.getElementById('sBtnVenc');
   bVenc.classList.toggle('col-hidden', !vv.length);
-  bVenc.textContent = vv.some(v=> v.dias<0) ? `⚠ Vencidos / por vencer (${vv.length})` : `⚠ Por vencer (${vv.length})`;
+  bVenc.innerHTML = ico('alerta') + ' ' + (vv.some(v=> v.dias<0) ? `Vencidos / por vencer (${vv.length})` : `Por vencer (${vv.length})`);
   bVenc.title = vv.map(v=> `${v.insumo}: ${v.cant} u. ${v.dias<0 ? 'vencido el' : 'vence el'} ${fechaLarga(v.vence)}`).join('\n');
   if(sTabActual==='movs') renderSuerosTabla();
   if(sTabActual==='stock') renderStock();
@@ -6549,7 +6640,7 @@ function renderStock(){
   btnOrd.textContent = sOrdenando ? '✓ Listo' : '↕ Ordenar';
   btnOrd.classList.toggle('btn-primary', sOrdenando);
   const btnCalc = document.getElementById('sBtnCalcCompra');
-  btnCalc.textContent = sCalcCompra ? '✓ Calcular compra' : '🧮 Calcular compra';
+  btnCalc.innerHTML = ico(sCalcCompra ? 'check' : 'calc') + ' Calcular compra';
   btnCalc.classList.toggle('btn-primary', sCalcCompra);
   // Columnas (la de "Faltan" solo con Calcular compra)
   const verCont = esFede();
@@ -6675,7 +6766,7 @@ function renderStock(){
   const bl = document.getElementById('sContLimpiar');
   if(bl) bl.onclick = async ()=>{
     if(!Object.keys(suerosConteo).length) return;
-    if(!confirm('¿Limpiar toda la columna Cont?')) return;
+    if(!await ummConfirm('¿Limpiar toda la columna Cont?')) return;
     suerosConteo = {}; renderStock();
     try{ await db.collection('sueros').doc('_conteo').set({lista: {}}); }catch(e){ alert('No se pudo limpiar: ' + e.message); }
   };
@@ -7368,7 +7459,7 @@ document.getElementById('sGuardar').onclick = async ()=>{
     if(!items.length){ alert("Agregá al menos un insumo."); return; }
     if(items.some(it=> !it.insumo || !(it.cant || it.sinCargo) || !it.valorUnit)){ alert("Cada insumo necesita detalle, cantidad (o unidades sin cargo) y valor unitario."); return; }
     if(!proveedoresRegistry.some(p=> mayus(p)===tercero)){
-      if(!confirm(`"${tercero}" no está en Proveedores. ¿Agregarlo?`)) return;
+      if(!await ummConfirm(`"${tercero}" no está en Proveedores. ¿Agregarlo?`)) return;
       try{ await db.collection('proveedores').add({nombre: tercero}); }
       catch(e){ alert("No se pudo crear el proveedor: " + e.message); return; }
     }
@@ -7406,7 +7497,7 @@ document.getElementById('sGuardar').onclick = async ()=>{
 
 document.getElementById('sEliminar').onclick = async ()=>{
   if(!sEditId || !esAdminSueros()) return;
-  if(!confirm("¿Eliminar este movimiento de sueros? Esta acción no se puede deshacer.")) return;
+  if(!await ummConfirm("¿Eliminar este movimiento de sueros? Esta acción no se puede deshacer.")) return;
   try{
     await db.collection('sueros').doc(sEditId).delete();
     cerrarModalSuero();
@@ -7730,7 +7821,7 @@ document.getElementById('hcNotaGuardar').onclick = async ()=>{
 async function quitarNotaHC(id){
   const nota = (hcDatos.notas||[]).find(n=> n.id===id);
   if(!nota || !hcPaciente) return;
-  if(!confirm("¿Eliminar esta nota?")) return;
+  if(!await ummConfirm("¿Eliminar esta nota?")) return;
   try{
     await db.collection('historiasSueros').doc(hcPaciente.id).update({ notas: firebase.firestore.FieldValue.arrayRemove(nota) });
   }catch(e){ alert("No se pudo eliminar: " + e.message); }
@@ -7931,7 +8022,7 @@ document.getElementById('aGuardar').onclick = async ()=>{
 };
 document.getElementById('aEliminar').onclick = async ()=>{
   if(!aEditId || !puedeCargarSueros()) return;
-  if(!confirm("¿Eliminar esta aplicación? Esta acción no se puede deshacer.")) return;
+  if(!await ummConfirm("¿Eliminar esta aplicación? Esta acción no se puede deshacer.")) return;
   try{ await db.collection('sueros').doc(aEditId).delete(); cerrarAplic(); }
   catch(e){ alert("No se pudo eliminar: " + e.message); }
 };
@@ -8304,7 +8395,7 @@ document.getElementById('caGuardar').onclick = async ()=>{
 async function quitarAjusteCrema(id){
   if(!esFede()) return;
   const a = cremasAjustes.find(x=> x.id===id);
-  if(!a || !confirm(`¿Eliminar este ${a.tipo==='retiro' ? 'retiro' : 'ingreso'} de ${a.cant}?`)) return;
+  if(!a || !await ummConfirm(`¿Eliminar este ${a.tipo==='retiro' ? 'retiro' : 'ingreso'} de ${a.cant}?`)) return;
   const nuevos = cremasAjustes.filter(x=> x.id!==id);
   try{ await db.collection('cremas').doc('_ajustes').set({items: nuevos}); cremasAjustes = nuevos; renderCremas(); }
   catch(e){ alert("No se pudo eliminar: " + e.message); }
@@ -8371,7 +8462,7 @@ document.getElementById('clGuardar').onclick = async ()=>{
 };
 async function quitarLineaPago(id){
   if(!esFede()) return;
-  if(!confirm("¿Eliminar esta línea de pago? Sus ventas vuelven a quedar pendientes (no se borra ninguna venta).")) return;
+  if(!await ummConfirm("¿Eliminar esta línea de pago? Sus ventas vuelven a quedar pendientes (no se borra ninguna venta).")) return;
   const nuevas = cremasPagos.filter(l=> l.id!==id);
   try{ await db.collection('cremas').doc('_pagos').set({lineas: nuevas}); cremasPagos = nuevas; renderCremasMovs(); }
   catch(e){ alert("No se pudo eliminar: " + e.message); }
@@ -8466,7 +8557,7 @@ function productosCremas(){
 async function eliminarProductoCrema(clave){
   if(!esFede()) return;
   const p = productosCremas().find(x=> x.clave===clave);
-  if(!confirm(`¿Eliminar ${p && p.nombre ? p.nombre + ' (' + clave + ')' : clave} del stock de cremas y colágenos?\n\nSe borran su precio y su costo. Los movimientos de la caja no se tocan.`)) return;
+  if(!await ummConfirm(`¿Eliminar ${p && p.nombre ? p.nombre + ' (' + clave + ')' : clave} del stock de cremas y colágenos?\n\nSe borran su precio y su costo. Los movimientos de la caja no se tocan.`)) return;
   try{
     await db.collection('cremas').doc('_stock').set({
       productos: {[clave]: firebase.firestore.FieldValue.delete()},
@@ -8633,7 +8724,7 @@ document.getElementById('btnImportar').onclick = ()=>{
 };
 document.getElementById('btnMigrarMayus').onclick = async ()=>{
   if(!esFede()) return;
-  if(!confirm("Se van a pasar a mayúsculas y sin tildes todos los datos ya cargados (movimientos, pacientes, profesionales, conceptos y proveedores). ¿Continuar?")) return;
+  if(!await ummConfirm("Se van a pasar a mayúsculas y sin tildes todos los datos ya cargados (movimientos, pacientes, profesionales, conceptos y proveedores). ¿Continuar?")) return;
   const btn = document.getElementById('btnMigrarMayus');
   const info = document.getElementById('mayusInfo');
   btn.disabled = true;
@@ -8697,7 +8788,7 @@ async function vaciarColeccion(coleccion){
 }
 
 document.getElementById('btnCorregirFechas').onclick = async ()=>{
-  if(!confirm("Esto revisa todos los pacientes y convierte las fechas de nacimiento que hayan quedado guardadas como número de Excel a una fecha real. ¿Continuamos?")) return;
+  if(!await ummConfirm("Esto revisa todos los pacientes y convierte las fechas de nacimiento que hayan quedado guardadas como número de Excel a una fecha real. ¿Continuamos?")) return;
   document.getElementById('btnCorregirFechas').disabled = true;
   document.getElementById('impPacientesInfo').textContent = "Revisando pacientes…";
 
@@ -8726,7 +8817,7 @@ document.getElementById('btnCorregirFechas').onclick = async ()=>{
 };
 
 document.getElementById('btnMigrarPagos').onclick = async ()=>{
-  if(!confirm("Esto revisa todos los movimientos y les agrega el nuevo campo de pagos si todavía no lo tienen. No cambia montos ni medios. ¿Continuamos?")) return;
+  if(!await ummConfirm("Esto revisa todos los movimientos y les agrega el nuevo campo de pagos si todavía no lo tienen. No cambia montos ni medios. ¿Continuamos?")) return;
   document.getElementById('btnMigrarPagos').disabled = true;
   document.getElementById('migrarPagosInfo').textContent = "Revisando movimientos…";
   try{
@@ -8755,8 +8846,8 @@ document.getElementById('btnMigrarPagos').onclick = async ()=>{
 };
 
 document.getElementById('btnVaciarPacientes').onclick = async ()=>{
-  if(!confirm("Esto borra TODOS los pacientes de la base, sin excepción. No se puede deshacer. ¿Confirmás que querés vaciarla?")) return;
-  if(!confirm("Confirmá una vez más: se van a eliminar todos los pacientes para volver a importarlos. ¿Seguimos?")) return;
+  if(!await ummConfirm("Esto borra TODOS los pacientes de la base, sin excepción. No se puede deshacer. ¿Confirmás que querés vaciarla?")) return;
+  if(!await ummConfirm("Confirmá una vez más: se van a eliminar todos los pacientes para volver a importarlos. ¿Seguimos?")) return;
   document.getElementById('btnVaciarPacientes').disabled = true;
   document.getElementById('impPacientesInfo').textContent = "Borrando pacientes…";
   const total = await vaciarColeccion('pacientes');
@@ -8789,7 +8880,7 @@ document.getElementById('impPacientesFile').addEventListener('change', (e)=>{
 });
 document.getElementById('impPacientesBtn').onclick = async ()=>{
   if(!impPacientesRows.length) return;
-  if(!confirm(`¿Importar ${impPacientesRows.length} pacientes? Esta acción no se puede deshacer.`)) return;
+  if(!await ummConfirm(`¿Importar ${impPacientesRows.length} pacientes? Esta acción no se puede deshacer.`)) return;
   document.getElementById('impPacientesBtn').disabled = true;
   try{
     await importarEnLotes('pacientes', impPacientesRows.map(r=>({
@@ -8826,7 +8917,7 @@ document.getElementById('impConceptosFile').addEventListener('change', (e)=>{
 });
 document.getElementById('impConceptosBtn').onclick = async ()=>{
   if(!impConceptosRows.length) return;
-  if(!confirm(`¿Importar ${impConceptosRows.length} conceptos? Esta acción no se puede deshacer.`)) return;
+  if(!await ummConfirm(`¿Importar ${impConceptosRows.length} conceptos? Esta acción no se puede deshacer.`)) return;
   document.getElementById('impConceptosBtn').disabled = true;
   try{
     await importarEnLotes('conceptos', impConceptosRows);
@@ -9027,7 +9118,7 @@ document.getElementById('guardarEditarCaja').onclick = async ()=>{
   if(!nombre){ alert("Ingresá el nombre."); return; }
   if(!fechaISO){ alert("Elegí una fecha."); return; }
   if(!aperturaTxt){ alert("Ingresá el monto de apertura."); return; }
-  if(!confirm("¿Guardar los cambios de esta caja?")) return;
+  if(!await ummConfirm("¿Guardar los cambios de esta caja?")) return;
 
   const cambios = {
     recepcionista: nombre, cerradaPor: nombre, fechaISO,
@@ -9055,7 +9146,7 @@ document.getElementById('guardarEditarCaja').onclick = async ()=>{
 
 document.getElementById('eliminarEditarCaja').onclick = async ()=>{
   if(!editandoCajaId) return;
-  if(!confirm("¿Eliminar este registro de apertura/cierre de caja? Esta acción no se puede deshacer.")) return;
+  if(!await ummConfirm("¿Eliminar este registro de apertura/cierre de caja? Esta acción no se puede deshacer.")) return;
   const btn = document.getElementById('eliminarEditarCaja');
   btn.disabled = true;
   try{
@@ -9289,7 +9380,7 @@ document.getElementById('pfGuardar').onclick = async ()=>{
   };
   if(nuevo){
     if(pacientesFullList.some(x=> mayus(x.nombreCompleto||'')===datos.nombreCompleto)){ alert("Ya existe un paciente con ese apellido y nombre."); return; }
-    if(!confirmarDatosFaltantes({tel: datos.telefono, dni: datos.dni, fnac: datos.fnac, medio})) return;
+    if(!await confirmarDatosFaltantes({tel: datos.telefono, dni: datos.dni, fnac: datos.fnac, medio})) return;
   }
   const btn = document.getElementById('pfGuardar'); const txt = btn.textContent;
   btn.disabled = true; btn.textContent = 'Guardando…';
@@ -9314,7 +9405,7 @@ document.getElementById('pfGuardar').onclick = async ()=>{
   }
 };
 document.getElementById('pfEliminar').onclick = async ()=>{
-  if(!pfPaciente || !confirm("¿Eliminar este paciente? Esta acción no se puede deshacer. No borra los movimientos ya cargados con su nombre.")) return;
+  if(!pfPaciente || !await ummConfirm("¿Eliminar este paciente? Esta acción no se puede deshacer. No borra los movimientos ya cargados con su nombre.")) return;
   try{
     await borrarPaciente(pfPaciente.id);
     pfPaciente = null;
@@ -9336,7 +9427,7 @@ async function unificarPacientes(destino, dup){
   const snaps = await Promise.all(refs.map(([c,f])=> db.collection(c).where(f,'==',viejo).get()));
   const cuenta = refs.map(([c],i)=> [c, snaps[i].size]).filter(([,n])=> n);
   const det = cuenta.length ? cuenta.map(([c,n])=> `· ${n} en ${c}`).join('\n') : '· No tiene registros cargados';
-  if(!confirm(`Unificar "${viejo}" en "${nuevo}":\n\n${det}\n\nTodo pasa a ${nuevo} y "${viejo}" queda oculto (no se borra). ¿Seguimos?`)) return false;
+  if(!await ummConfirm(`Unificar "${viejo}" en "${nuevo}":\n\n${det}\n\nTodo pasa a ${nuevo} y "${viejo}" queda oculto (no se borra). ¿Seguimos?`)) return false;
   let batch = db.batch(), n = 0;
   const flush = async ()=>{ if(n){ await batch.commit(); batch = db.batch(); n = 0; } };
   for(let i=0; i<refs.length; i++){
@@ -9466,7 +9557,7 @@ async function guardarProveedorFila(id, btn){
 window.guardarProveedorFila = conPausaRender(guardarProveedorFila);
 
 async function eliminarProveedorFila(id, btn){
-  if(!confirm("¿Eliminar este proveedor/destinatario? Esta acción no se puede deshacer.")) return;
+  if(!await ummConfirm("¿Eliminar este proveedor/destinatario? Esta acción no se puede deshacer.")) return;
   btn.disabled = true;
   try{
     await db.collection('proveedores').doc(id).delete();
@@ -9608,7 +9699,7 @@ async function eliminarProfesionalFila(id, nombre, btn){
   const mensaje = cantidadConceptos
     ? `Este profesional/área tiene ${cantidadConceptos} concepto(s) asignados. Al eliminarlo se van a borrar también esos conceptos. ¿Confirmás?`
     : "¿Eliminar este profesional/área? Esta acción no se puede deshacer.";
-  if(!confirm(mensaje)) return;
+  if(!await ummConfirm(mensaje)) return;
   btn.disabled = true;
   try{
     if(id){
@@ -9787,7 +9878,7 @@ async function eliminarConceptoFila(btn){
   const fila = btn.closest('.fila-editable');
   const profOriginal = fila.dataset.profesionalOriginal;
   const conceptoOriginal = fila.dataset.conceptoOriginal;
-  if(!confirm(`¿Eliminar el concepto "${conceptoOriginal}"? Esta acción no se puede deshacer.`)) return;
+  if(!await ummConfirm(`¿Eliminar el concepto "${conceptoOriginal}"? Esta acción no se puede deshacer.`)) return;
   btn.disabled = true;
   try{
     const snap = await db.collection('conceptos')
@@ -10106,7 +10197,7 @@ document.getElementById('pdfDescargar').onclick = async ()=>{
     }).from(document.getElementById('pdfHoja')).save();
     escalarHojaPDF();
   }catch(e){ alert(e.message || 'No se pudo generar el PDF.'); }
-  btn.disabled = false; btn.textContent = '⬇ Descargar PDF';
+  btn.disabled = false; btn.innerHTML = ico('descargar') + ' Descargar PDF';
 };
 // Informes de sueros: copia de lo que se ve
 document.getElementById('infPDF').onclick = ()=>{
@@ -10403,13 +10494,13 @@ function renderConta(){
   if(deudas.length){
     deudWrap.classList.remove('col-hidden');
     document.getElementById('vcDeudTbody').innerHTML = deudas.map(m=> `<tr class="${m.auto ? 'vc-auto' : ''}">
-      <td class="editcol">${m.auto ? '<span class="vc-auto-ico" title="Viene automático de Movimientos (caja diaria). Se modifica allá.">🔗</span>' : `<button class="editbtn" title="Editar" onclick="abrirConta('${m.id}')">&#9998;</button>`}</td>
+      <td class="editcol">${m.auto ? '<span class="vc-auto-ico" title="Viene automático de Movimientos (caja diaria). Se modifica allá.">' + ico('link') + '</span>' : `<button class="editbtn" title="Editar" onclick="abrirConta('${m.id}')">&#9998;</button>`}</td>
       <td>${vcFecha(m.fechaISO)}</td><td class="left">${vcDetalleHTML(m)}</td><td class="deb">${vcMonto(m.valor, m.moneda)}</td></tr>`).join('');
   }
   if(lista.length && !lista.some(m=> !vcEsDebe(m))){ tb.innerHTML = '<tr><td colspan="5" class="empty-state">No hay ingresos ni egresos en este mes.</td></tr>'; tf.innerHTML = ''; return; }
   if(!lista.length){ tb.innerHTML = '<tr><td colspan="5" class="empty-state">No hay movimientos en este mes. Cargalos con "+ Nuevo movimiento".</td></tr>'; tf.innerHTML = ''; return; }
   const fila = m => `<tr class="${m.auto ? 'vc-auto' : ''}">
-      <td class="editcol">${m.auto ? '<span class="vc-auto-ico" title="Viene automático de Movimientos (caja diaria). Se modifica allá.">🔗</span>' : `<button class="editbtn" title="Editar" onclick="abrirConta('${m.id}')">&#9998;</button>`}</td>
+      <td class="editcol">${m.auto ? '<span class="vc-auto-ico" title="Viene automático de Movimientos (caja diaria). Se modifica allá.">' + ico('link') + '</span>' : `<button class="editbtn" title="Editar" onclick="abrirConta('${m.id}')">&#9998;</button>`}</td>
       <td>${vcFecha(m.fechaISO)}</td>
       <td class="left">${vcDetalleHTML(m)}</td>
       <td class="ing">${!vcEsDebe(m) && m.tipo!=='egreso' ? vcMonto(m.valor, m.moneda) : ''}</td>
@@ -10500,7 +10591,7 @@ document.getElementById('vcGuardar').onclick = async ()=>{
   btn.disabled = false;
 };
 document.getElementById('vcEliminar').onclick = async ()=>{
-  if(!vcEditId || !confirm('¿Eliminar este movimiento?')) return;
+  if(!vcEditId || !await ummConfirm('¿Eliminar este movimiento?')) return;
   try{ await db.collection('contaVictoria').doc(vcEditId).delete(); cerrarConta(); }
   catch(e){ alert('No se pudo eliminar: ' + e.message); }
 };
@@ -10889,7 +10980,7 @@ cpBody.addEventListener('click', async e=>{
   const del = e.target.closest('.cp-del');
   if(del){
     const tr = del.closest('tr'), x = (cpLista||[]).find(y=> y.id===tr.dataset.id);
-    if(!confirm(`¿Eliminar la clase de prueba${x && x.alumno ? ' de ' + x.alumno : ''}?`)) return;
+    if(!await ummConfirm(`¿Eliminar la clase de prueba${x && x.alumno ? ' de ' + x.alumno : ''}?`)) return;
     try{ await db.collection('clasesPrueba').doc(tr.dataset.id).delete(); }catch(err){ alert('No se pudo eliminar: ' + err.message); }
   }
 });
@@ -11113,7 +11204,7 @@ dvBody.addEventListener('click', async e=>{
   const del = e.target.closest('.cp-del');
   if(del){
     const tr = del.closest('tr'), x = (dvLista||[]).find(y=> y.id===tr.dataset.id);
-    if(!confirm(`¿Eliminar la derivación${x && x.paciente ? ' de ' + x.paciente : ''}?`)) return;
+    if(!await ummConfirm(`¿Eliminar la derivación${x && x.paciente ? ' de ' + x.paciente : ''}?`)) return;
     try{ await db.collection('derivaciones').doc(tr.dataset.id).delete(); }catch(err){ alert('No se pudo eliminar: ' + err.message); }
   }
 });
@@ -11363,7 +11454,7 @@ document.getElementById('alNota').addEventListener('keydown', e=>{ if(e.key==='E
 document.getElementById('alCancelar').onclick = alCerrarForm;
 // Eliminar: no se borra de Firestore, se marca eliminada y deja de mostrarse
 document.getElementById('alEliminar').onclick = async ()=>{
-  if(!alEditId || !confirm('¿Eliminar esta alerta?')) return;
+  if(!alEditId || !await ummConfirm('¿Eliminar esta alerta?')) return;
   const id = alEditId, btn = document.getElementById('alEliminar'); btn.disabled = true;
   try{
     await db.collection('alertas').doc(id).update({eliminada:true,
