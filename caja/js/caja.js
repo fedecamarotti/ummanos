@@ -1788,6 +1788,10 @@ function construirFilaVisual(m){
   `;
 }
 
+// Opciones de captura de imagen. En el celular el navegador agranda solo el texto de los bloques anchos
+// ("font boosting") y la imagen salía con las palabras encimadas: se desactiva en la copia que se fotografía.
+const H2C_OPC = {scale:2, backgroundColor:'#f8f3e8', useCORS:true, windowWidth:1500,
+  onclone: doc=>{ const st = doc.createElement('style'); st.textContent = 'html,body,*{-webkit-text-size-adjust:100% !important;text-size-adjust:100% !important;}'; doc.head.appendChild(st); }};
 async function generarPNGReporteDiario(filas, fechaISO, sesiones){
   const [y_, m_, d_] = fechaISO.split('-');
   document.getElementById('rvFecha').textContent = `${d_}/${m_}/${y_}`;
@@ -1856,7 +1860,7 @@ async function generarPNGReporteDiario(filas, fechaISO, sesiones){
   `;
 
   const el = document.getElementById('reporteVisualHidden');
-  const canvas = await html2canvas(el, {scale:2, backgroundColor:'#f8f3e8', useCORS:true});
+  const canvas = await html2canvas(el, H2C_OPC);
   const dataUrl = canvas.toDataURL('image/png');
   mostrarPreviewPNG(dataUrl, `reporte-dia-${fechaISO}.png`);
 }
@@ -2100,7 +2104,7 @@ async function generarPNGPagoProfesional(prof, fechaISO, movs){
   `;
 
   const el = document.getElementById('pagoVisualHidden');
-  const canvas = await html2canvas(el, {scale:2, backgroundColor:'#f8f3e8', useCORS:true});
+  const canvas = await html2canvas(el, H2C_OPC);
   const dataUrl = canvas.toDataURL('image/png');
   const aPagar = `$${ummPesos.toLocaleString('es-AR')}${ummUsd?' y US$ '+ummUsd.toLocaleString('es-AR'):''}`;
   const texto = `Hola! Te paso el detalle de tu pago del ${isoToDisplay(fechaISO)}. Total a pagar: ${aPagar}.`;

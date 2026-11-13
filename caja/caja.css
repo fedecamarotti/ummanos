@@ -1445,3 +1445,6 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}   /* que el navegador
   .inf-tabla{min-width:440px;}
   .inf-tabla:has(col:nth-child(5)){min-width:860px;}
 }
+
+/* Imágenes exportadas (reporte diario, pago a profesional): sin agrandado automático de texto del celular */
+#reporteVisualHidden, #pagoVisualHidden, #reporteVisualHidden *, #pagoVisualHidden *{-webkit-text-size-adjust:100% !important;text-size-adjust:100% !important;}
