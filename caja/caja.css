@@ -1432,3 +1432,16 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}   /* que el navegador
 .bal-banc{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:9px 14px;border:1px solid #d9cfb8;border-radius:8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
 .bal-banc b{font-size:13px;letter-spacing:0;}
 @media (max-width:700px){ .vc-banc{width:calc(100% - 20px);} }
+
+/* Celular: tablas de Caja grande e Informes de sueros se deslizan de costado (no se pisan las columnas) */
+@media (max-width:700px){
+  .cg-saldos{margin:10px 10px 0;}
+  .cg-cuadro{margin:0 10px 14px !important;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .cg-cuadro table{min-width:860px;}
+  .cg-tabla td{white-space:normal;}
+  .cg-tabla td.left{word-break:break-word;line-height:1.35;}
+  .inf-tabla td{white-space:normal;}
+  .inf-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .inf-tabla{min-width:440px;}
+  .inf-tabla:has(col:nth-child(5)){min-width:860px;}
+}
