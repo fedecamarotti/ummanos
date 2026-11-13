@@ -59,9 +59,26 @@ function vcListaCompleta(){
   return [...contaMovs, ...contaAuto].sort((a,b)=> a.fechaISO===b.fechaISO ? ms(a.creadoEn)-ms(b.creadoEn) : (a.fechaISO<b.fechaISO?-1:1));
 }
 const vcEsDebe = m => m.medio==='debe';
+// Deudores para el balance: los del mes + los de meses anteriores que todavía no se saldaron (pacientes de Victoria)
+function vcDeudores(lista){
+  const delMes = lista.filter(vcEsDebe);
+  const anteriores = (movimientosDeuda||[]).filter(d=> vcEsVictoria(d.prof) && (d.fechaISO||'') < vcMesIni())
+    .map(d=> ({id:`auto_da_${d.movId}_${d.idx}`, auto:true, fechaISO:d.fechaISO, tipo:'ingreso', detalle: d.pac || 'Sin nombre',
+      extra: d.concepto || '', moneda: d.moneda==='USD' ? 'USD' : '$', valor: Number(d.valor)||0, medio:'debe'}));
+  return [...anteriores.sort((a,b)=> a.fechaISO < b.fechaISO ? -1 : 1), ...delMes];
+}
+const vcFechaLarga = iso => { const [y,m,d] = iso.split('-'); return `${d}/${m}/${y.slice(2)}`; };
+// Cobros bancarizados: todo lo que entró por transferencia en el mes
+function vcBancarizados(lista){
+  const t = {'$':0, 'USD':0};
+  lista.forEach(m=>{ if(!vcEsDebe(m) && m.tipo!=='egreso' && m.medio==='transferencia') t[m.moneda==='USD' ? 'USD' : '$'] += Number(m.valor)||0; });
+  return t;
+}
+const vcBancTxt = t => [t['$'] || !t['USD'] ? vcMonto(t['$'], '$') : '', t['USD'] ? vcMonto(t['USD'], 'USD') : ''].filter(Boolean).join(' + ');
 // Lo que Victoria le debe a Ummana: movimientos donde ella es la paciente/alumna y quedó "Debe" (de cualquier mes)
 function vcDeudaVictoria(){
-  return (movimientosDeuda||[]).filter(d=> vcEsVictoria(d.pac))
+  // solo hasta el fin del mes que se está mirando (una deuda de noviembre no va en el balance de septiembre)
+  return (movimientosDeuda||[]).filter(d=> vcEsVictoria(d.pac) && (d.fechaISO||'') < vcMesFin())
     .map(d=> ({fecha: d.fechaDisplay||'', detalle: [d.prof, d.concepto].filter(Boolean).join(' · '), notas: d.notas||'', moneda: d.moneda==='USD' ? 'USD' : '$', valor: Number(d.valor)||0}));
 }
 const vcDeudaFilaHTML = d => `<td>${vcEsc(d.fecha)}</td><td class="left">${vcEsc(d.detalle)}${d.notas ? ` <span class="vc-extra">— ${vcEsc(d.notas)}</span>` : ''}</td><td class="deb">${vcMonto(d.valor, d.moneda)}</td>`;
@@ -116,13 +133,15 @@ function renderConta(){
   dvWrap.classList.toggle('col-hidden', !dv.length);
   document.getElementById('vcDeudVicTbody').innerHTML = dv.map(d=> `<tr><td class="editcol"></td>${vcDeudaFilaHTML(d)}</tr>`).join('');
   if(lista==null){ tb.innerHTML = '<tr><td colspan="5" class="empty-state">Cargando…</td></tr>'; tf.innerHTML = ''; return; }
-  // Deudores del mes: aparte, sin totales (no son ingresos todavía)
-  const deudas = lista.filter(vcEsDebe);
+  // Deudores del mes y anteriores sin saldar: aparte, sin totales (no son ingresos todavía)
+  const deudas = vcDeudores(lista);
+  document.getElementById('vcBancWrap').classList.remove('col-hidden');
+  document.getElementById('vcBancVal').textContent = vcBancTxt(vcBancarizados(lista));
   if(deudas.length){
     deudWrap.classList.remove('col-hidden');
     document.getElementById('vcDeudTbody').innerHTML = deudas.map(m=> `<tr class="${m.auto ? 'vc-auto' : ''}">
       <td class="editcol">${m.auto ? '<span class="vc-auto-ico" title="Viene automático de Movimientos (caja diaria). Se modifica allá.">' + ico('link') + '</span>' : `<button class="editbtn" title="Editar" onclick="abrirConta('${m.id}')">&#9998;</button>`}</td>
-      <td>${vcFecha(m.fechaISO)}</td><td class="left">${vcDetalleHTML(m)}</td><td class="deb">${vcMonto(m.valor, m.moneda)}</td></tr>`).join('');
+      <td>${m.fechaISO < vcMesIni() ? vcFechaLarga(m.fechaISO) : vcFecha(m.fechaISO)}</td><td class="left">${vcDetalleHTML(m)}</td><td class="deb">${vcMonto(m.valor, m.moneda)}</td></tr>`).join('');
   }
   if(lista.length && !lista.some(m=> !vcEsDebe(m))){ tb.innerHTML = '<tr><td colspan="5" class="empty-state">No hay ingresos ni egresos en este mes.</td></tr>'; tf.innerHTML = ''; return; }
   if(!lista.length){ tb.innerHTML = '<tr><td colspan="5" class="empty-state">No hay movimientos en este mes. Cargalos con "+ Nuevo movimiento".</td></tr>'; tf.innerHTML = ''; return; }
@@ -291,10 +310,10 @@ document.getElementById('vcBtnPDF').onclick = ()=>{
         <td class="ing">${m.tipo!=='egreso' ? vcMonto(m.valor, k) : ''}</td><td class="egr">${m.tipo==='egreso' ? vcMonto(m.valor, k) : ''}</td></tr>`).join('')}</tbody>
       <tfoot><tr><td></td><td class="left">TOTALES</td><td class="ing">${vcMonto(t[k].ing, k)}</td><td class="egr">${vcMonto(t[k].egr, k)}</td></tr></tfoot></table>`;
   };
-  const deudas = lista.filter(vcEsDebe);
-  const tablaDeud = deudas.length ? `<div class="bal-h4">Deudores del mes</div>
+  const deudas = vcDeudores(lista);
+  const tablaDeud = deudas.length ? `<div class="bal-h4">Deudores (del mes y anteriores sin saldar)</div>
       <table class="bal-tabla bal-deud"><thead><tr><th>Fecha</th><th>Detalle</th><th>Debe</th></tr></thead>
-      <tbody>${deudas.map(m=> `<tr><td>${vcFecha(m.fechaISO)}</td><td class="left">${vcDetalleHTML(m)}</td><td class="deb">${vcMonto(m.valor, m.moneda)}</td></tr>`).join('')}</tbody></table>` : '';
+      <tbody>${deudas.map(m=> `<tr><td>${m.fechaISO < vcMesIni() ? vcFechaLarga(m.fechaISO) : vcFecha(m.fechaISO)}</td><td class="left">${vcDetalleHTML(m)}</td><td class="deb">${vcMonto(m.valor, m.moneda)}</td></tr>`).join('')}</tbody></table>` : '';
   const bal = k => t[k].ing - t[k].egr;
   const balTxt = k => (bal(k)<0 ? '−' : '+') + vcMonto(bal(k), k);
   const principal = t['$'].n ? '$' : 'USD';
@@ -308,6 +327,7 @@ document.getElementById('vcBtnPDF').onclick = ()=>{
       <tbody>${dv.map(d=> `<tr>${vcDeudaFilaHTML(d)}</tr>`).join('')}</tbody></table>` : ''; })()}
     <div class="bal-cierre"><div><div class="t">Balance de ${mesTxt}</div></div>
       <div class="v ${bal(principal)<0?'neg':''}">${balTxt(principal)}${secundario ? `<small class="${bal(secundario)<0?'neg':''}">${balTxt(secundario)}</small>` : ''}</div></div>
+    <div class="bal-banc"><span>Cobros bancarizados</span><b>${vcBancTxt(vcBancarizados(lista))}</b></div>
     <div class="bal-pie"><span>Ummana</span><span>${mesTxt}</span></div>`;
   abrirVistaPDF('Balance contable · Victoria', html, `Balance contable Victoria - ${mesTxt}`, {
     clase: 'pdf-balance', sinFecha: true,
