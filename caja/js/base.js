@@ -399,6 +399,7 @@ const alCambiarSesion = async (user)=>{
     return;
     document.getElementById('loginScreen').classList.remove('col-hidden');
     document.getElementById('app').classList.add('col-hidden');
+    document.body.classList.add('listo');   // se va la pantalla de carga
     if(unsubMovimientos) unsubMovimientos();
     if(unsubPacientes) unsubPacientes();
     if(unsubCajaAbierta) unsubCajaAbierta();
@@ -429,6 +430,7 @@ const alCambiarSesion = async (user)=>{
   if(!esUsuarioCaja()){ mostrarPortal(); return; }
   document.getElementById('portal').classList.add('col-hidden');
   document.getElementById('app').classList.remove('col-hidden');
+  document.body.classList.add('listo');   // se va la pantalla de carga
   aplicarRolUI();
   iniciarListeners();
 };

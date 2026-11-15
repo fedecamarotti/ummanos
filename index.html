@@ -7,12 +7,22 @@
 if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1)){
   var vp=document.querySelector('meta[name=viewport]'); if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0');
 }</script>
-<link rel="manifest" href="/manifest.webmanifest?v=2">
+<link rel="manifest" href="/manifest.webmanifest?v=202611151245">
 <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=2">
 <meta name="theme-color" content="#fffcf5">
 <title>ummana</title>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link rel="preload" as="image" href="caja/images/logo.png">
+<style id="ummLoaderCss">
+#ummLoader{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f8f3e8,#efe3c4);transition:opacity .45s ease,visibility .45s ease;}
+#ummLoader .ul-logo{position:relative;width:min(58vw,260px);}
+#ummLoader .ul-logo img{display:block;width:100%;height:auto;}
+#ummLoader .ul-base{filter:brightness(0) invert(1) drop-shadow(0 1px 6px rgba(150,130,90,.18));}
+#ummLoader .ul-fill{position:absolute;inset:0;clip-path:inset(0 100% 0 0);animation:ulLlenar 1.9s cubic-bezier(.45,.05,.35,1) infinite;}
+@keyframes ulLlenar{0%{clip-path:inset(0 100% 0 0)}65%,85%{clip-path:inset(0 0 0 0)}100%{clip-path:inset(0 0 0 0);opacity:.0}}
+body:not(.cargando) #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
+</style>
 <style>
  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
  body {
@@ -679,6 +689,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
 </style>
 </head>
 <body id="body" class="cargando">
+<div id="ummLoader" aria-hidden="true"><div class="ul-logo"><img class="ul-base" src="caja/images/logo.png" alt=""><img class="ul-fill" src="caja/images/logo.png" alt=""></div></div>
 <svg style="display:none"><defs>
 <symbol id="ico-sheet" viewBox="0 0 24 24" width="14" height="14"><rect fill="none" stroke="currentColor" stroke-width="2" x="3" y="3" width="18" height="18" rx="2"/><path fill="none" stroke="currentColor" stroke-width="2" d="M3 9h18M9 21V9"/></symbol><symbol id="ico-pdf" viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline fill="none" stroke="currentColor" stroke-width="2" points="14 2 14 8 20 8"/></symbol>
 <symbol id="ico-eye" viewBox="0 0 24 24" width="10" height="10"><path fill="none" stroke="currentColor" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle fill="none" stroke="currentColor" stroke-width="2" cx="12" cy="12" r="3"/></symbol>

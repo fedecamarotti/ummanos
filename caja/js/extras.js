@@ -1581,3 +1581,5 @@ document.addEventListener('keydown', e=>{
 
 // Arranque: recién acá (con todos los archivos cargados) se escucha el inicio de sesión
 auth.onAuthStateChanged(alCambiarSesion);
+// Por las dudas: la pantalla de carga nunca queda más de 12 segundos
+setTimeout(()=> document.body.classList.add('listo'), 12000);

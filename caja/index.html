@@ -7,13 +7,23 @@
 if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1)){
   var vp=document.querySelector('meta[name=viewport]'); if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0');
 }</script>
-<link rel="manifest" href="/manifest.webmanifest?v=202611132311">
+<link rel="manifest" href="/manifest.webmanifest?v=202611151245">
 <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611132311">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611151245">
 <meta name="theme-color" content="#fffcf5">
 <title>CAJA UMMANA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link rel="preload" as="image" href="images/logo.png">
+<style id="ummLoaderCss">
+#ummLoader{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f8f3e8,#efe3c4);transition:opacity .45s ease,visibility .45s ease;}
+#ummLoader .ul-logo{position:relative;width:min(58vw,260px);}
+#ummLoader .ul-logo img{display:block;width:100%;height:auto;}
+#ummLoader .ul-base{filter:brightness(0) invert(1) drop-shadow(0 1px 6px rgba(150,130,90,.18));}
+#ummLoader .ul-fill{position:absolute;inset:0;clip-path:inset(0 100% 0 0);animation:ulLlenar 1.9s cubic-bezier(.45,.05,.35,1) infinite;}
+@keyframes ulLlenar{0%{clip-path:inset(0 100% 0 0)}65%,85%{clip-path:inset(0 0 0 0)}100%{clip-path:inset(0 0 0 0);opacity:.0}}
+body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
+</style>
 
 <!-- Firebase (compat SDK) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -27,9 +37,10 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<link rel="stylesheet" href="caja.css?v=202611132311">
+<link rel="stylesheet" href="caja.css?v=202611151245">
 </head>
 <body>
+<div id="ummLoader" aria-hidden="true"><div class="ul-logo"><img class="ul-base" src="images/logo.png" alt=""><img class="ul-fill" src="images/logo.png" alt=""></div></div>
 
 <!-- ============ LOGIN ============ -->
 <div id="loginScreen" class="col-hidden">
@@ -1836,11 +1847,11 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
 
 </div><!-- /#app -->
 
-<script src="js/base.js?v=202611132311"></script>
-<script src="js/caja.js?v=202611132311"></script>
-<script src="js/sueros.js?v=202611132311"></script>
-<script src="js/cremas.js?v=202611132311"></script>
-<script src="js/paneles.js?v=202611132311"></script>
-<script src="js/extras.js?v=202611132311"></script>
+<script src="js/base.js?v=202611151245"></script>
+<script src="js/caja.js?v=202611151245"></script>
+<script src="js/sueros.js?v=202611151245"></script>
+<script src="js/cremas.js?v=202611151245"></script>
+<script src="js/paneles.js?v=202611151245"></script>
+<script src="js/extras.js?v=202611151245"></script>
 </body>
 </html>

@@ -1418,6 +1418,7 @@ function puedeCargarSueros(){
 }
 
 function mostrarPortal(){
+  document.body.classList.add('listo');
   document.getElementById('app').classList.add('col-hidden');
   document.getElementById('portal').classList.remove('col-hidden');
   const nom = (currentUser.nombre||'').trim();
