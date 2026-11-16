@@ -1448,3 +1448,6 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}   /* que el navegador
 
 /* Imágenes exportadas (reporte diario, pago a profesional): sin agrandado automático de texto del celular */
 #reporteVisualHidden, #pagoVisualHidden, #reporteVisualHidden *, #pagoVisualHidden *{-webkit-text-size-adjust:100% !important;text-size-adjust:100% !important;}
+
+/* Sueros: botón M/T único por día (celda combinada) */
+.tabla-sueros td.mt-dia{vertical-align:middle;background:#fbf7ec;border-left:1px solid var(--border);border-right:1px solid var(--border);}

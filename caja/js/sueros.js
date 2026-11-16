@@ -295,7 +295,17 @@ function renderSuerosTabla(){
     document.getElementById('sTfoot').innerHTML = '';
     return;
   }
-  tb.innerHTML = filas.map(m=>{
+  // M/T: un solo botón por día para todas las aplicaciones seguidas de esa fecha (celda combinada, centrada)
+  const turnoDia = f=>{ const ts = [...new Set(sueros.filter(x=> x.tipo!=='egreso' && x.fechaISO===f).map(x=> x.turno||''))]; return ts.length===1 ? ts[0] : '?'; };
+  const celdaTurno = (m, i)=>{
+    if(m.tipo==='egreso') return '<td></td>';
+    const ant = filas[i-1];
+    if(ant && ant.tipo!=='egreso' && ant.fechaISO===m.fechaISO) return '';   // ya la cubre la celda del día
+    let n = 1; while(filas[i+n] && filas[i+n].tipo!=='egreso' && filas[i+n].fechaISO===m.fechaISO) n++;
+    const t = turnoDia(m.fechaISO);
+    return `<td rowspan="${n}" class="mt-dia"><button type="button" class="sw-mt ${t==='M' ? 'm' : t==='T' ? 't' : ''}" data-turno-dia="${m.fechaISO}" title="${t==='?' ? 'Ese día hay turnos distintos: tocá M o T para ponerles el mismo a todos' : 'Mañana / sin asignar / tarde — vale para todas las aplicaciones del día'}"><i>${t==='?' ? '·' : t}</i></button></td>`;
+  };
+  tb.innerHTML = filas.map((m, i)=>{
     const esEg = m.tipo==='egreso';
     const r = calcularRepartoSuero(m);
     return `
@@ -305,7 +315,7 @@ function renderSuerosTabla(){
         <td class="left">${m.tercero||''}</td>
         ${esEg ? `<td class="concepto cortable" data-full="${detalleSuero(m).replace(/"/g,'&quot;')}">${detalleSuero(m)}</td>`
                : `<td class="concepto cortable" data-full="${insumosTxt(m).replace(/"/g,'&quot;')}">${insumosHTML(m) || '<span class="pend">—</span>'}</td>`}
-        <td>${esEg ? '' : `<button type="button" class="sw-mt ${m.turno==='M' ? 'm' : m.turno==='T' ? 't' : ''}" data-turno="${m.id}" title="Mañana / sin asignar / tarde"><i>${m.turno||''}</i></button>`}</td>
+        ${celdaTurno(m, i)}
         <td class="monto total ${esEg?'egreso':'ingreso'}">${m.pagoPendiente ? `<input class="falta-input" data-falta="${m.id}" inputmode="numeric" placeholder="FALTA" title="Escribí el pago y tocá Enter">` : esEg ? fmtPesos(-m.total) : `<span class="total-edit" data-total="${m.id}" title="Tocá para modificar el pago">${fmtPesos(m.total||0)}</span>`}</td>
         <td class="monto">${celdaReparto(r.insumos)}</td>
         <td class="monto">${celdaReparto(r.sabrina)}</td>
@@ -327,14 +337,18 @@ function renderSuerosTabla(){
     ${c(t.total)}${c(t.insumos)}${c(t.sabrina)}${c(t.gabriela)}${c(t.ummana)}
   </tr>`;
   activarInputsFalta(tb);
-  tb.querySelectorAll('[data-turno]').forEach(b=> b.onclick = e=>{
-    const m = sueros.find(x=> x.id===b.dataset.turno); if(!m) return;
+  tb.querySelectorAll('[data-turno-dia]').forEach(b=> b.onclick = e=>{
+    const f = b.dataset.turnoDia, delDia = sueros.filter(x=> x.tipo!=='egreso' && x.fechaISO===f);
+    if(!delDia.length) return;
+    const actual = turnoDia(f);
     const r = b.getBoundingClientRect(), x = (e.clientX - r.left) / r.width;
     let nuevo = x < 0.4 ? 'M' : x > 0.6 ? 'T' : '';
-    if(nuevo && nuevo===m.turno) nuevo = '';   // tocar el mismo lado lo vuelve a "sin asignar"
-    m.turno = nuevo;
+    if(nuevo && nuevo===actual) nuevo = '';   // tocar el mismo lado lo vuelve a "sin asignar"
+    delDia.forEach(m=> m.turno = nuevo);
     b.className = 'sw-mt ' + (nuevo==='M' ? 'm' : nuevo==='T' ? 't' : ''); b.querySelector('i').textContent = nuevo;
-    db.collection('sueros').doc(m.id).update({turno: nuevo}).catch(err=> alert('No se pudo guardar: ' + err.message));
+    const batch = db.batch();
+    delDia.forEach(m=> batch.update(db.collection('sueros').doc(m.id), {turno: nuevo}));
+    batch.commit().catch(err=> alert('No se pudo guardar: ' + err.message));
   });
   ajustarColumna(document.querySelector('.tabla-sueros col:nth-child(3)'), filas.map(m=> m.tercero), '500 10.5px Montserrat, sans-serif', 26, 165);
   tooltipSiCortado(tb);
