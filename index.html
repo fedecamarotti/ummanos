@@ -1608,5 +1608,178 @@ body:not(.cargando) #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
  });
  });
 </script>
+<style id="glosCss">
+/* ===== GLOSARIO: diseño con barra lateral (Biblioteca Ummana) ===== */
+#pro-screen.gl{padding:0 !important;align-items:stretch !important;flex-direction:row !important;position:fixed;inset:0;background:#f6f2e8;animation:none;z-index:5;}
+#pro-screen.gl > img, #pro-screen.gl > .info-section, #pro-screen.gl > .accordion-wrap, #pro-screen.gl > .quick-links{display:none !important;}
+body.gl-on #home-btn, body.gl-on #logout-btn{display:none !important;}
+.gl-side{width:330px;flex:none;background:#fffdf8;border-right:1px solid #ece4d2;padding:30px 20px 20px;display:flex;flex-direction:column;overflow-y:auto;}
+.gl-side .gl-logo{height:28px;width:auto;align-self:flex-start;margin:4px 12px 34px;filter:none !important;}
+.gl-lab{font-size:10px;letter-spacing:3px;color:#b0a58c;margin:0 12px 12px;font-weight:600;}
+.gl-cat{display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;border:none;background:none;border-radius:12px;font:inherit;font-size:13px;color:#5c574b;cursor:pointer;text-align:left;margin-bottom:2px;position:relative;transition:color .25s;}
+.gl-cat span{flex:1;} .gl-cat b{font-size:11px;color:#b0a58c;font-weight:400;transition:color .25s;}
+.gl-cat svg{flex:none;}
+.gl-cat:hover{background:#f6f0e1;}
+.gl-cat.on{color:#fff;background:transparent;} .gl-cat.on b{color:#cfd8c6;}
+.gl-pill{position:absolute;left:0;right:0;top:0;height:42px;border-radius:12px;background:#2f3a2c;transition:transform .35s cubic-bezier(.4,0,.2,1),height .35s;z-index:0;pointer-events:none;}
+.gl-cats{position:relative;} .gl-cat > *{position:relative;z-index:1;}
+.gl-pie{margin-top:auto;padding:18px 12px 4px;display:flex;justify-content:space-between;}
+.gl-pie button{border:none;background:none;font:inherit;font-size:11.5px;letter-spacing:.08em;color:#9c9179;cursor:pointer;padding:4px 0;}
+.gl-pie button:hover{color:#2f3a2c;}
+.gl-main{flex:1;min-width:0;overflow-y:auto;padding:44px 60px 60px;}
+.gl-head{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;}
+.gl-k{font-size:11px;letter-spacing:3px;color:#b69a62;font-weight:600;}
+.gl-tit{font-size:34px;font-weight:400;margin:8px 0 6px;color:#2a2a26;line-height:1.15;}
+.gl-sub{color:#9c9179;font-size:13px;}
+.gl-bus{width:300px;flex:none;margin-top:18px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a9a294' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E") no-repeat 16px center/15px;border:1px solid #ece4d2;border-radius:30px;padding:11px 16px 11px 40px;font:inherit;font-size:13px;color:#2a2a26;outline:none;transition:border-color .2s,box-shadow .2s;}
+.gl-bus:focus{border-color:#cfd8c6;box-shadow:0 0 0 4px rgba(47,58,44,.06);}
+.gl-lista{margin-top:30px;display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.gl-f{background:#fff;border:1px solid #ece4d2;border-radius:16px;padding:16px 18px;display:flex;align-items:center;gap:14px;transition:transform .25s,box-shadow .25s,border-color .25s;opacity:0;transform:translateY(10px);animation:glIn .45s ease forwards;}
+.gl-f:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(47,58,44,.12);border-color:#cfd8c6;}
+@keyframes glIn{to{opacity:1;transform:none;}}
+.gl-fi{width:42px;height:42px;border-radius:11px;background:#eef1e8;color:#4f6046;display:flex;align-items:center;justify-content:center;flex:none;transition:background .25s,color .25s;}
+.gl-f:hover .gl-fi{background:#2f3a2c;color:#fff;}
+.gl-ft{font-weight:600;font-size:13.5px;color:#2a2a26;line-height:1.3;}
+.gl-fs{font-size:11px;color:#a9a294;margin-top:3px;}
+.gl-fa{margin-left:auto;display:flex;gap:8px;flex:none;}
+.gl-fa a{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;border:1px solid #ece4d2;border-radius:20px;padding:6px 11px;color:#5c574b;text-decoration:none;background:#fff;transition:background .2s,color .2s,border-color .2s;}
+.gl-fa a:hover{background:#2f3a2c;color:#fff;border-color:#2f3a2c;}
+.gl-fa a.sol{padding:6px 8px;}
+.gl-vacio{grid-column:1/-1;text-align:center;color:#a9a294;padding:40px 0;font-size:13px;}
+@media (max-width:760px){
+  #pro-screen.gl{flex-direction:column !important;position:static;min-height:100vh;}
+  .gl-side{width:auto;border-right:none;border-bottom:1px solid #ece4d2;padding:18px 0 10px;overflow:visible;}
+  .gl-side .gl-logo{margin:0 18px 14px;height:24px;}
+  .gl-lab{margin:0 18px 8px;}
+  .gl-cats{display:flex;gap:6px;overflow-x:auto;padding:0 14px 6px;scrollbar-width:none;}
+  .gl-cat{width:auto;white-space:nowrap;border:1px solid #ece4d2;border-radius:20px;padding:8px 13px;font-size:12px;background:#fff;}
+  .gl-cat.on{background:#2f3a2c;border-color:#2f3a2c;}
+  .gl-pill{display:none;}
+  .gl-pie{position:absolute;top:18px;right:14px;margin:0;padding:0;gap:16px;}
+  .gl-side{position:relative;}
+  .gl-main{padding:22px 16px 40px;overflow:visible;}
+  .gl-head{flex-direction:column;gap:0;}
+  .gl-tit{font-size:26px;}
+  .gl-bus{width:100%;margin-top:14px;}
+  .gl-lista{grid-template-columns:1fr;margin-top:18px;}
+}
+</style>
+<script>
+/* Glosario (Biblioteca Ummana): arma la vista nueva a partir de los documentos que ya están en la página */
+(function(){
+  const pro = document.getElementById('pro-screen'); if(!pro) return;
+  const IC = {
+    file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+    sheet:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>',
+    eye:'<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    dl:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
+    open:'<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+    info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+    grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+    run:'<circle cx="13" cy="4" r="2"/><path d="m7 21 3-6 3 2v5"/><path d="M6 12l3-4 4 1 3 3 3 1"/>',
+    drop:'<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>',
+    spark:'<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>',
+    wave:'<path d="M2 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/><path d="M2 17c2-3 4-3 6 0s4 3 6 0 4-3 6 0" opacity=".5"/>',
+    leaf:'<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10Z"/><path d="M2 21c0-3 1.9-5.4 5.2-6.1"/>',
+    flower:'<circle cx="12" cy="12" r="3"/><path d="M12 2a4 4 0 0 1 0 7M12 22a4 4 0 0 1 0-7M2 12a4 4 0 0 1 7 0M22 12a4 4 0 0 1-7 0"/>',
+    moon:'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+    apple:'<path d="M12 20.9c1.4 0 2.9 1.1 4.5.1 2.3-1.5 4.5-6.6 3.5-10-1-3.2-4.6-3.6-6-2.7-.8.5-1.4.8-2 .8s-1.2-.3-2-.8C8.6 7.4 5 7.8 4 11c-1 3.4 1.2 8.5 3.5 10 1.6 1 3.1-.1 4.5-.1Z"/><path d="M12 8c0-2 1-4 3-5"/>',
+    bed:'<path d="M2 20V8"/><path d="M2 12h20v8"/><path d="M2 17h20"/><path d="M6 12V9a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3"/>',
+    uro:'<path d="M12 2v6"/><path d="M8 8h8l-1 6a3 3 0 0 1-6 0Z"/><path d="M12 17v5"/>'
+  };
+  const svg = (n,s=16)=> `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${IC[n]||IC.file}</svg>`;
+  const iconoCat = t=>{ t = t.toUpperCase();
+    return /PLANILLA/.test(t)?'grid':/ACTIVIDAD/.test(t)?'run':/COSMETO/.test(t)?'drop':/DERMATO/.test(t)?'spark':/ESTR[EÉ]S/.test(t)?'wave':/GASTRO/.test(t)?'leaf':/GINECO/.test(t)?'flower':/MEDITA|MINDFUL/.test(t)?'moon':/NUTRI/.test(t)?'apple':/SUE[NÑ]O/.test(t)?'bed':/URO/.test(t)?'uro':'file'; };
+  // "DERMATOLOGÍA Y ESTÉTICA" → "Dermatología y estética" (y después de "/" también mayúscula)
+  const lindo = t=> t.trim().toLowerCase().replace(/(^|\/\s*)([a-záéíóúñ])/g, (m,a,b)=> a + b.toUpperCase());
+  const esc = s=> String(s).replace(/[&<>"]/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  // datos
+  const cats = [];
+  const info = pro.querySelector('.info-section');
+  if(info){
+    const docs = [...info.querySelectorAll('a.info-link')].map(a=> ({t: a.textContent.trim(), ver: a.getAttribute('href'), dl: a.getAttribute('href'), tipo:'pdf'}));
+    if(docs.length) cats.push({t: 'Información importante', ic:'info', docs});
+  }
+  pro.querySelectorAll('.accordion-wrap .acc-item').forEach(it=>{
+    const h = it.querySelector('.acc-header'); if(!h) return;
+    const titulo = [...h.childNodes].filter(n=> n.nodeType===3).map(n=> n.textContent).join('').trim();
+    const docs = [...it.querySelectorAll('li')].map(li=>{
+      const nom = li.querySelector('.file-name'); const t = nom ? nom.textContent.trim() : '';
+      const ver = li.querySelector('a.btn-ver'), dl = li.querySelector('a.btn-dl'), ab = li.querySelector('a.btn-open');
+      return {t, ver: ver && ver.getAttribute('href'), dl: dl && dl.getAttribute('href'), abrir: ab && ab.getAttribute('href'), tipo: ab && !ver ? 'planilla' : 'pdf'};
+    }).filter(d=> d.t);
+    if(docs.length) cats.push({t: lindo(titulo), ic: iconoCat(titulo), docs});
+  });
+  if(!cats.length) return;
+  const total = cats.reduce((a,c)=> a + c.docs.length, 0);
+  // estructura
+  pro.classList.add('gl');
+  const side = document.createElement('aside'); side.className = 'gl-side';
+  side.innerHTML = `<img class="gl-logo" src="caja/images/logo.png" alt="ummana"><div class="gl-lab">BIBLIOTECA UMMANA</div>
+    <div class="gl-cats"><div class="gl-pill"></div>${cats.map((c,i)=> `<button type="button" class="gl-cat" data-i="${i}">${svg(c.ic)}<span>${esc(c.t)}</span><b>${c.docs.length}</b></button>`).join('')}</div>
+    <div class="gl-pie"><button type="button" id="glInicio">← Inicio</button><button type="button" id="glSalir">Salir</button></div>`;
+  const main = document.createElement('main'); main.className = 'gl-main';
+  main.innerHTML = `<div class="gl-head"><div><div class="gl-k" id="glK">ESPECIALIDAD</div><h2 class="gl-tit" id="glTit"></h2><div class="gl-sub" id="glSub"></div></div>
+    <input type="search" class="gl-bus" id="glBus" placeholder="Buscar entre los ${total} documentos" autocomplete="off"></div><div class="gl-lista" id="glLista"></div>`;
+  pro.appendChild(side); pro.appendChild(main);
+  const pill = side.querySelector('.gl-pill');
+  let actual = cats.length > 1 && cats[0].t==='Información importante' ? 0 : 0;
+  const tarjeta = (d, i, cat)=>{
+    const sub = d.tipo==='planilla' ? 'Planilla de Google' : 'PDF';
+    const acc = d.abrir
+      ? `<a href="${esc(d.abrir)}" target="_blank" rel="noopener">${svg('open',14)} Abrir</a>`
+      : `${d.ver ? `<a href="${esc(d.ver)}" target="_blank" rel="noopener">${svg('eye',14)} Ver</a>` : ''}${d.dl ? `<a class="sol" href="${esc(d.dl)}" download title="Descargar">${svg('dl',14)}</a>` : ''}`;
+    return `<div class="gl-f" style="animation-delay:${Math.min(i,12)*35}ms"><div class="gl-fi">${svg(d.tipo==='planilla' ? 'sheet' : 'file', 18)}</div><div><div class="gl-ft">${esc(d.t)}</div><div class="gl-fs">${sub}${cat ? ' · ' + esc(cat) : ''}</div></div><div class="gl-fa">${acc}</div></div>`;
+  };
+  const cantTxt = n=> `${n} ${n===1 ? 'documento' : 'documentos'}`;
+  function mover(){
+    const b = side.querySelector(`.gl-cat[data-i="${actual}"]`); if(!b) return;
+    pill.style.height = b.offsetHeight + 'px';
+    pill.style.transform = `translateY(${b.offsetTop}px)`;
+  }
+  function render(){
+    const q = document.getElementById('glBus').value.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    side.querySelectorAll('.gl-cat').forEach(b=> b.classList.toggle('on', !q && +b.dataset.i===actual));
+    const lista = document.getElementById('glLista');
+    if(q){
+      const res = []; cats.forEach(c=> c.docs.forEach(d=>{ if(d.t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').includes(q)) res.push([d, c.t]); }));
+      document.getElementById('glK').textContent = 'BÚSQUEDA';
+      document.getElementById('glTit').textContent = 'Resultados';
+      document.getElementById('glSub').textContent = cantTxt(res.length);
+      lista.innerHTML = res.length ? res.map(([d,c],i)=> tarjeta(d,i,c)).join('') : '<div class="gl-vacio">No hay documentos con ese nombre.</div>';
+      pill.style.opacity = '0';
+      return;
+    }
+    pill.style.opacity = '1';
+    const c = cats[actual];
+    document.getElementById('glK').textContent = c.t==='Información importante' ? 'PARA PROFESIONALES' : 'ESPECIALIDAD';
+    document.getElementById('glTit').textContent = c.t;
+    document.getElementById('glSub').textContent = cantTxt(c.docs.length);
+    lista.innerHTML = c.docs.map((d,i)=> tarjeta(d,i)).join('');
+    mover();
+  }
+  side.querySelector('.gl-cats').addEventListener('click', e=>{
+    const b = e.target.closest('.gl-cat'); if(!b) return;
+    actual = +b.dataset.i; document.getElementById('glBus').value = '';
+    render(); main.scrollTo({top:0, behavior:'smooth'});
+    if(window.matchMedia('(max-width:760px)').matches) b.scrollIntoView({inline:'center', block:'nearest', behavior:'smooth'});
+  });
+  document.getElementById('glBus').addEventListener('input', render);
+  document.getElementById('glSalir').onclick = ()=> document.getElementById('logout-btn').click();
+  document.getElementById('glInicio').onclick = ()=> document.getElementById('home-btn').click();
+  // mostrar/ocultar según la pantalla activa (la lógica existente cambia el display de #pro-screen)
+  const sync = ()=>{
+    const visible = pro.style.display && pro.style.display !== 'none';
+    document.body.classList.toggle('gl-on', !!visible);
+    document.getElementById('glInicio').style.display = document.getElementById('home-btn').style.display === 'none' || !document.getElementById('home-btn').style.display ? 'none' : '';
+    if(visible) requestAnimationFrame(mover);
+  };
+  new MutationObserver(sync).observe(pro, {attributes:true, attributeFilter:['style']});
+  new MutationObserver(sync).observe(document.getElementById('home-btn'), {attributes:true, attributeFilter:['style']});
+  window.addEventListener('resize', mover);
+  render(); sync();
+})();
+</script>
+
 </body>
 </html>
