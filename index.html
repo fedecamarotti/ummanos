@@ -12,7 +12,7 @@ if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacInt
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=2">
 <meta name="theme-color" content="#fffcf5">
 <title>ummana</title>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <link rel="preload" as="image" href="caja/images/logo.png">
 <style id="ummLoaderCss">
 #ummLoader{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f8f3e8,#efe3c4);transition:opacity .45s ease,visibility .45s ease;}
@@ -1610,6 +1610,7 @@ body:not(.cargando) #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 </script>
 <style id="glosCss">
 /* ===== GLOSARIO: diseño con barra lateral (Biblioteca Ummana) ===== */
+#pro-screen.gl, #pro-screen.gl *{font-family:'Montserrat', sans-serif;}
 #pro-screen.gl{padding:0 !important;align-items:stretch !important;flex-direction:row !important;position:fixed;inset:0;background:#f6f2e8;animation:none;z-index:5;}
 #pro-screen.gl > img, #pro-screen.gl > .info-section, #pro-screen.gl > .accordion-wrap, #pro-screen.gl > .quick-links{display:none !important;}
 body.gl-on #home-btn, body.gl-on #logout-btn{display:none !important;}
@@ -1639,7 +1640,7 @@ body.gl-on #home-btn, body.gl-on #logout-btn{display:none !important;}
 @keyframes glIn{to{opacity:1;transform:none;}}
 .gl-fi{width:42px;height:42px;border-radius:11px;background:#eef1e8;color:#4f6046;display:flex;align-items:center;justify-content:center;flex:none;transition:background .25s,color .25s;}
 .gl-f:hover .gl-fi{background:#2f3a2c;color:#fff;}
-.gl-ft{font-weight:600;font-size:13.5px;color:#2a2a26;line-height:1.3;}
+.gl-ft{font-weight:400;font-size:13.5px;color:#2a2a26;line-height:1.3;}
 .gl-fs{font-size:11px;color:#a9a294;margin-top:3px;}
 .gl-fa{margin-left:auto;display:flex;gap:8px;flex:none;}
 .gl-fa a{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;border:1px solid #ece4d2;border-radius:20px;padding:6px 11px;color:#5c574b;text-decoration:none;background:#fff;transition:background .2s,color .2s,border-color .2s;}
@@ -1648,6 +1649,21 @@ body.gl-on #home-btn, body.gl-on #logout-btn{display:none !important;}
 .gl-vacio{grid-column:1/-1;text-align:center;color:#a9a294;padding:40px 0;font-size:13px;}
 @media (max-width:760px){
   #pro-screen.gl{flex-direction:column !important;position:static;min-height:100vh;}
+  .gl-main .gl-head{display:none;} .gl-main .gl-lista{display:none;}
+  .gl-main{display:none;}
+  .gl-mbus{display:block !important;width:calc(100% - 28px) !important;margin:0 14px 14px !important;}
+  .gl-side .gl-cats{display:block !important;padding:0 14px 30px !important;overflow:visible !important;}
+  .gl-side .gl-cat{display:flex !important;width:100% !important;white-space:normal !important;border:1px solid #ece4d2 !important;border-radius:16px !important;padding:15px 16px !important;font-size:14px !important;background:#fff !important;color:#2a2a26 !important;margin-bottom:10px;box-shadow:0 2px 6px rgba(47,58,44,.04);}
+  .gl-side .gl-cat svg{color:#9c8250;}
+  .gl-side .gl-cat .gl-chev{transition:transform .3s;color:#b0a58c;margin-left:6px;}
+  .gl-side .gl-cat.abierta{background:#2f3a2c !important;color:#fff !important;border-color:#2f3a2c !important;border-radius:16px 16px 4px 4px !important;margin-bottom:0;}
+  .gl-side .gl-cat.abierta svg{color:#d9c08a;} .gl-side .gl-cat.abierta b{color:#cfd8c6;}
+  .gl-side .gl-cat.abierta .gl-chev{transform:rotate(180deg);color:#cfd8c6;}
+  .gl-acc{overflow:hidden;max-height:0;transition:max-height .45s cubic-bezier(.4,0,.2,1);margin-bottom:10px;}
+  .gl-acc .gl-acc-in{background:#fbf8f0;border:1px solid #ece4d2;border-top:none;border-radius:0 0 16px 16px;padding:10px;display:flex;flex-direction:column;gap:8px;}
+  .gl-acc .gl-f{padding:12px 12px;border-radius:12px;}
+  .gl-acc .gl-fi{width:36px;height:36px;}
+  .gl-acc .gl-ft{font-size:13px;}
   .gl-side{width:auto;border-right:none;border-bottom:1px solid #ece4d2;padding:18px 0 10px;overflow:visible;}
   .gl-side .gl-logo{margin:0 18px 14px;height:24px;}
   .gl-lab{margin:0 18px 8px;}
@@ -1718,6 +1734,9 @@ body.gl-on #home-btn, body.gl-on #logout-btn{display:none !important;}
   side.innerHTML = `<img class="gl-logo" src="caja/images/logo.png" alt="ummana"><div class="gl-lab">BIBLIOTECA UMMANA</div>
     <div class="gl-cats"><div class="gl-pill"></div>${cats.map((c,i)=> `<button type="button" class="gl-cat" data-i="${i}">${svg(c.ic)}<span>${esc(c.t)}</span><b>${c.docs.length}</b></button>`).join('')}</div>
     <div class="gl-pie"><button type="button" id="glInicio">← Inicio</button><button type="button" id="glSalir">Salir</button></div>`;
+  // celular: buscador arriba de la lista y una flechita en cada especialidad
+  side.querySelector('.gl-lab').insertAdjacentHTML('afterend', '<input type="search" class="gl-bus gl-mbus" id="glMBus" placeholder="Buscar documento" autocomplete="off" style="display:none">');
+  side.querySelectorAll('.gl-cat').forEach(b=> b.insertAdjacentHTML('beforeend', '<svg class="gl-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>'));
   const main = document.createElement('main'); main.className = 'gl-main';
   main.innerHTML = `<div class="gl-head"><div><div class="gl-k" id="glK">ESPECIALIDAD</div><h2 class="gl-tit" id="glTit"></h2><div class="gl-sub" id="glSub"></div></div>
     <input type="search" class="gl-bus" id="glBus" placeholder="Buscar entre los ${total} documentos" autocomplete="off"></div><div class="gl-lista" id="glLista"></div>`;
@@ -1758,8 +1777,31 @@ body.gl-on #home-btn, body.gl-on #logout-btn{display:none !important;}
     lista.innerHTML = c.docs.map((d,i)=> tarjeta(d,i)).join('');
     mover();
   }
+  const MQ = window.matchMedia('(max-width:760px)');
+  // Celular: cada especialidad es un botón que despliega sus archivos debajo
+  function toggleCel(b){
+    const abierta = b.classList.contains('abierta');
+    side.querySelectorAll('.gl-cat.abierta').forEach(x=>{ x.classList.remove('abierta'); const a = x.nextElementSibling; if(a && a.classList.contains('gl-acc')){ a.style.maxHeight = '0'; setTimeout(()=> a.remove(), 450); } });
+    if(abierta) return;
+    const c = cats[+b.dataset.i];
+    b.classList.add('abierta');
+    b.insertAdjacentHTML('afterend', `<div class="gl-acc"><div class="gl-acc-in">${c.docs.map((d,i)=> tarjeta(d,i)).join('')}</div></div>`);
+    const acc = b.nextElementSibling;
+    requestAnimationFrame(()=>{ acc.style.maxHeight = acc.scrollHeight + 'px'; });
+    setTimeout(()=> b.scrollIntoView({block:'start', behavior:'smooth'}), 120);
+  }
+  document.getElementById('glMBus').addEventListener('input', e=>{
+    const q = e.target.value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    side.querySelectorAll('.gl-acc').forEach(a=> a.remove()); side.querySelectorAll('.gl-cat.abierta').forEach(x=> x.classList.remove('abierta'));
+    side.querySelectorAll('.gl-res').forEach(a=> a.remove());
+    side.querySelectorAll('.gl-cat').forEach(b=> b.style.display = q ? 'none' : '');
+    if(!q) return;
+    const res = []; cats.forEach(c=> c.docs.forEach(d=>{ if(d.t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(q)) res.push([d, c.t]); }));
+    side.querySelector('.gl-cats').insertAdjacentHTML('beforeend', `<div class="gl-res" style="display:flex;flex-direction:column;gap:8px">${res.length ? res.map(([d,c],i)=> tarjeta(d,i,c)).join('') : '<div class="gl-vacio">No hay documentos con ese nombre.</div>'}</div>`);
+  });
   side.querySelector('.gl-cats').addEventListener('click', e=>{
     const b = e.target.closest('.gl-cat'); if(!b) return;
+    if(MQ.matches){ toggleCel(b); return; }
     actual = +b.dataset.i; document.getElementById('glBus').value = '';
     render(); main.scrollTo({top:0, behavior:'smooth'});
     if(window.matchMedia('(max-width:760px)').matches) b.scrollIntoView({inline:'center', block:'nearest', behavior:'smooth'});
