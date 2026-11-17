@@ -1633,6 +1633,11 @@ body.gl-on #home-btn, body.gl-on #logout-btn{display:none !important;}
 .gl-tit{font-size:34px;font-weight:400;margin:8px 0 6px;color:#2a2a26;line-height:1.15;}
 .gl-sub{color:#9c9179;font-size:13px;}
 .gl-bus{width:300px;flex:none;margin-top:18px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a9a294' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E") no-repeat 16px center/15px;border:1px solid #ece4d2;border-radius:30px;padding:11px 16px 11px 40px;font:inherit;font-size:13px;color:#2a2a26;outline:none;transition:border-color .2s,box-shadow .2s;}
+.gl-der{display:flex;flex-direction:column;align-items:flex-end;gap:16px;flex:none;}
+.gl-volver{border:none;background:none;font-size:12px;letter-spacing:.1em;color:#9c9179;cursor:pointer;padding:2px 0;transition:color .2s,transform .2s;}
+.gl-volver::before{content:'← ';}
+.gl-volver:hover{color:#2f3a2c;transform:translateX(-3px);}
+.gl-der .gl-bus{margin-top:0;}
 .gl-bus:focus{border-color:#cfd8c6;box-shadow:0 0 0 4px rgba(47,58,44,.06);}
 .gl-lista{margin-top:30px;display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 .gl-f{background:#fff;border:1px solid #ece4d2;border-radius:16px;padding:16px 18px;display:flex;align-items:center;gap:14px;transition:transform .25s,box-shadow .25s,border-color .25s;opacity:0;transform:translateY(10px);animation:glIn .45s ease forwards;}
@@ -1739,7 +1744,7 @@ body.gl-on #home-btn, body.gl-on #logout-btn{display:none !important;}
   side.querySelectorAll('.gl-cat').forEach(b=> b.insertAdjacentHTML('beforeend', '<svg class="gl-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>'));
   const main = document.createElement('main'); main.className = 'gl-main';
   main.innerHTML = `<div class="gl-head"><div><div class="gl-k" id="glK">ESPECIALIDAD</div><h2 class="gl-tit" id="glTit"></h2><div class="gl-sub" id="glSub"></div></div>
-    <input type="search" class="gl-bus" id="glBus" placeholder="Buscar entre los ${total} documentos" autocomplete="off"></div><div class="gl-lista" id="glLista"></div>`;
+    <div class="gl-der"><button type="button" class="gl-volver" id="glVolver">Volver</button><input type="search" class="gl-bus" id="glBus" placeholder="Buscar entre los ${total} documentos" autocomplete="off"></div></div><div class="gl-lista" id="glLista"></div>`;
   pro.appendChild(side); pro.appendChild(main);
   const pill = side.querySelector('.gl-pill');
   let actual = cats.length > 1 && cats[0].t==='Información importante' ? 0 : 0;
@@ -1809,11 +1814,14 @@ body.gl-on #home-btn, body.gl-on #logout-btn{display:none !important;}
   document.getElementById('glBus').addEventListener('input', render);
   document.getElementById('glSalir').onclick = ()=> document.getElementById('logout-btn').click();
   document.getElementById('glInicio').onclick = ()=> document.getElementById('home-btn').click();
+  document.getElementById('glVolver').onclick = ()=> document.getElementById('home-btn').click();
   // mostrar/ocultar según la pantalla activa (la lógica existente cambia el display de #pro-screen)
   const sync = ()=>{
     const visible = pro.style.display && pro.style.display !== 'none';
     document.body.classList.toggle('gl-on', !!visible);
-    document.getElementById('glInicio').style.display = document.getElementById('home-btn').style.display === 'none' || !document.getElementById('home-btn').style.display ? 'none' : '';
+    const sinInicio = document.getElementById('home-btn').style.display === 'none' || !document.getElementById('home-btn').style.display;
+    document.getElementById('glInicio').style.display = sinInicio ? 'none' : '';
+    document.getElementById('glVolver').style.visibility = sinInicio ? 'hidden' : '';
     if(visible) requestAnimationFrame(mover);
   };
   new MutationObserver(sync).observe(pro, {attributes:true, attributeFilter:['style']});
