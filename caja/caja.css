@@ -1456,3 +1456,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}   /* que el navegador
 .pf-pres-del{border:none;background:none;color:#b0a58c;padding:2px 4px;margin-left:6px;cursor:pointer;vertical-align:-2px;}
 .pf-pres-del:hover{color:#a13a3a;}
 .pf-pres-del svg.ico{width:13px;height:13px;}
+
+/* Botón INICIO en la barra superior (vuelve a ummanos.com.ar) */
+.btn-inicio{display:inline-flex;align-items:center;text-decoration:none;letter-spacing:.12em;font-size:11.5px;}
+#pVolver{display:none !important;}

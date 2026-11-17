@@ -7,9 +7,9 @@
 if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1)){
   var vp=document.querySelector('meta[name=viewport]'); if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0');
 }</script>
-<link rel="manifest" href="/manifest.webmanifest?v=202611171416">
+<link rel="manifest" href="/manifest.webmanifest?v=202611171513">
 <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611171416">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611171513">
 <meta name="theme-color" content="#fffcf5">
 <title>CAJA UMMANA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,7 +37,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<link rel="stylesheet" href="caja.css?v=202611171416">
+<link rel="stylesheet" href="caja.css?v=202611171513">
 </head>
 <body>
 <div id="ummLoader" aria-hidden="true"><div class="ul-logo"><img class="ul-base" src="images/logo.png" alt=""><img class="ul-fill" src="images/logo.png" alt=""></div></div>
@@ -248,6 +248,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
     <div><img src="images/logo.png" alt="Ummana" class="topbar-logo"></div>
     <div class="actions">
       <span class="p-user" id="pUser"></span>
+      <a class="btn btn-inicio" href="../">INICIO</a>
       <button class="btn" id="pLogout">Salir</button>
     </div>
   </div>
@@ -471,7 +472,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
           <button class="menu-close" id="menuClose" title="Cerrar" aria-label="Cerrar menú">✕</button>
         </div>
         <div class="menu-links" id="sidebarLinks">
-          <a class="btn menu-inicio" href="../"><span class="side-icon"><i data-ico="inicio"></i></span> Inicio</a>
+          <a class="btn menu-inicio" href="../"><span class="side-icon"><i data-ico="inicio"></i></span> INICIO</a>
           <button class="btn col-hidden" id="btnVistaMovimientos"><span class="side-icon"><i data-ico="lista"></i></span> Movimientos</button>
           <button class="btn col-hidden" id="btnCajas"><span class="side-icon"><i data-ico="cajas"></i></span> Cajas</button>
           <button class="btn" id="btnPacientes"><span class="side-icon"><i data-ico="pacientes"></i></span> Pacientes</button>
@@ -491,6 +492,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
       </div>
     </div>
     <button class="btn btn-primary" id="btnNuevo">+ Nuevo movimiento</button>
+    <a class="btn btn-inicio" href="../">INICIO</a>
     <button class="btn" id="btnLogout">Salir</button>
   </div>
 </div>
@@ -1847,11 +1849,11 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 
 </div><!-- /#app -->
 
-<script src="js/base.js?v=202611171416"></script>
-<script src="js/caja.js?v=202611171416"></script>
-<script src="js/sueros.js?v=202611171416"></script>
-<script src="js/cremas.js?v=202611171416"></script>
-<script src="js/paneles.js?v=202611171416"></script>
-<script src="js/extras.js?v=202611171416"></script>
+<script src="js/base.js?v=202611171513"></script>
+<script src="js/caja.js?v=202611171513"></script>
+<script src="js/sueros.js?v=202611171513"></script>
+<script src="js/cremas.js?v=202611171513"></script>
+<script src="js/paneles.js?v=202611171513"></script>
+<script src="js/extras.js?v=202611171513"></script>
 </body>
 </html>
