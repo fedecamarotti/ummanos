@@ -1451,3 +1451,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}   /* que el navegador
 
 /* Sueros: botón M/T único por día (celda combinada) */
 .tabla-sueros td.mt-dia{vertical-align:middle;background:#fbf7ec;border-left:1px solid var(--border);border-right:1px solid var(--border);}
+
+/* Ficha: eliminar presupuesto */
+.pf-pres-del{border:none;background:none;color:#b0a58c;padding:2px 4px;margin-left:6px;cursor:pointer;vertical-align:-2px;}
+.pf-pres-del:hover{color:#a13a3a;}
+.pf-pres-del svg.ico{width:13px;height:13px;}

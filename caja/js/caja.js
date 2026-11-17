@@ -1521,12 +1521,25 @@ async function cargarPresupuestosFicha(nombre){
   lista.innerHTML = '<div class="pf-pres-vacio">Cargando…</div>';
   try{
     const snap = await db.collection('presupuestos').where('paciente','==', nombre).get();
-    pfPresDatos = snap.docs.map(d=> ({id:d.id, ...d.data()})).sort((a,b)=> (b.fechaISO||'').localeCompare(a.fechaISO||''));
-    lista.innerHTML = pfPresDatos.length ? pfPresDatos.map((p,i)=> `<div class="pf-pres-it" data-pr="${i}" title="Abrir PDF"><span class="f">${ecFecha(p.fechaISO)}${p.profesional ? ' · ' + escHtml(p.profesional) : ''}</span><span class="t">${p.sinTotal ? `${p.items.length} opciones` : fmtMonto(p.total, p.moneda)}</span><span class="d">${escHtml(p.items.map(x=> x.det).join(' + '))}</span></div>`).join('')
+    // los eliminados no se borran de la base: quedan marcados y no se muestran
+    pfPresDatos = snap.docs.map(d=> ({id:d.id, ...d.data()})).filter(p=> !p.eliminado).sort((a,b)=> (b.fechaISO||'').localeCompare(a.fechaISO||''));
+    const puedeBorrar = currentUser && currentUser.rol==='admin';
+    lista.innerHTML = pfPresDatos.length ? pfPresDatos.map((p,i)=> `<div class="pf-pres-it" data-pr="${i}" title="Abrir PDF"><span class="f">${ecFecha(p.fechaISO)}${p.profesional ? ' · ' + escHtml(p.profesional) : ''}</span><span class="t">${p.sinTotal ? `${p.items.length} opciones` : fmtMonto(p.total, p.moneda)}${puedeBorrar ? `<button type="button" class="pf-pres-del" data-del="${i}" title="Eliminar presupuesto">${ico('basura')}</button>` : ''}</span><span class="d">${escHtml(p.items.map(x=> x.det).join(' + '))}</span></div>`).join('')
       : '<div class="pf-pres-vacio">Sin presupuestos.</div>';
   }catch(e){ lista.innerHTML = `<div class="pf-pres-vacio">No se pudieron leer los presupuestos.</div>`; }
 }
 document.getElementById('pfPresLista').addEventListener('click', async e=>{
+  const del = e.target.closest('[data-del]');
+  if(del){
+    e.stopPropagation();
+    const pr = pfPresDatos[+del.dataset.del]; if(!pr) return;
+    if(!await ummConfirm(`¿Eliminar el presupuesto del ${ecFecha(pr.fechaISO)}${pr.profesional ? ' (' + pr.profesional + ')' : ''}?\nDeja de aparecer en la ficha del paciente.`, {si: 'Eliminar'})) return;
+    try{
+      await db.collection('presupuestos').doc(pr.id).update({eliminado: true, eliminadoPor: currentUser.nombre, eliminadoEn: firebase.firestore.FieldValue.serverTimestamp()});
+      cargarPresupuestosFicha(pr.paciente);
+    }catch(err){ alert('No se pudo eliminar: ' + err.message); }
+    return;
+  }
   const it = e.target.closest('.pf-pres-it'); if(!it) return;
   const pr = pfPresDatos[+it.dataset.pr]; if(!pr) return;
   try{ const {doc, archivo} = await pdfPresupuesto(pr); mostrarPreviewPDF(doc, archivo); }
