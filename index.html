@@ -686,6 +686,23 @@ body:not(.cargando) #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
  #home-screen .login-card { text-align: center; }
  #home-hola { margin: 0 0 18px; font-size: 13px; letter-spacing: 0; text-transform: none; color: #9c9179; }
  .home-botones { width: 100%; gap: 10px; }
+ .home-botones { gap: 12px; }
+ #home-screen .login-card { width: min(360px, calc(100vw - 32px)); }
+ .home-botones button, .home-botones a {
+ position: relative; display: block; width: 100%; margin: 0; padding: 18px 44px;
+ background: #fff; border: 1px solid #e6dbc2; border-radius: 14px; color: #3a2f1c;
+ font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 400; letter-spacing: .16em; text-transform: uppercase; text-align: center;
+ transition: transform .25s, box-shadow .25s, border-color .25s, color .25s;
+ }
+ .home-botones button::after, .home-botones a::after {
+ content: ''; position: absolute; right: 18px; top: 50%; width: 16px; height: 16px; margin-top: -8px; background: #cbbf9f;
+ -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E%3C/svg%3E") center/contain no-repeat;
+ mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E%3C/svg%3E") center/contain no-repeat;
+ transition: background .25s, transform .25s;
+ }
+ .home-botones button:hover, .home-botones a:hover { background: #fff; color: #6f7f5e; border-color: rgba(111,127,94,.4); transform: translateY(-3px); box-shadow: 0 12px 26px rgba(111,127,94,.2); }
+ .home-botones button:hover::after, .home-botones a:hover::after { background: #6f7f5e; transform: translateX(3px); }
+ .home-botones button:active, .home-botones a:active { transform: translateY(-1px); }
 </style>
 </head>
 <body id="body" class="cargando">
