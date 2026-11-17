@@ -1452,7 +1452,7 @@ function abrirPresupuesto(){
 // Textos que quedan "congelados" en cada presupuesto guardado: si mañana cambian, los viejos se siguen viendo como se enviaron
 const PR_OBSERVACIONES = [{t:'Presupuesto válido por 15 días desde el envío del mismo.', b:true}, {t:'Los valores de las cotizaciones se ajustarán por IPC.'},
   {t:'Abonando en efectivo, se aplica un 10% de descuento sobre el valor total.'},
-  {t:'Los protocolos deben abonarse en su totalidad antes de iniciar el tratamiento.'},
+  {t:'Los protocolos completos deben abonarse en su totalidad antes de iniciar el tratamiento.'},
   {t:'Los descuentos y promociones no son acumulables entre sí.'}];
 const UMM_CONTACTO = [['ic-mail','info@ummana.ar'],['ic-wa','11 3920-8108'],['ic-pin','M. Castro 1125, Banfield'],['ic-ig','somos.ummana'],['ic-web','ummana.ar']];
 // Arma el PDF de un presupuesto a partir de sus datos (se usa al crearlo y al volver a abrirlo desde la ficha)
