@@ -1229,11 +1229,13 @@ async function ummCargarFuente(doc){
     try{
       const b64 = async f=>{ const buf = await (await fetch(f)).arrayBuffer(); let bin = ''; const u = new Uint8Array(buf); for(let i=0;i<u.length;i+=0x8000) bin += String.fromCharCode.apply(null, u.subarray(i, i+0x8000)); return btoa(bin); };
       ummFuente = {normal: await b64('fonts/Montserrat-Regular.ttf'), bold: await b64('fonts/Montserrat-Bold.ttf')};
+      try{ ummFuente.italic = await b64('fonts/Montserrat-Italic.ttf'); }catch(_){}
     }catch(e){ ummFuente = false; }
   }
   if(!ummFuente) return 'helvetica';
   doc.addFileToVFS('Montserrat-Regular.ttf', ummFuente.normal); doc.addFont('Montserrat-Regular.ttf', 'Montserrat', 'normal');
   doc.addFileToVFS('Montserrat-Bold.ttf', ummFuente.bold); doc.addFont('Montserrat-Bold.ttf', 'Montserrat', 'bold');
+  if(ummFuente.italic){ doc.addFileToVFS('Montserrat-Italic.ttf', ummFuente.italic); doc.addFont('Montserrat-Italic.ttf', 'Montserrat', 'italic'); }
   return 'Montserrat';
 }
 // opts: {titulo, datos:[[etiqueta, valor]], head, body, columnStyles, totales:[{lbl, val, tipo:'sub'|'desc'|'total'}], notas, observaciones:[{t, b}]}
@@ -1284,6 +1286,11 @@ async function pdfFormatoUmmana(opts){
       doc.setFont(F,'normal'); doc.setFontSize(9.5); doc.setTextColor(...(t.tipo==='desc' ? UMM_VERDE_OSC : UMM_TXT));
     }
     doc.text(T(t.lbl), tx + 6, y); doc.text(T(t.val), W - M - 6, y, {align:'right'});
+    if(t.sub){   // detalle chico en cursiva al lado (ej: "(Efectivo 10% desc.)")
+      const x2 = tx + 6 + doc.getTextWidth(T(t.lbl)) + 4;
+      doc.setFont(F, (F==='Montserrat' && !(ummFuente && ummFuente.italic)) ? 'normal' : 'italic'); doc.setFontSize(7.5);
+      doc.text(T(t.sub), x2, y);
+    }
     y += t.tipo==='total' ? 22 : 16;
   });
   const etiqueta = txt=>{ nuevaPagSi(40); y += 10; doc.setFont(F,'bold'); doc.setFontSize(7.5); doc.setTextColor(...UMM_VERDE); doc.setCharSpace(1); doc.text(txt, M, y); doc.setCharSpace(0); y += 7; };
@@ -1449,7 +1456,7 @@ const UMM_CONTACTO = [['ic-mail','info@ummana.ar'],['ic-wa','11 3920-8108'],['ic
 async function pdfPresupuesto(pr){
   if(pr.sinTotal) return pdfPresupuestoOpciones(pr);
   const tot = [{lbl:'Subtotal', val: fmtMonto(pr.subtotal, pr.moneda), tipo:'sub'}];
-  if(pr.descuento) tot.push({lbl: 'Descuento', val: '-' + fmtMonto(pr.descuento, pr.moneda), tipo:'desc'});
+  if(pr.descuento) tot.push({lbl: 'Descuento', sub: pr.descuentoLbl && pr.descuentoLbl!=='Descuento' ? `(${pr.descuentoLbl} desc.)` : '', val: '-' + fmtMonto(pr.descuento, pr.moneda), tipo:'desc'});
   tot.push({lbl:'TOTAL', val: fmtMonto(pr.total, pr.moneda), tipo:'total'});
   const doc = await pdfFormatoUmmana({
     titulo: 'PRESUPUESTO',
