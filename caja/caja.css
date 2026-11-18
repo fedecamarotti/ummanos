@@ -1495,3 +1495,22 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}   /* que el navegador
 .pr-fila.libre .pr-det{padding-right:11px;border-style:dashed;border-color:#c9a45c;background:#fdf6e3;}
 .pr-cab-fuera{display:none;font-style:normal;font-size:9px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:#8a6420;background:#f6e6bf;border-radius:8px;padding:2px 7px;margin-left:6px;vertical-align:1px;}
 .pr-cab:has(+ #prItems .pr-fila.libre) .pr-cab-fuera{display:inline-block;}
+/* Títulos-buscador sin recuadro (como en Las Vaskas): se ve el título; al escribir aparece una línea abajo y filtra */
+thead th input.th-search[type=text], thead th textarea.th-search{
+  border:none;border-radius:0;background:transparent;
+  background-image:linear-gradient(var(--accent), var(--accent));background-repeat:no-repeat;
+  background-position:center bottom 2px;background-size:0 1.5px;transition:background-size .25s;
+}
+thead th .th-search::placeholder{color:#a8925f;opacity:1;}
+thead th input.th-search[type=text]:focus, thead th textarea.th-search:focus,
+thead th input.th-search[type=text]:not(:placeholder-shown), thead th textarea.th-search:not(:placeholder-shown){
+  background-color:transparent;background-size:calc(100% - 12px) 1.5px;color:var(--text);
+}
+/* Presupuestos: bolita roja en "Realizado" cuando el turno ya pasó y falta confirmar */
+.pv-tabla .cp-sw.pv-alerta{overflow:visible;}
+.pv-tabla .cp-sw.pv-alerta::after{content:'';position:absolute;top:-4px;right:-5px;width:8px;height:8px;border-radius:50%;background:#e53935;box-shadow:0 0 0 1.5px #fffcf5;}
+thead th input.th-search[type=text]:focus, thead th textarea.th-search:focus,
+thead th input.th-search[type=text]:not(:placeholder-shown), thead th textarea.th-search:not(:placeholder-shown){
+  background:transparent linear-gradient(var(--accent), var(--accent)) no-repeat center bottom 2px / calc(100% - 12px) 1.5px !important;
+  border-color:transparent !important;box-shadow:none !important;
+}

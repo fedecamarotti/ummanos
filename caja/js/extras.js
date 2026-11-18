@@ -1927,7 +1927,7 @@ function renderPv(){
       <td>${sw('enviado', !!x.enviado)}</td>
       <td>${sw('agendado', !!x.agendado)}</td>
       <td><input type="text" readonly data-campo="fechaAgend" data-iso="${x.fechaAgend||''}" value="${cpFechaCorta(x.fechaAgend)}" placeholder="—" class="cp-fc ${pvVencido(x) ? 'cp-vencido' : ''}"></td>
-      <td>${sw('realizado', !!x.realizado)}</td>
+      <td>${sw('realizado', !!x.realizado).replace('class="cp-sw ', pvVencido(x) ? 'class="cp-sw pv-alerta ' : 'class="cp-sw ')}</td>
       <td><button type="button" class="cp-sw-estado ${x.cerrado?'cerrado':''}" title="${x.cerrado?'Cerrado':'Abierto'} (tocá para cambiar)" aria-pressed="${x.cerrado?'true':'false'}"><i></i></button></td>
       <td class="left"><input type="text" class="cp-notas" data-campo="seguimiento" maxlength="120" value="${escHtml(x.seguimiento||'')}"></td>
       <td><button type="button" class="cp-del" title="Eliminar presupuesto">✕</button></td>
@@ -1954,7 +1954,7 @@ function pvCambio(el){
   if(x[campo]===v) return;
   x[campo] = v;
   pvGuardar(id, {[campo]: v});
-  if(campo==='fechaAgend'){ el.classList.toggle('cp-vencido', pvVencido(x)); pvAgendasActualizar(id, {fechaAgend: v}); }
+  if(campo==='fechaAgend'){ el.classList.toggle('cp-vencido', pvVencido(x)); pvAgendasActualizar(id, {fechaAgend: v}); const r = el.closest('tr').querySelector('.cp-sw[data-campo=realizado]'); if(r) r.classList.toggle('pv-alerta', pvVencido(x)); }
 }
 pvBody.addEventListener('change', e=>{
   const el = e.target.closest('[data-campo]'); if(!el || el.classList.contains('cp-sw') || el.classList.contains('pv-prof')) return;
