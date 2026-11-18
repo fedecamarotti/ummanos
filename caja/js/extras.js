@@ -1908,7 +1908,7 @@ function suscribirPv(){
 }
 // En la lista solo van los presupuestos de profesionales (nombre y apellido: "APELLIDO, NOMBRE"); los de áreas
 // (alfarería, alquileres, colágenos, cremas, suplementos, sueroterapia, etc.) no se agendan
-const pvDeProfesional = p=> /,/.test(p.profesional || '');
+const pvDeProfesional = p=> /,/.test(p.profesional || '') || /^SUEROTERAPIA/.test(mayus(p.profesional || '').trim());   // sueroterapia también se agenda
 const pvProf = x => x.profDeriva!==undefined ? x.profDeriva : (x.profesional || '');
 function renderPv(){
   if(movSub!=='presupuesto') return;
