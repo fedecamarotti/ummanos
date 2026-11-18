@@ -1393,13 +1393,14 @@ function prAgregarFila(){
     else { det.dataset.acSiempre = PR_FUERA; det.removeAttribute('data-ac-libre'); det.placeholder = 'Elegí el tratamiento…'; }
   };
   attachAutocomplete(det, ()=> d.classList.contains('libre') ? [] : prConceptosProf().map(c=> c.concepto), valor=>{
-    if(valor === PR_FUERA){ det.value = ''; setLibre(true); setTimeout(()=> det.focus(), 0); return; }
+    if(valor === PR_FUERA){ det.value = ''; setLibre(true); det.focus(); setTimeout(()=> det.focus(), 0); return; }
     const c = prConceptosProf().find(x=> x.concepto===valor);
     const val = d.querySelector('.pr-val');
     if(c && c.valor && (c.valorMoneda||'$')===prMon){ val.value = Number(c.valor).toLocaleString('es-AR'); prRecalc(); }
   });
   det.addEventListener('blur', ()=>{
     setTimeout(()=>{
+      if(document.activeElement===det) return;   // sigue escribiendo (p. ej. recién eligió "fuera de lista" y volvió al casillero)
       if(d.classList.contains('libre')){ if(!det.value.trim()) setLibre(false); return; }
       // si no eligió de la lista, se borra: lo libre solo va por "Tratamiento fuera de lista"
       if(det.value.trim() && !prConceptosProf().some(c=> c.concepto===mayus(det.value.trim()))){ det.value = ''; prRecalc(); }

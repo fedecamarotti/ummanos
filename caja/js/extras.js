@@ -1903,9 +1903,12 @@ function suscribirPv(){
   if(unsubPv) unsubPv();
   pvMesSuscripto = clave; pvLista = null;
   unsubPv = db.collection('presupuestos').where('fechaISO','>=', mesInicioISO()).where('fechaISO','<', mesFinISO())
-    .onSnapshot(snap=>{ pvLista = snap.docs.map(d=> ({id:d.id, ...d.data()})).filter(p=> !p.eliminado); renderPv(); },
+    .onSnapshot(snap=>{ pvLista = snap.docs.map(d=> ({id:d.id, ...d.data()})).filter(p=> !p.eliminado && pvDeProfesional(p)); renderPv(); },
       err=>{ pvLista = []; document.getElementById('pvBody').innerHTML = `<tr><td colspan="10" class="empty-state" style="color:#a13a3a;">No se pudieron leer los presupuestos: ${escHtml(err.message)}</td></tr>`; });
 }
+// En la lista solo van los presupuestos de profesionales (nombre y apellido: "APELLIDO, NOMBRE"); los de áreas
+// (alfarería, alquileres, colágenos, cremas, suplementos, sueroterapia, etc.) no se agendan
+const pvDeProfesional = p=> /,/.test(p.profesional || '');
 const pvProf = x => x.profDeriva!==undefined ? x.profDeriva : (x.profesional || '');
 function renderPv(){
   if(movSub!=='presupuesto') return;
@@ -2031,7 +2034,7 @@ pvBody.addEventListener('focusout', e=>{
 const pvVencido = x=> !!x.fechaAgend && x.fechaAgend < hoyISO() && !x.realizado && !x.cerrado;
 let pvAgendas = [], unsubPvAgendas = null;
 function renderPvAgendasCount(){
-  const n = pvAgendas.filter(x=> !x.eliminado && pvVencido(x)).length;
+  const n = pvAgendas.filter(x=> !x.eliminado && pvDeProfesional(x) && pvVencido(x)).length;
   const b = document.getElementById('mSubPresN');
   if(b){ b.textContent = n; b.classList.toggle('col-hidden', !n); }
 }

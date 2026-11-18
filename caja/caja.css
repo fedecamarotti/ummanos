@@ -1490,3 +1490,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}   /* que el navegador
 .pf-pres-it .d{grid-column:1 / 3;}
 .pf-pres-it .pf-pres-del{grid-column:3;grid-row:1 / 3;align-self:center;margin:0;padding:2px;font-size:13px;line-height:1;color:#d0605a;}
 .pf-pres-it .pf-pres-del:hover{color:#a13a3a;}
+/* Fuera de lista: cartelito al lado de "Detalle" y el casillero libre se distingue (borde punteado) */
+.pr-fila .pr-fuera-tag{display:none !important;}
+.pr-fila.libre .pr-det{padding-right:11px;border-style:dashed;border-color:#c9a45c;background:#fdf6e3;}
+.pr-cab-fuera{display:none;font-style:normal;font-size:9px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:#8a6420;background:#f6e6bf;border-radius:8px;padding:2px 7px;margin-left:6px;vertical-align:1px;}
+.pr-cab:has(+ #prItems .pr-fila.libre) .pr-cab-fuera{display:inline-block;}

@@ -7,9 +7,9 @@
 if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1)){
   var vp=document.querySelector('meta[name=viewport]'); if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0');
 }</script>
-<link rel="manifest" href="/manifest.webmanifest?v=202611181513">
+<link rel="manifest" href="/manifest.webmanifest?v=202611181538">
 <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611181513">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611181538">
 <meta name="theme-color" content="#fffcf5">
 <title>CAJA UMMANA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,7 +37,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<link rel="stylesheet" href="caja.css?v=202611181513">
+<link rel="stylesheet" href="caja.css?v=202611181538">
 </head>
 <body>
 <div id="ummLoader" aria-hidden="true"><div class="ul-logo"><img class="ul-base" src="images/logo.png" alt=""><img class="ul-fill" src="images/logo.png" alt=""></div></div>
@@ -1490,7 +1490,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
     <div class="field"><label>Paciente</label><div class="ac-wrap"><input type="text" id="prPac" placeholder="Escribí para buscar…" autocomplete="off" data-ac-libre></div></div>
     <div class="field"><label>Dr. Dra. / Área</label><div class="ac-wrap"><input type="text" id="prProf" placeholder="Escribí para buscar…" autocomplete="off"></div></div>
     <div class="field"><label>Tratamientos</label>
-      <div class="pr-cab"><span>Detalle</span><span>Cant.</span><span>Valor</span><span></span></div>
+      <div class="pr-cab"><span>Detalle <em class="pr-cab-fuera">Fuera de lista</em></span><span>Cant.</span><span>Valor</span><span></span></div>
       <div id="prItems"></div>
       <button type="button" class="btn" id="prAgregar" style="margin-top:4px">+ Agregar tratamiento</button>
     </div>
@@ -1881,11 +1881,11 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 
 </div><!-- /#app -->
 
-<script src="js/base.js?v=202611181513"></script>
-<script src="js/caja.js?v=202611181513"></script>
-<script src="js/sueros.js?v=202611181513"></script>
-<script src="js/cremas.js?v=202611181513"></script>
-<script src="js/paneles.js?v=202611181513"></script>
-<script src="js/extras.js?v=202611181513"></script>
+<script src="js/base.js?v=202611181538"></script>
+<script src="js/caja.js?v=202611181538"></script>
+<script src="js/sueros.js?v=202611181538"></script>
+<script src="js/cremas.js?v=202611181538"></script>
+<script src="js/paneles.js?v=202611181538"></script>
+<script src="js/extras.js?v=202611181538"></script>
 </body>
 </html>
