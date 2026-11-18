@@ -2047,6 +2047,29 @@ function suscribirPvAgendas(){
   setInterval(renderPvAgendasCount, 5*60*1000);
 }
 
+
+/* Pestañas (todas las filas .s-tabs): una pastilla blanca que se desliza hasta la elegida */
+(function(){
+  function ubicar(tabs){
+    const pill = tabs._pill, act = tabs.querySelector('.s-tab.active:not(.col-hidden)');
+    if(!act || !act.offsetWidth){ pill.style.opacity = '0'; return; }
+    pill.style.opacity = '1';
+    pill.style.width = act.offsetWidth + 'px'; pill.style.height = act.offsetHeight + 'px';
+    pill.style.transform = `translate(${act.offsetLeft}px, ${act.offsetTop}px)`;
+    if(!tabs._listo) requestAnimationFrame(()=> requestAnimationFrame(()=>{ tabs._listo = true; tabs.classList.add('pill-anim'); }));
+  }
+  document.querySelectorAll('.s-tabs').forEach(tabs=>{
+    if(tabs._pill) return;
+    const pill = document.createElement('span'); pill.className = 's-pill'; pill.setAttribute('aria-hidden','true');
+    tabs.prepend(pill); tabs._pill = pill; tabs.classList.add('con-pill');
+    const re = ()=> ubicar(tabs);
+    new MutationObserver(re).observe(tabs, {subtree:true, attributes:true, attributeFilter:['class']});
+    if(window.ResizeObserver) new ResizeObserver(re).observe(tabs);
+    re();
+  });
+  window.addEventListener('resize', ()=> document.querySelectorAll('.s-tabs.con-pill').forEach(ubicar));
+})();
+
 // Arranque: recién acá (con todos los archivos cargados) se escucha el inicio de sesión
 auth.onAuthStateChanged(alCambiarSesion);
 // Por las dudas: la pantalla de carga nunca queda más de 12 segundos

@@ -1523,3 +1523,15 @@ thead th input.th-search[type=text]:not(:placeholder-shown), thead th textarea.t
 .ds-mover{cursor:grab;color:#b8ad93;font-size:14px;letter-spacing:-3px;text-align:center;user-select:none;line-height:1;}
 .ds-mover:hover{color:var(--accent-dk);}
 .ds-fila.arrastrando{opacity:.45;}
+/* Pestañas estilo iOS: cápsula translúcida y pastilla blanca que se desliza a la elegida */
+.s-tabs{position:relative;background:rgba(255,255,255,.5);border:1px solid #e9dfc8;border-radius:13px;box-shadow:inset 0 1px 2px rgba(58,47,28,.05);}
+.s-tab{position:relative;z-index:1;color:#7d745f;border-radius:10px;transition:color .2s, background .2s;}
+.s-tab:hover{background:rgba(255,255,255,.32);color:var(--text);}
+.s-tab.active{background:#fff;color:var(--text);box-shadow:0 2px 8px rgba(90,70,30,.13);}
+.s-tabs.con-pill .s-tab.active{background:transparent;box-shadow:none;}
+.s-pill{position:absolute;left:0;top:0;z-index:0;background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(90,70,30,.13);pointer-events:none;opacity:0;}
+.s-tabs.pill-anim .s-pill{transition:transform .32s cubic-bezier(.3,.7,.2,1), width .32s cubic-bezier(.3,.7,.2,1), opacity .2s;}
+body.fede-nav-on #vistaSueros .sueros-bar .s-tabs, body.fede-nav-on #vistaCremas .sueros-bar .s-tabs, body.fede-nav-on #movSubTabs,
+body.fede-nav-on #vistaInformes .sueros-bar .s-tabs{border-radius:11px;}
+.s-tab-nuevo{z-index:1;}
+@media (prefers-reduced-motion: reduce){ .s-tabs.pill-anim .s-pill{transition:none;} }
