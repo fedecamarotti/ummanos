@@ -703,9 +703,12 @@ function iniciarListeners(){
 
   // Sesión de caja abierta (si hay)
   unsubCajaAbierta = db.collection('cajaSesiones').where('cerradaEn','==', null).onSnapshot(async snap=>{
-    if(!snap.empty){
-      const d = snap.docs[0];
-      cajaActual = {id:d.id, ...d.data()};
+    // si por algún motivo hubiera más de una abierta, siempre se toma la primera que se abrió (nunca una al azar)
+    const abiertas = snap.docs.map(d=> ({id:d.id, ...d.data()})).filter(c=> !c.duplicada)
+      .sort((a,b)=> (tsMs(a.abiertaEn) ?? Date.now()) - (tsMs(b.abiertaEn) ?? Date.now()));
+    if(abiertas.length > 1) marcarCajasDuplicadas(abiertas);
+    if(abiertas.length){
+      cajaActual = abiertas[0];
     } else {
       cajaActual = null;
       // buscamos el último cierre para sugerir la próxima apertura
@@ -715,6 +718,23 @@ function iniciarListeners(){
     }
     actualizarEstadoCaja();
   });
+}
+
+// Cajas abiertas dos veces por error (doble clic de antes del candado): la repetida (misma persona, mismo monto,
+// abierta con menos de 2 minutos de diferencia y sin ningún movimiento) se marca "duplicada" y se cierra sola. No se borra nada.
+async function marcarCajasDuplicadas(abiertas){
+  const base = abiertas[0];
+  for(const c of abiertas.slice(1)){
+    try{
+      if(c.recepcionista !== base.recepcionista || Number(c.aperturaMonto) !== Number(base.aperturaMonto)) continue;
+      const t0 = tsMs(base.abiertaEn), t1 = tsMs(c.abiertaEn);
+      if(t0 == null || t1 == null || Math.abs(t1 - t0) > 120000) continue;
+      const movs = await db.collection('movimientos').where('cajaId','==', c.id).limit(1).get({source:'server'});
+      if(!movs.empty) continue;
+      await db.collection('cajaSesiones').doc(c.id).update({duplicada: true, duplicadaDe: base.id, cerradaEn: c.abiertaEn, cerradaPor: 'SISTEMA (CAJA DUPLICADA)',
+        montoContado: Number(c.aperturaMonto)||0, esperadoCierre: Number(c.aperturaMonto)||0, diferencia: 0});
+    }catch(e){ console.warn('No se pudo marcar la caja duplicada', e); }
+  }
 }
 
 /* =====================================================================

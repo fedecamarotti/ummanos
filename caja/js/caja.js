@@ -109,7 +109,7 @@ const tsMs = ts => ts && ts.toMillis ? ts.toMillis() : null;
 function sesionDeMovimiento(m, sesiones){
   // si la caja con la que se cargó fue eliminada, se reparte como un movimiento viejo (por fecha y hora)
   if(m.cajaId && !m._cajaBorrada) return sesiones.find(c=> c.id === m.cajaId) || null;
-  const delDia = sesiones.filter(c=> c.fechaISO === m.fechaISO && c.abiertaEn);
+  const delDia = sesiones.filter(c=> c.fechaISO === m.fechaISO && c.abiertaEn && !c.duplicada);
   if(!delDia.length) return null;
   if(delDia.length === 1) return delDia[0];
   const t = tsMs(m.creadoEn);
@@ -322,14 +322,43 @@ document.getElementById('confirmarApertura').onclick = async ()=>{
     return;
   }
 
-  await db.collection('cajaSesiones').add({
-    fechaISO: fechaElegida, recepcionista: currentUser.nombre,
-    aperturaMonto: monto, aperturaMontoUsd: montoUsd, abiertaEn: firebase.firestore.FieldValue.serverTimestamp(),
-    diferenciaApertura, diferenciaAperturaUsd,
-    cerradaEn: null, montoContado: null, esperadoCierre: null, diferencia: null,
-  });
-  overlayApertura.classList.remove('show');
+  const btnAp = document.getElementById('confirmarApertura');
+  if(cajaOperando) return;          // ya se está abriendo (doble clic)
+  cajaOperando = true; btnAp.disabled = true;
+  try{
+    await abrirCajaSegura({
+      fechaISO: fechaElegida, recepcionista: currentUser.nombre,
+      aperturaMonto: monto, aperturaMontoUsd: montoUsd, abiertaEn: firebase.firestore.FieldValue.serverTimestamp(),
+      diferenciaApertura, diferenciaAperturaUsd,
+      cerradaEn: null, montoContado: null, esperadoCierre: null, diferencia: null,
+    });
+    overlayApertura.classList.remove('show');
+  }catch(e){ alert(e.mensajeCaja || ('No se pudo abrir la caja. Revisá la conexión a internet y probá de nuevo.\n(' + e.message + ')')); }
+  cajaOperando = false; btnAp.disabled = false;
 };
+/* ---- Candado de caja: nunca puede haber dos cajas abiertas a la vez.
+   cajaSesiones/_estado guarda cuál está abierta; abrir y cerrar se hacen en una transacción en el servidor,
+   así un doble clic o dos compus abriendo al mismo tiempo no crean dos cajas. (Hace falta internet para abrir/cerrar.) */
+let cajaOperando = false;
+const cajaEstadoRef = ()=> db.collection('cajaSesiones').doc('_estado');
+async function abrirCajaSegura(datos){
+  // 1) Por si quedó una abierta de antes del candado: se consulta al servidor (no al caché)
+  const abiertas = await db.collection('cajaSesiones').where('cerradaEn','==', null).get({source:'server'});
+  const vivas = abiertas.docs.filter(d=> !d.data().duplicada);
+  if(vivas.length){ const c = vivas[0].data(); const e = new Error('abierta'); e.mensajeCaja = `Ya hay una caja abierta (la abrió ${c.recepcionista||'otra persona'}). Cerrala antes de abrir otra.`; throw e; }
+  // 2) Transacción: si el candado dice que hay una abierta y sigue abierta, no se abre otra
+  const nueva = db.collection('cajaSesiones').doc();
+  await db.runTransaction(async tx=>{
+    const est = await tx.get(cajaEstadoRef());
+    const idAb = est.exists ? est.data().abierta : null;
+    if(idAb){
+      const ses = await tx.get(db.collection('cajaSesiones').doc(idAb));
+      if(ses.exists && ses.data().cerradaEn == null && !ses.data().duplicada){ const e = new Error('abierta'); e.mensajeCaja = `Ya hay una caja abierta (la abrió ${ses.data().recepcionista||'otra persona'}). Cerrala antes de abrir otra.`; throw e; }
+    }
+    tx.set(nueva, datos);
+    tx.set(cajaEstadoRef(), {abierta: nueva.id, abiertaPor: currentUser.nombre, actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()});
+  });
+}
 
 const overlayCierre = document.getElementById('overlayCierre');
 const inpCierreMonto = document.getElementById('inpCierreMonto');
@@ -398,15 +427,30 @@ document.getElementById('confirmarCierre').onclick = async ()=>{
     return;
   }
 
-  await db.collection('cajaSesiones').doc(cajaActual.id).update({
-    fechaISO: fechaCierre,
-    cerradaEn: firebase.firestore.FieldValue.serverTimestamp(),
-    cerradaPor: currentUser.nombre,
-    montoContado: contado, esperadoCierre: esperado, diferencia,
-    montoContadoUsd: contadoUsd, esperadoCierreUsd: esperadoUsd, diferenciaUsd,
-    ...(explicacion && (diferencia !== 0 || diferenciaUsd !== 0) ? {explicacionDiferencia: explicacion} : {}),
-  });
-  overlayCierre.classList.remove('show');
+  if(cajaOperando) return;          // ya se está cerrando (doble clic)
+  const btnCi = document.getElementById('confirmarCierre');
+  cajaOperando = true; btnCi.disabled = true;
+  const idCaja = cajaActual.id;
+  try{
+    await db.runTransaction(async tx=>{
+      const ref = db.collection('cajaSesiones').doc(idCaja);
+      const ses = await tx.get(ref);
+      if(!ses.exists){ const e = new Error('no existe'); e.mensajeCaja = 'Esa caja ya no existe (¿la eliminaron desde Cajas?). Recargá la página.'; throw e; }
+      if(ses.data().cerradaEn != null){ const e = new Error('cerrada'); e.mensajeCaja = `Esta caja ya estaba cerrada (la cerró ${ses.data().cerradaPor||'otra persona'}).`; throw e; }
+      const est = await tx.get(cajaEstadoRef());
+      tx.update(ref, {
+        fechaISO: fechaCierre,
+        cerradaEn: firebase.firestore.FieldValue.serverTimestamp(),
+        cerradaPor: currentUser.nombre,
+        montoContado: contado, esperadoCierre: esperado, diferencia,
+        montoContadoUsd: contadoUsd, esperadoCierreUsd: esperadoUsd, diferenciaUsd,
+        ...(explicacion && (diferencia !== 0 || diferenciaUsd !== 0) ? {explicacionDiferencia: explicacion} : {}),
+      });
+      if(!est.exists || est.data().abierta === idCaja) tx.set(cajaEstadoRef(), {abierta: null, cerradaPor: currentUser.nombre, actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()});
+    });
+    overlayCierre.classList.remove('show');
+  }catch(e){ alert(e.mensajeCaja || ('No se pudo cerrar la caja. Revisá la conexión a internet y probá de nuevo.\n(' + e.message + ')')); }
+  cajaOperando = false; btnCi.disabled = false;
 };
 
 /* =====================================================================
@@ -1687,7 +1731,7 @@ document.getElementById('generarReporteFecha').onclick = async ()=>{
     ]);
     const filas = snapMov.docs.map(d=>({id:d.id, ...d.data()})).filter(noMigrado).filter(m=> !esCajaGrande(m));   // el reporte es de la caja chica
     if(!filas.length){ alert("No hay movimientos cargados en esa fecha."); return; }
-    const sesiones = snapCaja.docs.map(d=> d.data())
+    const sesiones = snapCaja.docs.map(d=> d.data()).filter(c=> !c.duplicada)
       .sort((a,b)=> (a.abiertaEn?.toMillis()||0) - (b.abiertaEn?.toMillis()||0));
     await generarPNGReporteDiario(filas, fechaISO, sesiones);
     overlayReporteFecha.classList.remove('show');

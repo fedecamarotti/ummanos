@@ -337,14 +337,14 @@ async function cargarCajas(){
     if(snap.empty){ cont.innerHTML = '<div class="empty-state">No hay aperturas registradas este mes.</div>'; return; }
 
     // Movimientos cargados durante las cajas del mes, asignados a cada caja
-    const sesiones = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(c=>c.abiertaEn);
+    const sesiones = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(c=>c.abiertaEn && !c.duplicada);
     const movsSes = await movimientosParaSesiones(sesiones);
     const netoPorCaja = netoPorSesion(movsSes, sesiones);
     const netoPorCajaUsd = netoPorSesion(movsSes, sesiones, 'USD');
 
     // Último cierre anterior al mes (ordenado por fecha y hora de apertura)
     const previas = snapPrev.docs.map(d=>d.data())
-      .filter(c=>c.cerradaEn && c.montoContado!=null)
+      .filter(c=>c.cerradaEn && c.montoContado!=null && !c.duplicada)
       .sort((a,b)=> a.fechaISO===b.fechaISO ? (tsMs(b.abiertaEn)||0)-(tsMs(a.abiertaEn)||0) : (a.fechaISO<b.fechaISO?1:-1));
     let cierreAnterior = previas.length ? Number(previas[0].montoContado) : null;
 
@@ -352,7 +352,7 @@ async function cargarCajas(){
     const rojo = 'color:#a13a3a;font-weight:700;';
 
     cajasCache = {};
-    const filas = snap.docs.map(d=>{
+    const filas = snap.docs.filter(d=> !d.data().duplicada).map(d=>{   // las abiertas dos veces por error no se listan
       const c = d.data();
       const apertura = Number(c.aperturaMonto)||0;
       const cerrada = !!c.cerradaEn && c.montoContado!=null;
