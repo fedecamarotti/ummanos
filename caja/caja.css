@@ -1474,3 +1474,13 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}   /* que el navegador
 .su-tabla input.su-plata::placeholder{color:#cfc7b4;opacity:1;}
 /* Recepcionistas: si tienen una sola sección, no se muestra el botón "Movimientos" de arriba */
 #fedeTabs.una-sola{display:none !important;}
+/* Presupuestos: lista del mes */
+.pv-tabla td{vertical-align:middle;}
+.pv-tabla .ac-wrap{position:relative;}
+.pv-tabla .ac-dropdown{min-width:220px;}
+.pv-tabla input.pv-prof{text-align:center;}
+.pv-tabla td.pv-fecha, .pv-tabla .pv-pac{cursor:pointer;}
+.pv-tabla td.pv-fecha{text-align:center;}
+.pv-tabla td.pv-fecha:hover, .pv-tabla .pv-pac:hover{color:var(--accent-dk);text-decoration:underline;}
+.pv-tabla .pv-pac{padding:0 7px;}
+.pv-tabla .cp-sw{width:26px;height:14px;} .pv-tabla .cp-sw i{width:10px;height:10px;top:2px;left:2px;} .pv-tabla .cp-sw.on i{left:14px;}

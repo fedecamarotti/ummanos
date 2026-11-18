@@ -457,7 +457,8 @@ let cpLista = null, unsubCp = null, cpMesSuscripto = null, cpPendiente = false;
 function mostrarSubMov(sub){
   movSub = sub;
   document.querySelectorAll('#movSubTabs [data-msub]').forEach(x=> x.classList.toggle('active', x.dataset.msub===sub));
-  document.getElementById('panelContainer').classList.toggle('col-hidden', sub==='prueba' || sub==='deriv' || sub==='grande' || sub==='supl');
+  document.getElementById('panelContainer').classList.toggle('col-hidden', sub==='prueba' || sub==='deriv' || sub==='grande' || sub==='supl' || sub==='presupuesto');
+  document.getElementById('pvPanel').classList.toggle('col-hidden', sub!=='presupuesto');
   document.getElementById('suPanel').classList.toggle('col-hidden', sub!=='supl');
   document.getElementById('suBtnFijo').classList.toggle('col-hidden', !(sub==='supl' && esFede()));
   document.getElementById('cpPanel').classList.toggle('col-hidden', sub!=='prueba');
@@ -473,6 +474,7 @@ function mostrarSubMov(sub){
   if(sub==='prueba'){ suscribirClasesPrueba(); renderClasesPrueba(); }
   if(sub==='deriv'){ suscribirDerivaciones(); renderDerivaciones(); }
   if(sub==='supl'){ suscribirSupl(); renderSupl(); }
+  if(sub==='presupuesto'){ suscribirPv(); renderPv(); }
 }
 function suscribirClasesPrueba(){
   const clave = mesInicioISO();
@@ -672,6 +674,7 @@ document.getElementById('fabNuevo').onclick = ()=>{
   if(movSub==='prueba') cpAbrirNueva();
   else if(movSub==='deriv') dvAbrirNueva();
   else if(movSub==='supl') suNueva();
+  else if(movSub==='presupuesto') abrirPresupuesto();
   else document.getElementById('btnNuevo').click();
 };
 // Resumen + packs de clases de prueba: se pueden minimizar (queda recordado en este navegador)
@@ -1160,7 +1163,7 @@ function suscribirDvContactos(){
 
 document.querySelectorAll('#movSubTabs [data-msub]').forEach(b=> b.onclick = ()=>{
   const sub = b.dataset.msub;
-  if(sub==='diarios' || sub==='prueba' || sub==='deriv' || sub==='grande' || sub==='supl'){ mostrarSubMov(sub); return; }
+  if(sub==='diarios' || sub==='prueba' || sub==='deriv' || sub==='grande' || sub==='supl' || sub==='presupuesto'){ mostrarSubMov(sub); return; }
   if(sub==='cajas') document.getElementById('btnCajas').click();
   else if(sub==='pacientes') document.getElementById('btnPacientes').click();
   else if(sub==='deudores') document.getElementById('btnDeudores').click();
@@ -1887,6 +1890,131 @@ async function suImportar(){
   suImportando = false;
 }
 
+
+
+/* =====================================================================
+   PRESUPUESTOS — lista del mes (colección "presupuestos", los mismos que se ven en la ficha del paciente)
+   El "+" abre el armado del presupuesto; al guardarlo aparece solo en la lista.
+   ===================================================================== */
+let pvLista = null, unsubPv = null, pvMesSuscripto = null, pvPendiente = false;
+function suscribirPv(){
+  const clave = mesInicioISO();
+  if(unsubPv && pvMesSuscripto===clave) return;
+  if(unsubPv) unsubPv();
+  pvMesSuscripto = clave; pvLista = null;
+  unsubPv = db.collection('presupuestos').where('fechaISO','>=', mesInicioISO()).where('fechaISO','<', mesFinISO())
+    .onSnapshot(snap=>{ pvLista = snap.docs.map(d=> ({id:d.id, ...d.data()})).filter(p=> !p.eliminado); renderPv(); },
+      err=>{ pvLista = []; document.getElementById('pvBody').innerHTML = `<tr><td colspan="9" class="empty-state" style="color:#a13a3a;">No se pudieron leer los presupuestos: ${escHtml(err.message)}</td></tr>`; });
+}
+const pvProf = x => x.profDeriva!==undefined ? x.profDeriva : (x.profesional || '');
+function renderPv(){
+  if(movSub!=='presupuesto') return;
+  const tb = document.getElementById('pvBody');
+  if(tb.contains(document.activeElement) && document.activeElement.matches('input[type=text], input[type=date]')){ pvPendiente = true; return; }
+  pvPendiente = false;
+  if(pvLista==null){ tb.innerHTML = '<tr><td colspan="9" class="empty-state">Cargando…</td></tr>'; return; }
+  const ms = ts => ts && ts.toMillis ? ts.toMillis() : Date.now();
+  const lista = pvLista.slice().sort((a,b)=> a.fechaISO!==b.fechaISO ? (a.fechaISO<b.fechaISO?-1:1) : ms(a.creadoEn)-ms(b.creadoEn));
+  if(!lista.length){ tb.innerHTML = '<tr><td colspan="9" class="empty-state">No hay presupuestos este mes. Armalos con el "+".</td></tr>'; return; }
+  const ad = currentUser && currentUser.rol==='admin';
+  const sw = (campo, on)=> `<button type="button" class="cp-sw ${on?'on':''}" data-campo="${campo}" aria-pressed="${on?'true':'false'}" title="${on?'Sí':'No'}"><i></i></button>`;
+  tb.innerHTML = lista.map(x=> `<tr data-id="${x.id}" class="${x.cerrado ? 'cp-cerrado' : ''}">
+      <td class="pv-fecha" title="Ver el PDF">${cpFechaCorta(x.fechaISO)}</td>
+      <td class="left"><span class="pv-pac" title="Ver el PDF">${escHtml(x.paciente||'')}</span></td>
+      <td><div class="ac-wrap"><input type="text" class="pv-prof" data-campo="profDeriva" value="${escHtml(pvProf(x))}" placeholder="—" autocomplete="off"></div></td>
+      <td>${sw('enviado', !!x.enviado)}</td>
+      <td>${sw('agendado', !!x.agendado)}</td>
+      <td><input type="text" readonly class="cp-fc" data-campo="fechaAgend" data-iso="${x.fechaAgend||''}" value="${cpFechaCorta(x.fechaAgend)}" placeholder="—"></td>
+      <td><button type="button" class="cp-sw-estado ${x.cerrado?'cerrado':''}" title="${x.cerrado?'Cerrado':'Abierto'} (tocá para cambiar)" aria-pressed="${x.cerrado?'true':'false'}"><i></i></button></td>
+      <td class="left"><input type="text" class="cp-notas" data-campo="seguimiento" maxlength="120" value="${escHtml(x.seguimiento||'')}"></td>
+      <td>${ad ? '<button type="button" class="cp-del" title="Eliminar presupuesto">✕</button>' : ''}</td>
+    </tr>`).join('');
+}
+async function pvGuardar(id, cambios){
+  try{ await db.collection('presupuestos').doc(id).update({...cambios, actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()}); }
+  catch(e){ alert('No se pudo guardar: ' + e.message); }
+}
+const pvBody = document.getElementById('pvBody');
+new MutationObserver(()=> plFiltrar('pvBody')).observe(pvBody, {childList:true});
+function pvCambio(el){
+  const tr = el.closest('tr'); if(!tr) return;
+  const id = tr.dataset.id, campo = el.dataset.campo, x = (pvLista||[]).find(y=> y.id===id); if(!x) return;
+  let v = el.value;
+  if(campo==='profDeriva'){
+    v = suDeLista(suProfesionales(), v);
+    if(v==null){ el.value = pvProf(x); alert('Elegí un profesional de la lista.'); return; }
+    el.value = v;
+    if(pvProf(x)===v) return;
+  }
+  if(campo==='seguimiento') v = mayus(String(v).trim());
+  if(campo==='fechaAgend') el.dataset.iso = v;
+  if(x[campo]===v) return;
+  x[campo] = v;
+  pvGuardar(id, {[campo]: v});
+}
+pvBody.addEventListener('change', e=>{
+  const el = e.target.closest('[data-campo]'); if(!el || el.classList.contains('cp-sw') || el.classList.contains('pv-prof')) return;
+  pvCambio(el); cpCerrarFecha(el);
+});
+pvBody.addEventListener('click', async e=>{
+  const sw = e.target.closest('.cp-sw');
+  if(sw){
+    const id = sw.closest('tr').dataset.id, campo = sw.dataset.campo, on = !sw.classList.contains('on');
+    sw.classList.toggle('on', on); sw.setAttribute('aria-pressed', on ? 'true' : 'false'); sw.title = on ? 'Sí' : 'No';
+    const x = (pvLista||[]).find(y=> y.id===id); if(x) x[campo] = on;
+    pvGuardar(id, {[campo]: on});
+    return;
+  }
+  const est = e.target.closest('.cp-sw-estado');
+  if(est){
+    const tr = est.closest('tr'), id = tr.dataset.id, x = (pvLista||[]).find(y=> y.id===id) || {};
+    const cerrado = !est.classList.contains('cerrado');
+    // para cerrar hace falta el motivo en Notas (se mira lo que está escrito ahora en el casillero)
+    const nota = (tr.querySelector('[data-campo=seguimiento]').value || '').trim();
+    if(cerrado && !nota){ alert('Para cerrar un caso tiene que detallar el motivo en notas.'); tr.querySelector('[data-campo=seguimiento]').focus(); return; }
+    if(cerrado && mayus(nota)!==(x.seguimiento||'')){ x.seguimiento = mayus(nota); }
+    x.cerrado = cerrado;
+    pvGuardar(id, {cerrado, ...(cerrado ? {seguimiento: x.seguimiento} : {})});
+    renderPv();
+    return;
+  }
+  const del = e.target.closest('.cp-del');
+  if(del){
+    const tr = del.closest('tr'), pr = (pvLista||[]).find(y=> y.id===tr.dataset.id); if(!pr) return;
+    if(!await ummConfirm(`¿Eliminar el presupuesto de ${pr.paciente}${pr.fechaISO ? ' del ' + ecFecha(pr.fechaISO) : ''}?\nDeja de aparecer en la lista y en la ficha del paciente.`, {si: 'Eliminar'})) return;
+    try{ await db.collection('presupuestos').doc(pr.id).update({eliminado: true, eliminadoPor: currentUser.nombre, eliminadoEn: firebase.firestore.FieldValue.serverTimestamp()}); }
+    catch(err){ alert('No se pudo eliminar: ' + err.message); }
+    return;
+  }
+  // tocar la fecha o el paciente abre el PDF del presupuesto
+  if(e.target.closest('.pv-fecha, .pv-pac')){
+    const pr = (pvLista||[]).find(y=> y.id===e.target.closest('tr').dataset.id); if(!pr || !pr.items) return;
+    try{ const {doc, archivo} = await pdfPresupuesto(pr); mostrarPreviewPDF(doc, archivo); }
+    catch(err){ alert('No se pudo generar el PDF: ' + err.message); }
+  }
+});
+pvBody.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && e.target.matches('input[type=text], input[type=date]')){
+    if(e.target.classList.contains('pv-prof') && e.target.closest('.ac-wrap').querySelector('.ac-dropdown.show .ac-option')) return;
+    e.preventDefault(); e.target.blur();
+  }
+});
+pvBody.addEventListener('focusin', e=>{
+  const el = e.target;
+  if(el.classList && el.classList.contains('cp-fc') && el.type==='text'){ el.readOnly = false; el.type = 'date'; el.value = el.dataset.iso || ''; try{ el.showPicker(); }catch(_){} }
+  if(el.classList && el.classList.contains('pv-prof') && !el._ac){
+    el._ac = true;
+    attachAutocomplete(el, suProfesionales, ()=> pvCambio(el));
+    el.dispatchEvent(new Event('focus'));
+  }
+});
+pvBody.addEventListener('focusout', e=>{
+  const el = e.target;
+  if(el.classList && el.classList.contains('cp-fc') && el.type==='date'){ el.dataset.iso = el.value; el.type = 'text'; el.readOnly = true; el.value = cpFechaCorta(el.dataset.iso); }
+  if(el.classList && el.classList.contains('pv-prof')) setTimeout(()=>{ if(document.activeElement!==el) pvCambio(el); }, 120);
+  setTimeout(()=>{ if(pvPendiente && !pvBody.contains(document.activeElement)) renderPv(); }, 200);
+});
+['mesPrev','mesNext'].forEach(id=> document.getElementById(id).addEventListener('click', ()=>{ if(movSub==='presupuesto'){ suscribirPv(); renderPv(); } }));
 
 // Arranque: recién acá (con todos los archivos cargados) se escucha el inicio de sesión
 auth.onAuthStateChanged(alCambiarSesion);

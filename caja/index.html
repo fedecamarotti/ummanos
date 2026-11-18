@@ -7,9 +7,9 @@
 if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1)){
   var vp=document.querySelector('meta[name=viewport]'); if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0');
 }</script>
-<link rel="manifest" href="/manifest.webmanifest?v=202611181453">
+<link rel="manifest" href="/manifest.webmanifest?v=202611181506">
 <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611181453">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611181506">
 <meta name="theme-color" content="#fffcf5">
 <title>CAJA UMMANA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,7 +37,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<link rel="stylesheet" href="caja.css?v=202611181453">
+<link rel="stylesheet" href="caja.css?v=202611181506">
 </head>
 <body>
 <div id="ummLoader" aria-hidden="true"><div class="ul-logo"><img class="ul-base" src="images/logo.png" alt=""><img class="ul-fill" src="images/logo.png" alt=""></div></div>
@@ -639,6 +639,16 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
           <colgroup><col style="width:52px"><col style="width:170px"><col style="width:300px"><col style="width:130px"><col style="width:130px"><col style="width:52px"><col style="width:42px"><col style="width:52px"><col style="width:52px"><col style="width:58px"><col style="width:332px"><col style="width:30px"></colgroup>
           <thead><tr><th><input type="text" class="th-search pl-busca" placeholder="Fecha" autocomplete="off" aria-label="Buscar Fecha"></th><th><input type="text" class="th-search pl-busca" placeholder="Paciente" autocomplete="off" aria-label="Buscar Paciente"></th><th><input type="text" class="th-search pl-busca" placeholder="Motivo" autocomplete="off" aria-label="Buscar Motivo"></th><th><textarea class="th-search pl-busca" rows="2" placeholder="Prof.&#10;deriva" aria-label="Buscar Prof. deriva"></textarea></th><th><input type="text" class="th-search pl-busca" placeholder="Deriva a" autocomplete="off" aria-label="Buscar Deriva a"></th><th><textarea class="th-search pl-busca" rows="2" placeholder="Próx.&#10;cont." aria-label="Buscar Próx. cont."></textarea></th><th><input type="text" class="th-search pl-busca" placeholder="Env." autocomplete="off" aria-label="Buscar Env."></th><th><input type="text" class="th-search pl-busca" placeholder="Agend." autocomplete="off" aria-label="Buscar Agend."></th><th><textarea class="th-search pl-busca" rows="2" placeholder="Fecha&#10;agend." aria-label="Buscar Fecha agend."></textarea></th><th><input type="text" class="th-search pl-busca" placeholder="Estado" autocomplete="off" aria-label="Buscar Estado"></th><th><input type="text" class="th-search pl-busca" placeholder="Notas" autocomplete="off" aria-label="Buscar Notas"></th><th></th></tr></thead>
           <tbody id="dvBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- ============ PRESUPUESTOS (lista; el "+" abre el armado del presupuesto) ============ -->
+    <div class="cp-panel col-hidden" id="pvPanel">
+      <div class="sheet-wrap cp-hoja">
+        <table class="cp-tabla pv-tabla">
+          <colgroup><col style="width:62px"><col style="width:230px"><col style="width:200px"><col style="width:62px"><col style="width:72px"><col style="width:76px"><col style="width:62px"><col style="width:420px"><col style="width:30px"></colgroup>
+          <thead><tr><th><input type="text" class="th-search pl-busca" placeholder="Fecha" autocomplete="off" aria-label="Buscar Fecha"></th><th><input type="text" class="th-search pl-busca" placeholder="Paciente" autocomplete="off" aria-label="Buscar Paciente"></th><th><textarea class="th-search pl-busca" rows="2" placeholder="Prof.&#10;deriva" aria-label="Buscar Prof. deriva"></textarea></th><th><textarea class="th-search pl-busca" rows="2" placeholder="Pres.&#10;enviado" aria-label="Buscar Pres. enviado"></textarea></th><th><input type="text" class="th-search pl-busca" placeholder="Agendado" autocomplete="off" aria-label="Buscar Agendado"></th><th><textarea class="th-search pl-busca" rows="2" placeholder="Fecha&#10;agend." aria-label="Buscar Fecha agend."></textarea></th><th><input type="text" class="th-search pl-busca" placeholder="Cerrado" autocomplete="off" aria-label="Buscar Cerrado"></th><th><input type="text" class="th-search pl-busca" placeholder="Notas" autocomplete="off" aria-label="Buscar Notas"></th><th></th></tr></thead>
+          <tbody id="pvBody"></tbody>
         </table>
       </div>
     </div>
@@ -1871,11 +1881,11 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 
 </div><!-- /#app -->
 
-<script src="js/base.js?v=202611181453"></script>
-<script src="js/caja.js?v=202611181453"></script>
-<script src="js/sueros.js?v=202611181453"></script>
-<script src="js/cremas.js?v=202611181453"></script>
-<script src="js/paneles.js?v=202611181453"></script>
-<script src="js/extras.js?v=202611181453"></script>
+<script src="js/base.js?v=202611181506"></script>
+<script src="js/caja.js?v=202611181506"></script>
+<script src="js/sueros.js?v=202611181506"></script>
+<script src="js/cremas.js?v=202611181506"></script>
+<script src="js/paneles.js?v=202611181506"></script>
+<script src="js/extras.js?v=202611181506"></script>
 </body>
 </html>
