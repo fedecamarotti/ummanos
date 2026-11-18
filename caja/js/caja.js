@@ -1533,8 +1533,8 @@ async function cargarPresupuestosFicha(nombre){
     const snap = await db.collection('presupuestos').where('paciente','==', nombre).get();
     // los eliminados no se borran de la base: quedan marcados y no se muestran
     pfPresDatos = snap.docs.map(d=> ({id:d.id, ...d.data()})).filter(p=> !p.eliminado).sort((a,b)=> (b.fechaISO||'').localeCompare(a.fechaISO||''));
-    const puedeBorrar = currentUser && currentUser.rol==='admin';
-    lista.innerHTML = pfPresDatos.length ? pfPresDatos.map((p,i)=> `<div class="pf-pres-it" data-pr="${i}" title="Abrir PDF"><span class="f">${ecFecha(p.fechaISO)}${p.profesional ? ' · ' + escHtml(p.profesional) : ''}</span><span class="t">${p.sinTotal ? `${p.items.length} opciones` : fmtMonto(p.total, p.moneda)}${puedeBorrar ? `<button type="button" class="pf-pres-del" data-del="${i}" title="Eliminar presupuesto">${ico('basura')}</button>` : ''}</span><span class="d">${escHtml(p.items.map(x=> x.det).join(' + '))}</span></div>`).join('')
+    // eliminar: lo pueden hacer todos los usuarios de la caja (también se va de la lista de Presupuestos)
+    lista.innerHTML = pfPresDatos.length ? pfPresDatos.map((p,i)=> `<div class="pf-pres-it" data-pr="${i}" title="Abrir PDF"><span class="f">${ecFecha(p.fechaISO)}${p.profesional ? ' · ' + escHtml(p.profesional) : ''}</span><span class="t">${p.sinTotal ? `${p.items.length} opciones` : fmtMonto(p.total, p.moneda)}</span><button type="button" class="pf-pres-del" data-del="${i}" title="Eliminar presupuesto">✕</button><span class="d">${escHtml(p.items.map(x=> x.det).join(' + '))}</span></div>`).join('')
       : '<div class="pf-pres-vacio">Sin presupuestos.</div>';
   }catch(e){ lista.innerHTML = `<div class="pf-pres-vacio">No se pudieron leer los presupuestos.</div>`; }
 }

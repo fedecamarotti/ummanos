@@ -1916,7 +1916,6 @@ function renderPv(){
   const ms = ts => ts && ts.toMillis ? ts.toMillis() : Date.now();
   const lista = pvLista.slice().sort((a,b)=> a.fechaISO!==b.fechaISO ? (a.fechaISO<b.fechaISO?-1:1) : ms(a.creadoEn)-ms(b.creadoEn));
   if(!lista.length){ tb.innerHTML = '<tr><td colspan="10" class="empty-state">No hay presupuestos este mes. Armalos con el "+".</td></tr>'; return; }
-  const ad = currentUser && currentUser.rol==='admin';
   const sw = (campo, on)=> `<button type="button" class="cp-sw ${on?'on':''}" data-campo="${campo}" aria-pressed="${on?'true':'false'}" title="${on?'Sí':'No'}"><i></i></button>`;
   tb.innerHTML = lista.map(x=> `<tr data-id="${x.id}" class="${x.cerrado ? 'cp-cerrado' : (x.realizado ? 'cp-compro' : '')}">
       <td class="pv-fecha" title="Ver el PDF">${cpFechaCorta(x.fechaISO)}</td>
@@ -1928,7 +1927,7 @@ function renderPv(){
       <td>${sw('realizado', !!x.realizado)}</td>
       <td><button type="button" class="cp-sw-estado ${x.cerrado?'cerrado':''}" title="${x.cerrado?'Cerrado':'Abierto'} (tocá para cambiar)" aria-pressed="${x.cerrado?'true':'false'}"><i></i></button></td>
       <td class="left"><input type="text" class="cp-notas" data-campo="seguimiento" maxlength="120" value="${escHtml(x.seguimiento||'')}"></td>
-      <td>${ad ? '<button type="button" class="cp-del" title="Eliminar presupuesto">✕</button>' : ''}</td>
+      <td><button type="button" class="cp-del" title="Eliminar presupuesto">✕</button></td>
     </tr>`).join('');
 }
 async function pvGuardar(id, cambios){
