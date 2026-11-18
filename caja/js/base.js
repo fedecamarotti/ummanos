@@ -694,6 +694,7 @@ function iniciarListeners(){
     renderDeudoresCount();
   });
   suscribirCpContactos();
+  suscribirPvAgendas();
   const DERIVACIONES_ACTIVAS = false;   // botón Derivaciones oculto por ahora: no se leen sus alarmas
   if(DERIVACIONES_ACTIVAS) suscribirDvContactos();
   pasarNotasAMayus();

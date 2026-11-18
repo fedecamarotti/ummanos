@@ -1484,3 +1484,4 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}   /* que el navegador
 .pv-tabla td.pv-fecha:hover, .pv-tabla .pv-pac:hover{color:var(--accent-dk);text-decoration:underline;}
 .pv-tabla .pv-pac{padding:0 7px;}
 .pv-tabla .cp-sw{width:26px;height:14px;} .pv-tabla .cp-sw i{width:10px;height:10px;top:2px;left:2px;} .pv-tabla .cp-sw.on i{left:14px;}
+.pv-tabla tr.cp-compro .cp-sw[data-campo="realizado"]{opacity:1;}

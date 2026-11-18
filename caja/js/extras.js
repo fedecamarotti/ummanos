@@ -1904,7 +1904,7 @@ function suscribirPv(){
   pvMesSuscripto = clave; pvLista = null;
   unsubPv = db.collection('presupuestos').where('fechaISO','>=', mesInicioISO()).where('fechaISO','<', mesFinISO())
     .onSnapshot(snap=>{ pvLista = snap.docs.map(d=> ({id:d.id, ...d.data()})).filter(p=> !p.eliminado); renderPv(); },
-      err=>{ pvLista = []; document.getElementById('pvBody').innerHTML = `<tr><td colspan="9" class="empty-state" style="color:#a13a3a;">No se pudieron leer los presupuestos: ${escHtml(err.message)}</td></tr>`; });
+      err=>{ pvLista = []; document.getElementById('pvBody').innerHTML = `<tr><td colspan="10" class="empty-state" style="color:#a13a3a;">No se pudieron leer los presupuestos: ${escHtml(err.message)}</td></tr>`; });
 }
 const pvProf = x => x.profDeriva!==undefined ? x.profDeriva : (x.profesional || '');
 function renderPv(){
@@ -1912,19 +1912,20 @@ function renderPv(){
   const tb = document.getElementById('pvBody');
   if(tb.contains(document.activeElement) && document.activeElement.matches('input[type=text], input[type=date]')){ pvPendiente = true; return; }
   pvPendiente = false;
-  if(pvLista==null){ tb.innerHTML = '<tr><td colspan="9" class="empty-state">Cargando…</td></tr>'; return; }
+  if(pvLista==null){ tb.innerHTML = '<tr><td colspan="10" class="empty-state">Cargando…</td></tr>'; return; }
   const ms = ts => ts && ts.toMillis ? ts.toMillis() : Date.now();
   const lista = pvLista.slice().sort((a,b)=> a.fechaISO!==b.fechaISO ? (a.fechaISO<b.fechaISO?-1:1) : ms(a.creadoEn)-ms(b.creadoEn));
-  if(!lista.length){ tb.innerHTML = '<tr><td colspan="9" class="empty-state">No hay presupuestos este mes. Armalos con el "+".</td></tr>'; return; }
+  if(!lista.length){ tb.innerHTML = '<tr><td colspan="10" class="empty-state">No hay presupuestos este mes. Armalos con el "+".</td></tr>'; return; }
   const ad = currentUser && currentUser.rol==='admin';
   const sw = (campo, on)=> `<button type="button" class="cp-sw ${on?'on':''}" data-campo="${campo}" aria-pressed="${on?'true':'false'}" title="${on?'Sí':'No'}"><i></i></button>`;
-  tb.innerHTML = lista.map(x=> `<tr data-id="${x.id}" class="${x.cerrado ? 'cp-cerrado' : ''}">
+  tb.innerHTML = lista.map(x=> `<tr data-id="${x.id}" class="${x.cerrado ? 'cp-cerrado' : (x.realizado ? 'cp-compro' : '')}">
       <td class="pv-fecha" title="Ver el PDF">${cpFechaCorta(x.fechaISO)}</td>
       <td class="left"><span class="pv-pac" title="Ver el PDF">${escHtml(x.paciente||'')}</span></td>
       <td><div class="ac-wrap"><input type="text" class="pv-prof" data-campo="profDeriva" value="${escHtml(pvProf(x))}" placeholder="—" autocomplete="off"></div></td>
       <td>${sw('enviado', !!x.enviado)}</td>
       <td>${sw('agendado', !!x.agendado)}</td>
-      <td><input type="text" readonly class="cp-fc" data-campo="fechaAgend" data-iso="${x.fechaAgend||''}" value="${cpFechaCorta(x.fechaAgend)}" placeholder="—"></td>
+      <td><input type="text" readonly data-campo="fechaAgend" data-iso="${x.fechaAgend||''}" value="${cpFechaCorta(x.fechaAgend)}" placeholder="—" class="cp-fc ${pvVencido(x) ? 'cp-vencido' : ''}"></td>
+      <td>${sw('realizado', !!x.realizado)}</td>
       <td><button type="button" class="cp-sw-estado ${x.cerrado?'cerrado':''}" title="${x.cerrado?'Cerrado':'Abierto'} (tocá para cambiar)" aria-pressed="${x.cerrado?'true':'false'}"><i></i></button></td>
       <td class="left"><input type="text" class="cp-notas" data-campo="seguimiento" maxlength="120" value="${escHtml(x.seguimiento||'')}"></td>
       <td>${ad ? '<button type="button" class="cp-del" title="Eliminar presupuesto">✕</button>' : ''}</td>
@@ -1951,6 +1952,7 @@ function pvCambio(el){
   if(x[campo]===v) return;
   x[campo] = v;
   pvGuardar(id, {[campo]: v});
+  if(campo==='fechaAgend'){ el.classList.toggle('cp-vencido', pvVencido(x)); pvAgendasActualizar(id, {fechaAgend: v}); }
 }
 pvBody.addEventListener('change', e=>{
   const el = e.target.closest('[data-campo]'); if(!el || el.classList.contains('cp-sw') || el.classList.contains('pv-prof')) return;
@@ -1963,6 +1965,7 @@ pvBody.addEventListener('click', async e=>{
     sw.classList.toggle('on', on); sw.setAttribute('aria-pressed', on ? 'true' : 'false'); sw.title = on ? 'Sí' : 'No';
     const x = (pvLista||[]).find(y=> y.id===id); if(x) x[campo] = on;
     pvGuardar(id, {[campo]: on});
+    if(campo==='realizado'){ renderPv(); pvAgendasActualizar(id, {realizado: on}); }
     return;
   }
   const est = e.target.closest('.cp-sw-estado');
@@ -1975,7 +1978,7 @@ pvBody.addEventListener('click', async e=>{
     if(cerrado && mayus(nota)!==(x.seguimiento||'')){ x.seguimiento = mayus(nota); }
     x.cerrado = cerrado;
     pvGuardar(id, {cerrado, ...(cerrado ? {seguimiento: x.seguimiento} : {})});
-    renderPv();
+    renderPv(); pvAgendasActualizar(id, {cerrado});
     return;
   }
   const del = e.target.closest('.cp-del');
@@ -2015,6 +2018,24 @@ pvBody.addEventListener('focusout', e=>{
   setTimeout(()=>{ if(pvPendiente && !pvBody.contains(document.activeElement)) renderPv(); }, 200);
 });
 ['mesPrev','mesNext'].forEach(id=> document.getElementById(id).addEventListener('click', ()=>{ if(movSub==='presupuesto'){ suscribirPv(); renderPv(); } }));
+
+
+// Turno agendado: desde el día siguiente a la fecha, si no se marcó "Realizado" (ni se cerró), globito rojo en Presupuestos
+const pvVencido = x=> !!x.fechaAgend && x.fechaAgend < hoyISO() && !x.realizado && !x.cerrado;
+let pvAgendas = [], unsubPvAgendas = null;
+function renderPvAgendasCount(){
+  const n = pvAgendas.filter(x=> !x.eliminado && pvVencido(x)).length;
+  const b = document.getElementById('mSubPresN');
+  if(b){ b.textContent = n; b.classList.toggle('col-hidden', !n); }
+}
+function pvAgendasActualizar(id, cambios){ const x = pvAgendas.find(y=> y.id===id); if(x) Object.assign(x, cambios); renderPvAgendasCount(); }
+function suscribirPvAgendas(){
+  if(unsubPvAgendas) return;
+  unsubPvAgendas = db.collection('presupuestos').where('fechaAgend','>','')
+    .onSnapshot(snap=>{ pvAgendas = snap.docs.map(d=> ({id:d.id, ...d.data()})); renderPvAgendasCount(); },
+      err=> console.warn('No se pudieron leer los turnos agendados de presupuestos', err));
+  setInterval(renderPvAgendasCount, 5*60*1000);
+}
 
 // Arranque: recién acá (con todos los archivos cargados) se escucha el inicio de sesión
 auth.onAuthStateChanged(alCambiarSesion);
