@@ -1460,3 +1460,17 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}   /* que el navegador
 /* Botón INICIO en la barra superior (vuelve a ummanos.com.ar) */
 .btn-inicio{display:inline-flex;align-items:center;text-decoration:none;letter-spacing:.12em;font-size:11.5px;}
 #pVolver{display:none !important;}
+
+/* Suplementación: misma planilla que Derivaciones */
+.su-tabla td{vertical-align:middle;}
+.su-tabla .ac-wrap{position:relative;}
+.su-tabla .ac-dropdown{min-width:220px;}
+.su-tabla td.su-fecha{text-align:center;}
+.su-tabla td.su-num{text-align:right;padding-right:8px;white-space:nowrap;}
+.su-tabla input.su-plata{text-align:right;}
+.su-tabla input[data-lista=prof], .su-tabla input[data-lista=prov]{text-align:center;}
+.su-tabla .cp-sw{width:26px;height:14px;} .su-tabla .cp-sw i{width:10px;height:10px;top:2px;left:2px;} .su-tabla .cp-sw.on i{left:14px;}
+.su-der{display:flex;justify-content:flex-end;}
+.su-tabla input.su-plata::placeholder{color:#cfc7b4;opacity:1;}
+/* Recepcionistas: si tienen una sola sección, no se muestra el botón "Movimientos" de arriba */
+#fedeTabs.una-sola{display:none !important;}

@@ -7,9 +7,9 @@
 if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1)){
   var vp=document.querySelector('meta[name=viewport]'); if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0');
 }</script>
-<link rel="manifest" href="/manifest.webmanifest?v=202611171513">
+<link rel="manifest" href="/manifest.webmanifest?v=202611181453">
 <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611171513">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611181453">
 <meta name="theme-color" content="#fffcf5">
 <title>CAJA UMMANA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,7 +37,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<link rel="stylesheet" href="caja.css?v=202611171513">
+<link rel="stylesheet" href="caja.css?v=202611181453">
 </head>
 <body>
 <div id="ummLoader" aria-hidden="true"><div class="ul-logo"><img class="ul-base" src="images/logo.png" alt=""><img class="ul-fill" src="images/logo.png" alt=""></div></div>
@@ -120,6 +120,21 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
     <div class="modal-actions">
       <button class="btn" id="dvnCancelar">Cancelar</button>
       <button class="btn btn-primary" id="dvnGuardar">Cargar derivación</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlaySuFijo">
+  <div class="modal" style="max-width:380px;">
+    <button class="close-x" id="sufCerrar">✕</button>
+    <h2>Valor fijo administrativo</h2>
+    <div class="modal-sub">Se suma al Valor PX de suplementación. El cambio vale desde hoy en adelante; lo que ya está cargado no se modifica.</div>
+    <div class="cpn-grid">
+      <label>Valor fijo ($)<input type="text" id="sufValor" inputmode="numeric" autocomplete="off"></label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="sufCancelar">Cancelar</button>
+      <button class="btn btn-primary" id="sufGuardar">Guardar</button>
     </div>
   </div>
 </div>
@@ -517,13 +532,14 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
         <button class="s-tab" data-msub="cajas" id="mSubCajas">Cajas</button>
         <button class="s-tab" data-msub="pacientes"><span class="t-largo">Pacientes/alumnos</span><span class="t-corto">Pacientes</span></button>
         <button class="s-tab" data-msub="presupuesto"><span class="t-largo">Presupuestos</span><span class="t-corto">Presup.</span></button>
+        <button class="s-tab" data-msub="supl"><span class="t-largo">Suplementación</span><span class="t-corto">Suplem.</span></button>
         <button class="s-tab col-hidden" data-msub="pago" id="mSubPago"><span class="t-largo">Calcular pago prof.</span><span class="t-corto">Pago prof.</span></button>
         <button class="s-tab" data-msub="reporte"><span class="t-largo">Reporte diario</span><span class="t-corto">Reporte</span></button>
         <button class="s-tab col-hidden" data-msub="grande" id="mSubGrande">Caja grande</button>
         <button class="s-tab col-hidden" data-msub="backup" id="mSubBackup">Back up</button>
         <button class="s-tab s-tab-badge" data-msub="deudores">Deudores <span class="badge-count col-hidden" id="mSubDeudoresN">0</span></button>
       </div>
-      <div></div>
+      <div class="su-der"><button type="button" class="btn col-hidden" id="suBtnFijo">Valor fijo</button></div>
     </div>
     <!-- fila de secciones (se ubica arriba de la vista que se esté mirando) -->
     <div class="s-tabs col-hidden" id="fedeTabs" role="tablist" aria-label="Secciones">
@@ -624,6 +640,12 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
           <thead><tr><th><input type="text" class="th-search pl-busca" placeholder="Fecha" autocomplete="off" aria-label="Buscar Fecha"></th><th><input type="text" class="th-search pl-busca" placeholder="Paciente" autocomplete="off" aria-label="Buscar Paciente"></th><th><input type="text" class="th-search pl-busca" placeholder="Motivo" autocomplete="off" aria-label="Buscar Motivo"></th><th><textarea class="th-search pl-busca" rows="2" placeholder="Prof.&#10;deriva" aria-label="Buscar Prof. deriva"></textarea></th><th><input type="text" class="th-search pl-busca" placeholder="Deriva a" autocomplete="off" aria-label="Buscar Deriva a"></th><th><textarea class="th-search pl-busca" rows="2" placeholder="Próx.&#10;cont." aria-label="Buscar Próx. cont."></textarea></th><th><input type="text" class="th-search pl-busca" placeholder="Env." autocomplete="off" aria-label="Buscar Env."></th><th><input type="text" class="th-search pl-busca" placeholder="Agend." autocomplete="off" aria-label="Buscar Agend."></th><th><textarea class="th-search pl-busca" rows="2" placeholder="Fecha&#10;agend." aria-label="Buscar Fecha agend."></textarea></th><th><input type="text" class="th-search pl-busca" placeholder="Estado" autocomplete="off" aria-label="Buscar Estado"></th><th><input type="text" class="th-search pl-busca" placeholder="Notas" autocomplete="off" aria-label="Buscar Notas"></th><th></th></tr></thead>
           <tbody id="dvBody"></tbody>
         </table>
+      </div>
+    </div>
+    <!-- ============ SUPLEMENTACIÓN (subsección de Movimientos) ============ -->
+    <div class="cp-panel col-hidden" id="suPanel">
+      <div class="sheet-wrap cp-hoja">
+        <table class="cp-tabla su-tabla" id="suTabla"><colgroup id="suCols"></colgroup><thead id="suHead"></thead><tbody id="suBody"></tbody></table>
       </div>
     </div>
    </div><!-- /#vistaMovimientos -->
@@ -1849,11 +1871,11 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 
 </div><!-- /#app -->
 
-<script src="js/base.js?v=202611171513"></script>
-<script src="js/caja.js?v=202611171513"></script>
-<script src="js/sueros.js?v=202611171513"></script>
-<script src="js/cremas.js?v=202611171513"></script>
-<script src="js/paneles.js?v=202611171513"></script>
-<script src="js/extras.js?v=202611171513"></script>
+<script src="js/base.js?v=202611181453"></script>
+<script src="js/caja.js?v=202611181453"></script>
+<script src="js/sueros.js?v=202611181453"></script>
+<script src="js/cremas.js?v=202611181453"></script>
+<script src="js/paneles.js?v=202611181453"></script>
+<script src="js/extras.js?v=202611181453"></script>
 </body>
 </html>

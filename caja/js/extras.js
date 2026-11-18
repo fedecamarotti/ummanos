@@ -457,7 +457,9 @@ let cpLista = null, unsubCp = null, cpMesSuscripto = null, cpPendiente = false;
 function mostrarSubMov(sub){
   movSub = sub;
   document.querySelectorAll('#movSubTabs [data-msub]').forEach(x=> x.classList.toggle('active', x.dataset.msub===sub));
-  document.getElementById('panelContainer').classList.toggle('col-hidden', sub==='prueba' || sub==='deriv' || sub==='grande');
+  document.getElementById('panelContainer').classList.toggle('col-hidden', sub==='prueba' || sub==='deriv' || sub==='grande' || sub==='supl');
+  document.getElementById('suPanel').classList.toggle('col-hidden', sub!=='supl');
+  document.getElementById('suBtnFijo').classList.toggle('col-hidden', !(sub==='supl' && esFede()));
   document.getElementById('cpPanel').classList.toggle('col-hidden', sub!=='prueba');
   document.getElementById('dvPanel').classList.toggle('col-hidden', sub!=='deriv');
   document.getElementById('cgPanel').classList.toggle('col-hidden', sub!=='grande');
@@ -470,6 +472,7 @@ function mostrarSubMov(sub){
   actualizarMesLabel();
   if(sub==='prueba'){ suscribirClasesPrueba(); renderClasesPrueba(); }
   if(sub==='deriv'){ suscribirDerivaciones(); renderDerivaciones(); }
+  if(sub==='supl'){ suscribirSupl(); renderSupl(); }
 }
 function suscribirClasesPrueba(){
   const clave = mesInicioISO();
@@ -565,7 +568,7 @@ cpBody.addEventListener('change', e=>{
 // Títulos-buscadores de Clases de prueba y Derivaciones: filtran las filas del mes por lo que se ve en cada columna
 function plTextoCelda(td){
   const el = td.querySelector('input:not([type=checkbox]), textarea, select, .cp-sw, .cp-sw-estado, input[type=checkbox]');
-  if(!el) return '';
+  if(!el) return td.textContent || '';
   if(el.classList.contains('cp-sw')) return el.classList.contains('on') ? 'si' : 'no';
   if(el.classList.contains('cp-sw-estado')) return el.classList.contains('ok') ? 'concretado' : (el.classList.contains('cerrado') ? 'cerrado' : 'abierto');
   if(el.type==='checkbox') return el.checked ? 'si' : 'no';
@@ -668,6 +671,7 @@ function cpAbrirNueva(){
 document.getElementById('fabNuevo').onclick = ()=>{
   if(movSub==='prueba') cpAbrirNueva();
   else if(movSub==='deriv') dvAbrirNueva();
+  else if(movSub==='supl') suNueva();
   else document.getElementById('btnNuevo').click();
 };
 // Resumen + packs de clases de prueba: se pueden minimizar (queda recordado en este navegador)
@@ -1156,7 +1160,7 @@ function suscribirDvContactos(){
 
 document.querySelectorAll('#movSubTabs [data-msub]').forEach(b=> b.onclick = ()=>{
   const sub = b.dataset.msub;
-  if(sub==='diarios' || sub==='prueba' || sub==='deriv' || sub==='grande'){ mostrarSubMov(sub); return; }
+  if(sub==='diarios' || sub==='prueba' || sub==='deriv' || sub==='grande' || sub==='supl'){ mostrarSubMov(sub); return; }
   if(sub==='cajas') document.getElementById('btnCajas').click();
   else if(sub==='pacientes') document.getElementById('btnPacientes').click();
   else if(sub==='deudores') document.getElementById('btnDeudores').click();
@@ -1578,6 +1582,311 @@ document.addEventListener('keydown', e=>{
   const cerrar = ov.querySelector('.close-x');
   if(cerrar) cerrar.click(); else ov.classList.remove('show');
 });
+
+/* =====================================================================
+   SUPLEMENTACIÓN — colección "suplementacion" (planilla por mes, como Derivaciones)
+   · Cada fila tiene "mes" (AAAA-MM): las que se migraron de la planilla no tienen fecha pero sí mes.
+   · Valor PX: las chicas escriben el valor y se le suma el valor fijo administrativo (guardado en la fila).
+   · Pago prof., Ummana y Liq. prof. solo los ven Fede y Pedro (admins).
+   · El valor fijo vive en suplementacion/_config (lo cambia Fede con el botón "Valor fijo").
+   ===================================================================== */
+const SU_PROVS = ['VIP','YSONUT','BIOHELPER'];
+const SU_FIJO_INICIAL = 15000;
+let suLista = null, unsubSu = null, suMesSuscripto = null, suPendiente = false, suConfig = null, unsubSuCfg = null, suFoco = null;
+const suEsAdmin = ()=> !!currentUser && currentUser.rol === 'admin';
+const suYM = ()=> mesInicioISO().slice(0,7);
+const suFijoActual = ()=> (suConfig && Number(suConfig.fijo) >= 0 && suConfig.fijo !== undefined) ? Number(suConfig.fijo) : SU_FIJO_INICIAL;
+const suPesos = v => (v===null || v===undefined || v==='') ? '' : '$ ' + Number(v).toLocaleString('es-AR');
+const suNum = s => { const d = String(s||'').replace(/[^\d]/g,''); return d ? Number(d) : null; };
+function suProfesionales(){ return ['PARTICULAR', ...dvProfesionales().filter(n=> normBusqueda(n)!=='particular')]; }
+function suDeLista(lista, v){ const k = normBusqueda(String(v||'').trim()); if(!k) return ''; return lista.find(n=> normBusqueda(n)===k) ?? null; }
+// Fijo de la fila: el que quedó guardado al cargarla (si no, el actual)
+const suFijoDe = x => (x.fijo!==undefined && x.fijo!==null) ? Number(x.fijo) : suFijoActual();
+function suPagoProf(x){
+  if(x.pagoProfImp!==undefined && x.pagoProfImp!==null) return Number(x.pagoProfImp);
+  if(normBusqueda(x.profDeriva||'')==='particular' || !x.profDeriva) return 0;
+  if(x.valorPx==null) return 0;
+  return Math.round(Math.max(0, Number(x.valorPx) - suFijoDe(x)) * 0.25);
+}
+function suUmmana(x){
+  if(x.ummanaImp!==undefined && x.ummanaImp!==null) return Number(x.ummanaImp);
+  if(x.valorPx==null) return null;
+  return Number(x.valorPx) - Number(x.valorProv||0) - suPagoProf(x);
+}
+function suscribirSuConfig(){
+  if(unsubSuCfg) return;
+  unsubSuCfg = db.collection('suplementacion').doc('_config').onSnapshot(d=>{
+    suConfig = d.exists ? d.data() : {};
+    suPintarBtnFijo();
+    if(esFede() && !suConfig.importado) suImportar();
+  }, err=> console.warn('No se pudo leer la configuración de suplementación', err));
+}
+function suPintarBtnFijo(){ document.getElementById('suBtnFijo').textContent = 'Valor fijo: ' + suPesos(suFijoActual()); }
+function suscribirSupl(){
+  suscribirSuConfig();
+  const clave = suYM();
+  if(unsubSu && suMesSuscripto===clave) return;
+  if(unsubSu) unsubSu();
+  suMesSuscripto = clave; suLista = null;
+  unsubSu = db.collection('suplementacion').where('mes','==', clave)
+    .onSnapshot(snap=>{ suLista = snap.docs.map(d=> ({id:d.id, ...d.data()})); renderSupl(); },
+      err=>{
+        suLista = [];
+        document.getElementById('suBody').innerHTML = `<tr><td colspan="17" class="empty-state" style="color:#a13a3a;">No se pudo leer suplementación: ${escHtml(err.message)}<br>Revisá que en las reglas de Firebase esté la colección <b>suplementacion</b>.</td></tr>`;
+      });
+}
+// Columnas: [campo, título (con \n = dos renglones), ancho, soloAdmin]
+const SU_COLS = [['fechaISO','Fecha',62],['paciente','Paciente',190],['profDeriva','Prof.\nderiva',170],['prov','Prov.',86],['presPedido','Pres.\npedido',52],
+  ['valorProv','Valor\nprov.',86],['valorPx','Valor\nPX',90],['presEnviado','Pres.\nenviado',56],['pagado','Pagado\nPX',54],['pedidoProv','Pedido\na prov.',56],
+  ['fechaEntrega','Fecha\nentrega',72],['recibido','Recibido\nUmmana',62],['entregado','Entregado\na PX',70],
+  ['pagoProf','Pago prof.\n25%',84,true],['ummana','Ummana',84,true],['liqProf','Liq.\nprof.',44,true],['_del','',30]];
+let suHeadAdmin = null;
+function suArmarCabecera(){
+  const ad = suEsAdmin();
+  if(suHeadAdmin===ad) return;
+  suHeadAdmin = ad;
+  const cols = SU_COLS.filter(c=> ad || !c[3]);
+  document.getElementById('suCols').innerHTML = cols.map(c=> `<col style="width:${c[2]}px">`).join('');
+  document.getElementById('suHead').innerHTML = '<tr>' + cols.map(c=>{
+    if(c[0]==='_del') return '<th></th>';
+    const t = escHtml(c[1]);
+    return c[1].includes('\n')
+      ? `<th><textarea class="th-search pl-busca" rows="2" placeholder="${t.replace('\n','&#10;')}" aria-label="Buscar ${t.replace('\n',' ')}"></textarea></th>`
+      : `<th><input type="text" class="th-search pl-busca" placeholder="${t}" autocomplete="off" aria-label="Buscar ${t}"></th>`;
+  }).join('') + '</tr>';
+  document.getElementById('suTabla').style.minWidth = cols.reduce((a,c)=> a + c[2], 0) + 'px';
+  document.querySelectorAll('#suHead .pl-busca').forEach(f=>{
+    f.addEventListener('input', ()=> plFiltrar('suBody'));
+    f.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); f.blur(); } if(e.key==='Escape' && f.value){ e.preventDefault(); f.value=''; plFiltrar('suBody'); } });
+  });
+}
+function renderSupl(){
+  if(movSub!=='supl') return;
+  suArmarCabecera();
+  const tb = document.getElementById('suBody');
+  if(tb.contains(document.activeElement) && document.activeElement.matches('input[type=text], input[type=date]')){ suPendiente = true; return; }
+  suPendiente = false;
+  const ad = suEsAdmin(), nCol = SU_COLS.filter(c=> ad || !c[3]).length;
+  if(suLista==null){ tb.innerHTML = `<tr><td colspan="${nCol}" class="empty-state">Cargando…</td></tr>`; return; }
+  const ms = ts => ts && ts.toMillis ? ts.toMillis() : Date.now();
+  const lista = suLista.slice().sort((a,b)=> ((a.orden??1e15)-(b.orden??1e15)) || ms(a.creadoEn)-ms(b.creadoEn));
+  if(!lista.length){ tb.innerHTML = `<tr><td colspan="${nCol}" class="empty-state">No hay suplementación cargada este mes. Agregala con el "+".</td></tr>`; return; }
+  const sw = (campo, on)=> `<button type="button" class="cp-sw ${on?'on':''}" data-campo="${campo}" aria-pressed="${on?'true':'false'}" title="${on?'Sí':'No'}"><i></i></button>`;
+  tb.innerHTML = lista.map(x=>{
+    const um = suUmmana(x), pp = suPagoProf(x);
+    return `<tr data-id="${x.id}">
+      <td class="su-fecha">${cpFechaCorta(x.fechaISO)}</td>
+      <td class="left"><div class="ac-wrap"><input type="text" class="su-ac" data-lista="pac" data-campo="paciente" data-ac-libre value="${escHtml(x.paciente||'')}" placeholder="Apellido, nombre" autocomplete="off"></div></td>
+      <td><div class="ac-wrap"><input type="text" class="su-ac" data-lista="prof" data-campo="profDeriva" value="${escHtml(x.profDeriva||'')}" placeholder="—" autocomplete="off"></div></td>
+      <td><div class="ac-wrap"><input type="text" class="su-ac" data-lista="prov" data-campo="prov" value="${escHtml(x.prov||'')}" placeholder="—" autocomplete="off"></div></td>
+      <td>${sw('presPedido', !!x.presPedido)}</td>
+      <td><input type="text" class="su-plata" data-campo="valorProv" inputmode="numeric" value="${suPesos(x.valorProv)}" placeholder="$"></td>
+      <td><input type="text" class="su-plata" data-campo="valorPx" inputmode="numeric" value="${suPesos(x.valorPx)}" placeholder="${suPesos(suFijoDe(x))}" title="Se le suman ${suPesos(suFijoDe(x))} de valor fijo"></td>
+      <td>${sw('presEnviado', !!x.presEnviado)}</td>
+      <td>${sw('pagado', !!x.pagado)}</td>
+      <td>${sw('pedidoProv', !!x.pedidoProv)}</td>
+      <td><input type="text" readonly class="cp-fc" data-campo="fechaEntrega" data-iso="${x.fechaEntrega||''}" value="${cpFechaCorta(x.fechaEntrega)}" placeholder="—"></td>
+      <td>${sw('recibido', !!x.recibido)}</td>
+      <td>${sw('entregado', !!x.entregado)}</td>
+      ${ad ? `<td class="su-num">${pp ? suPesos(pp) : '–'}</td><td class="su-num">${um==null ? '' : (um ? suPesos(um) : '–')}</td><td><input type="checkbox" data-campo="liqProf" ${x.liqProf?'checked':''}></td>` : ''}
+      <td><button type="button" class="cp-del" title="Eliminar">✕</button></td>
+    </tr>`;
+  }).join('');
+  if(suFoco){ const inp = tb.querySelector(`tr[data-id="${suFoco}"] [data-campo=paciente]`); suFoco = null; if(inp) inp.focus(); }
+}
+async function suGuardar(id, cambios){
+  try{ await db.collection('suplementacion').doc(id).update({...cambios, actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()}); }
+  catch(e){ alert('No se pudo guardar: ' + e.message); }
+}
+const suBody = document.getElementById('suBody');
+new MutationObserver(()=> plFiltrar('suBody')).observe(suBody, {childList:true});
+function suCambio(el){
+  const tr = el.closest('tr'); if(!tr) return;
+  const id = tr.dataset.id, campo = el.dataset.campo;
+  const x = (suLista||[]).find(y=> y.id===id); if(!x) return;
+  let v = el.value;
+  const cambios = {};
+  if(campo==='paciente') v = mayus(String(v).trim());
+  if(campo==='profDeriva' || campo==='prov'){
+    v = suDeLista(campo==='prov' ? SU_PROVS : suProfesionales(), v);
+    if(v==null){ el.value = x[campo]||''; alert(campo==='prov' ? 'Elegí el proveedor de la lista (VIP, YSONUT o BIOHELPER).' : 'Elegí un profesional de la lista.'); return; }
+    el.value = v;
+  }
+  if(campo==='valorProv'){ v = suNum(v); el.value = suPesos(v); }
+  if(campo==='valorPx'){
+    // lo que se escribe es el valor sin el fijo: se le suma el fijo de la fila (o el actual si es nueva)
+    const base = suNum(v), fijo = suFijoDe(x);
+    v = base==null ? null : base + fijo;
+    if(x.fijo===undefined || x.fijo===null){ cambios.fijo = fijo; x.fijo = fijo; }
+    el.value = suPesos(v);
+  }
+  if(campo==='fechaEntrega') el.dataset.iso = v;
+  if(x[campo]===v && !Object.keys(cambios).length) return;
+  x[campo] = v; cambios[campo] = v;
+  // si cambian los valores o el profesional de una fila migrada, Pago prof. y Ummana pasan a calcularse solos
+  if(['valorProv','valorPx','profDeriva'].includes(campo) && (x.pagoProfImp!=null || x.ummanaImp!=null)){
+    cambios.pagoProfImp = null; cambios.ummanaImp = null; x.pagoProfImp = null; x.ummanaImp = null;
+  }
+  suGuardar(id, cambios);
+  if(suEsAdmin() && ['valorProv','valorPx','profDeriva'].includes(campo)){
+    const tds = tr.querySelectorAll('td.su-num'), pp = suPagoProf(x), um = suUmmana(x);
+    if(tds[0]) tds[0].textContent = pp ? suPesos(pp) : '–';
+    if(tds[1]) tds[1].textContent = um==null ? '' : (um ? suPesos(um) : '–');
+  }
+}
+suBody.addEventListener('change', e=>{
+  const el = e.target.closest('[data-campo]'); if(!el || el.classList.contains('cp-sw')) return;
+  if(el.dataset.campo==='liqProf'){ const id = el.closest('tr').dataset.id, x = (suLista||[]).find(y=> y.id===id); if(x) x.liqProf = el.checked; suGuardar(id, {liqProf: el.checked}); return; }
+  if(el.classList.contains('su-ac')) return;   // los autocompletados guardan al salir del casillero
+  suCambio(el);
+  cpCerrarFecha(el);
+});
+suBody.addEventListener('click', async e=>{
+  const sw = e.target.closest('.cp-sw');
+  if(sw){
+    const id = sw.closest('tr').dataset.id, campo = sw.dataset.campo, on = !sw.classList.contains('on');
+    sw.classList.toggle('on', on); sw.setAttribute('aria-pressed', on ? 'true' : 'false'); sw.title = on ? 'Sí' : 'No';
+    const x = (suLista||[]).find(y=> y.id===id); if(x) x[campo] = on;
+    suGuardar(id, {[campo]: on});
+    return;
+  }
+  const del = e.target.closest('.cp-del');
+  if(del){
+    const tr = del.closest('tr'), x = (suLista||[]).find(y=> y.id===tr.dataset.id);
+    if(!await ummConfirm(`¿Eliminar la fila de suplementación${x && x.paciente ? ' de ' + x.paciente : ''}?`)) return;
+    try{ await db.collection('suplementacion').doc(tr.dataset.id).delete(); }catch(err){ alert('No se pudo eliminar: ' + err.message); }
+  }
+});
+suBody.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && e.target.matches('input[type=text], input[type=date]')){
+    if(e.target.classList.contains('su-ac') && e.target.closest('.ac-wrap').querySelector('.ac-dropdown.show .ac-option')) return;   // está eligiendo de la lista (Enter sin moverse = la primera)
+    e.preventDefault(); e.target.blur();
+  }
+});
+suBody.addEventListener('focusin', e=>{
+  const el = e.target;
+  if(el.classList && el.classList.contains('cp-fc') && el.type==='text'){ el.readOnly = false; el.type = 'date'; el.value = el.dataset.iso || ''; try{ el.showPicker(); }catch(_){} }
+  // Valor PX: al tocarlo se ve el valor sin el fijo (lo que escribieron)
+  if(el.classList && el.classList.contains('su-plata')){
+    const x = (suLista||[]).find(y=> y.id===el.closest('tr').dataset.id);
+    const v = x ? x[el.dataset.campo] : null;
+    el.value = v==null ? '' : String(el.dataset.campo==='valorPx' ? Math.max(0, Number(v) - suFijoDe(x)) : v);
+    const puesto = el.value; setTimeout(()=>{ if(document.activeElement===el && el.value===puesto) el.select(); }, 0);   // si ya empezó a escribir, no le pisa lo escrito
+  }
+  if(el.classList && el.classList.contains('su-ac') && !el._ac){
+    el._ac = true;
+    const fuentes = {pac: ()=> pacienteRegistry, prof: suProfesionales, prov: ()=> SU_PROVS};
+    attachAutocomplete(el, fuentes[el.dataset.lista], ()=> suCambio(el));
+    el.dispatchEvent(new Event('focus'));
+  }
+});
+suBody.addEventListener('focusout', e=>{
+  const el = e.target;
+  if(el.classList && el.classList.contains('cp-fc') && el.type==='date'){
+    el.dataset.iso = el.value;
+    el.type = 'text'; el.readOnly = true; el.value = cpFechaCorta(el.dataset.iso);
+  }
+  if(el.classList && el.classList.contains('su-plata')){
+    const x = (suLista||[]).find(y=> y.id===el.closest('tr').dataset.id);
+    setTimeout(()=>{ if(document.activeElement!==el && x) el.value = suPesos(x[el.dataset.campo]); }, 0);
+  }
+  if(el.classList && el.classList.contains('su-ac')) setTimeout(()=>{ if(document.activeElement!==el) suCambio(el); }, 120);
+  setTimeout(()=>{ if(suPendiente && !suBody.contains(document.activeElement)) renderSupl(); }, 200);
+});
+// "+": agrega una fila vacía con la fecha de hoy (o el 1° del mes que se está mirando) y va al paciente
+async function suNueva(){
+  const hoy = hoyISO();
+  const fechaISO = hoy >= mesInicioISO() && hoy < mesFinISO() ? hoy : mesInicioISO();
+  try{
+    const ref = await db.collection('suplementacion').add({mes: suYM(), fechaISO, orden: Date.now(), paciente:'', profDeriva:'', prov:'', presPedido:false, valorProv:null, valorPx:null,
+      fijo: suFijoActual(), presEnviado:false, pagado:false, pedidoProv:false, fechaEntrega:'', recibido:false, entregado:false, liqProf:false,
+      creadoPor: currentUser ? currentUser.nombre : '', creadoEn: firebase.firestore.FieldValue.serverTimestamp()});
+    suFoco = ref.id;
+  }catch(e){ alert('No se pudo agregar: ' + e.message); }
+}
+// Valor fijo (solo Fede)
+const ovSuFijo = document.getElementById('overlaySuFijo');
+document.getElementById('suBtnFijo').onclick = ()=>{
+  document.getElementById('sufValor').value = suFijoActual().toLocaleString('es-AR');
+  ovSuFijo.classList.add('show'); setTimeout(()=> document.getElementById('sufValor').select(), 50);
+};
+const sufCerrar = ()=> ovSuFijo.classList.remove('show');
+document.getElementById('sufCerrar').onclick = sufCerrar;
+document.getElementById('sufCancelar').onclick = sufCerrar;
+document.getElementById('sufValor').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('sufGuardar').click(); });
+document.getElementById('sufGuardar').onclick = async ()=>{
+  const v = suNum(document.getElementById('sufValor').value);
+  if(v==null){ alert('Escribí el valor fijo.'); return; }
+  const hist = (suConfig && suConfig.historial) || [];
+  try{
+    await db.collection('suplementacion').doc('_config').set({fijo: v, fijoDesde: hoyISO(), historial: [...hist, {valor: v, desde: hoyISO(), por: currentUser ? currentUser.nombre : ''}]}, {merge:true});
+    sufCerrar();
+  }catch(e){ alert('No se pudo guardar: ' + e.message); }
+};
+['mesPrev','mesNext'].forEach(id=> document.getElementById(id).addEventListener('click', ()=>{ if(movSub==='supl'){ suscribirSupl(); renderSupl(); } }));
+
+// Migración (una sola vez, la hace el usuario de Fede): lo que estaba en la planilla, cada fila en su mes.
+// [mes, fecha, paciente, prof, presPedido, valorProv, valorPx, presEnviado, pagado, pedidoProv, entrega, recibido, entregado, pagoProf, ummana, liqProf]
+const SU_PLANILLA = [
+ ['04','','SARIERE, MARIA BELEN','RYNKIEWICZ, CECILIA',1,86792,183584,1,0,0,'',0,0,43396,53396,1],
+ ['04','','BARBIERI, STELLA','RYNKIEWICZ, CECILIA',1,61218,61218,1,1,1,'02-27',1,1,0,0,1],
+ ['04','','SALVATI, DANIELA','PARTICULAR',1,33802,77604,1,1,1,'03-23',1,1,0,43802,0],
+ ['04','','SALVATI, DANIELA','PARTICULAR',1,60231,130462,1,1,1,'05-12',0,0,0,70231,0],
+ ['04','','ALVES, MARTA','REAL, LUCIANA',1,18959,47918,1,1,1,'04-24',1,1,9480,19480,1],
+ ['04','','ALVES, MARTA','REAL, LUCIANA',1,16126,42252,1,1,1,'04-24',1,1,8063,18063,1],
+ ['05','','TOGNOLA, PABLO','REAL, LUCIANA',1,52167,114334,1,1,1,'05-13',1,1,26084,36084,1],
+ ['05','','SALVATI, DANIELA','PARTICULAR',1,33802,77604,1,1,1,'',1,1,0,43802,0],
+ ['05','','SOSA, MIRIAM ROSA','REAL, LUCIANA',1,16883,43766,1,1,1,'05-22',1,1,8442,18442,1],
+ ['05','','SOSA, MIRIAM ROSA','REAL, LUCIANA',1,16126,42252,1,1,1,'05-23',1,1,8063,18063,1],
+ ['06','','COPPOLA, ANTONELLA','REAL, LUCIANA',1,20268,50536,1,1,1,'06-12',1,1,10134,20134,1],
+ ['06','','COPPOLA, ANTONELLA','REAL, LUCIANA',1,23398,56796,1,1,1,'06-13',1,1,11699,21699,1],
+ ['06','','COPPOLA, ANTONELLA','REAL, LUCIANA',1,20354,50708,1,1,1,'06-14',1,1,10177,20177,1],
+ ['06','','FIGUEROA, MARTA ALICIA','RYNKIEWICZ, CECILIA',1,66938,143876,1,1,1,'06-19',1,1,33469,43469,1],
+ ['07','','SALVATI, DANIELA','PARTICULAR',1,53205,116410,1,1,1,'',1,1,0,63205,0],
+ ['07','','SALVATI, DANIELA','PARTICULAR',1,27246,64492,1,1,1,'',1,1,0,37246,0],
+ ['07','','GUTIERREZ, ANTONELLA','PARTICULAR',1,21131,52262,1,1,1,'',1,1,0,31131,0],
+ ['07','','GUTIERREZ, ANTONELLA','PARTICULAR',1,21131,52262,1,1,1,'',1,1,0,31131,0],
+ ['08','','BARBIERI, STELLA','PARTICULAR',1,13516,13516,1,1,1,'08-26',1,1,0,0,0],
+ ['08','','FIGUEROA, MARTA ALICIA','PARTICULAR',1,66938,143876,1,1,1,'08-28',1,1,0,76938,0],
+ ['08','','CABADA, GRACIELA','RYNKIEWICZ, CECILIA',1,49468,108936,1,1,1,'08-28',1,1,24734,34734,1],
+ ['09','','MARTINEZ, MIRTA INES','RYNKIEWICZ, CECILIA',1,49468,108936,1,1,1,'',1,1,24734,34734,1],
+ ['09','','DOMINGUEZ, YANINA','BARBIERI, VICTORIA',1,17646,45292,1,1,1,'09-16',1,1,8823,18823,1],
+ ['09','','DOMINGUEZ, YANINA','BARBIERI, VICTORIA',1,12981,35962,1,1,1,'09-16',1,1,6491,16491,1],
+ ['09','','LOFFREDA, VERONICA','PARTICULAR',1,94775,204550,1,1,1,'09-18',1,1,47388,62388,0],
+ ['09','','BIUSO, ROSA','PARTICULAR',1,140950,296900,1,1,1,'09-30',1,1,70475,85475,0],
+ ['09','','SALVATI, FIO','PARTICULAR',1,170917,356834,1,0,1,'09-30',1,1,85459,100459,0],
+ ['09','','SLAVATI, FIO','BARBIERI, VICTORIA',1,142601,300202,1,0,0,'',0,0,71301,86301,1],
+ ['10','','VALES, SILVIA','BARBIERI, VICTORIA',1,26067,67134,1,1,1,'10-16',1,1,13034,28034,1],
+ ['10','','CORTI, JUAN PABLO','BARBIERI, VICTORIA',1,60211,135422,1,1,1,'10-16',1,0,30106,45106,1],
+ ['10','','KAYSER, PAULA','PARTICULAR',1,116619,248238,1,1,1,'10-19',1,1,58310,73310,0],
+ ['10','','GRASSI, VALERIA','PARTICULAR',1,136125,287250,1,1,1,'10-23',1,1,68063,83063,0],
+ ['10','','SRUGO, DAMIAN','BARBIERI, VICTORIA',1,137334,289668,1,1,1,'10-23',1,1,68667,83667,1],
+ ['10','','CASTELLANOS, LAURA','BARBIERI, VICTORIA',0,null,15000,0,0,0,'',0,0,0,15000,0],
+ ['10','','CELONA, NADIA','PARTICULAR',1,49264,113528,1,0,0,'',0,0,24632,39632,0],
+ ['11','2026-11-18','ALTSTAEDTER, LENA LEVI','RYNKIEWICZ, CECILIA',1,38743,92486,1,0,0,'',0,0,19372,34372,0]];
+let suImportando = false;
+async function suImportar(){
+  if(suImportando || !esFede()) return;
+  suImportando = true;
+  try{
+    const ya = await db.collection('suplementacion').where('importado','==',true).limit(1).get();
+    if(ya.empty){
+      const batch = db.batch();
+      SU_PLANILLA.forEach((r, i)=>{
+        const [m, fecha, paciente, profDeriva, presPedido, valorProv, valorPx, presEnviado, pagado, pedidoProv, entrega, recibido, entregado, pagoProf, ummana, liq] = r;
+        const dif = valorProv!=null ? valorPx - 2*valorProv : valorPx;   // el fijo que tenía (10.000 antes, 15.000 después)
+        batch.set(db.collection('suplementacion').doc(), {mes: '2026-' + m, fechaISO: fecha, orden: i+1, paciente, profDeriva, prov:'VIP', presPedido: !!presPedido,
+          valorProv, valorPx, fijo: (dif===10000 || dif===15000) ? dif : 0, presEnviado: !!presEnviado, pagado: !!pagado, pedidoProv: !!pedidoProv,
+          fechaEntrega: entrega ? '2026-' + entrega : '', recibido: !!recibido, entregado: !!entregado, pagoProfImp: pagoProf, ummanaImp: ummana, liqProf: !!liq,
+          importado: true, creadoPor: 'PLANILLA', creadoEn: firebase.firestore.FieldValue.serverTimestamp()});
+      });
+      await batch.commit();
+    }
+    await db.collection('suplementacion').doc('_config').set({importado: true, ...(suConfig && suConfig.fijo!==undefined ? {} : {fijo: SU_FIJO_INICIAL, fijoDesde: '2026-11-18'})}, {merge:true});
+  }catch(e){ console.warn('No se pudo migrar la planilla de suplementación', e); }
+  suImportando = false;
+}
+
 
 // Arranque: recién acá (con todos los archivos cargados) se escucha el inicio de sesión
 auth.onAuthStateChanged(alCambiarSesion);
