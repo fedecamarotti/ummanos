@@ -1920,7 +1920,7 @@ function renderPv(){
   const sw = (campo, on)=> `<button type="button" class="cp-sw ${on?'on':''}" data-campo="${campo}" aria-pressed="${on?'true':'false'}" title="${on?'Sí':'No'}"><i></i></button>`;
   tb.innerHTML = lista.map(x=> `<tr data-id="${x.id}" class="${x.cerrado ? 'cp-cerrado' : (x.realizado ? 'cp-compro' : '')}">
       <td class="pv-fecha" title="Ver el PDF">${cpFechaCorta(x.fechaISO)}</td>
-      <td class="left"><span class="pv-pac" title="Ver el PDF">${escHtml(x.paciente||'')}</span></td>
+      <td class="left"><span class="pv-pac" title="Abrir la ficha del paciente">${escHtml(x.paciente||'')}</span></td>
       <td><div class="ac-wrap"><input type="text" class="pv-prof" data-campo="profDeriva" value="${escHtml(pvProf(x))}" placeholder="—" autocomplete="off"></div></td>
       <td>${sw('enviado', !!x.enviado)}</td>
       <td>${sw('agendado', !!x.agendado)}</td>
@@ -1989,8 +1989,16 @@ pvBody.addEventListener('click', async e=>{
     catch(err){ alert('No se pudo eliminar: ' + err.message); }
     return;
   }
-  // tocar la fecha o el paciente abre el PDF del presupuesto
-  if(e.target.closest('.pv-fecha, .pv-pac')){
+  // tocar el paciente abre su ficha (como en Movimientos diarios)
+  const pac = e.target.closest('.pv-pac');
+  if(pac){
+    const nombre = pac.textContent.trim();
+    if(pacientesFullList.some(x=> mayus(x.nombreCompleto||'')===mayus(nombre))) abrirFichaPacientePorNombre(nombre);
+    else alert('Este paciente no está en la base de pacientes.');
+    return;
+  }
+  // tocar la fecha abre el PDF del presupuesto
+  if(e.target.closest('.pv-fecha')){
     const pr = (pvLista||[]).find(y=> y.id===e.target.closest('tr').dataset.id); if(!pr || !pr.items) return;
     try{ const {doc, archivo} = await pdfPresupuesto(pr); mostrarPreviewPDF(doc, archivo); }
     catch(err){ alert('No se pudo generar el PDF: ' + err.message); }
