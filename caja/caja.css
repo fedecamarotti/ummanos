@@ -1514,3 +1514,12 @@ thead th input.th-search[type=text]:not(:placeholder-shown), thead th textarea.t
   background:transparent linear-gradient(var(--accent), var(--accent)) no-repeat center bottom 2px / calc(100% - 12px) 1.5px !important;
   border-color:transparent !important;box-shadow:none !important;
 }
+/* Presupuesto de suplementos: fila fija de costo administrativo */
+.pr-adm{display:grid;grid-template-columns:1fr auto 34px;gap:6px;align-items:center;margin-top:8px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:#f8f2e2;font-size:12px;}
+.pr-adm span{color:var(--muted);font-weight:600;} .pr-adm b{text-align:right;}
+.pr-adm-volver{display:block;margin-top:6px;border:none;background:none;padding:0;font:inherit;font-size:11px;color:var(--accent-dk);cursor:pointer;text-decoration:underline;}
+/* Descuentos: se ordenan arrastrando */
+.ds-cab,.ds-fila{grid-template-columns:18px 1fr 70px 34px;}
+.ds-mover{cursor:grab;color:#b8ad93;font-size:14px;letter-spacing:-3px;text-align:center;user-select:none;line-height:1;}
+.ds-mover:hover{color:var(--accent-dk);}
+.ds-fila.arrastrando{opacity:.45;}

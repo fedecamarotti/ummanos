@@ -1115,9 +1115,14 @@ document.getElementById('inpImportarProfesionales').addEventListener('change', a
 const overlayDescuentos = document.getElementById('overlayDescuentos');
 function dsFila(d){
   const f = document.createElement('div'); f.className = 'ds-fila';
-  f.innerHTML = `<input type="text" class="ds-n" value="${escAttr(d.n||'')}" placeholder="Ej: EFECTIVO"><input type="text" class="ds-p" inputmode="numeric" value="${d.p||''}" placeholder="10"><button type="button" class="btn-quitar" title="Quitar">✕</button>`;
+  f.innerHTML = `<span class="ds-mover" title="Arrastrá para ordenar">⋮⋮</span><input type="text" class="ds-n" value="${escAttr(d.n||'')}" placeholder="Ej: EFECTIVO"><input type="text" class="ds-p" inputmode="numeric" value="${d.p||''}" placeholder="10"><button type="button" class="btn-quitar" title="Quitar">✕</button>`;
   f.querySelector('.ds-p').addEventListener('input', e=> e.target.value = e.target.value.replace(/\D/g,'').slice(0,2));
   f.querySelector('.btn-quitar').onclick = ()=> f.remove();
+  // ordenar: se arrastra desde los puntitos de la izquierda (el orden es el de los desplegables)
+  const h = f.querySelector('.ds-mover');
+  h.addEventListener('mousedown', ()=> f.draggable = true);
+  f.addEventListener('dragstart', e=>{ f.classList.add('arrastrando'); e.dataTransfer.effectAllowed = 'move'; try{ e.dataTransfer.setData('text/plain',''); }catch(_){} });
+  f.addEventListener('dragend', ()=>{ f.classList.remove('arrastrando'); f.draggable = false; });
   document.getElementById('dsLista').appendChild(f);
 }
 document.getElementById('btnDescuentosPanel').onclick = ()=>{
@@ -1125,6 +1130,12 @@ document.getElementById('btnDescuentosPanel').onclick = ()=>{
   descuentosLista.forEach(dsFila);
   overlayDescuentos.classList.add('show');
 };
+document.getElementById('dsLista').addEventListener('dragover', e=>{
+  const mov = document.querySelector('#dsLista .ds-fila.arrastrando'); if(!mov) return;
+  e.preventDefault();
+  const despues = [...document.querySelectorAll('#dsLista .ds-fila:not(.arrastrando)')].find(x=>{ const r = x.getBoundingClientRect(); return e.clientY < r.top + r.height/2; });
+  document.getElementById('dsLista').insertBefore(mov, despues || null);
+});
 document.getElementById('dsAgregar').onclick = ()=>{ dsFila({}); const l = document.querySelectorAll('#dsLista .ds-n'); l[l.length-1].focus(); };
 ['closeDescuentos','cancelDescuentos'].forEach(id=> document.getElementById(id).onclick = ()=> overlayDescuentos.classList.remove('show'));
 document.getElementById('guardarDescuentos').onclick = async ()=>{

@@ -1422,13 +1422,28 @@ function prDatos(){
   })).filter(i=> i.det || i.val);
   const sub = items.reduce((a,i)=> a + i.cant * i.val, 0);
   const [pct, lbl] = (document.getElementById('prDesc').value || '').split('|');
-  const sugerido = totalConDescuento(sub, pct, prMon);
+  const adm = items.length ? prAdmMonto() : 0;   // costo administrativo (suplementos): no lleva descuento
+  const sugerido = totalConDescuento(sub, pct, prMon) + adm;
   const escrito = document.getElementById('prTotalInp').value.replace(/\D/g,'');
   const total = escrito ? Number(escrito) : sugerido;
-  const desc = sub - total;
-  return {items, sub, sugerido, desc: desc > 0 ? desc : 0, descLbl: desc > 0 ? (lbl || 'Descuento') : '', total};
+  const desc = sub + adm - total;
+  return {items, sub, adm, sugerido, desc: desc > 0 ? desc : 0, descLbl: desc > 0 ? (lbl || 'Descuento') : '', total};
 }
+// Suplementos: se suma solo el costo administrativo (el mismo valor fijo de Suplementación; si Fede lo cambia, cambia acá)
+let prAdmQuitado = false;
+const prEsSuplementos = ()=> /SUPLEMENT/.test(mayus(document.getElementById('prProf').value.trim()));
+function prAdmMonto(){ return prEsSuplementos() && !prAdmQuitado && prMon==='$' ? suFijoActual() : 0; }
+function prAdmPintar(){
+  const sup = prEsSuplementos() && prMon==='$';
+  document.getElementById('prAdm').classList.toggle('col-hidden', !sup || prAdmQuitado);
+  document.getElementById('prAdmVolver').classList.toggle('col-hidden', !sup || !prAdmQuitado);
+  document.getElementById('prAdmVal').textContent = fmtMonto(suFijoActual(), '$');
+}
+document.getElementById('prAdmQuitar').onclick = ()=>{ prAdmQuitado = true; prRecalc(); };
+document.getElementById('prAdmVolver').onclick = ()=>{ prAdmQuitado = false; prRecalc(); };
+['input','change'].forEach(ev=> document.getElementById('prProf').addEventListener(ev, ()=> setTimeout(prRecalc, 0)));
 function prRecalc(){
+  prAdmPintar();
   const d = prDatos();
   document.getElementById('prTotalWrap').classList.toggle('col-hidden', !prConTotal);
   if(!prConTotal){
@@ -1438,7 +1453,7 @@ function prRecalc(){
     return;
   }
   document.getElementById('prTot').innerHTML = d.items.length
-    ? `Subtotal ${fmtMonto(d.sub, prMon)}${d.desc ? ` · ${escHtml(d.descLbl)}: −${fmtMonto(d.desc, prMon)}` : ''}` : '';
+    ? `Subtotal ${fmtMonto(d.sub, prMon)}${d.adm ? ` · Costo administrativo: ${fmtMonto(d.adm, prMon)}` : ''}${d.desc ? ` · ${escHtml(d.descLbl)}: −${fmtMonto(d.desc, prMon)}` : ''}` : '';
   document.getElementById('prTotalInp').placeholder = d.items.length ? Number(d.sugerido).toLocaleString('es-AR') : '0';
 }
 function abrirPresupuesto(){
@@ -1446,6 +1461,7 @@ function abrirPresupuesto(){
   ['prPac','prProf','prNotas'].forEach(id=> document.getElementById(id).value = '');
   document.getElementById('prDesc').value = '';
   document.getElementById('prTotalInp').value = '';
+  prAdmQuitado = false; try{ suscribirSuConfig(); }catch(_){}
   document.getElementById('prItems').innerHTML = ''; prAgregarFila(); prSetTotModo(true); prSetMon('$');
   overlayPresupuesto.classList.add('show');
 }
@@ -1460,6 +1476,7 @@ const UMM_CONTACTO = [['ic-mail','info@ummana.ar'],['ic-wa','11 3920-8108'],['ic
 async function pdfPresupuesto(pr){
   if(pr.sinTotal) return pdfPresupuestoOpciones(pr);
   const tot = [{lbl:'Subtotal', val: fmtMonto(pr.subtotal, pr.moneda), tipo:'sub'}];
+  if(pr.costoAdm) tot.push({lbl:'Costo administrativo', val: fmtMonto(pr.costoAdm, pr.moneda), tipo:'sub'});
   if(pr.descuento) tot.push({lbl: 'Descuento', sub: pr.descuentoLbl && pr.descuentoLbl!=='Descuento' ? `(${pr.descuentoLbl} desc.)` : '', val: '-' + fmtMonto(pr.descuento, pr.moneda), tipo:'desc'});
   tot.push({lbl:'TOTAL', val: fmtMonto(pr.total, pr.moneda), tipo:'total'});
   const doc = await pdfFormatoUmmana({
@@ -1491,7 +1508,7 @@ async function pdfPresupuestoOpciones(pr){
   const doc = await pdfFormatoUmmana({
     titulo: 'PRESUPUESTO',
     datos: [['PACIENTE', pr.paciente, true], ['FECHA', ecFecha(pr.fechaISO)], ['DR. DRA. / ÁREA', pr.profesional || '-']],
-    head, body, columnStyles, totales: [],
+    head, body, columnStyles, totales: pr.costoAdm ? [{lbl:'Costo administrativo', sub:'(se suma a la opción elegida)', val: fmtMonto(pr.costoAdm, pr.moneda), tipo:'sub'}] : [],
     notas: pr.notas || '',
     observaciones: pr.observaciones || PR_OBSERVACIONES,
     contacto: pr.contacto,
@@ -1512,7 +1529,7 @@ document.getElementById('descargarPresupuesto').onclick = async ()=>{
   try{
     // se guardan solo los datos (no el PDF): ocupa ~1 KB por presupuesto
     const pr = {paciente: pac, profesional: prof, fechaISO: fecha, moneda: prMon, items: d.items,
-      subtotal: d.sub, descuento: d.desc, descuentoLbl: d.descLbl, total: d.total, redondeo: true,
+      subtotal: d.sub, costoAdm: d.adm || 0, descuento: d.desc, descuentoLbl: d.descLbl, total: d.total, redondeo: true,
       ...(prConTotal ? {} : {sinTotal: true, descuentoPct: Number((document.getElementById('prDesc').value || '').split('|')[0]) || 0}),
       notas: mayus(document.getElementById('prNotas').value.trim()),
       observaciones: PR_OBSERVACIONES, contacto: UMM_CONTACTO.map(([ic, t])=> ({ic, t}))};
