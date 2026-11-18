@@ -1476,8 +1476,8 @@ const UMM_CONTACTO = [['ic-mail','info@ummana.ar'],['ic-wa','11 3920-8108'],['ic
 async function pdfPresupuesto(pr){
   if(pr.sinTotal) return pdfPresupuestoOpciones(pr);
   const tot = [{lbl:'Subtotal', val: fmtMonto(pr.subtotal, pr.moneda), tipo:'sub'}];
-  if(pr.costoAdm) tot.push({lbl:'Costo administrativo', val: fmtMonto(pr.costoAdm, pr.moneda), tipo:'sub'});
   if(pr.descuento) tot.push({lbl: 'Descuento', sub: pr.descuentoLbl && pr.descuentoLbl!=='Descuento' ? `(${pr.descuentoLbl} desc.)` : '', val: '-' + fmtMonto(pr.descuento, pr.moneda), tipo:'desc'});
+  if(pr.costoAdm) tot.push({lbl:'Costo administrativo', val: fmtMonto(pr.costoAdm, pr.moneda), tipo:'sub'});   // después del descuento, así no parece que se resta
   tot.push({lbl:'TOTAL', val: fmtMonto(pr.total, pr.moneda), tipo:'total'});
   const doc = await pdfFormatoUmmana({
     titulo: 'PRESUPUESTO',
