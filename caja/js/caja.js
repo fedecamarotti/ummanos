@@ -391,7 +391,6 @@ function ocultarAvisoCierre(){
 async function abrirModalCierre(){
   document.getElementById('cierreExplic').value = '';
   document.getElementById('cierreEsperadoTxt').textContent = `Monto esperado en caja: calculando…`;
-  document.getElementById('cierreDetalle').innerHTML = '';
   document.getElementById('inpFechaCierre').value = cajaActual.fechaISO;
   inpCierreMonto.value = ""; document.getElementById('inpCierreUsd').value = "";
   ocultarAvisoCierre();
@@ -407,8 +406,6 @@ async function recalcularEsperadoCierre(){
   inpCierreMonto.value = esperado.toLocaleString('es-AR');
   document.getElementById('inpCierreUsd').value = esperadoUsd.toLocaleString('es-AR');
   document.getElementById('cierreUsdEsp').textContent = `(esperado: US$ ${esperadoUsd.toLocaleString('es-AR')})`;
-  try{ document.getElementById('cierreDetalle').innerHTML = htmlDetalleEfectivo(await detalleEfectivoCaja(), Number(cajaActual.aperturaMonto)||0, '$'); }
-  catch(e){ document.getElementById('cierreDetalle').innerHTML = ''; console.warn(e); }
   ocultarAvisoCierre();
   document.getElementById('confirmarCierre').textContent = "Cerrar caja";
 }
