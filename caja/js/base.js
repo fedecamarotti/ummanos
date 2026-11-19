@@ -141,7 +141,9 @@ let TIPO_POR_CONCEPTO = {};      // "SUEROTERAPIA||SUERO BASE..." -> "ingreso" |
 function esEgreso(prof, concepto){ return TIPO_POR_CONCEPTO[prof+"||"+concepto] === "egreso"; }
 // Movimientos migrados de la planilla vieja: traen su propio tipo (los conceptos viejos no están en el catálogo)
 function esGastoMov(m){ return m && m.migrado ? m.tipo === 'egreso' : esEgreso(m.prof, m.concepto); }
-const noMigrado = m => !m.migrado;
+// pendienteAut / rechazadoAut: efectivo de días anteriores esperando que Fede lo autorice (o rechazado): no cuenta en cajas ni informes
+const noMigrado = m => !m.migrado && !m.pendienteAut && !m.rechazadoAut;
+const tagAut = m => m.pendienteAut ? '<i class="tag-aut">ESPERANDO AUTORIZACIÓN</i>' : (m.rechazadoAut ? '<i class="tag-aut rech">RECHAZADO POR FEDE</i>' : '');
 // Áreas que no cuentan como "área de Ummana" en la ficha del paciente
 const NO_ES_AREA = /^(CAJA DIARIA|ALQUILER CONSUL|GASTOS )/i;
 // Mes con información migrada de la planilla (dic 2024 → ago 2026)
@@ -874,6 +876,7 @@ function renderTabla(){
   movimientos.filter(pasaFiltros).forEach(m=>{
     const esGasto = esGastoMov(m);
     const tr = document.createElement('tr');
+    if(m.pendienteAut || m.rechazadoAut) tr.className = m.rechazadoAut ? 'mov-rech' : 'mov-pend';
     const esPac = !esGasto && nombresPacientes.has(mayus(m.pac||''));
     tr.innerHTML = `
       <td class="editcol">${m.migrado ? '' : `<button class="editbtn" title="Editar" onclick="abrirEdicion('${m.id}')">&#9998;</button>`}</td>
@@ -881,7 +884,7 @@ function renderTabla(){
       <td class="left">${esPac ? `<span class="pac-link" data-pac="${escHtml(m.pac)}" title="Ver ficha del paciente">${m.pac}</span>` : m.pac}</td>
       <td${esViejoCatalogo(m,'prof') ? ' class="mig-viejo"' : ''}>${m.prof}</td>
       <td class="concepto${esViejoCatalogo(m,'concepto') ? ' mig-viejo' : ''}">${m.concepto}</td>
-      <td class="notas" title="${(m.notas||"").replace(/"/g,'&quot;')}${m.jornada?' (JORNADA)':''}">${m.notas||""}${m.jornada ? `${m.notas ? ' ' : ''}<i class="tag-jornada">(JORNADA)</i>` : ''}${esCajaGrande(m) ? '<i class="tag-grande">CAJA GRANDE</i>' : ''}</td>
+      <td class="notas" title="${(m.notas||"").replace(/"/g,'&quot;')}${m.jornada?' (JORNADA)':''}">${m.notas||""}${m.jornada ? `${m.notas ? ' ' : ''}<i class="tag-jornada">(JORNADA)</i>` : ''}${esCajaGrande(m) ? '<i class="tag-grande">CAJA GRANDE</i>' : ''}${tagAut(m)}</td>
       <td class="total ${m.valor==0 ? '' : (esGasto?'egreso':'ingreso')}">${fmtTotal(m)}</td>
       <td class="badges-cell">${medioBadgesHTML(m)}</td>
       <td class="concepto">${cobroBadgesHTML(m)}</td>
@@ -924,9 +927,9 @@ function renderMovCel(){
           const tags = medioBadgesHTML(m)
             + (m.descuentoLbl ? `<span class="badge mc-desc">${escHtml(m.descuentoLbl)}</span>` : '')
             + (m.jornada ? '<span class="badge mc-desc">JORNADA</span>' : '');
-          return `<div class="mc-card">
+          return `<div class="mc-card${m.pendienteAut ? ' mov-pend' : (m.rechazadoAut ? ' mov-rech' : '')}">
             <div class="mc-top"><div class="mc-txt"><div class="mc-pac">${esPac ? `<span class="pac-link" data-pac="${escHtml(m.pac)}">${escHtml(m.pac||'')}</span>` : escHtml(m.pac||'')}</div>
-              <div class="mc-con">${escHtml(m.concepto||'')}</div><div class="mc-pro">${escHtml(m.prof||'')}${m.notas ? ' · ' + escHtml(m.notas) : ''}</div></div>
+              <div class="mc-con">${escHtml(m.concepto||'')}</div><div class="mc-pro">${escHtml(m.prof||'')}${m.notas ? ' · ' + escHtml(m.notas) : ''}</div>${tagAut(m)}</div>
               <div class="mc-monto ${m.valor==0 ? '' : (egr ? 'egreso' : 'ingreso')}">${egr ? '−' : '+'}${fmtTotal(m)}</div></div>
             <div class="mc-pie"><div class="mc-tags">${tags}</div>${m.migrado ? '' : `<button class="mc-lapiz" title="Editar" onclick="abrirEdicion('${m.id}')">${ico('lapiz')}</button>`}</div>
           </div>`;

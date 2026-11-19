@@ -979,9 +979,57 @@ const alDeResp = (a, f)=> !f || a.responsable===f || a.responsable==='TODAS';
 const alDeAdmin = a=> a.creadoRol ? a.creadoRol==='admin' : /^(FEDE|PEDRO)/.test(mayus(a.creadoPor||'').trim());
 const alPuedeEditar = a=> alEsAdmin() || !alDeAdmin(a);
 const alVencida = a=> !a.hecha && a.vence && a.vence <= hoyISO();
+/* ---- Autorizaciones (solo Fede): efectivo cargado con fecha anterior por las chicas ---- */
+let autPend = [], unsubAut = null;
+function suscribirAutorizaciones(){
+  if(unsubAut) return;
+  unsubAut = db.collection('movimientos').where('pendienteAut','==',true).onSnapshot(snap=>{
+    autPend = snap.docs.map(d=> ({id:d.id, ...d.data()}));
+    renderAlertasCount(); renderAut();
+  }, err=> console.warn('No se pudieron leer las autorizaciones', err));
+}
+function renderAut(){
+  const ls = document.getElementById('autLista');
+  if(!esFede() || !autPend.length){ ls.classList.add('col-hidden'); ls.innerHTML = ''; return; }
+  ls.classList.remove('col-hidden');
+  const ms = ts => ts && ts.toMillis ? ts.toMillis() : Date.now();
+  const efe = m=> pagosDe(m).filter(p=> p.medio==='efectivo').reduce((a,p)=> a + (Number(p.valor)||0), 0);
+  ls.innerHTML = `<div class="aut-tit">Efectivo de días anteriores para autorizar</div>` + autPend.slice().sort((a,b)=> ms(a.autSolicitadaEn)-ms(b.autSolicitadaEn)).map(m=> `
+    <div class="aut-it" data-id="${m.id}">
+      <div class="aut-tx"><b>${escHtml(m.pac||'')}</b> · ${escHtml(m.concepto||'')}<br>
+        <span>Fecha ${escHtml(m.fechaDisplay||'')} · efectivo ${fmtMonto(efe(m), m.moneda||'$')} · cargó ${escHtml(m.autSolicitadaPor||m.creadoPor||'')}</span></div>
+      <div class="aut-bt">
+        <button type="button" data-aut="hoy" title="El efectivo entró hoy: se suma a la caja en la que se cargó">Entra hoy</button>
+        <button type="button" data-aut="dia" title="Ese efectivo ya se contó en la caja de ese día: no toca la caja de hoy">Ya se contó ese día</button>
+        <button type="button" data-aut="no" class="no" title="Rechazar: no cuenta en ningún lado">Rechazar</button>
+      </div>
+    </div>`).join('');
+}
+document.getElementById('autLista').addEventListener('click', async e=>{
+  const b = e.target.closest('[data-aut]'); if(!b) return;
+  e.stopPropagation();
+  const id = b.closest('.aut-it').dataset.id, m = autPend.find(x=> x.id===id); if(!m) return;
+  const quien = currentUser ? currentUser.nombre : '';
+  const ts = firebase.firestore.FieldValue.serverTimestamp();
+  try{
+    if(b.dataset.aut==='no'){
+      if(!await ummConfirm(`¿Rechazar el movimiento de ${m.pac}?\nQueda marcado como rechazado y no cuenta en ninguna caja.`, {si:'Rechazar'})) return;
+      await db.collection('movimientos').doc(id).update({pendienteAut:false, rechazadoAut:true, rechazadoPor: quien, rechazadoEn: ts});
+    } else if(b.dataset.aut==='hoy'){
+      await db.collection('movimientos').doc(id).update({pendienteAut:false, autorizadoPor: quien, autorizadoEn: ts, autTipo:'hoy'});
+    } else {
+      // va a la última caja de ese día (si no hubo caja ese día, no cuenta en ninguna)
+      const sn = await db.collection('cajaSesiones').where('fechaISO','==', m.fechaISO).get({source:'server'});
+      const cajas = sn.docs.map(d=> ({id:d.id, ...d.data()})).filter(c=> !c.duplicada && c.abiertaEn)
+        .sort((a,b)=> (b.abiertaEn.toMillis ? b.abiertaEn.toMillis() : 0) - (a.abiertaEn.toMillis ? a.abiertaEn.toMillis() : 0));
+      await db.collection('movimientos').doc(id).update({pendienteAut:false, autorizadoPor: quien, autorizadoEn: ts, autTipo:'dia', cajaIdOriginal: m.cajaId || null, cajaId: cajas.length ? cajas[0].id : 'SIN_CAJA'});
+    }
+  }catch(err){ alert('No se pudo guardar: ' + err.message); }
+});
 function suscribirAlertas(){
   if(unsubAl) return;
   alFiltro = alEsAdmin() ? null : alMia();
+  if(esFede()) suscribirAutorizaciones();
   unsubAl = db.collection('alertas').where('hecha','==',false).onSnapshot(snap=>{
     alPend = snap.docs.map(d=> ({id:d.id, ...d.data()})).filter(a=> !a.eliminada);
     renderAlertasCount(); if(alVista==='pend') renderAlertas();
@@ -991,7 +1039,7 @@ function suscribirAlertas(){
 // Globito: las vencidas (o que vencen hoy) que ve cada una por defecto: las recepcionistas las suyas, Fede y Pedro todas
 function renderAlertasCount(){
   const mia = alEsAdmin() ? null : alMia();
-  const n = alPend.filter(a=> alVencida(a) && alDeResp(a, mia)).length;
+  const n = alPend.filter(a=> alVencida(a) && alDeResp(a, mia)).length + (esFede() ? autPend.length : 0);
   const b = document.getElementById('alN');
   b.textContent = n; b.classList.toggle('col-hidden', !n);
 }

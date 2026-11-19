@@ -86,6 +86,7 @@ function renderCajaGrande(){
 }
 function netoEfectivoMovimiento(m, mon){
   mon = mon || '$';
+  if(m.pendienteAut || m.rechazadoAut) return 0;   // esperando autorización de Fede (o rechazado): no toca la caja
   if(esCajaGrande(m)) return 0;   // lo cargado en caja grande no toca la caja chica
   const esGasto = esGastoMov(m);
   let neto = 0;
@@ -1134,7 +1135,10 @@ btnGuardarMov.onclick = async ()=>{
     nuevoMovId = editingId;
   } else {
     if(!cajaActual && !esFede()){ alert("La caja se encuentra cerrada, no se pueden cargar movimientos."); return; }
-    if(cajaActual && fechaISO !== cajaActual.fechaISO){
+    // Efectivo con fecha anterior (las chicas): queda pendiente hasta que Fede lo autorice
+    const necesitaAut = !(currentUser && currentUser.rol==='admin') && fechaISO < (cajaActual ? cajaActual.fechaISO : hoyISO()) && pagos.some(p=> p.medio==='efectivo');
+    if(necesitaAut && !await ummConfirm(`Este movimiento es del ${fechaDisplay} y tiene pago en EFECTIVO.\n\nVa a quedar pendiente hasta que Fede lo autorice: mientras tanto no suma a la caja. ¿Cargarlo así?`, {si:'Cargar y pedir autorización'})) return;
+    if(!necesitaAut && cajaActual && fechaISO !== cajaActual.fechaISO){
       try{
         const snapDia = await db.collection('cajaSesiones').where('fechaISO','==', fechaISO).get();
         const tieneCajaCerrada = snapDia.docs.some(d=> d.id !== cajaActual.id && d.data().cerradaEn);
@@ -1152,6 +1156,7 @@ btnGuardarMov.onclick = async ()=>{
       ...(!document.getElementById('indicaWrap').classList.contains('col-hidden') ? {indicaCrema: document.getElementById('selIndica').value || 'PARTICULAR'} : {}),
       creadoPor: currentUser.nombre, creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
       cajaId: cajaActual ? cajaActual.id : 'SIN_CAJA',
+      ...(necesitaAut ? {pendienteAut: true, autSolicitadaPor: currentUser.nombre, autSolicitadaEn: firebase.firestore.FieldValue.serverTimestamp()} : {}),
     });
     nuevoMovId = nuevoRef.id;
   }

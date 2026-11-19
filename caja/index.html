@@ -7,9 +7,9 @@
 if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1)){
   var vp=document.querySelector('meta[name=viewport]'); if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0');
 }</script>
-<link rel="manifest" href="/manifest.webmanifest?v=202611190018">
+<link rel="manifest" href="/manifest.webmanifest?v=202611190033">
 <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611190018">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611190033">
 <meta name="theme-color" content="#fffcf5">
 <title>CAJA UMMANA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,7 +37,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<link rel="stylesheet" href="caja.css?v=202611190018">
+<link rel="stylesheet" href="caja.css?v=202611190033">
 </head>
 <body>
 <div id="ummLoader" aria-hidden="true"><div class="ul-logo"><img class="ul-base" src="images/logo.png" alt=""><img class="ul-fill" src="images/logo.png" alt=""></div></div>
@@ -473,6 +473,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
           <div class="al-fila"><div><label>Responsable</label><select id="alResp"></select></div><div><label>Vencimiento</label><input type="date" id="alVence"></div></div>
           <div class="al-fila al-acc"><button type="button" class="al-del col-hidden" id="alEliminar">Eliminar</button><button type="button" class="al-cn" id="alCancelar">Cancelar</button><button type="button" class="al-gd" id="alGuardar">Guardar</button></div>
         </div>
+        <div class="aut-ls col-hidden" id="autLista"></div>
         <div class="al-ls" id="alLista"></div>
       </div>
     </div>
@@ -1883,11 +1884,11 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 
 </div><!-- /#app -->
 
-<script src="js/base.js?v=202611190018"></script>
-<script src="js/caja.js?v=202611190018"></script>
-<script src="js/sueros.js?v=202611190018"></script>
-<script src="js/cremas.js?v=202611190018"></script>
-<script src="js/paneles.js?v=202611190018"></script>
-<script src="js/extras.js?v=202611190018"></script>
+<script src="js/base.js?v=202611190033"></script>
+<script src="js/caja.js?v=202611190033"></script>
+<script src="js/sueros.js?v=202611190033"></script>
+<script src="js/cremas.js?v=202611190033"></script>
+<script src="js/paneles.js?v=202611190033"></script>
+<script src="js/extras.js?v=202611190033"></script>
 </body>
 </html>

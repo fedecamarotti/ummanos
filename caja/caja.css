@@ -1546,3 +1546,16 @@ body.fede-nav-on #vistaInformes .sueros-bar .s-tabs{border-radius:11px;}
 .cierre-det .cd-fila:first-of-type{border-top:none;margin-top:4px;}
 .cierre-det .cd-fila span:last-child{white-space:nowrap;font-weight:600;}
 .cierre-det .cd-otra{background:#fff4e0;margin:0 -6px;padding:4px 6px;border-radius:5px;color:#7a5410;}
+/* Efectivo de días anteriores esperando autorización de Fede */
+.tag-aut{display:inline-block;margin-left:6px;font-style:normal;font-size:9px;font-weight:700;letter-spacing:.3px;color:#8a6420;background:#f6e6bf;border-radius:8px;padding:1px 7px;vertical-align:1px;}
+.tag-aut.rech{color:#a13a3a;background:#f8dcd8;}
+tr.mov-pend td{opacity:.6;} tr.mov-pend td.notas, tr.mov-pend td.editcol{opacity:1;}
+tr.mov-rech td{opacity:.45;text-decoration:line-through;} tr.mov-rech td.notas, tr.mov-rech td.editcol{opacity:1;text-decoration:none;}
+.mc-card.mov-pend{opacity:.75;} .mc-card.mov-rech{opacity:.55;}
+.aut-ls{border-bottom:1px solid var(--border);padding:6px 14px 10px;margin-bottom:8px;}
+.aut-tit{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#a13a3a;margin:2px 0 6px;}
+.aut-it{background:#fff7e8;border:1px solid #f0d49a;border-radius:9px;padding:8px 10px;margin-bottom:6px;font-size:12px;}
+.aut-tx span{color:var(--muted);font-size:11px;}
+.aut-bt{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap;}
+.aut-bt button{border:1px solid #d9c79c;background:#fffcf5;border-radius:7px;padding:4px 9px;font:inherit;font-size:11px;font-weight:600;cursor:pointer;}
+.aut-bt button:hover{background:#f3ead3;} .aut-bt button.no{color:#a13a3a;border-color:#e8c2bd;}
