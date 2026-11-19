@@ -1535,3 +1535,14 @@ body.fede-nav-on #vistaSueros .sueros-bar .s-tabs, body.fede-nav-on #vistaCremas
 body.fede-nav-on #vistaInformes .sueros-bar .s-tabs{border-radius:11px;}
 .s-tab-nuevo{z-index:1;}
 @media (prefers-reduced-motion: reduce){ .s-tabs.pill-anim .s-pill{transition:none;} }
+/* Cierre de caja: de dónde sale el monto esperado */
+.cierre-det{margin:-4px 0 14px;font-size:12px;}
+.cierre-det .cd-res{color:var(--muted);} .cierre-det .cd-res span{white-space:nowrap;} .cierre-det .cd-res b{color:var(--text);}
+.cierre-det .cd-aviso{margin-top:8px;padding:8px 10px;border-radius:8px;background:#fff4e0;border:1px solid #f0d49a;color:#7a5410;font-size:11.5px;line-height:1.4;}
+.cierre-det .cd-aviso svg{width:13px;height:13px;vertical-align:-2px;}
+.cierre-det .cd-lista{margin-top:8px;border:1px solid var(--border);border-radius:8px;padding:6px 10px;background:#fffdf8;}
+.cierre-det .cd-lista summary{cursor:pointer;font-weight:600;color:var(--accent-dk);font-size:11.5px;}
+.cierre-det .cd-fila{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-top:1px solid #f0e8d6;font-size:11.5px;}
+.cierre-det .cd-fila:first-of-type{border-top:none;margin-top:4px;}
+.cierre-det .cd-fila span:last-child{white-space:nowrap;font-weight:600;}
+.cierre-det .cd-otra{background:#fff4e0;margin:0 -6px;padding:4px 6px;border-radius:5px;color:#7a5410;}

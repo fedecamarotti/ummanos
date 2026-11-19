@@ -171,6 +171,27 @@ async function netoEfectivoDeSesion(sesionId, sesion, mon){
   // también los viejos de ese día que pudieran caer en esta caja
   return netoPorSesion(movs, sesiones, mon)[sesionId] || 0;
 }
+// Detalle de lo que suma/resta al efectivo de la caja abierta (para que se vea de dónde sale el "esperado")
+async function detalleEfectivoCaja(mon){
+  if(!cajaActual || !cajaActual.abiertaEn) return [];
+  const snapDia = await db.collection('cajaSesiones').where('fechaISO','==', cajaActual.fechaISO).get();
+  const sesiones = snapDia.docs.map(d=>({id:d.id, ...d.data()}));
+  if(!sesiones.some(c=>c.id===cajaActual.id)) sesiones.push(cajaActual);
+  const movs = await movimientosParaSesiones(sesiones.filter(c=>c.id===cajaActual.id));
+  return movs.filter(m=>{ const ses = sesionDeMovimiento(m, sesiones); return ses && ses.id===cajaActual.id; })
+    .map(m=> ({m, neto: netoEfectivoMovimiento(m, mon)})).filter(x=> x.neto)
+    .sort((a,b)=> (tsMs(a.m.creadoEn)||0) - (tsMs(b.m.creadoEn)||0));
+}
+function htmlDetalleEfectivo(det, apertura, mon){
+  const f = v=> fmtMonto(Math.abs(v), mon);
+  const ent = det.filter(x=> x.neto>0), sal = det.filter(x=> x.neto<0);
+  const sumE = ent.reduce((a,x)=>a+x.neto,0), sumS = sal.reduce((a,x)=>a+x.neto,0);
+  const otras = det.filter(x=> x.m.fechaISO !== cajaActual.fechaISO);
+  const fila = x=> `<div class="cd-fila${x.m.fechaISO !== cajaActual.fechaISO ? ' cd-otra' : ''}"><span>${escHtml(x.m.pac||'')} · ${escHtml(x.m.concepto||'')}${x.m.fechaISO !== cajaActual.fechaISO ? ` <b>(fecha ${isoToDisplay(x.m.fechaISO)})</b>` : ''}</span><span>${x.neto>0?'+':'−'}${f(x.neto)}</span></div>`;
+  return `<div class="cd-res">Apertura ${f(apertura)} <span>+ ${f(sumE)} entradas</span> <span>− ${f(sumS)} salidas</span> = <b>${fmtMonto(apertura + sumE + sumS, mon)}</b></div>`
+    + (otras.length ? `<div class="cd-aviso">${ico('alerta')} Hay ${otras.length===1 ? 'un movimiento' : otras.length + ' movimientos'} en efectivo con <b>otra fecha</b> cargado${otras.length===1?'':'s'} en esta caja: también cuenta${otras.length===1?'':'n'} en el efectivo de hoy.</div>` : '')
+    + (det.length ? `<details class="cd-lista"${otras.length ? ' open' : ''}><summary>Ver los ${det.length} movimientos en efectivo de esta caja</summary>${det.map(fila).join('')}</details>` : '<div class="cd-res" style="margin-top:4px">No hay movimientos en efectivo en esta caja.</div>');
+}
 async function calcularEsperadoCaja(mon){
   if(!cajaActual) return 0;
   if(mon==='USD') return (Number(cajaActual.aperturaMontoUsd)||0) + await netoEfectivoDeSesion(cajaActual.id, cajaActual, 'USD');
@@ -370,6 +391,7 @@ function ocultarAvisoCierre(){
 async function abrirModalCierre(){
   document.getElementById('cierreExplic').value = '';
   document.getElementById('cierreEsperadoTxt').textContent = `Monto esperado en caja: calculando…`;
+  document.getElementById('cierreDetalle').innerHTML = '';
   document.getElementById('inpFechaCierre').value = cajaActual.fechaISO;
   inpCierreMonto.value = ""; document.getElementById('inpCierreUsd').value = "";
   ocultarAvisoCierre();
@@ -385,6 +407,8 @@ async function recalcularEsperadoCierre(){
   inpCierreMonto.value = esperado.toLocaleString('es-AR');
   document.getElementById('inpCierreUsd').value = esperadoUsd.toLocaleString('es-AR');
   document.getElementById('cierreUsdEsp').textContent = `(esperado: US$ ${esperadoUsd.toLocaleString('es-AR')})`;
+  try{ document.getElementById('cierreDetalle').innerHTML = htmlDetalleEfectivo(await detalleEfectivoCaja(), Number(cajaActual.aperturaMonto)||0, '$'); }
+  catch(e){ document.getElementById('cierreDetalle').innerHTML = ''; console.warn(e); }
   ocultarAvisoCierre();
   document.getElementById('confirmarCierre').textContent = "Cerrar caja";
 }
@@ -1117,7 +1141,10 @@ btnGuardarMov.onclick = async ()=>{
       try{
         const snapDia = await db.collection('cajaSesiones').where('fechaISO','==', fechaISO).get();
         const tieneCajaCerrada = snapDia.docs.some(d=> d.id !== cajaActual.id && d.data().cerradaEn);
-        if(tieneCajaCerrada && !await ummConfirm("Está cargando un movimiento en un día que ya tiene su caja cerrada, ¿está seguro de continuar?")) return;
+        const conEfectivo = (pagos||[]).some(p=> p.medio==='efectivo');
+        if(tieneCajaCerrada && !await ummConfirm(conEfectivo
+          ? `Está cargando un movimiento del ${fechaDisplay}, que ya tiene su caja cerrada.\n\nComo es en EFECTIVO, se va a sumar al efectivo de la caja abierta ahora. Hacelo solo si ese dinero está entrando hoy a la caja (si ya se contó en la caja del ${fechaDisplay}, no lo cargues en efectivo). ¿Continuar?`
+          : "Está cargando un movimiento en un día que ya tiene su caja cerrada, ¿está seguro de continuar?")) return;
       }catch(e){ console.error(e); }
     }
     const nuevoRef = await db.collection('movimientos').add({
