@@ -607,7 +607,7 @@ function abrirFichaPaciente(id){
   document.getElementById('pfDni').value = p ? (p.dni||'') : '';
   pfSetMedio(p ? p.medioLlegada : '');
   document.getElementById('pfReferido').value = p ? (p.referidoPor||'') : '';
-  document.getElementById('pfEliminar').classList.toggle('col-hidden', nuevo);
+  document.getElementById('pfEliminar').classList.toggle('col-hidden', nuevo || !(currentUser && currentUser.rol==='admin'));   // borrar pacientes: solo Fede y Pedro
   document.getElementById('pfUnificar').classList.toggle('col-hidden', nuevo || !esFede());
   document.getElementById('pfUnifBox').classList.add('col-hidden'); document.getElementById('pfUnifDup').value = '';
   document.getElementById('pfGuardar').textContent = nuevo ? 'Crear paciente' : 'Guardar';

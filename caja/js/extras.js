@@ -633,7 +633,7 @@ cpBody.addEventListener('click', async e=>{
   if(del){
     const tr = del.closest('tr'), x = (cpLista||[]).find(y=> y.id===tr.dataset.id);
     if(!await ummConfirm(`¿Eliminar la clase de prueba${x && x.alumno ? ' de ' + x.alumno : ''}?`)) return;
-    try{ await db.collection('clasesPrueba').doc(tr.dataset.id).delete(); }catch(err){ alert('No se pudo eliminar: ' + err.message); }
+    try{ await borrarConCopia('clasesPrueba', tr.dataset.id); }catch(err){ alert('No se pudo eliminar: ' + err.message); }
   }
 });
 // Enter guarda y sale del casillero (como al hacer clic afuera)
@@ -859,7 +859,7 @@ dvBody.addEventListener('click', async e=>{
   if(del){
     const tr = del.closest('tr'), x = (dvLista||[]).find(y=> y.id===tr.dataset.id);
     if(!await ummConfirm(`¿Eliminar la derivación${x && x.paciente ? ' de ' + x.paciente : ''}?`)) return;
-    try{ await db.collection('derivaciones').doc(tr.dataset.id).delete(); }catch(err){ alert('No se pudo eliminar: ' + err.message); }
+    try{ await borrarConCopia('derivaciones', tr.dataset.id); }catch(err){ alert('No se pudo eliminar: ' + err.message); }
   }
 });
 // Enter guarda y sale del casillero (también en Motivo: no hay saltos de línea, el texto pasa solo al segundo renglón)
@@ -1805,7 +1805,7 @@ suBody.addEventListener('click', async e=>{
   if(del){
     const tr = del.closest('tr'), x = (suLista||[]).find(y=> y.id===tr.dataset.id);
     if(!await ummConfirm(`¿Eliminar la fila de suplementación${x && x.paciente ? ' de ' + x.paciente : ''}?`)) return;
-    try{ await db.collection('suplementacion').doc(tr.dataset.id).delete(); }catch(err){ alert('No se pudo eliminar: ' + err.message); }
+    try{ await borrarConCopia('suplementacion', tr.dataset.id); }catch(err){ alert('No se pudo eliminar: ' + err.message); }
   }
 });
 suBody.addEventListener('keydown', e=>{

@@ -941,7 +941,7 @@ btnEliminar.onclick = async ()=>{
           await refDeuda.update({ pagos: pagosDeuda, tieneDeudaPendiente: tieneDeudaPendiente(pagosDeuda) });
         }
       }
-      await ref.delete();
+      await borrarConCopia('movimientos', ref.id);
       cerrarModal();
     }catch(e){
       alert("No se pudo eliminar: " + e.message);

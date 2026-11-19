@@ -561,6 +561,17 @@ function suscribirMovimientos(){
    Por eso TODA escritura en "pacientes" tiene que llevar ...marcaPac() (y para borrar, usar borrarPaciente()). */
 const PAC_CACHE_KEY = 'ummanaPacientesCache_v1';
 const marcaPac = ()=> ({ modificadoEn: firebase.firestore.FieldValue.serverTimestamp() });
+// Antes de borrar algo del día a día (movimientos, clases de prueba, derivaciones, suplementación) se guarda una copia en
+// "eliminados" (solo la leen Fede y Pedro), en la misma operación: si alguien borra por error, se puede recuperar.
+async function borrarConCopia(coleccion, id){
+  const ref = db.collection(coleccion).doc(id);
+  const snap = await ref.get();
+  const lote = db.batch();
+  if(snap.exists) lote.set(db.collection('eliminados').doc(), {coleccion, idOriginal: id, datos: snap.data(),
+    eliminadoPor: currentUser ? currentUser.nombre : '', eliminadoEn: firebase.firestore.FieldValue.serverTimestamp()});
+  lote.delete(ref);
+  await lote.commit();
+}
 async function borrarPaciente(id){
   // Primero se marca (así las otras compus se enteran por su escucha) y después se borra
   await db.collection('pacientes').doc(id).update(marcaPac());
