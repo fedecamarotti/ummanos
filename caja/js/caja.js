@@ -791,7 +791,9 @@ selProfesional.addEventListener('input', actualizarConceptosDesdeProfesional);
 
 document.getElementById('btnNuevo').onclick = ()=>{
   if(soloLectura()){ alert(cajaDeOtra() ? `La caja la abrió ${cajaActual.recepcionista}: solo ella puede cargar movimientos. Cuando la cierre, abrí la tuya.` : "Para cargar movimientos hay que abrir caja."); return; }
-  if(!cajaActual && !esFede()){ alert("La caja se encuentra cerrada, no se pueden cargar movimientos."); return; }
+  // Caja grande es interna (no toca la caja chica): los admins cargan siempre, esté la chica abierta o no
+  const enGrande = movSub==='grande' && currentUser && currentUser.rol==='admin';
+  if(!cajaActual && !esFede() && !enGrande){ alert("La caja se encuentra cerrada, no se pueden cargar movimientos."); return; }
   modo = 'nuevo'; editingId = null; document.getElementById('movCargadoPor').classList.add('col-hidden');
   setMovCaja(movSub==='grande' ? 'grande' : 'chica');
   modalTitle.textContent = "Nuevo movimiento";
@@ -1134,11 +1136,12 @@ btnGuardarMov.onclick = async ()=>{
     await db.collection('movimientos').doc(editingId).update(cambios);
     nuevoMovId = editingId;
   } else {
-    if(!cajaActual && !esFede()){ alert("La caja se encuentra cerrada, no se pueden cargar movimientos."); return; }
+    const cargaGrande = movCaja==='grande' && currentUser && currentUser.rol==='admin';   // caja grande: siempre, sin depender de la chica
+    if(!cajaActual && !esFede() && !cargaGrande){ alert("La caja se encuentra cerrada, no se pueden cargar movimientos."); return; }
     // Efectivo con fecha anterior (las chicas): queda pendiente hasta que Fede lo autorice
     const necesitaAut = !(currentUser && currentUser.rol==='admin') && fechaISO < (cajaActual ? cajaActual.fechaISO : hoyISO()) && pagos.some(p=> p.medio==='efectivo');
     if(necesitaAut && !await ummConfirm(`Este movimiento es del ${fechaDisplay} y tiene pago en EFECTIVO.\n\nVa a quedar pendiente hasta que Fede lo autorice: mientras tanto no suma a la caja. ¿Cargarlo así?`, {si:'Cargar y pedir autorización'})) return;
-    if(!necesitaAut && cajaActual && fechaISO !== cajaActual.fechaISO){
+    if(!necesitaAut && !cargaGrande && cajaActual && fechaISO !== cajaActual.fechaISO){
       try{
         const snapDia = await db.collection('cajaSesiones').where('fechaISO','==', fechaISO).get();
         const tieneCajaCerrada = snapDia.docs.some(d=> d.id !== cajaActual.id && d.data().cerradaEn);
