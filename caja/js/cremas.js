@@ -242,7 +242,7 @@ function renderCremasMovs(){
       costo: !l ? guion : `<td><input class="c-costo ${c.costoEditado ? 'editado' : ''}" data-id="${m.id}" inputmode="numeric" value="${c.aPagar!=null ? fmtPesos(c.aPagar) : ''}" placeholder="—" ${c.bon ? 'disabled' : ''}
         title="${c.bon ? 'Bonificada: no se le paga al proveedor' : (c.colageno ? 'Costo pagado (sugerido de Stock); lo podés cambiar' : (c.costo!=null ? `Costo ${fmtUsd(c.costo)} × cotización; lo podés cambiar` : 'Sin costo en Stock'))}"></td>`,
       cot: !l ? guion : `<td><input class="c-cot" data-id="${m.id}" inputmode="numeric" value="${c.cot ? c.cot.toLocaleString('es-AR') : ''}" placeholder="—"></td>`,
-      pagado: `<td>${l ? `<button type="button" class="c-pag-fecha" data-pago="${l.id}" title="Pagado el ${isoToDisplay(l.fechaPago)}${l.proveedor ? ' a ' + l.proveedor : ''} — tocá para eliminar este pago">${c.bon ? 'BON' : isoToDisplay(l.fechaPago)}</button>` : '<span class="pend">—</span>'}</td>`,
+      pagado: `<td>${l ? `<button type="button" class="c-pag-fecha" data-pago="${l.id}" title="Pagado el ${isoToDisplay(l.fechaPago)}${l.proveedor ? ' a ' + l.proveedor : ''} — tocá para ver el detalle">${c.bon ? 'BON' : isoToDisplay(l.fechaPago)}</button>` : '<span class="pend">—</span>'}</td>`,
       prof: l ? `<td class="monto">${celdaMonto(c.prof)}</td>` : guion,
       umm: l ? `<td class="monto ${c.ummana!=null && c.ummana<0 ? 'neg' : ''}">${celdaMonto(c.ummana)}</td>` : guion,
     });
@@ -340,7 +340,7 @@ function renderCremasMovs(){
   });
   tb.querySelectorAll('[data-linea]').forEach(b=> b.onclick = ()=> abrirLineaPago(b.dataset.linea));
   tb.querySelectorAll('[data-quitar-linea]').forEach(b=> b.onclick = ()=> quitarLineaPago(b.dataset.quitarLinea));
-  tb.querySelectorAll('[data-pago]').forEach(b=> b.onclick = ()=> quitarLineaPago(b.dataset.pago));
+  tb.querySelectorAll('[data-pago]').forEach(b=> b.onclick = e=>{ e.stopPropagation(); abrirDetallePago(b.dataset.pago, b); });
   tb.querySelectorAll('[data-quitar-ajuste]').forEach(b=> b.onclick = ()=> quitarAjusteCrema(b.dataset.quitarAjuste));
   // al entrar, se ve el final (lo más nuevo)
   const wrap = tb.closest('.sheet-wrap');
@@ -581,6 +581,48 @@ document.getElementById('cpgGuardar').onclick = async ()=>{
     renderCremas();
   }catch(e){ alert("No se pudo guardar el pago: " + e.message); }
 };
+
+/* ---- Detalle de un pago (al tocar la fecha en Pagado) ---- */
+function cerrarDetallePago(){ const d = document.getElementById('cPagoDet'); if(d) d.remove(); document.removeEventListener('click', cerrarDetallePagoFuera, true); }
+function cerrarDetallePagoFuera(e){ const d = document.getElementById('cPagoDet'); if(d && !d.contains(e.target)) cerrarDetallePago(); }
+function abrirDetallePago(id, ancla){
+  cerrarDetallePago();
+  const l = cremasPagos.find(x=> x.id===id); if(!l) return;
+  const pagos = pagosPorVenta(ventasCremasTodas());
+  const vs = ventasCremasTodas().filter(m=> pagos[m.id]===l);
+  let tPago = 0, tCosto = 0, tProf = 0, tUmm = 0;
+  const filas = vs.map(m=>{
+    const c = calcularCrema(m);
+    tPago += c.pago; tCosto += c.aPagar||0; tProf += c.prof||0; tUmm += c.ummana||0;
+    return `<tr><td>${isoToDisplay(m.fechaISO)}</td><td class="l">${escHtml(m.concepto||'')}<small>${escHtml(m.pac||'')}</small></td><td>${c.bon ? 'BON' : celdaMonto(c.aPagar)}</td></tr>`;
+  }).join('');
+  const prov = l.proveedor || PROV_CREMAS[l.tipo] || '';
+  const d = document.createElement('div');
+  d.id = 'cPagoDet'; d.className = 'c-pago-det';
+  d.innerHTML = `
+    <div class="cpd-hd"><div><b>Pago del ${fechaLarga ? fechaLarga(l.fechaPago) : isoToDisplay(l.fechaPago)}</b><small>${prov}${l.cot ? ' · cotización ' + Number(l.cot).toLocaleString('es-AR') : ''}</small></div><button type="button" class="cpd-x" aria-label="Cerrar">✕</button></div>
+    <table class="cpd-tabla"><thead><tr><th>Compra</th><th class="l">Producto</th><th>Costo</th></tr></thead><tbody>${filas || '<tr><td colspan="3">Sin ventas</td></tr>'}</tbody></table>
+    <div class="cpd-tot"><span>Total del pago <small>${vs.length} ${vs.length===1?'producto':'productos'}</small></span><b>${fmtPesos(lineaNueva(l) && l.total!=null ? Number(l.total) : tCosto)}</b></div>
+    <div class="cpd-rend">
+      <div><span>Vendido</span><b>${fmtPesos(tPago)}</b></div>
+      <div><span>50% profesional</span><b>${fmtPesos(tProf)}</b></div>
+      <div><span>Ummana</span><b class="${tUmm<0?'neg':''}">${fmtPesos(tUmm)}</b></div>
+    </div>
+    <button type="button" class="cpd-del">Eliminar este pago</button>`;
+  document.body.appendChild(d);
+  // debajo de la fecha (o arriba si no entra); en celular, centrado
+  const r = ancla.getBoundingClientRect(), w = d.offsetWidth, h = d.offsetHeight;
+  if(window.innerWidth > 700){
+    let left = Math.min(Math.max(8, r.left + r.width/2 - w/2), window.innerWidth - w - 8);
+    let top = r.bottom + 6; if(top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
+    d.style.left = left + 'px'; d.style.top = top + 'px';
+  } else d.classList.add('centrado');
+  d.querySelector('.cpd-x').onclick = cerrarDetallePago;
+  d.querySelector('.cpd-del').onclick = ()=>{ cerrarDetallePago(); quitarLineaPago(id); };
+  setTimeout(()=> document.addEventListener('click', cerrarDetallePagoFuera, true), 0);
+}
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') cerrarDetallePago(); });
+document.addEventListener('scroll', e=>{ if(document.getElementById('cPagoDet') && !document.getElementById('cPagoDet').contains(e.target)) cerrarDetallePago(); }, true);
 
 async function guardarExtraCrema(id, datos){
   if(!esFede()) return;
