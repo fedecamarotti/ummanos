@@ -341,7 +341,8 @@ document.querySelectorAll('#fedeTabs [data-ir]').forEach(b=> b.onclick = ()=>{
   if(ir==='backup'){ abrirBackup(); return; }
   if(ir==='grande'){ mostrarVista('movimientos'); mostrarSubMov('grande'); return; }
   if(ir==='movimientos'){ if(movSub==='grande') mostrarSubMov('diarios'); mostrarVista('movimientos'); return; }
-  if(ir==='sueros' || ir==='cremas' || ir==='conta' || ir==='informes') mostrarVista(ir);
+  if(ir==='conta'){ mostrarVista('pedidos'); return; }   // Victoria arranca en Pedidos secretaría
+  if(ir==='sueros' || ir==='cremas' || ir==='informes') mostrarVista(ir);
 });
 // Victoria: Contabilidad / Cobros (lo que era Tratamientos) / Ord. Presupuestos (próximamente)
 document.querySelectorAll('.vic-tabs [data-vic]').forEach(b=> b.onclick = ()=>{
@@ -367,7 +368,15 @@ function trConceptos(){
   const prof = mayus(document.getElementById('trProf').value.trim());
   return (CONCEPTOS[prof] || []).filter(c=> (c.tipo||'ingreso')!=='egreso');
 }
-function trRender(){ trRenderLista(); trRenderRealizados(); trRenderTotal(); }
+// En el usuario de Victoria el profesional es ella: queda fijo (sale de sus conceptos)
+function trFijarProfVictoria(){
+  const inp = document.getElementById('trProf');
+  if(!esVictoria()){ inp.readOnly = false; inp.classList.remove('tr-fijo'); return; }
+  const k = Object.keys(CONCEPTOS).find(vcEsVictoria);
+  if(k && inp.value !== k){ inp.value = k; trSel = []; }
+  inp.readOnly = true; inp.tabIndex = -1; inp.classList.add('tr-fijo');
+}
+function trRender(){ trFijarProfVictoria(); trRenderLista(); trRenderRealizados(); trRenderTotal(); }
 function trRenderLista(){
   const cont = document.getElementById('trLista');
   if(!document.getElementById('trProf').value.trim()){ cont.innerHTML = '<div class="tr-vacio">Elegí el profesional para ver sus tratamientos.</div>'; return; }
@@ -466,7 +475,11 @@ let cpLista = null, unsubCp = null, cpMesSuscripto = null, cpPendiente = false;
 function mostrarSubMov(sub){
   movSub = sub;
   document.querySelectorAll('#movSubTabs [data-msub]').forEach(x=> x.classList.toggle('active', x.dataset.msub===sub));
-  document.getElementById('panelContainer').classList.toggle('col-hidden', sub==='prueba' || sub==='deriv' || sub==='grande' || sub==='supl' || sub==='presupuesto');
+  document.getElementById('panelContainer').classList.toggle('col-hidden', sub==='prueba' || sub==='deriv' || sub==='grande' || sub==='supl' || sub==='presupuesto' || sub==='pedidos');
+  const pdP = document.getElementById('pdPanel');
+  if(sub==='pedidos') pdMostrarEn('vistaMovimientos');
+  else if(pdP.parentElement===document.getElementById('vistaMovimientos')) pdP.classList.add('col-hidden');
+  document.getElementById('fabNuevo').classList.toggle('col-hidden', sub==='pedidos' && !pdPuedeCrear());
   document.getElementById('pvPanel').classList.toggle('col-hidden', sub!=='presupuesto');
   document.getElementById('suPanel').classList.toggle('col-hidden', sub!=='supl');
   document.getElementById('suBtnFijo').classList.toggle('col-hidden', !(sub==='supl' && esFede()));
@@ -685,6 +698,7 @@ document.getElementById('fabNuevo').onclick = ()=>{
   else if(movSub==='deriv') dvAbrirNueva();
   else if(movSub==='supl') suNueva();
   else if(movSub==='presupuesto') abrirPresupuesto();
+  else if(movSub==='pedidos') pdAbrirNuevo();
   else document.getElementById('btnNuevo').click();
 };
 // Resumen + packs de clases de prueba: se pueden minimizar (queda recordado en este navegador)
@@ -1221,7 +1235,7 @@ function suscribirDvContactos(){
 
 document.querySelectorAll('#movSubTabs [data-msub]').forEach(b=> b.onclick = ()=>{
   const sub = b.dataset.msub;
-  if(sub==='diarios' || sub==='prueba' || sub==='deriv' || sub==='grande' || sub==='supl' || sub==='presupuesto'){ mostrarSubMov(sub); return; }
+  if(sub==='diarios' || sub==='prueba' || sub==='deriv' || sub==='grande' || sub==='supl' || sub==='presupuesto' || sub==='pedidos'){ mostrarSubMov(sub); return; }
   if(sub==='cajas') document.getElementById('btnCajas').click();
   else if(sub==='pacientes') document.getElementById('btnPacientes').click();
   else if(sub==='deudores') document.getElementById('btnDeudores').click();

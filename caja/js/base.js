@@ -489,7 +489,7 @@ function seccionesUsuario(){ return currentUser && Array.isArray(currentUser.sec
 function esAdminSueros(){ return esFede() || seccionesUsuario().includes('sueros-admin'); }
 // Portal de sueros + Stock e Informes (sin resumen mensual ni valores): secciones ["sueros","sueros-informes"]
 function suerosLimitado(){ return !esAdminSueros() && seccionesUsuario().includes('sueros-informes'); }
-// Dra. Victoria Barbieri: secciones ["victoria"] → solo ve su botón (Pacientes/alumnos, Cobros, Ord. Presupuestos)
+// Dra. Victoria Barbieri: secciones ["victoria"] → solo ve su botón (Pedidos secretaría, Cobros, Ord. Presupuestos, Pacientes/alumnos)
 function esVictoria(){ return !!currentUser && currentUser.rol !== 'admin' && seccionesUsuario().includes('victoria'); }
 function puedeVerVictoria(){ return esFede() || esVictoria(); }
 function aplicarRolUI(){
@@ -524,7 +524,7 @@ function aplicarRolUI(){
   // Fede y Pedro: orden propio de los botones de Movimientos (lo que no tienen, no se agrega)
   if(esAdmin){
     const sub = document.getElementById('movSubTabs');
-    ['diarios','prueba','presupuesto','supl','deudores','pacientes','reporte','deriv','pago']
+    ['diarios','pedidos','prueba','presupuesto','supl','deudores','pacientes','reporte','deriv','pago']
       .forEach(k=>{ const b = sub.querySelector(`[data-msub="${k}"]`); if(b) sub.appendChild(b); });
   }
   // Recepcionistas: Tipo como antes (Ingreso / Egreso) y sin selector de caja (siempre CHICA). Fede y Pedro: ING / EGR + CAJA
@@ -537,7 +537,8 @@ function aplicarRolUI(){
   document.getElementById('movBar').classList.add('con-tabs');
   document.getElementById('btnNuevo').classList.add('col-hidden');   // "+ Nuevo mov." ahora está debajo de Movimientos
   document.body.classList.toggle('modo-victoria', esVictoria());
-  mostrarVista(esVictoria() ? 'trat' : 'movimientos');
+  pdIniciar();   // pedidos a secretaría (globito de pendientes)
+  mostrarVista(esVictoria() ? 'pedidos' : 'movimientos');
 }
 
 /* =====================================================================

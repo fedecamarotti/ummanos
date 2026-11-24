@@ -7,9 +7,9 @@
 if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1)){
   var vp=document.querySelector('meta[name=viewport]'); if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0');
 }</script>
-<link rel="manifest" href="/manifest.webmanifest?v=202611241248">
+<link rel="manifest" href="/manifest.webmanifest?v=202611241837">
 <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611241248">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611241837">
 <meta name="theme-color" content="#fffcf5">
 <title>CAJA UMMANA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,7 +37,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<link rel="stylesheet" href="caja.css?v=202611241248">
+<link rel="stylesheet" href="caja.css?v=202611241837">
 </head>
 <body>
 <div id="ummLoader" aria-hidden="true"><div class="ul-logo"><img class="ul-base" src="images/logo.png" alt=""><img class="ul-fill" src="images/logo.png" alt=""></div></div>
@@ -120,6 +120,51 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
     <div class="modal-actions">
       <button class="btn" id="dvnCancelar">Cancelar</button>
       <button class="btn btn-primary" id="dvnGuardar">Cargar derivación</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: NUEVO PEDIDO A SECRETARÍA ============ -->
+<div class="overlay" id="overlayPdNuevo">
+  <div class="modal">
+    <button class="close-x" id="pdnCerrar">✕</button>
+    <h2>Nuevo pedido a secretaría</h2>
+    <div class="cpn-grid">
+      <label>Paciente<div class="ac-wrap"><input type="text" id="pdnPaciente" placeholder="Buscá en pacientes/alumnos…" autocomplete="off"></div></label>
+      <label>Tipo de pedido<select id="pdnTipo"></select></label>
+      <label><span class="pd-lab">Detalle breve <em id="pdnCont" class="pd-cont">0/50</em></span><input type="text" id="pdnDetalle" maxlength="50" placeholder="Ej.: LABORATORIO DE CONTROL" autocomplete="off"></label>
+      <label>Indicación<textarea id="pdnIndicacion" rows="8" placeholder="Todo lo que tiene que gestionar recepción"></textarea></label>
+    </div>
+    <div class="pd-info" id="pdnLimite"></div>
+    <div class="pd-error" id="pdnError"></div>
+    <div class="modal-actions">
+      <button class="btn" id="pdnCancelar">Cancelar</button>
+      <button class="btn btn-primary" id="pdnGuardar">Enviar a secretaría</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: DETALLE DEL PEDIDO ============ -->
+<div class="overlay" id="overlayPdDet">
+  <div class="modal">
+    <button class="close-x" id="pddCerrar">✕</button>
+    <h2 id="pddTitulo">Pedido</h2>
+    <div class="pd-meta" id="pddMeta"></div>
+    <div class="pd-pac" id="pddPaciente"></div>
+    <div class="pd-ind">
+      <div class="pd-ind-top"><span>Indicación de Victoria</span><button type="button" class="btn s-cfg-btn" id="pddCopiar">Copiar</button></div>
+      <div class="pd-ind-txt" id="pddIndicacion"></div>
+    </div>
+    <div class="cpn-grid pd-2col">
+      <label>Responsable<select id="pddResp"></select></label>
+      <label>Estado<select id="pddEstado"></select></label>
+    </div>
+    <div class="cpn-grid"><label>Notas<textarea id="pddNotas" rows="3" placeholder="Qué se hizo, con quién se habló… (obligatorio para cancelar)"></textarea></label></div>
+    <details class="pd-hist" id="pddHistWrap"><summary>Historial (<span id="pddHistN">0</span>)</summary><div id="pddHist"></div></details>
+    <div class="pd-error" id="pddError"></div>
+    <div class="modal-actions">
+      <button class="btn" id="pddCerrar2">Cerrar</button>
+      <button class="btn btn-primary" id="pddGuardar">Guardar</button>
     </div>
   </div>
 </div>
@@ -549,6 +594,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
         <button class="s-tab active" data-msub="diarios" role="tab"><span class="t-largo">Movimientos diarios</span><span class="t-corto">Diarios</span></button>
         <button class="s-tab s-tab-badge" data-msub="prueba"><span class="t-largo">Clases de prueba</span><span class="t-corto">Prueba</span> <span class="badge-count col-hidden" id="mSubPruebaN" title="Contactos vencidos">0</span></button>
         <button class="s-tab s-tab-badge col-hidden" data-msub="deriv" title="Oculto por ahora (no se usa)"><span class="t-largo">Derivaciones</span><span class="t-corto">Deriv.</span> <span class="badge-count col-hidden" id="mSubDerivN" title="Contactos vencidos">0</span></button>
+        <button class="s-tab s-tab-badge" data-msub="pedidos"><span class="t-largo">Pedidos secretaría</span><span class="t-corto">Pedidos</span> <span class="badge-count col-hidden" id="mSubPedN" title="Pedidos pendientes">0</span></button>
         <button class="s-tab" data-msub="pacientes"><span class="t-largo">Pacientes/alumnos</span><span class="t-corto">Pacientes</span></button>
         <button class="s-tab s-tab-badge" data-msub="presupuesto"><span class="t-largo">Presupuestos</span><span class="t-corto">Presup.</span> <span class="badge-count col-hidden" id="mSubPresN" title="Turnos a confirmar si se realizaron">0</span></button>
         <button class="s-tab" data-msub="supl"><span class="t-largo">Suplementación</span><span class="t-corto">Suplem.</span></button>
@@ -675,6 +721,24 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
     <div class="cp-panel col-hidden" id="suPanel">
       <div class="sheet-wrap cp-hoja">
         <table class="cp-tabla su-tabla" id="suTabla"><colgroup id="suCols"></colgroup><thead id="suHead"></thead><tbody id="suBody"></tbody></table>
+      </div>
+    </div>
+    <!-- ============ PEDIDOS A SECRETARÍA (Movimientos para recepción; se mueve a Victoria) ============ -->
+    <div class="cp-panel col-hidden" id="pdPanel">
+      <div class="pd-top">
+        <div class="s-tabs" id="pdEstados" role="tablist" aria-label="Estado de los pedidos">
+          <button class="s-tab active" data-pde="pendiente" role="tab">Pendientes <b class="pd-n" id="pdN-pendiente">0</b></button>
+          <button class="s-tab" data-pde="realizado" role="tab">Realizados <b class="pd-n" id="pdN-realizado">0</b></button>
+          <button class="s-tab" data-pde="cancelado" role="tab">Cancelados <b class="pd-n" id="pdN-cancelado">0</b></button>
+          <button class="s-tab" data-pde="" role="tab">Todos <b class="pd-n" id="pdN-todos">0</b></button>
+        </div>
+      </div>
+      <div class="sheet-wrap cp-hoja">
+        <table class="cp-tabla pd-tabla">
+          <colgroup><col style="width:70px"><col style="width:200px"><col style="width:170px"><col style="width:260px"><col style="width:76px"><col style="width:96px"><col style="width:110px"><col></colgroup>
+          <thead><tr><th><input type="text" class="th-search pl-busca" placeholder="Fecha" autocomplete="off" aria-label="Buscar Fecha"></th><th><input type="text" class="th-search pl-busca" placeholder="Paciente" autocomplete="off" aria-label="Buscar Paciente"></th><th><input type="text" class="th-search pl-busca" placeholder="Tipo" autocomplete="off" aria-label="Buscar Tipo"></th><th><input type="text" class="th-search pl-busca" placeholder="Detalle" autocomplete="off" aria-label="Buscar Detalle"></th><th><input type="text" class="th-search pl-busca" placeholder="Límite" autocomplete="off" aria-label="Buscar Fecha límite"></th><th><input type="text" class="th-search pl-busca" placeholder="Estado" autocomplete="off" aria-label="Buscar Estado"></th><th><input type="text" class="th-search pl-busca" placeholder="Responsable" autocomplete="off" aria-label="Buscar Responsable"></th><th><input type="text" class="th-search pl-busca" placeholder="Notas" autocomplete="off" aria-label="Buscar Notas"></th></tr></thead>
+          <tbody id="pdBody"></tbody>
+        </table>
       </div>
     </div>
    </div><!-- /#vistaMovimientos -->
@@ -878,10 +942,11 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
         <button id="vcMesNext" title="Mes siguiente">▶</button>
       </div>
       <div class="s-tabs vic-tabs" role="tablist" aria-label="Victoria">
-        <button class="s-tab vic-solo" data-vic="pacientes" role="tab">Pacientes/alumnos</button>
+        <button class="s-tab s-tab-badge" data-vic="pedidos" role="tab"><span class="t-largo">Pedidos secretaría</span><span class="t-corto">Pedidos</span> <span class="badge-count col-hidden">0</span></button>
         <button class="s-tab active" data-vic="conta" role="tab">Contabilidad</button>
         <button class="s-tab" data-vic="trat" role="tab">Cobros</button>
         <button class="s-tab s-tab-inactivo" title="Próximamente">Ord. Presupuestos</button>
+        <button class="s-tab vic-solo" data-vic="pacientes" role="tab">Pacientes/alumnos</button>
       </div>
       <div style="justify-self:end;display:flex;gap:8px;">
         <button class="btn btn-primary s-cfg-btn" id="vcBtnNuevo">+ Nuevo movimiento</button>
@@ -924,15 +989,32 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
     </div>
    </div><!-- /#vistaConta -->
 
+   <!-- ============ PEDIDOS A SECRETARÍA (Victoria; el panel #pdPanel se mueve acá o a Movimientos) ============ -->
+   <div class="vista col-hidden" id="vistaPedidos">
+    <div class="fede-nav col-hidden"></div>
+    <button class="fab-nuevo col-hidden" id="pdFab" title="Nuevo pedido a secretaría" aria-label="Nuevo pedido"><svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M12 4.5v15M4.5 12h15" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg></button>
+    <div class="sueros-bar"><div></div>
+      <div class="s-tabs vic-tabs" role="tablist" aria-label="Victoria">
+        <button class="s-tab s-tab-badge active" data-vic="pedidos" role="tab"><span class="t-largo">Pedidos secretaría</span><span class="t-corto">Pedidos</span> <span class="badge-count col-hidden" id="vicPedN">0</span></button>
+        <button class="s-tab" data-vic="conta" role="tab">Contabilidad</button>
+        <button class="s-tab" data-vic="trat" role="tab">Cobros</button>
+        <button class="s-tab s-tab-inactivo" title="Próximamente">Ord. Presupuestos</button>
+        <button class="s-tab vic-solo" data-vic="pacientes" role="tab">Pacientes/alumnos</button>
+      </div>
+      <div></div>
+    </div>
+   </div><!-- /#vistaPedidos -->
+
    <!-- ============ TRATAMIENTOS DEL DÍA (prueba, solo Fede) ============ -->
    <div class="vista col-hidden" id="vistaTrat">
     <div class="fede-nav col-hidden"></div>
     <div class="sueros-bar"><div></div>
       <div class="s-tabs vic-tabs" role="tablist" aria-label="Victoria">
-        <button class="s-tab vic-solo" data-vic="pacientes" role="tab">Pacientes/alumnos</button>
+        <button class="s-tab s-tab-badge" data-vic="pedidos" role="tab"><span class="t-largo">Pedidos secretaría</span><span class="t-corto">Pedidos</span> <span class="badge-count col-hidden">0</span></button>
         <button class="s-tab" data-vic="conta" role="tab">Contabilidad</button>
         <button class="s-tab active" data-vic="trat" role="tab">Cobros</button>
         <button class="s-tab s-tab-inactivo" title="Próximamente">Ord. Presupuestos</button>
+        <button class="s-tab vic-solo" data-vic="pacientes" role="tab">Pacientes/alumnos</button>
       </div>
       <div></div>
     </div>
@@ -1916,11 +1998,12 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 
 </div><!-- /#app -->
 
-<script src="js/base.js?v=202611241248"></script>
-<script src="js/caja.js?v=202611241248"></script>
-<script src="js/sueros.js?v=202611241248"></script>
-<script src="js/cremas.js?v=202611241248"></script>
-<script src="js/paneles.js?v=202611241248"></script>
-<script src="js/extras.js?v=202611241248"></script>
+<script src="js/base.js?v=202611241837"></script>
+<script src="js/caja.js?v=202611241837"></script>
+<script src="js/sueros.js?v=202611241837"></script>
+<script src="js/cremas.js?v=202611241837"></script>
+<script src="js/paneles.js?v=202611241837"></script>
+<script src="js/pedidos.js?v=202611241837"></script>
+<script src="js/extras.js?v=202611241837"></script>
 </body>
 </html>

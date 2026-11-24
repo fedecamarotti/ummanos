@@ -87,20 +87,21 @@ function marcarSeccion(){
   const tabs = document.getElementById('fedeTabs'); if(!tabs) return;
   let act = vistaActual;
   if(act==='movimientos' && typeof movSub!=='undefined' && movSub==='grande') act = 'grande';
-  if(act==='trat') act = 'conta';
+  if(act==='trat' || act==='pedidos') act = 'conta';
   tabs.querySelectorAll('[data-ir]').forEach(b=> b.classList.toggle('active', b.dataset.ir===act));
   // en Caja grande no van los botones de Movimientos
   const ms = document.getElementById('movSubTabs');
   if(ms && currentUser && currentUser.rol==='admin') ms.classList.toggle('col-hidden', act==='grande');
 }
 function mostrarVista(v){
-  if((v==='sueros' && !esAdminSueros()) || (v==='movimientos' && esVictoria()) || (v==="cremas" && !esFede()) || (v==='conta' && !esFede()) || (v==='trat' && !puedeVerVictoria()) || (v==='informes' && currentUser.rol!=='admin')) return;
+  if((v==='sueros' && !esAdminSueros()) || (v==='movimientos' && esVictoria()) || (v==="cremas" && !esFede()) || (v==='conta' && !esFede()) || (v==='trat' && !puedeVerVictoria()) || (v==='pedidos' && !puedeVerVictoria()) || (v==='informes' && currentUser.rol!=='admin')) return;
   vistaActual = v;
   document.getElementById('vistaMovimientos').classList.toggle('col-hidden', v!=='movimientos');
   document.getElementById('vistaSueros').classList.toggle('col-hidden', v!=='sueros');
   document.getElementById('vistaCremas').classList.toggle('col-hidden', v!=='cremas');
   document.getElementById('vistaConta').classList.toggle('col-hidden', v!=='conta');
   document.getElementById('vistaTrat').classList.toggle('col-hidden', v!=='trat');
+  document.getElementById('vistaPedidos').classList.toggle('col-hidden', v!=='pedidos');
   document.getElementById('vistaInformes').classList.toggle('col-hidden', v!=='informes');
   document.getElementById('btnNuevo').classList.add('col-hidden');
   document.getElementById('btnVistaMovimientos').classList.toggle('activo', v==='movimientos');
@@ -110,7 +111,7 @@ function mostrarVista(v){
   // La fila de secciones queda siempre arriba; los botones de cada sección van debajo, más chicos
   if(esUsuarioCaja()){
     const tabs = document.getElementById('fedeTabs');
-    const destino = document.querySelector(`#${({movimientos:'vistaMovimientos', sueros:'vistaSueros', cremas:'vistaCremas', conta:'vistaConta', informes:'vistaInformes', trat:'vistaTrat'})[v]} > .fede-nav`);
+    const destino = document.querySelector(`#${({movimientos:'vistaMovimientos', sueros:'vistaSueros', cremas:'vistaCremas', conta:'vistaConta', informes:'vistaInformes', trat:'vistaTrat', pedidos:'vistaPedidos'})[v]} > .fede-nav`);
     destino.classList.remove('col-hidden'); destino.appendChild(tabs);
     marcarSeccion();
     document.body.classList.add('fede-nav-on');
@@ -119,6 +120,8 @@ function mostrarVista(v){
   if(v==='cremas'){ suscribirCremas(); cremasVentas = null; renderCremas(); }
   if(v==='conta'){ suscribirConta(); renderConta(); }
   if(v==='trat') trRender();
+  if(v==='pedidos') pdMostrarEn('vistaPedidos');
+  if(v==='movimientos' && typeof movSub!=='undefined' && movSub==='pedidos') pdMostrarEn('vistaMovimientos');
   if(v==='informes') cargarAsistencias();
 }
 document.getElementById('btnVistaMovimientos').onclick = ()=> mostrarVista('movimientos');

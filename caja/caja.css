@@ -1631,3 +1631,41 @@ body.modo-victoria #vistaTrat .tr-item .p{cursor:default;}
 .c-pago-det .cpd-rend b.neg{color:#a13a3a;}
 .c-pago-det .cpd-del{display:block;margin:10px auto 0;border:none;background:none;color:#c62828;font-size:11px;cursor:pointer;opacity:.75;}
 .c-pago-det .cpd-del:hover{opacity:1;text-decoration:underline;}
+
+/* ---------- Pedidos a secretaría (Victoria → recepción) ---------- */
+body.fede-nav-on #vistaPedidos > .sueros-bar{margin-top:8px;}
+#pdPanel .pd-top{display:flex;justify-content:center;margin:12px 28px 0;flex:none;}
+#pdEstados .pd-n{font-size:10px;font-weight:700;background:rgba(0,0,0,.07);border-radius:999px;padding:1px 7px;margin-left:4px;}
+.pd-tabla{min-width:980px;}
+.pd-tabla td{font-size:11px;padding-top:7px;padding-bottom:7px;}
+.pd-tabla td.left{text-align:left;white-space:normal;}
+.pd-tabla .pd-tipo{font-size:9.5px;color:var(--muted);white-space:normal;}
+.pd-tabla .pd-notas{color:var(--muted);white-space:normal;}
+.pd-tabla tr.pd-fila{cursor:pointer;}
+.pd-tabla tr.pd-fila:hover td{background:#f6f8f2;}
+.pd-vencido{color:#a13a3a !important;font-weight:700;}
+.pd-estado{display:inline-block;padding:2px 9px;border-radius:999px;font-size:9.5px;font-weight:700;letter-spacing:.3px;}
+.pd-pendiente{background:#f6e7c8;color:#7d5a12;}
+.pd-realizado{background:#e3ecd9;color:#3f5230;}
+.pd-cancelado{background:#ececec;color:#777;}
+#overlayPdNuevo .modal, #overlayPdDet .modal{max-width:600px;}
+#pdnIndicacion{min-height:150px;resize:vertical;}
+.pd-lab{display:flex;justify-content:space-between;align-items:baseline;}
+.pd-cont{font-style:normal;font-weight:600;color:var(--muted);text-transform:none;}
+.pd-cont.lleno{color:#a13a3a;}
+.pd-info{font-size:11px;color:var(--muted);margin:6px 0 2px;}
+.pd-error{color:#a13a3a;font-size:12px;font-weight:600;min-height:14px;margin-top:6px;}
+.pd-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:11px;color:var(--muted);margin:2px 0 8px;}
+.pd-meta-der{margin-left:auto;}
+.pd-pac{font-weight:700;font-size:13px;margin-bottom:8px;}
+.pd-ind{background:#fdfbf2;border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px;}
+.pd-ind-top{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
+.pd-ind-txt{white-space:pre-wrap;overflow-wrap:break-word;font-size:13px;line-height:1.45;color:var(--text);margin-top:6px;max-height:40vh;overflow:auto;user-select:text;}
+.pd-2col{grid-template-columns:1fr 1fr;}
+.pd-hist{font-size:11px;color:var(--muted);margin-top:8px;}
+.pd-hist summary{cursor:pointer;}
+.pd-hist div div{margin-top:3px;}
+#pddNotas:disabled, #pddResp:disabled, #pddEstado:disabled{opacity:.75;}
+/* Cobros en el usuario de Victoria: el profesional es ella y no se cambia */
+#trProf.tr-fijo{pointer-events:none;background:#f4f1e8;font-weight:600;}
+@media (max-width:700px){ .pd-2col{grid-template-columns:1fr;} .pd-meta-der{margin-left:0;} #pdPanel .pd-top{margin:10px 12px 0;} }
