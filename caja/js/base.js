@@ -489,7 +489,7 @@ function seccionesUsuario(){ return currentUser && Array.isArray(currentUser.sec
 function esAdminSueros(){ return esFede() || seccionesUsuario().includes('sueros-admin'); }
 // Portal de sueros + Stock e Informes (sin resumen mensual ni valores): secciones ["sueros","sueros-informes"]
 function suerosLimitado(){ return !esAdminSueros() && seccionesUsuario().includes('sueros-informes'); }
-// Dra. Victoria Barbieri: secciones ["victoria"] → solo ve su botón (Contabilidad solo lectura, Cobros, Ord. Presupuestos)
+// Dra. Victoria Barbieri: secciones ["victoria"] → solo ve su botón (Pacientes/alumnos, Cobros, Ord. Presupuestos)
 function esVictoria(){ return !!currentUser && currentUser.rol !== 'admin' && seccionesUsuario().includes('victoria'); }
 function puedeVerVictoria(){ return esFede() || esVictoria(); }
 function aplicarRolUI(){
@@ -537,7 +537,7 @@ function aplicarRolUI(){
   document.getElementById('movBar').classList.add('con-tabs');
   document.getElementById('btnNuevo').classList.add('col-hidden');   // "+ Nuevo mov." ahora está debajo de Movimientos
   document.body.classList.toggle('modo-victoria', esVictoria());
-  mostrarVista(esVictoria() ? 'conta' : 'movimientos');
+  mostrarVista(esVictoria() ? 'trat' : 'movimientos');
 }
 
 /* =====================================================================

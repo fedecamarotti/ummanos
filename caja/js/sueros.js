@@ -94,7 +94,7 @@ function marcarSeccion(){
   if(ms && currentUser && currentUser.rol==='admin') ms.classList.toggle('col-hidden', act==='grande');
 }
 function mostrarVista(v){
-  if((v==='sueros' && !esAdminSueros()) || (v==='movimientos' && esVictoria()) || (v==="cremas" && !esFede()) || ((v==='conta' || v==='trat') && !puedeVerVictoria()) || (v==='informes' && currentUser.rol!=='admin')) return;
+  if((v==='sueros' && !esAdminSueros()) || (v==='movimientos' && esVictoria()) || (v==="cremas" && !esFede()) || (v==='conta' && !esFede()) || (v==='trat' && !puedeVerVictoria()) || (v==='informes' && currentUser.rol!=='admin')) return;
   vistaActual = v;
   document.getElementById('vistaMovimientos').classList.toggle('col-hidden', v!=='movimientos');
   document.getElementById('vistaSueros').classList.toggle('col-hidden', v!=='sueros');

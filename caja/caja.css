@@ -1566,9 +1566,10 @@ tr.mov-rech td{opacity:.45;text-decoration:line-through;} tr.mov-rech td.notas, 
 #asisPanel{width:75%;margin-left:auto;margin-right:auto;}
 @media (max-width:800px){ #asisPanel{width:auto;margin-left:10px;margin-right:10px;} }
 
-/* Dra. Victoria: Contabilidad solo lectura y sin lo que es de caja */
-body.modo-victoria #vcBtnNuevo, body.modo-victoria #vcBtnDetalles, body.modo-victoria #vcBtnPDF,
-body.modo-victoria #vistaConta .editbtn, body.modo-victoria #alWrap, body.modo-victoria #menuWrap,
+/* Dra. Victoria: Pacientes/alumnos, Cobros y Ord. Presupuestos (sin Contabilidad ni lo que es de caja) */
+.vic-tabs .vic-solo{display:none;}
+body.modo-victoria .vic-tabs .vic-solo{display:inline-flex;}
+body.modo-victoria .vic-tabs [data-vic="conta"], body.modo-victoria #alWrap, body.modo-victoria #menuWrap,
 body.modo-victoria #cajaStatus, body.modo-victoria #btnCierre, body.modo-victoria #btnVistaPrevia,
 body.modo-victoria #cajaHint{display:none !important;}
 body.modo-victoria #vistaTrat .tr-item .p{cursor:default;}

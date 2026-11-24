@@ -90,7 +90,7 @@ const vcFecha = iso => { const [y,m,d] = iso.split('-'); return `${d}/${m}`; };
 const vcDetalleHTML = m => vcEsc(m.detalle) + (m.extra ? ` <span class="vc-extra">— ${vcEsc(m.extra)}</span>` : '');
 
 function suscribirConta(){
-  if(!puedeVerVictoria()) return;
+  if(!esFede()) return;
   if(!unsubVcCfg){
     unsubVcCfg = db.collection('contaVictoria').doc('_config').onSnapshot(d=>{
       const det = d.exists && d.data().detalles;
@@ -191,8 +191,7 @@ function vcSetMoneda(c){
 document.querySelectorAll('#vcTipo button').forEach(b=> b.onclick = ()=> vcSetTipo(b.dataset.tipo));
 document.querySelectorAll('#vcMoneda button').forEach(b=> b.onclick = ()=> vcSetMoneda(b.dataset.cur));
 document.getElementById('vcValor').addEventListener('input', e=> formatearInputMonto(e.target));
-function abrirConta(id){ if(esVictoria()) return; return abrirContaEd(id); }
-function abrirContaEd(id){
+function abrirConta(id){
   if(!esFede()) return;
   const m = id ? (contaMovs||[]).find(x=> x.id===id) : null;
   vcEditId = m ? m.id : null;
@@ -345,7 +344,10 @@ document.querySelectorAll('#fedeTabs [data-ir]').forEach(b=> b.onclick = ()=>{
   if(ir==='sueros' || ir==='cremas' || ir==='conta' || ir==='informes') mostrarVista(ir);
 });
 // Victoria: Contabilidad / Cobros (lo que era Tratamientos) / Ord. Presupuestos (próximamente)
-document.querySelectorAll('.vic-tabs [data-vic]').forEach(b=> b.onclick = ()=> mostrarVista(b.dataset.vic));
+document.querySelectorAll('.vic-tabs [data-vic]').forEach(b=> b.onclick = ()=>{
+  if(b.dataset.vic==='pacientes'){ document.getElementById('btnPacientes').click(); return; }   // abre Pacientes/alumnos (como en Movimientos)
+  mostrarVista(b.dataset.vic);
+});
 
 /* =====================================================================
    TRATAMIENTOS DEL DÍA (prueba en el usuario de Fede): el profesional elige paciente
