@@ -1603,3 +1603,10 @@ body.modo-victoria #vistaTrat .tr-item .p{cursor:default;}
 @media (max-width:700px){ .cpg-campos{grid-template-columns:1fr 1fr;} .cpg-fila{grid-template-columns:20px 40px 1fr 90px 60px;} .cpg-fila .cpg-usd{display:none;} }
 .cpg-fila.sin-usd{grid-template-columns:22px 48px 1fr 110px 72px;}
 @media (max-width:700px){ .cpg-fila.sin-usd{grid-template-columns:20px 40px 1fr 90px 60px;} }
+
+/* Productos: todo centrado en su columna; fecha de pago como texto */
+.tabla-cremas td.monto, .tabla-cremas tfoot td{text-align:center;}
+.tabla-cremas input.c-pagopx, .tabla-cremas input.c-costo, .tabla-cremas input.c-cot{text-align:center;}
+.tabla-cremas .c-pag-fecha{border:none;background:none;padding:0;font:inherit;font-size:11px;font-weight:400;color:var(--text);cursor:pointer;}
+.tabla-cremas .c-pag-fecha:hover{text-decoration:underline;}
+.tabla-cremas tfoot td.left{text-align:left;}

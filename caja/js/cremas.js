@@ -227,8 +227,8 @@ function renderCremasMovs(){
     const c = calcularCrema(m);
     const opts = profs.map(n=> `<option ${n===c.indica?'selected':''}>${n}</option>`).join('');
     const sinStock = c.colageno ? c.costo==null : (c.venta==null && c.costo==null);
-    const l = pagos[m.id];
-    const costoPh = c.bon ? '$0' : (!c.colageno && c.costo!=null ? fmtUsd(c.costo) : '—');
+    const l = pagos[m.id];   // sin pago al proveedor: costo, cot., 50% prof y Ummana quedan con guión
+    const guion = '<td><span class="pend">—</span></td>';
     return fila('', {
       fecha: `<td>${isoToDisplay(m.fechaISO)}</td>`,
       pac: `<td class="left">${m.pac||''}</td>`,
@@ -240,12 +240,12 @@ function renderCremasMovs(){
       pago: `<td><input class="c-pagopx ${c.pagoEditado ? 'editado' : ''} ${!c.pagoEditado && m.moneda==='USD' ? 'usd' : ''}" data-id="${m.id}" inputmode="numeric"
         value="${c.pagoEditado ? fmtPesos(c.pago) : (m.moneda==='USD' ? 'US$ ' : '$') + Number(m.valor||0).toLocaleString('es-AR')}"
         title="${c.pagoEditado ? `Editado acá. En la caja: ${m.moneda==='USD' ? 'US$ ' : '$'}${Number(m.valor||0).toLocaleString('es-AR')}. Borralo para volver a ese valor.` : 'Podés poner el valor en pesos (por ejemplo, si pagó en dólares)'}"></td>`,
-      costo: `<td><input class="c-costo ${c.costoEditado ? 'editado' : ''}" data-id="${m.id}" inputmode="numeric" value="${c.aPagar!=null ? fmtPesos(c.aPagar) : ''}" placeholder="${costoPh}" ${c.bon ? 'disabled' : ''}
-        title="${c.colageno ? 'Costo sugerido de Stock; lo podés cambiar' : (c.costo!=null ? `Costo ${fmtUsd(c.costo)} × cotización; lo podés cambiar` : 'Sin costo en Stock')}"></td>`,
-      cot: `<td><input class="c-cot" data-id="${m.id}" inputmode="numeric" value="${c.cot ? c.cot.toLocaleString('es-AR') : ''}" placeholder="—"></td>`,
-      pagado: `<td>${c.bon ? '<span class="c-pag-chip bon" title="Bonificada: no se le paga al proveedor">BON</span>' : (l ? `<span class="c-pag-chip" title="Pagado el ${isoToDisplay(l.fechaPago)}">${isoToDisplay(l.fechaPago)}</span>` : '<span class="pend">—</span>')}</td>`,
-      prof: `<td class="monto">${celdaMonto(c.prof)}</td>`,
-      umm: `<td class="monto ${c.ummana!=null && c.ummana<0 ? 'neg' : ''}">${celdaMonto(c.ummana)}</td>`,
+      costo: !l ? guion : `<td><input class="c-costo ${c.costoEditado ? 'editado' : ''}" data-id="${m.id}" inputmode="numeric" value="${c.aPagar!=null ? fmtPesos(c.aPagar) : ''}" placeholder="—" ${c.bon ? 'disabled' : ''}
+        title="${c.bon ? 'Bonificada: no se le paga al proveedor' : (c.colageno ? 'Costo pagado (sugerido de Stock); lo podés cambiar' : (c.costo!=null ? `Costo ${fmtUsd(c.costo)} × cotización; lo podés cambiar` : 'Sin costo en Stock'))}"></td>`,
+      cot: !l ? guion : `<td><input class="c-cot" data-id="${m.id}" inputmode="numeric" value="${c.cot ? c.cot.toLocaleString('es-AR') : ''}" placeholder="—"></td>`,
+      pagado: `<td>${l ? `<button type="button" class="c-pag-fecha" data-pago="${l.id}" title="Pagado el ${isoToDisplay(l.fechaPago)}${l.proveedor ? ' a ' + l.proveedor : ''} — tocá para eliminar este pago">${c.bon ? 'BON' : isoToDisplay(l.fechaPago)}</button>` : '<span class="pend">—</span>'}</td>`,
+      prof: l ? `<td class="monto">${celdaMonto(c.prof)}</td>` : guion,
+      umm: l ? `<td class="monto ${c.ummana!=null && c.ummana<0 ? 'neg' : ''}">${celdaMonto(c.ummana)}</td>` : guion,
     });
   };
   const filaAjuste = a=>{
@@ -282,7 +282,6 @@ function renderCremasMovs(){
   const items = [
     ...ventasVis.map(m=> ({f:m.fechaISO, o:msCreado(m), html:()=> filaVenta(m)})),
     ...ajTipo.filter(pasaAj).filter(a=> verTodo || a.fechaISO > ultimoPago).map(a=> ({f:a.fechaISO, o:a.creadoMs||0, html:()=> filaAjuste(a)})),
-    ...(verTodo && !filtrando ? lineasTipo.map(l=> ({f:l.fechaPago, o:Number.MAX_SAFE_INTEGER, html:()=> filaPago(l)})) : []),
   ].sort((a,b)=> a.f===b.f ? a.o-b.o : (a.f < b.f ? -1 : 1));
   const btnPag = document.getElementById('cBtnPagados');
   btnPag.classList.toggle('col-hidden', !lineasTipo.length);
@@ -298,11 +297,15 @@ function renderCremasMovs(){
   tb.innerHTML = html;
   // Totales de las ventas a la vista (línea fija abajo, como en Sueros)
   const s = sumas(ventasVis);
+  const pagadasVis = ventasVis.filter(m=> pagos[m.id]);
+  const sp = sumas(pagadasVis);   // costo, 50% prof y Ummana: solo lo ya pagado
+  s.pagar = sp.pagar; s.prof = sp.prof; s.umm = sp.umm;
+  const totM = v=> pagadasVis.length ? fmtPesos(v) : '<span class="pend">—</span>';
   tf.innerHTML = ventasVis.length ? fila('', {
     pago: `<td class="monto">${fmtPesos(s.pago)}</td>`,
-    costo: `<td class="monto">${fmtPesos(s.pagar)}</td>`,
-    prof: `<td class="monto">${fmtPesos(s.prof)}</td>`,
-    umm: `<td class="monto ${s.umm<0?'neg':''}">${fmtPesos(s.umm)}</td>`,
+    costo: `<td class="monto">${totM(s.pagar)}</td>`,
+    prof: `<td class="monto">${totM(s.prof)}</td>`,
+    umm: `<td class="monto ${s.umm<0?'neg':''}">${totM(s.umm)}</td>`,
   }, {desde:'fecha', hasta: usd ? 'usd' : 'indica', html: `TOTALES <span class="tot-cant">(${ventasVis.length} ${ventasVis.length===1?'venta':'ventas'}${verTodo ? '' : ' sin pagar'})</span>`}) : '';
   const verBtn = tb.querySelector('.c-ver-pagados');
   if(verBtn) verBtn.onclick = ()=>{ cVerPagados = true; renderCremasMovs(); };
@@ -349,6 +352,7 @@ function renderCremasMovs(){
   });
   tb.querySelectorAll('[data-linea]').forEach(b=> b.onclick = ()=> abrirLineaPago(b.dataset.linea));
   tb.querySelectorAll('[data-quitar-linea]').forEach(b=> b.onclick = ()=> quitarLineaPago(b.dataset.quitarLinea));
+  tb.querySelectorAll('[data-pago]').forEach(b=> b.onclick = ()=> quitarLineaPago(b.dataset.pago));
   tb.querySelectorAll('[data-quitar-ajuste]').forEach(b=> b.onclick = ()=> quitarAjusteCrema(b.dataset.quitarAjuste));
   // al entrar, se ve el final (lo más nuevo)
   const wrap = tb.closest('.sheet-wrap');
@@ -471,7 +475,9 @@ document.getElementById('clGuardar').onclick = async ()=>{
 };
 async function quitarLineaPago(id){
   if(!esFede()) return;
-  if(!await ummConfirm("¿Eliminar este pago? Sus ventas vuelven a quedar pendientes (no se borra ninguna venta).")) return;
+  const l = cremasPagos.find(x=> x.id===id); if(!l) return;
+  const n = Object.values(pagosPorVenta(ventasCremasTodas())).filter(x=> x===l).length;
+  if(!await ummConfirm(`¿Eliminar el pago del ${isoToDisplay(l.fechaPago)}${l.proveedor ? ' a ' + l.proveedor : ''} (${n} ${n===1?'venta':'ventas'})?\n\nEsas ventas vuelven a quedar sin pagar (no se borra ninguna venta).`, {si:'Eliminar pago'})) return;
   const nuevas = cremasPagos.filter(l=> l.id!==id);
   try{ await db.collection('cremas').doc('_pagos').set({lineas: nuevas}); cremasPagos = nuevas; renderCremasMovs(); }
   catch(e){ alert("No se pudo eliminar: " + e.message); }
