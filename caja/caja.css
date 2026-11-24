@@ -1577,3 +1577,29 @@ body.modo-victoria #vistaTrat .tr-item .p{cursor:default;}
 #vistaConta .s-panel{overflow-y:auto;overscroll-behavior:contain;}
 #vistaConta .s-panel > .sheet-wrap{flex:none !important;min-height:auto;overflow:visible;}
 #vistaConta .s-panel > .sheet-wrap thead th{position:static;}
+
+/* Productos: Pagado, costo editable, + flotante y ventana "Cargar pago" */
+#vistaCremas #cBtnPagoNuevo{bottom:72px;}
+.tabla-cremas .c-pag-chip{display:inline-block;border:1px solid #c5e6b9;background:#dff3d8;color:#2f7a2f;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;}
+.tabla-cremas .c-pag-chip.bon{border-color:#c3e2f3;background:#dff1fb;color:#2f86b3;}
+.tabla-cremas input.c-costo{width:100%;padding:3px 6px;font-size:11px;font-weight:700;text-align:right;border:1px solid transparent;background:transparent;border-radius:6px;font-family:inherit;color:var(--text);}
+.tabla-cremas input.c-costo:hover:not(:disabled){border-color:var(--border);background:#fdfbf2;}
+.tabla-cremas input.c-costo:focus{outline:none;border-color:var(--accent);background:#fffcf5;}
+.tabla-cremas input.c-costo.editado{background:#fdf3dc;border-color:#ecd9a8;}
+.tabla-cremas input.c-costo::placeholder{color:#b9ae8c;font-weight:500;}
+.cpg-modal{max-width:720px;width:100%;}
+.cpg-campos{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:6px 0 4px;}
+.cpg-lista{max-height:46vh;overflow:auto;border:1px solid var(--border);border-radius:10px;margin-top:8px;}
+.cpg-fila{display:grid;grid-template-columns:22px 48px 1fr 80px 110px 72px;gap:8px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--border);font-size:12px;}
+.cpg-fila:last-child{border-bottom:none;}
+.cpg-fila.fuera{opacity:.45;}
+.cpg-fila .cpg-n small{color:var(--muted);}
+.cpg-fila .cpg-usd{text-align:right;color:#2f86b3;font-weight:600;}
+.cpg-fila input.cpg-costo{width:100%;padding:4px 6px;text-align:right;font-weight:700;border:1px solid var(--border);border-radius:6px;background:#fdfbf2;font-family:inherit;}
+.cpg-fila input.cpg-costo.editado{background:#fdf3dc;}
+.cpg-fila .cpg-bon{font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer;}
+.cpg-total{display:flex;justify-content:space-between;align-items:center;margin:12px 2px 4px;font-weight:700;font-size:14px;}
+.cpg-total small{font-weight:500;color:var(--muted);font-size:11px;margin-left:6px;}
+@media (max-width:700px){ .cpg-campos{grid-template-columns:1fr 1fr;} .cpg-fila{grid-template-columns:20px 40px 1fr 90px 60px;} .cpg-fila .cpg-usd{display:none;} }
+.cpg-fila.sin-usd{grid-template-columns:22px 48px 1fr 110px 72px;}
+@media (max-width:700px){ .cpg-fila.sin-usd{grid-template-columns:20px 40px 1fr 90px 60px;} }

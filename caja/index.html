@@ -7,9 +7,9 @@
 if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1)){
   var vp=document.querySelector('meta[name=viewport]'); if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0');
 }</script>
-<link rel="manifest" href="/manifest.webmanifest?v=202611241112">
+<link rel="manifest" href="/manifest.webmanifest?v=202611241120">
 <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611241112">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611241120">
 <meta name="theme-color" content="#fffcf5">
 <title>CAJA UMMANA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,7 +37,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<link rel="stylesheet" href="caja.css?v=202611241112">
+<link rel="stylesheet" href="caja.css?v=202611241120">
 </head>
 <body>
 <div id="ummLoader" aria-hidden="true"><div class="ul-logo"><img class="ul-base" src="images/logo.png" alt=""><img class="ul-fill" src="images/logo.png" alt=""></div></div>
@@ -238,6 +238,25 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
     <div class="modal-actions">
       <button class="btn" id="clCancelar">Cancelar</button>
       <button class="btn btn-primary" id="clGuardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlayCPago">
+  <div class="modal cpg-modal">
+    <button class="close-x" id="closeCPago">✕</button>
+    <h2>Cargar pago</h2>
+    <div class="cpg-campos">
+      <div class="field"><label>Fecha de pago</label><input type="date" id="cpgFecha"></div>
+      <div class="field"><label>Proveedor</label><select id="cpgProv"><option value="GISE">GISE (cremas)</option><option value="FLAVIA">FLAVIA (colágenos)</option><option value="GABRIELA">GABRIELA (geles)</option></select></div>
+      <div class="field" id="cpgCotWrap"><label>Cotización USD</label><input type="text" id="cpgCot" inputmode="numeric" autocomplete="off"></div>
+    </div>
+    <div class="modal-sub" id="cpgSub"></div>
+    <div class="cpg-lista" id="cpgLista"></div>
+    <div class="cpg-total"><span>Total a pagar <small id="cpgCant"></small></span><b id="cpgTotal">$0</b></div>
+    <div class="modal-actions">
+      <button class="btn" id="cpgCancelar">Cancelar</button>
+      <button class="btn btn-primary" id="cpgGuardar">Guardar pago</button>
     </div>
   </div>
 </div>
@@ -779,6 +798,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
    <!-- ============ VISTA: CREMAS / COLÁGENOS (solo Fede) ============ -->
    <div class="vista col-hidden" id="vistaCremas">
     <div class="fede-nav col-hidden"></div>
+    <button class="fab-nuevo col-hidden" id="cBtnPagoNuevo" title="Cargar pago" aria-label="Cargar pago"><svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M12 4.5v15M4.5 12h15" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg></button>
     <div class="sueros-bar">
       <div class="mes-selector" style="visibility:hidden;">
         <button id="cMesPrev" title="Mes anterior">◀</button>
@@ -810,13 +830,12 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
               <th><input type="text" class="th-search" id="cfConcepto" placeholder="Concepto" autocomplete="off"></th>
               <th><div class="th-search">Cant.</div></th>
               <th><div class="th-search">Stock</div></th>
+              <th><input type="text" class="th-search" id="cfIndica" placeholder="Indica" autocomplete="off"></th>
               <th class="c-solo-usd"><div class="th-search">Valor USD</div></th>
               <th><div class="th-search">Pago px</div></th>
-              <th><input type="text" class="th-search" id="cfIndica" placeholder="Indica" autocomplete="off"></th>
               <th><div class="th-search" id="cThCosto">Costo</div></th>
               <th class="c-solo-usd"><div class="th-search">Cot.</div></th>
-              <th class="c-solo-usd"><div class="th-search">A pagar</div></th>
-              <th><div class="th-search">Pag.</div></th>
+              <th><div class="th-search">Pagado</div></th>
               <th><div class="th-search">50% prof</div></th>
               <th><div class="th-search">Ummana</div></th>
             </tr>
@@ -1897,11 +1916,11 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 
 </div><!-- /#app -->
 
-<script src="js/base.js?v=202611241112"></script>
-<script src="js/caja.js?v=202611241112"></script>
-<script src="js/sueros.js?v=202611241112"></script>
-<script src="js/cremas.js?v=202611241112"></script>
-<script src="js/paneles.js?v=202611241112"></script>
-<script src="js/extras.js?v=202611241112"></script>
+<script src="js/base.js?v=202611241120"></script>
+<script src="js/caja.js?v=202611241120"></script>
+<script src="js/sueros.js?v=202611241120"></script>
+<script src="js/cremas.js?v=202611241120"></script>
+<script src="js/paneles.js?v=202611241120"></script>
+<script src="js/extras.js?v=202611241120"></script>
 </body>
 </html>

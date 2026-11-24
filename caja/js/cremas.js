@@ -84,14 +84,33 @@ function calcularCrema(m){
   const pago = pagoEditado ? Number(ex.pagoPx) : (Number(m.valor)||0);
   const indica = ex.indica || m.indicaCrema || PARTICULAR;   // en la planilla se puede cambiar; si no, lo que se eligió al cargar la venta
   const cot = Number(ex.cot)||0;
-  const costo = prod.costo!=null && prod.costo!=='' ? Number(prod.costo) : null;
+  const costo = prod.costo!=null && prod.costo!=='' ? Number(prod.costo) : null;   // cremas: USD · colágenos y geles: pesos
   const colageno = esColageno(m.prof);
-  // Cremas: costo en USD × cotización. Colágenos: el costo ya está en pesos.
   const bon = ex.pagado==='bon';
-  const aPagar = bon ? 0 : (colageno ? (costo!=null ? Math.round(costo) : null) : (cot && costo!=null ? Math.round(costo * cot) : null));
+  // Costo sugerido en pesos: cremas = costo USD × cotización; colágenos y geles = el costo de Stock
+  const costoSug = colageno ? (costo!=null ? Math.round(costo) : null) : (cot && costo!=null ? Math.round(costo * cot) : null);
+  const tieneCostoArs = ex.costoArs!=null && ex.costoArs!=='';
+  const aPagar = bon ? 0 : (tieneCostoArs ? Number(ex.costoArs) : costoSug);
+  const costoEditado = !bon && tieneCostoArs && Number(ex.costoArs)!==costoSug;
   const prof = aPagar==null ? null : (bon || indica===PARTICULAR ? 0 : Math.round((pago - aPagar) / 2));
   const ummana = aPagar==null ? null : pago - aPagar - prof;
-  return { pago, pagoEditado, indica, cot, colageno, pagado: ['si','bon'].includes(ex.pagado) ? ex.pagado : 'no', venta: !colageno && prod.venta!=null && prod.venta!=='' ? Number(prod.venta) : null, costo, aPagar, prof, ummana };
+  return { pago, pagoEditado, indica, cot, colageno, bon, pagado: ['si','bon'].includes(ex.pagado) ? ex.pagado : 'no', venta: !colageno && prod.venta!=null && prod.venta!=='' ? Number(prod.venta) : null, costo, costoSug, costoEditado, aPagar, prof, ummana };
+}
+// Proveedor de cada tipo de producto (siempre el mismo)
+const PROV_CREMAS = {crema:'GISE', colageno:'FLAVIA', gel:'GABRIELA'};
+const TIPO_DE_PROV = {GISE:'crema', FLAVIA:'colageno', GABRIELA:'gel'};
+const lineaNueva = l => Array.isArray(l.ids);   // pagos cargados con el "+" (con sus ventas); los viejos se agrupan por fecha
+// Pago de cada venta: { idVenta: línea de pago }
+function pagosPorVenta(ventas){
+  const res = {};
+  cremasPagos.filter(lineaNueva).forEach(l=> l.ids.forEach(id=> res[id] = l));
+  ['crema','colageno','gel'].forEach(tipo=>{
+    const viejas = cremasPagos.filter(l=> !lineaNueva(l) && l.tipo===tipo);
+    if(!viejas.length) return;
+    const vs = ventas.filter(m=> tipoProductoCrema(m.prof)===tipo && !res[m.id]);
+    gruposDePago(vs, tipo, viejas).forEach(g=> g.ventas.forEach(m=> res[m.id] = g.linea));
+  });
+  return res;
 }
 
 /* ---- Vista, mes y pestañas ---- */
@@ -109,7 +128,8 @@ function renderCremas(){
   document.querySelectorAll('.c-tab[data-ctab]').forEach(b=> b.classList.toggle('active', b.dataset.ctab===cTab));
   document.getElementById('cPanelMovs').classList.toggle('col-hidden', cTab==='stock');
   document.getElementById('cPanelStock').classList.toggle('col-hidden', cTab!=='stock');
-  document.getElementById('cBtnLinea').classList.toggle('col-hidden', cTab==='stock');
+  document.getElementById('cBtnLinea').classList.add('col-hidden');   // reemplazado por el + (Cargar pago)
+  document.getElementById('cBtnPagoNuevo').classList.toggle('col-hidden', cTab==='stock');
   if(cTab==='stock') document.getElementById('cBtnPagados').classList.add('col-hidden');
   if(cremasVentas==null) cargarVentasCremas();
   if(cTab!=='stock') renderCremasMovs(); else { if(cremasVentas==null) cargarVentasCremas(); renderCremasStock(); }
@@ -152,24 +172,35 @@ function stockDespuesDeVenta(ventas){
   });
   return res;
 }
+const C_ANCHOS = {fecha:'58px', pac:'15%', conc:'', cant:'44px', stock:'52px', indica:'150px', usd:'84px', pago:'100px', costo:'104px', cot:'80px', pagado:'74px', prof:'96px', umm:'110px'};
 function renderCremasMovs(){
   const tb = document.getElementById('cTbody'), tf = document.getElementById('cTfoot');
-  if(document.activeElement && tb.contains(document.activeElement) && (document.activeElement.classList.contains('c-cot') || document.activeElement.classList.contains('c-pagopx'))) return; // no pisar lo que se está escribiendo
-  const usd = cTab==='crema';   // colágenos y geles: sin dólares ni cotización
-  const tabla = tb.closest('table');
-  tabla.classList.toggle('c-pesos', !usd);
-  document.getElementById('cCols').innerHTML = usd
-    ? '<col style="width:58px"><col style="width:15%"><col><col style="width:44px"><col style="width:56px"><col style="width:84px"><col style="width:100px"><col style="width:150px"><col style="width:84px"><col style="width:84px"><col style="width:100px"><col style="width:56px"><col style="width:100px"><col style="width:110px">'
-    : '<col style="width:64px"><col style="width:18%"><col><col style="width:44px"><col style="width:56px"><col style="width:110px"><col style="width:170px"><col style="width:110px"><col style="width:70px"><col style="width:100px"><col style="width:120px">';
-  document.getElementById('cThCosto').textContent = usd ? 'Costo' : 'Costo';
-  const nCols = usd ? 14 : 11;
+  const ae = document.activeElement;
+  if(ae && tb.contains(ae) && (ae.classList.contains('c-cot') || ae.classList.contains('c-pagopx') || ae.classList.contains('c-costo'))) return; // no pisar lo que se está escribiendo
+  const usd = cTab==='crema';   // colágenos y geles: solo pesos
+  const COLS = usd ? ['fecha','pac','conc','cant','stock','indica','usd','pago','costo','cot','pagado','prof','umm']
+                   : ['fecha','pac','conc','cant','stock','indica','pago','costo','pagado','prof','umm'];
+  const nCols = COLS.length;
+  tb.closest('table').classList.toggle('c-pesos', !usd);
+  document.getElementById('cCols').innerHTML = COLS.map(k=> C_ANCHOS[k] ? `<col style="width:${C_ANCHOS[k]}">` : '<col>').join('');
+  // arma una fila con las columnas de la pestaña; span = {desde, hasta, html} une celdas (título de pago / totales)
+  const fila = (cls, cells, span)=>{
+    const i0 = span ? COLS.indexOf(span.desde) : -1, i1 = span ? COLS.indexOf(span.hasta) : -1;
+    return `<tr class="${cls}">` + COLS.map((k,i)=>{
+      if(i>i0 && i<=i1) return '';
+      if(i===i0) return `<td colspan="${i1-i0+1}" class="left">${span.html}</td>`;
+      return cells[k] ?? '<td></td>';
+    }).join('') + '</tr>';
+  };
   if(cremasVentas==null){ tb.innerHTML = `<tr><td colspan="${nCols}" class="empty-state">Cargando ventas…</td></tr>`; tf.innerHTML = ''; return; }
   const f = id => document.getElementById(id).value;
   const todas = ventasCremasTodas();
   const stockTras = stockDespuesDeVenta(todas);
+  const pagos = pagosPorVenta(todas);
   const delTipo = todas.filter(m=> tipoProductoCrema(m.prof)===cTab);
   const prods = {}; productosCremas().forEach(p=> prods[p.clave] = p);
   const ajTipo = ajustesCremas().filter(a=> prods[a.clave] ? tipoProductoCrema(prods[a.clave].prof)===cTab : false);
+  const lineasTipo = cremasPagos.filter(l=> l.tipo===cTab).slice().sort((a,b)=> a.fechaPago < b.fechaPago ? -1 : (a.fechaPago > b.fechaPago ? 1 : 0));
   const pasa = m=>{
     const c = calcularCrema(m);
     return (!f('cfFecha') || contiene(isoToDisplay(m.fechaISO), f('cfFecha')))
@@ -184,108 +215,98 @@ function renderCremasMovs(){
       && (!f('cfConcepto') || contiene(p.nombre||'', f('cfConcepto')))
       && !f('cfIndica');
   };
+  const filtrando = ['cfFecha','cfPaciente','cfConcepto','cfIndica'].some(id=> f(id));
   const nombreTipo = ({crema:'cremas', colageno:'colágenos', gel:'geles'})[cTab];
   if(!delTipo.length && !ajTipo.length){
     tb.innerHTML = `<tr><td colspan="${nCols}" class="empty-state">No hay ventas de ${nombreTipo} desde el 20/8/2026.</td></tr>`;
     tf.innerHTML = ''; return;
   }
-  const grupos = gruposDePago(delTipo, cTab);
-  const ultima = grupos.length ? grupos[grupos.length-1].linea.fechaPago : '';
-  const pendientes = delTipo.filter(m=> m.fechaISO > ultima);
   const profs = [PARTICULAR, ...todosLosNombresDeProfesionales().filter(n=> !esProfCremas(n))];
-  const sumas = vs=> vs.reduce((a,m)=>{ const c = calcularCrema(m); a.pago += c.pago; a.pagar += c.aPagar||0; a.prof += c.prof||0; a.umm += c.ummana||0; return a; }, {pago:0, pagar:0, prof:0, umm:0});
   const celdaStock = id=>{ const st = stockTras[id]; return `<td class="${st!=null && st<0 ? 'neg' : ''}" style="font-weight:700;">${st==null ? '<span class="pend">—</span>' : st}</td>`; };
   const filaVenta = m=>{
     const c = calcularCrema(m);
     const opts = profs.map(n=> `<option ${n===c.indica?'selected':''}>${n}</option>`).join('');
     const sinStock = c.colageno ? c.costo==null : (c.venta==null && c.costo==null);
-    const pagoCelda = `<td><input class="c-pagopx ${c.pagoEditado ? 'editado' : ''} ${!c.pagoEditado && m.moneda==='USD' ? 'usd' : ''}" data-id="${m.id}" inputmode="numeric"
+    const l = pagos[m.id];
+    const costoPh = c.bon ? '$0' : (!c.colageno && c.costo!=null ? fmtUsd(c.costo) : '—');
+    return fila('', {
+      fecha: `<td>${isoToDisplay(m.fechaISO)}</td>`,
+      pac: `<td class="left">${m.pac||''}</td>`,
+      conc: `<td class="concepto">${m.concepto||''}${sinStock ? ' <span class="c-aviso" title="Este producto no tiene precios en Stock">sin precio</span>' : ''}</td>`,
+      cant: `<td class="c-cant">-1</td>`,
+      stock: celdaStock(m.id),
+      indica: `<td><select class="c-indica" data-id="${m.id}">${opts}</select></td>`,
+      usd: `<td class="monto">${c.venta==null ? '<span class="pend">—</span>' : fmtUsd(c.venta)}</td>`,
+      pago: `<td><input class="c-pagopx ${c.pagoEditado ? 'editado' : ''} ${!c.pagoEditado && m.moneda==='USD' ? 'usd' : ''}" data-id="${m.id}" inputmode="numeric"
         value="${c.pagoEditado ? fmtPesos(c.pago) : (m.moneda==='USD' ? 'US$ ' : '$') + Number(m.valor||0).toLocaleString('es-AR')}"
-        title="${c.pagoEditado ? `Editado acá. En la caja: ${m.moneda==='USD' ? 'US$ ' : '$'}${Number(m.valor||0).toLocaleString('es-AR')}. Borralo para volver a ese valor.` : 'Podés poner el valor en pesos (por ejemplo, si pagó en dólares)'}"></td>`;
-    const pagSel = `<td><select class="c-pag c-pag-${c.pagado}" data-id="${m.id}">
-        <option value="no" ${c.pagado==='no'?'selected':''}>NO</option>
-        <option value="si" ${c.pagado==='si'?'selected':''}>SI</option>
-        <option value="bon" ${c.pagado==='bon'?'selected':''}>BON</option>
-      </select></td>`;
-    return `<tr>
-      <td>${isoToDisplay(m.fechaISO)}</td>
-      <td class="left">${m.pac||''}</td>
-      <td class="concepto">${m.concepto||''}${sinStock ? ' <span class="c-aviso" title="Este producto no tiene precios en Stock">sin precio</span>' : ''}</td>
-      <td class="c-cant">-1</td>
-      ${celdaStock(m.id)}
-      ${usd ? `<td class="monto">${c.venta==null ? '<span class="pend">—</span>' : fmtUsd(c.venta)}</td>` : ''}
-      ${pagoCelda}
-      <td><select class="c-indica" data-id="${m.id}">${opts}</select></td>
-      <td class="monto">${c.costo==null ? '<span class="pend">—</span>' : (c.colageno ? fmtPesos(c.costo) : fmtUsd(c.costo))}</td>
-      ${usd ? `<td><input class="c-cot" data-id="${m.id}" inputmode="numeric" value="${c.cot ? c.cot.toLocaleString('es-AR') : ''}" placeholder="—"></td>
-      <td class="monto">${celdaMonto(c.aPagar)}</td>` : ''}
-      ${pagSel}
-      <td class="monto">${celdaMonto(c.prof)}</td>
-      <td class="monto ${c.ummana!=null && c.ummana<0 ? 'neg' : ''}">${celdaMonto(c.ummana)}</td>
-    </tr>`;
+        title="${c.pagoEditado ? `Editado acá. En la caja: ${m.moneda==='USD' ? 'US$ ' : '$'}${Number(m.valor||0).toLocaleString('es-AR')}. Borralo para volver a ese valor.` : 'Podés poner el valor en pesos (por ejemplo, si pagó en dólares)'}"></td>`,
+      costo: `<td><input class="c-costo ${c.costoEditado ? 'editado' : ''}" data-id="${m.id}" inputmode="numeric" value="${c.aPagar!=null ? fmtPesos(c.aPagar) : ''}" placeholder="${costoPh}" ${c.bon ? 'disabled' : ''}
+        title="${c.colageno ? 'Costo sugerido de Stock; lo podés cambiar' : (c.costo!=null ? `Costo ${fmtUsd(c.costo)} × cotización; lo podés cambiar` : 'Sin costo en Stock')}"></td>`,
+      cot: `<td><input class="c-cot" data-id="${m.id}" inputmode="numeric" value="${c.cot ? c.cot.toLocaleString('es-AR') : ''}" placeholder="—"></td>`,
+      pagado: `<td>${c.bon ? '<span class="c-pag-chip bon" title="Bonificada: no se le paga al proveedor">BON</span>' : (l ? `<span class="c-pag-chip" title="Pagado el ${isoToDisplay(l.fechaPago)}">${isoToDisplay(l.fechaPago)}</span>` : '<span class="pend">—</span>')}</td>`,
+      prof: `<td class="monto">${celdaMonto(c.prof)}</td>`,
+      umm: `<td class="monto ${c.ummana!=null && c.ummana<0 ? 'neg' : ''}">${celdaMonto(c.ummana)}</td>`,
+    });
   };
   const filaAjuste = a=>{
     const p = prods[a.clave] || {};
     const ing = a.tipo!=='retiro';
-    return `<tr class="c-ajuste ${ing ? 'ing' : 'ret'}">
-      <td>${isoToDisplay(a.fechaISO)}</td>
-      <td class="left">${ing ? 'INGRESO' : 'RETIRO'}${a.detalle ? ' · ' + a.detalle : ''}</td>
-      <td class="concepto">${p.nombre || p.codigo || a.clave}</td>
-      <td class="c-cant">${ing ? '+' : '-'}${Number(a.cant).toLocaleString('es-AR')}</td>
-      ${celdaStock(a.id)}
-      <td colspan="${nCols-6}"></td>
-      <td><button class="c-linea-quitar" data-quitar-ajuste="${a.id}" title="Eliminar este ${ing ? 'ingreso' : 'retiro'}">✕</button></td>
-    </tr>`;
+    return fila(`c-ajuste ${ing ? 'ing' : 'ret'}`, {
+      fecha: `<td>${isoToDisplay(a.fechaISO)}</td>`,
+      pac: `<td class="left">${ing ? 'INGRESO' : 'RETIRO'}${a.detalle ? ' · ' + a.detalle : ''}</td>`,
+      conc: `<td class="concepto">${p.nombre || p.codigo || a.clave}</td>`,
+      cant: `<td class="c-cant">${ing ? '+' : '-'}${Number(a.cant).toLocaleString('es-AR')}</td>`,
+      stock: celdaStock(a.id),
+      umm: `<td><button class="c-linea-quitar" data-quitar-ajuste="${a.id}" title="Eliminar este ${ing ? 'ingreso' : 'retiro'}">✕</button></td>`,
+    });
   };
-  const filaSuma = (s, linea, n)=>{
-    const titulo = linea
-      ? `<span class="c-linea-tit">PAGO</span> <span class="c-linea-n">${n} ${n===1?'venta':'ventas'}</span>`
-      : `<span class="c-linea-tit">PENDIENTE DE PAGO</span> <span class="c-linea-n">${n} ${n===1?'venta':'ventas'} desde el último pago</span>`;
-    const fecha = linea ? `<button class="c-linea-fecha" data-linea="${linea.id}" title="Cambiar la fecha de pago">${isoToDisplay(linea.fechaPago)}</button>` : '';
-    const quitar = linea ? ` <button class="c-linea-quitar" data-quitar-linea="${linea.id}" title="Eliminar la línea de pago">✕</button>` : '';
-    return `<tr class="${linea ? 'c-linea' : 'c-linea c-linea-pend'}">
-      <td colspan="${usd ? 6 : 5}" class="left">${titulo}</td>
-      <td class="monto">${fmtPesos(s.pago)}</td><td></td>
-      ${usd ? `<td></td><td></td><td class="monto">${fmtPesos(s.pagar)}</td>` : `<td class="monto">${fmtPesos(s.pagar)}</td>`}
-      <td>${fecha}</td>
-      <td class="monto">${fmtPesos(s.prof)}</td>
-      <td class="monto ${s.umm<0?'neg':''}">${fmtPesos(s.umm)}${quitar}</td>
-    </tr>`;
+  const sumas = vs=> vs.reduce((a,m)=>{ const c = calcularCrema(m); a.pago += c.pago; a.pagar += c.aPagar||0; a.prof += c.prof||0; a.umm += c.ummana||0; return a; }, {pago:0, pagar:0, prof:0, umm:0});
+  const filaPago = l=>{
+    const vs = delTipo.filter(m=> pagos[m.id]===l);
+    const s = sumas(vs);
+    const total = lineaNueva(l) && l.total!=null ? Number(l.total) : s.pagar;
+    const prov = l.proveedor || PROV_CREMAS[l.tipo] || '';
+    const tit = `<span class="c-linea-tit">PAGO${prov ? ' · ' + prov : ''}</span> <span class="c-linea-n">${vs.length} ${vs.length===1?'venta':'ventas'}${l.cot ? ' · cot. ' + Number(l.cot).toLocaleString('es-AR') : ''}</span>`;
+    return fila('c-linea', {
+      fecha: `<td>${lineaNueva(l) ? isoToDisplay(l.fechaPago) : `<button class="c-linea-fecha" data-linea="${l.id}" title="Cambiar la fecha de pago">${isoToDisplay(l.fechaPago)}</button>`}</td>`,
+      pago: `<td class="monto">${fmtPesos(s.pago)}</td>`,
+      costo: `<td class="monto">${fmtPesos(total)}</td>`,
+      prof: `<td class="monto">${fmtPesos(s.prof)}</td>`,
+      umm: `<td class="monto ${s.umm<0?'neg':''}">${fmtPesos(s.umm)} <button class="c-linea-quitar" data-quitar-linea="${l.id}" title="Eliminar este pago">✕</button></td>`,
+    }, {desde:'pac', hasta: usd ? 'usd' : 'indica', html: tit});
   };
-  // filas de ventas e ingresos/retiros en orden de fecha
-  const filas = (ventas, desde, hasta)=>{
-    const items = [
-      ...ventas.filter(pasa).map(m=> ({f:m.fechaISO, o:msCreado(m), html:()=> filaVenta(m)})),
-      ...ajTipo.filter(a=> a.fechaISO > desde && (hasta==null || a.fechaISO <= hasta)).filter(pasaAj).map(a=> ({f:a.fechaISO, o:a.creadoMs||0, html:()=> filaAjuste(a)})),
-    ].sort((a,b)=> a.f===b.f ? a.o-b.o : (a.f < b.f ? -1 : 1));
-    return items.map(x=> x.html()).join('');
-  };
-  // Lo ya pagado queda oculto; se despliega con "Ver pagados"
-  let html = '', prev = '';
+  // Lo ya pagado se puede ocultar ("Ver pagados"); sin pagados a la vista, solo lo pendiente
+  const ultimoPago = lineasTipo.length ? lineasTipo[lineasTipo.length-1].fechaPago : '';
+  const verTodo = cVerPagados || filtrando;
+  const ventasVis = delTipo.filter(pasa).filter(m=> verTodo || !pagos[m.id]);
+  const items = [
+    ...ventasVis.map(m=> ({f:m.fechaISO, o:msCreado(m), html:()=> filaVenta(m)})),
+    ...ajTipo.filter(pasaAj).filter(a=> verTodo || a.fechaISO > ultimoPago).map(a=> ({f:a.fechaISO, o:a.creadoMs||0, html:()=> filaAjuste(a)})),
+    ...(verTodo && !filtrando ? lineasTipo.map(l=> ({f:l.fechaPago, o:Number.MAX_SAFE_INTEGER, html:()=> filaPago(l)})) : []),
+  ].sort((a,b)=> a.f===b.f ? a.o-b.o : (a.f < b.f ? -1 : 1));
   const btnPag = document.getElementById('cBtnPagados');
-  btnPag.classList.toggle('col-hidden', !grupos.length);
-  btnPag.textContent = cVerPagados ? `▴ Ocultar pagados` : `▾ Ver pagados (${grupos.length})`;
+  btnPag.classList.toggle('col-hidden', !lineasTipo.length);
+  btnPag.textContent = cVerPagados ? `▴ Ocultar pagados` : `▾ Ver pagados (${lineasTipo.length})`;
   btnPag.classList.toggle('btn-primary', cVerPagados);
-  grupos.forEach(g=>{
-    if(cVerPagados){
-      html += filas(g.ventas, prev, g.linea.fechaPago);
-      html += filaSuma(sumas(g.ventas), g.linea, g.ventas.length);
-    }
-    prev = g.linea.fechaPago;
-  });
-  if(!cVerPagados && grupos.length){
-    const ult = grupos[grupos.length-1].linea;
-    html += `<tr class="c-ocultos"><td colspan="${nCols}"><button class="c-ver-pagados" type="button">▾ ${grupos.length} ${grupos.length===1?'pago anterior oculto':'pagos anteriores ocultos'} (último: ${isoToDisplay(ult.fechaPago)}) — tocá para verlos</button></td></tr>`;
+  let html = '';
+  if(!verTodo && lineasTipo.length){
+    const n = delTipo.filter(m=> pagos[m.id]).length;
+    html += `<tr class="c-ocultos"><td colspan="${nCols}"><button class="c-ver-pagados" type="button">▾ ${n} ${n===1?'venta pagada oculta':'ventas pagadas ocultas'} (último pago: ${isoToDisplay(ultimoPago)}) — tocá para verlas</button></td></tr>`;
   }
-  html += filas(pendientes, prev, null);
-  if(pendientes.length) html += filaSuma(sumas(pendientes), null, pendientes.length);
-  if(!html) html = `<tr><td colspan="${nCols}" class="empty-state">No hay ventas pendientes de pago.</td></tr>`;
+  html += items.map(x=> x.html()).join('');
+  if(!items.length) html += `<tr><td colspan="${nCols}" class="empty-state">${filtrando ? 'No hay ventas con ese filtro.' : 'No hay ventas pendientes de pago.'}</td></tr>`;
   tb.innerHTML = html;
-  tf.innerHTML = '';
+  // Totales de las ventas a la vista (línea fija abajo, como en Sueros)
+  const s = sumas(ventasVis);
+  tf.innerHTML = ventasVis.length ? fila('', {
+    pago: `<td class="monto">${fmtPesos(s.pago)}</td>`,
+    costo: `<td class="monto">${fmtPesos(s.pagar)}</td>`,
+    prof: `<td class="monto">${fmtPesos(s.prof)}</td>`,
+    umm: `<td class="monto ${s.umm<0?'neg':''}">${fmtPesos(s.umm)}</td>`,
+  }, {desde:'fecha', hasta: usd ? 'usd' : 'indica', html: `TOTALES <span class="tot-cant">(${ventasVis.length} ${ventasVis.length===1?'venta':'ventas'}${verTodo ? '' : ' sin pagar'})</span>`}) : '';
   const verBtn = tb.querySelector('.c-ver-pagados');
   if(verBtn) verBtn.onclick = ()=>{ cVerPagados = true; renderCremasMovs(); };
   tb.querySelectorAll('.c-indica').forEach(sel=> sel.onchange = ()=> guardarExtraCrema(sel.dataset.id, {indica: sel.value}));
-  tb.querySelectorAll('.c-pag').forEach(sel=> sel.onchange = ()=> guardarExtraCrema(sel.dataset.id, {pagado: sel.value}));
   tb.querySelectorAll('.c-pagopx').forEach(inp=>{
     inp.addEventListener('focus', ()=>{
       const ex = cremasExtra[inp.dataset.id] || {};
@@ -300,6 +321,22 @@ function renderCremasMovs(){
       const v = inp.value.trim()==='' ? null : parseMonto(inp.value);
       if(inp.dataset.cancelar || v===antes){ delete inp.dataset.cancelar; renderCremasMovs(); return; }
       guardarExtraCrema(id, {pagoPx: v});
+    });
+  });
+  // Costo: sugerido (de Stock, o USD × cotización) y editable; vacío = vuelve al sugerido
+  tb.querySelectorAll('.c-costo').forEach(inp=>{
+    inp.addEventListener('focus', ()=>{ inp.value = inp.value.replace(/[^\d]/g,'') ? Number(inp.value.replace(/[^\d]/g,'')).toLocaleString('es-AR') : ''; inp.select(); });
+    inp.addEventListener('input', ()=> formatearInputMonto(inp));
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } if(e.key==='Escape'){ e.preventDefault(); inp.dataset.cancelar='1'; inp.blur(); } });
+    inp.addEventListener('blur', ()=>{
+      const id = inp.dataset.id, ex = cremasExtra[id] || {};
+      const m = delTipo.find(x=> x.id===id); if(!m) return;
+      const c = calcularCrema(m);
+      const antes = ex.costoArs!=null && ex.costoArs!=='' ? Number(ex.costoArs) : null;
+      let v = inp.value.trim()==='' ? null : parseMonto(inp.value);
+      if(v!=null && v===c.costoSug) v = null;   // igual al sugerido: no queda como editado
+      if(inp.dataset.cancelar || v===antes){ delete inp.dataset.cancelar; renderCremasMovs(); return; }
+      guardarExtraCrema(id, {costoArs: v});
     });
   });
   tb.querySelectorAll('.c-cot').forEach(inp=>{
@@ -386,14 +423,16 @@ function gruposDePago(ventas, tipo, lineas){
 const overlayCLinea = document.getElementById('overlayCLinea');
 let cLineaEdit = null;
 function lineasConFecha(fecha){
-  return cLineaEdit ? cremasPagos.map(l=> l.id===cLineaEdit ? {...l, fechaPago: fecha} : l)
-                    : [...cremasPagos, {id:'__nueva', tipo:cTab, fechaPago: fecha}];
+  const viejas = cremasPagos.filter(l=> !lineaNueva(l));
+  return cLineaEdit ? viejas.map(l=> l.id===cLineaEdit ? {...l, fechaPago: fecha} : l)
+                    : [...viejas, {id:'__nueva', tipo:cTab, fechaPago: fecha}];
 }
 function resumenLineaPago(){
   const fecha = document.getElementById('clFecha').value;
   const cont = document.getElementById('clResumen');
   if(!fecha){ cont.textContent = 'Elegí la fecha de pago.'; return; }
-  const ventas = ventasCremasTodas().filter(m=> tipoProductoCrema(m.prof)===cTab);
+  const nuevasIds = new Set(cremasPagos.filter(lineaNueva).flatMap(l=> l.ids));
+  const ventas = ventasCremasTodas().filter(m=> tipoProductoCrema(m.prof)===cTab && !nuevasIds.has(m.id));
   const g = gruposDePago(ventas, cTab, lineasConFecha(fecha)).find(x=> x.linea.id===(cLineaEdit || '__nueva'));
   const vs = g ? g.ventas : [];
   const aPagar = vs.reduce((a,m)=> a + (calcularCrema(m).aPagar||0), 0);
@@ -432,11 +471,121 @@ document.getElementById('clGuardar').onclick = async ()=>{
 };
 async function quitarLineaPago(id){
   if(!esFede()) return;
-  if(!await ummConfirm("¿Eliminar esta línea de pago? Sus ventas vuelven a quedar pendientes (no se borra ninguna venta).")) return;
+  if(!await ummConfirm("¿Eliminar este pago? Sus ventas vuelven a quedar pendientes (no se borra ninguna venta).")) return;
   const nuevas = cremasPagos.filter(l=> l.id!==id);
   try{ await db.collection('cremas').doc('_pagos').set({lineas: nuevas}); cremasPagos = nuevas; renderCremasMovs(); }
   catch(e){ alert("No se pudo eliminar: " + e.message); }
 }
+
+/* ---- Cargar pago (el "+" de abajo): proveedor, ventas sin pagar, cotización y bonificadas ---- */
+const overlayCPago = document.getElementById('overlayCPago');
+let cpgFilas = [];   // [{m, incl, bon, costo, editado}]
+const cpgTipo = ()=> TIPO_DE_PROV[document.getElementById('cpgProv').value] || 'crema';
+function cpgCostoSugerido(m, cot){
+  const c = calcularCrema(m);
+  const ex = cremasExtra[m.id] || {};
+  if(ex.costoArs!=null && ex.costoArs!=='' && c.costoEditado) return Number(ex.costoArs);   // lo que ya se había corregido a mano
+  if(c.colageno) return c.costo!=null ? Math.round(c.costo) : null;
+  return cot && c.costo!=null ? Math.round(c.costo * cot) : null;
+}
+function cpgArmarLista(){
+  const tipo = cpgTipo();
+  const todas = ventasCremasTodas();
+  const pagos = pagosPorVenta(todas);
+  const cot = parseMonto(document.getElementById('cpgCot').value);
+  cpgFilas = todas.filter(m=> tipoProductoCrema(m.prof)===tipo && !pagos[m.id]).map(m=>{
+    const c = calcularCrema(m);
+    return {m, incl:true, bon:c.bon, costo: cpgCostoSugerido(m, cot), editado:false};
+  });
+  document.getElementById('cpgCotWrap').classList.toggle('col-hidden', tipo!=='crema');
+  document.getElementById('cpgSub').textContent = cpgFilas.length
+    ? `Ventas de ${({crema:'cremas', colageno:'colágenos', gel:'geles'})[tipo]} sin pagar. Destildá las que no entran en este pago y marcá las bonificadas (no se pagan).`
+    : `No hay ventas de ${({crema:'cremas', colageno:'colágenos', gel:'geles'})[tipo]} sin pagar.`;
+  cpgRender();
+}
+function cpgRender(){
+  const tipo = cpgTipo(), usd = tipo==='crema';
+  document.getElementById('cpgLista').innerHTML = cpgFilas.map((r,i)=>{
+    const c = calcularCrema(r.m);
+    return `<div class="cpg-fila${usd ? '' : ' sin-usd'}${r.incl ? '' : ' fuera'}">
+      <input type="checkbox" class="cpg-incl" data-i="${i}" ${r.incl?'checked':''} title="Incluir en este pago">
+      <span class="cpg-f">${isoToDisplay(r.m.fechaISO)}</span>
+      <span class="cpg-n">${escHtml(r.m.pac||'')} <small>· ${escHtml(r.m.concepto||'')}</small></span>
+      ${usd ? `<span class="cpg-usd">${c.costo!=null ? fmtUsd(c.costo) : '<span class="pend">sin costo</span>'}</span>` : ''}
+      <input class="cpg-costo${r.editado ? ' editado' : ''}" data-i="${i}" inputmode="numeric" value="${r.bon ? '$0' : (r.costo!=null ? fmtPesos(r.costo) : '')}" placeholder="${usd ? 'poné la cot.' : '—'}" ${r.bon || !r.incl ? 'disabled' : ''}>
+      <label class="cpg-bon"><input type="checkbox" class="cpg-bonchk" data-i="${i}" ${r.bon?'checked':''} ${r.incl?'':'disabled'}> Bonif.</label>
+    </div>`;
+  }).join('') || '';
+  const total = cpgFilas.filter(r=> r.incl && !r.bon).reduce((a,r)=> a + (r.costo||0), 0);
+  const n = cpgFilas.filter(r=> r.incl).length;
+  document.getElementById('cpgTotal').textContent = fmtPesos(total);
+  document.getElementById('cpgCant').textContent = `${n} ${n===1?'venta':'ventas'}`;
+  const lista = document.getElementById('cpgLista');
+  lista.querySelectorAll('.cpg-incl').forEach(ch=> ch.onchange = ()=>{ cpgFilas[ch.dataset.i].incl = ch.checked; cpgRender(); });
+  lista.querySelectorAll('.cpg-bonchk').forEach(ch=> ch.onchange = ()=>{ cpgFilas[ch.dataset.i].bon = ch.checked; cpgRender(); });
+  lista.querySelectorAll('.cpg-costo').forEach(inp=>{
+    inp.addEventListener('focus', ()=> inp.select());
+    inp.addEventListener('input', ()=> formatearInputMonto(inp));
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } });
+    inp.addEventListener('change', ()=>{
+      const r = cpgFilas[inp.dataset.i];
+      r.costo = inp.value.trim()==='' ? null : parseMonto(inp.value);
+      r.editado = true; cpgRender();
+    });
+  });
+}
+document.getElementById('cBtnPagoNuevo').onclick = ()=>{
+  if(!esFede()) return;
+  document.getElementById('cpgFecha').value = hoyISO();
+  document.getElementById('cpgProv').value = PROV_CREMAS[cTab] || 'GISE';
+  const ultCot = cremasPagos.filter(l=> lineaNueva(l) && l.cot).sort((a,b)=> a.fechaPago < b.fechaPago ? -1 : 1).pop();
+  document.getElementById('cpgCot').value = '';
+  document.getElementById('cpgCot').placeholder = ultCot ? 'última: ' + Number(ultCot.cot).toLocaleString('es-AR') : 'ej. 1.150';
+  cpgArmarLista();
+  overlayCPago.classList.add('show');
+};
+document.getElementById('cpgProv').onchange = cpgArmarLista;
+document.getElementById('cpgCot').addEventListener('input', e=>{
+  formatearInputMonto(e.target);
+  const cot = parseMonto(e.target.value);
+  cpgFilas.forEach(r=>{ if(!r.editado) r.costo = cpgCostoSugerido(r.m, cot); });
+  cpgRender();
+});
+const cerrarCPago = ()=> overlayCPago.classList.remove('show');
+document.getElementById('closeCPago').onclick = cerrarCPago;
+document.getElementById('cpgCancelar').onclick = cerrarCPago;
+document.getElementById('cpgGuardar').onclick = async ()=>{
+  if(!esFede()) return;
+  const fechaPago = document.getElementById('cpgFecha').value;
+  const proveedor = document.getElementById('cpgProv').value;
+  const tipo = cpgTipo();
+  const cot = tipo==='crema' ? parseMonto(document.getElementById('cpgCot').value) : 0;
+  const incl = cpgFilas.filter(r=> r.incl);
+  if(!fechaPago){ alert("Elegí la fecha de pago."); return; }
+  if(!incl.length){ alert("No hay ninguna venta tildada para este pago."); return; }
+  const sinCosto = incl.filter(r=> !r.bon && (r.costo==null || isNaN(r.costo)));
+  if(sinCosto.length){ alert(tipo==='crema' && !cot ? "Poné la cotización del dólar (o el costo de cada venta)." : `Falta el costo de ${sinCosto[0].m.pac || 'una venta'}.`); return; }
+  const total = incl.filter(r=> !r.bon).reduce((a,r)=> a + r.costo, 0);
+  if(!await ummConfirm(`¿Guardar el pago a ${proveedor} del ${isoToDisplay(fechaPago)}?\n\n${incl.length} ${incl.length===1?'venta':'ventas'} · Total ${fmtPesos(total)}`, {si:'Guardar pago'})) return;
+  const items = {};
+  incl.forEach(r=> items[r.m.id] = {costo: r.bon ? 0 : r.costo, bon: !!r.bon});
+  const linea = {id: 'p' + Date.now().toString(36), tipo, proveedor, fechaPago, ids: incl.map(r=> r.m.id), items, total, creadoMs: Date.now(), ...(tipo==='crema' ? {cot} : {})};
+  const nuevas = [...cremasPagos, linea];
+  try{
+    const lote = db.batch();
+    lote.set(db.collection('cremas').doc('_pagos'), {lineas: nuevas});
+    incl.forEach(r=>{
+      const datos = {pagado: r.bon ? 'bon' : 'si', costoArs: r.bon ? null : r.costo, ...(tipo==='crema' && cot ? {cot} : {})};
+      lote.set(db.collection('cremas').doc(r.m.id), datos, {merge:true});
+      cremasExtra[r.m.id] = {...(cremasExtra[r.m.id]||{}), ...datos};
+    });
+    await lote.commit();
+    cremasPagos = nuevas;
+    cerrarCPago();
+    if(cTab!==tipo){ cTab = tipo; }
+    cVerPagados = true; renderCremas();
+  }catch(e){ alert("No se pudo guardar el pago: " + e.message); }
+};
 
 async function guardarExtraCrema(id, datos){
   if(!esFede()) return;
