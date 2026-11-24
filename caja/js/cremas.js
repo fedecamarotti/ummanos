@@ -99,7 +99,7 @@ function calcularCrema(m){
 // Proveedor de cada tipo de producto (siempre el mismo)
 const PROV_CREMAS = {crema:'GISE', colageno:'FLAVIA', gel:'GABRIELA'};
 const TIPO_DE_PROV = {GISE:'crema', FLAVIA:'colageno', GABRIELA:'gel'};
-const lineaNueva = l => Array.isArray(l.ids);   // pagos cargados con el "+" (con sus ventas); los viejos se agrupan por fecha
+const lineaNueva = l => !!l.proveedor && Array.isArray(l.ids);   // pagos cargados con el "+" (con proveedor y sus ventas); los viejos se agrupan por fecha (algunos traen una lista "ids" de antes que no se usa)
 // Pago de cada venta: { idVenta: línea de pago }
 function pagosPorVenta(ventas){
   const res = {};
