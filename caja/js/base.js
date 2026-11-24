@@ -489,7 +489,7 @@ function seccionesUsuario(){ return currentUser && Array.isArray(currentUser.sec
 function esAdminSueros(){ return esFede() || seccionesUsuario().includes('sueros-admin'); }
 // Portal de sueros + Stock e Informes (sin resumen mensual ni valores): secciones ["sueros","sueros-informes"]
 function suerosLimitado(){ return !esAdminSueros() && seccionesUsuario().includes('sueros-informes'); }
-// Dra. Victoria Barbieri: secciones ["victoria"] → solo ve su botón (Pedidos secretaría, Cobros, Ord. Presupuestos, Pacientes/alumnos)
+// Dra. Victoria Barbieri: secciones ["victoria"] → solo ve su botón (Pedidos secretaría, Cobros, Pacientes/alumnos)
 function esVictoria(){ return !!currentUser && currentUser.rol !== 'admin' && seccionesUsuario().includes('victoria'); }
 function puedeVerVictoria(){ return esFede() || esVictoria(); }
 function aplicarRolUI(){

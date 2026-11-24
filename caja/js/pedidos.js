@@ -5,9 +5,20 @@
    se asigna, cambia el estado y deja notas.
    Colección: pedidosSecretaria (nunca se borra: se cancela con nota obligatoria).
    ===================================================================== */
-const PD_TIPOS = ['RECETA ELECTRONICA RCTA','ORDEN DE LABORATORIO','ORDEN DE ESTUDIOS','RECETA BIOHELPER / YSONUT',
-  'PEDIDO DE PRODUCTOS BIOHELPER','PEDIDO DE PRODUCTOS YSONUT','FORMULACION MAGISTRAL / FARMACIA VIP','BONO DE DESCUENTO',
-  'ENVIO DE DEVOLUCION O MATERIAL','DERIVACION / COORDINACION','PEDIDO ESPECIAL'];
+// Tipos en orden alfabético; OTRO PEDIDO siempre último
+const PD_TIPOS = [
+  'BONO DE DESCUENTO',
+  'DERIVACION / COORDINACION',
+  'ENVIO DE DEVOLUCION O MATERIAL',
+  'FORMULACION MAGISTRAL / FARMACIA VIP',
+  'ORDEN DE ESTUDIOS',
+  'ORDEN DE LABORATORIO',
+  'PEDIDO DE PRODUCTOS BIOHELPER',
+  'PEDIDO DE PRODUCTOS YSONUT',
+  'PRESUPUESTOS',
+  'RECETA BIOHELPER / YSONUT',
+  'RECETA ELECTRONICA RCTA',
+  'OTRO PEDIDO'];
 const PD_ESTADOS = {pendiente:'PENDIENTE', realizado:'REALIZADO', cancelado:'CANCELADO'};
 const PD_RESPONSABLES = ['ORIANA','STEPHANIE','TIARA MEDINA'];
 let pdLista = null, unsubPd = null, pdFiltro = 'pendiente', pdAbierto = null, pdPendienteRender = false;

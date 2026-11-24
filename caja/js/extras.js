@@ -344,7 +344,7 @@ document.querySelectorAll('#fedeTabs [data-ir]').forEach(b=> b.onclick = ()=>{
   if(ir==='conta'){ mostrarVista('pedidos'); return; }   // Victoria arranca en Pedidos secretaría
   if(ir==='sueros' || ir==='cremas' || ir==='informes') mostrarVista(ir);
 });
-// Victoria: Contabilidad / Cobros (lo que era Tratamientos) / Ord. Presupuestos (próximamente)
+// Victoria: Contabilidad / Cobros (lo que era Tratamientos) 
 document.querySelectorAll('.vic-tabs [data-vic]').forEach(b=> b.onclick = ()=>{
   if(b.dataset.vic==='pacientes'){ document.getElementById('btnPacientes').click(); return; }   // abre Pacientes/alumnos (como en Movimientos)
   mostrarVista(b.dataset.vic);
