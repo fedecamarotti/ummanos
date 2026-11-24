@@ -244,7 +244,7 @@ function renderCremasMovs(){
     const fecha = linea ? `<button class="c-linea-fecha" data-linea="${linea.id}" title="Cambiar la fecha de pago">${isoToDisplay(linea.fechaPago)}</button>` : '';
     const quitar = linea ? ` <button class="c-linea-quitar" data-quitar-linea="${linea.id}" title="Eliminar la línea de pago">✕</button>` : '';
     return `<tr class="${linea ? 'c-linea' : 'c-linea c-linea-pend'}">
-      <td colspan="${usd ? 7 : 6}" class="left">${titulo}</td>
+      <td colspan="${usd ? 6 : 5}" class="left">${titulo}</td>
       <td class="monto">${fmtPesos(s.pago)}</td><td></td>
       ${usd ? `<td></td><td></td><td class="monto">${fmtPesos(s.pagar)}</td>` : `<td class="monto">${fmtPesos(s.pagar)}</td>`}
       <td>${fecha}</td>

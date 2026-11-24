@@ -1560,8 +1560,8 @@ tr.mov-rech td{opacity:.45;text-decoration:line-through;} tr.mov-rech td.notas, 
 .aut-bt button{border:1px solid #d9c79c;background:#fffcf5;border-radius:7px;padding:4px 9px;font:inherit;font-size:11px;font-weight:600;cursor:pointer;}
 .aut-bt button:hover{background:#f3ead3;} .aut-bt button.no{color:#a13a3a;border-color:#e8c2bd;}
 
-/* Sueros: el + flotante no tapa la última fila */
-#vistaSueros .s-panel .sheet-wrap{padding-bottom:64px;}
+/* Sueros: el + flotante va arriba de la línea de totales (que queda fija abajo) */
+#vistaSueros #sBtnNuevo{bottom:72px;}
 /* Informes (Asistencias, Packs, Sueroterapia): el bloque de gráficos al 75% del ancho, centrado */
 #asisPanel{width:75%;margin-left:auto;margin-right:auto;}
 @media (max-width:800px){ #asisPanel{width:auto;margin-left:10px;margin-right:10px;} }
