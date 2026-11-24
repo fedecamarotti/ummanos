@@ -337,8 +337,14 @@ document.getElementById('vcBtnPDF').onclick = ()=>{
 
 document.querySelectorAll('#fedeTabs [data-ir]').forEach(b=> b.onclick = ()=>{
   const ir = b.dataset.ir;
-  if(ir==='sueros' || ir==='cremas' || ir==='movimientos' || ir==='conta' || ir==='informes' || ir==='trat') mostrarVista(ir);
+  if(ir==='cajas'){ document.getElementById('btnCajas').click(); return; }   // abren su ventana, como antes
+  if(ir==='backup'){ abrirBackup(); return; }
+  if(ir==='grande'){ mostrarVista('movimientos'); mostrarSubMov('grande'); return; }
+  if(ir==='movimientos'){ if(movSub==='grande') mostrarSubMov('diarios'); mostrarVista('movimientos'); return; }
+  if(ir==='sueros' || ir==='cremas' || ir==='conta' || ir==='informes') mostrarVista(ir);
 });
+// Victoria: Contabilidad / Cobros (lo que era Tratamientos) / Ord. Presupuestos (próximamente)
+document.querySelectorAll('.vic-tabs [data-vic]').forEach(b=> b.onclick = ()=> mostrarVista(b.dataset.vic));
 
 /* =====================================================================
    TRATAMIENTOS DEL DÍA (prueba en el usuario de Fede): el profesional elige paciente
@@ -464,6 +470,7 @@ function mostrarSubMov(sub){
   document.getElementById('cpPanel').classList.toggle('col-hidden', sub!=='prueba');
   document.getElementById('dvPanel').classList.toggle('col-hidden', sub!=='deriv');
   document.getElementById('cgPanel').classList.toggle('col-hidden', sub!=='grande');
+  if(typeof marcarSeccion==='function') marcarSeccion();
   if(sub==='grande'){
     if(`${mesActual.year}-${String(mesActual.month).padStart(2,'0')}` < CG_DESDE){
       const [y,m] = CG_DESDE.split('-').map(Number); mesActual = {year:y, month:m}; suscribirMovimientos();

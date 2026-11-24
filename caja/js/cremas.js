@@ -5,7 +5,7 @@
      cremas/{idMovimiento} → { indica, cot }
      cremas/_stock         → { productos: { CODIGO: { venta, costo } } }   (USD)
    ===================================================================== */
-let cTab = 'stock';
+let cTab = 'crema';
 let mesCremas = { year: hoyRef.getFullYear(), month: hoyRef.getMonth()+1 };
 let cremasMovsMes = [];          // movimientos diarios del mes elegido (si no es el mes de la tabla principal)
 let cremasMesCargado = null;

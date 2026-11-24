@@ -82,6 +82,17 @@ function consumosDeIngreso(m){
   return expandirKit(m.items, m.fechaISO);
 }
 
+// Botón de arriba encendido: Caja grande es una vista de Movimientos; Cobros (tratamientos) va dentro de Victoria
+function marcarSeccion(){
+  const tabs = document.getElementById('fedeTabs'); if(!tabs) return;
+  let act = vistaActual;
+  if(act==='movimientos' && typeof movSub!=='undefined' && movSub==='grande') act = 'grande';
+  if(act==='trat') act = 'conta';
+  tabs.querySelectorAll('[data-ir]').forEach(b=> b.classList.toggle('active', b.dataset.ir===act));
+  // en Caja grande no van los botones de Movimientos
+  const ms = document.getElementById('movSubTabs');
+  if(ms && currentUser && currentUser.rol==='admin') ms.classList.toggle('col-hidden', act==='grande');
+}
 function mostrarVista(v){
   if((v==='sueros' && !esAdminSueros()) || ((v==="cremas" || v==='conta' || v==='trat') && !esFede()) || (v==='informes' && currentUser.rol!=='admin')) return;
   vistaActual = v;
@@ -101,7 +112,7 @@ function mostrarVista(v){
     const tabs = document.getElementById('fedeTabs');
     const destino = document.querySelector(`#${({movimientos:'vistaMovimientos', sueros:'vistaSueros', cremas:'vistaCremas', conta:'vistaConta', informes:'vistaInformes', trat:'vistaTrat'})[v]} > .fede-nav`);
     destino.classList.remove('col-hidden'); destino.appendChild(tabs);
-    tabs.querySelectorAll('[data-ir]').forEach(b=> b.classList.toggle('active', b.dataset.ir===v));
+    marcarSeccion();
     document.body.classList.add('fede-nav-on');
   }
   if(v==='sueros'){ suscribirSueros(); if(sTabActual==='resumen') sResAlMesActual(); renderSueros(); }
@@ -291,7 +302,7 @@ function renderSuerosTabla(){
         && (!f('sfUmmana')   || contiene(vs(r.ummana), f('sfUmmana')));
   });
   if(!filas.length){
-    tb.innerHTML = `<tr><td colspan="10" class="empty-state">${sueros.length ? 'No hay movimientos de sueros en este mes.' : 'Todavía no cargaste movimientos de sueros. Empezá con "+ Nuevo mov."'}</td></tr>`;
+    tb.innerHTML = `<tr><td colspan="10" class="empty-state">${sueros.length ? 'No hay movimientos de sueros en este mes.' : 'Todavía no cargaste movimientos de sueros. Empezá con el +'}</td></tr>`;
     document.getElementById('sTfoot').innerHTML = '';
     return;
   }

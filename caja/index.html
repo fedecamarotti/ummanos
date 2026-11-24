@@ -7,9 +7,9 @@
 if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1)){
   var vp=document.querySelector('meta[name=viewport]'); if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0');
 }</script>
-<link rel="manifest" href="/manifest.webmanifest?v=202611201341">
+<link rel="manifest" href="/manifest.webmanifest?v=202611241019">
 <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611201341">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611241019">
 <meta name="theme-color" content="#fffcf5">
 <title>CAJA UMMANA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,7 +37,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<link rel="stylesheet" href="caja.css?v=202611201341">
+<link rel="stylesheet" href="caja.css?v=202611241019">
 </head>
 <body>
 <div id="ummLoader" aria-hidden="true"><div class="ul-logo"><img class="ul-base" src="images/logo.png" alt=""><img class="ul-fill" src="images/logo.png" alt=""></div></div>
@@ -530,14 +530,11 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
         <button class="s-tab active" data-msub="diarios" role="tab"><span class="t-largo">Movimientos diarios</span><span class="t-corto">Diarios</span></button>
         <button class="s-tab s-tab-badge" data-msub="prueba"><span class="t-largo">Clases de prueba</span><span class="t-corto">Prueba</span> <span class="badge-count col-hidden" id="mSubPruebaN" title="Contactos vencidos">0</span></button>
         <button class="s-tab s-tab-badge col-hidden" data-msub="deriv" title="Oculto por ahora (no se usa)"><span class="t-largo">Derivaciones</span><span class="t-corto">Deriv.</span> <span class="badge-count col-hidden" id="mSubDerivN" title="Contactos vencidos">0</span></button>
-        <button class="s-tab" data-msub="cajas" id="mSubCajas">Cajas</button>
         <button class="s-tab" data-msub="pacientes"><span class="t-largo">Pacientes/alumnos</span><span class="t-corto">Pacientes</span></button>
         <button class="s-tab s-tab-badge" data-msub="presupuesto"><span class="t-largo">Presupuestos</span><span class="t-corto">Presup.</span> <span class="badge-count col-hidden" id="mSubPresN" title="Turnos a confirmar si se realizaron">0</span></button>
         <button class="s-tab" data-msub="supl"><span class="t-largo">Suplementación</span><span class="t-corto">Suplem.</span></button>
         <button class="s-tab col-hidden" data-msub="pago" id="mSubPago"><span class="t-largo">Calcular pago prof.</span><span class="t-corto">Pago prof.</span></button>
         <button class="s-tab" data-msub="reporte"><span class="t-largo">Reporte diario</span><span class="t-corto">Reporte</span></button>
-        <button class="s-tab col-hidden" data-msub="grande" id="mSubGrande">Caja grande</button>
-        <button class="s-tab col-hidden" data-msub="backup" id="mSubBackup">Back up</button>
         <button class="s-tab s-tab-badge" data-msub="deudores">Deudores <span class="badge-count col-hidden" id="mSubDeudoresN">0</span></button>
       </div>
       <div class="su-der"><button type="button" class="btn col-hidden" id="suBtnFijo">Valor fijo</button></div>
@@ -546,10 +543,12 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
     <div class="s-tabs col-hidden" id="fedeTabs" role="tablist" aria-label="Secciones">
       <button class="s-tab active" data-ir="movimientos" role="tab">Movimientos</button>
       <button class="s-tab" data-ir="sueros" role="tab">Sueros</button>
-      <button class="s-tab" data-ir="cremas" role="tab"><span class="t-largo">Cremas/Col./Geles</span><span class="t-corto">Cremas</span></button>
+      <button class="s-tab" data-ir="cremas" role="tab">Productos</button>
       <button class="s-tab" data-ir="informes" role="tab">Informes</button>
-      <button class="s-tab" data-ir="conta" role="tab"><span class="t-largo">Victoria contabilidad</span><span class="t-corto">Victoria</span></button>
-      <button class="s-tab" data-ir="trat" role="tab">Tratamientos</button>
+      <button class="s-tab" data-ir="conta" role="tab">Victoria</button>
+      <button class="s-tab" data-ir="grande" role="tab"><span class="t-largo">Caja grande</span><span class="t-corto">C. grande</span></button>
+      <button class="s-tab" data-ir="cajas" role="tab">Cajas</button>
+      <button class="s-tab" data-ir="backup" role="tab">Back up</button>
     </div>
 
     <div class="panel-container" id="panelContainer">
@@ -664,6 +663,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
    <!-- ============ VISTA: SUEROS (solo Fede) ============ -->
    <div class="vista col-hidden" id="vistaSueros">
     <div class="fede-nav col-hidden"></div>
+    <button class="fab-nuevo" id="sBtnNuevo" title="Nueva aplicación" aria-label="Nuevo"><svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M12 4.5v15M4.5 12h15" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg></button>
     <div class="sueros-bar">
       <div class="mes-selector">
         <button id="sMesPrev" title="Mes anterior">◀</button>
@@ -671,11 +671,10 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
         <button id="sMesNext" title="Mes siguiente">▶</button>
       </div>
       <div class="s-tabs" role="tablist" aria-label="Sueros">
-        <button class="s-tab active" data-tab="movs" role="tab"><span class="t-largo">Movimientos sueros</span><span class="t-corto">Movimientos</span></button>
+        <button class="s-tab active" data-tab="movs" role="tab">Aplicaciones</button>
         <button class="s-tab col-hidden" id="sBtnPacientes" title="Fichas de los pacientes"><span class="t-largo">Pacientes sueros</span><span class="t-corto">Pacientes</span></button>
         <button class="s-tab" data-tab="stock" role="tab">Stock</button>
         <button class="s-tab" data-tab="resumen" role="tab">Informes</button>
-        <button class="s-tab s-tab-nuevo" id="sBtnNuevo"><span class="t-largo">+ Nuevo mov.</span><span class="t-corto">+ Nuevo</span></button>
       </div>
       <div style="justify-self:end;display:flex;gap:8px;">
         <button class="btn s-cfg-btn venc-alerta col-hidden" id="sBtnVenc"></button>
@@ -787,10 +786,10 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
         <button id="cMesNext" title="Mes siguiente">▶</button>
       </div>
       <div class="s-tabs" role="tablist" aria-label="Cremas y colágenos">
-        <button class="s-tab c-tab active" data-ctab="stock" role="tab">Stock</button>
-        <button class="s-tab c-tab" data-ctab="crema" role="tab">Cremas</button>
+        <button class="s-tab c-tab active" data-ctab="crema" role="tab">Cremas</button>
         <button class="s-tab c-tab" data-ctab="colageno" role="tab">Colágenos</button>
         <button class="s-tab c-tab" data-ctab="gel" role="tab">Geles</button>
+        <button class="s-tab c-tab" data-ctab="stock" role="tab">Stock</button>
       </div>
       <div style="justify-self:end;display:flex;gap:8px;">
         <button class="btn s-cfg-btn col-hidden" id="cBtnPagados" title="Mostrar u ocultar lo que ya está pagado"></button>
@@ -859,7 +858,11 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
         <span id="vcMesLabel"></span>
         <button id="vcMesNext" title="Mes siguiente">▶</button>
       </div>
-      <div></div>
+      <div class="s-tabs vic-tabs" role="tablist" aria-label="Victoria">
+        <button class="s-tab active" data-vic="conta" role="tab">Contabilidad</button>
+        <button class="s-tab" data-vic="trat" role="tab">Cobros</button>
+        <button class="s-tab s-tab-inactivo" title="Próximamente">Ord. Presupuestos</button>
+      </div>
       <div style="justify-self:end;display:flex;gap:8px;">
         <button class="btn btn-primary s-cfg-btn" id="vcBtnNuevo">+ Nuevo movimiento</button>
         <button class="btn s-cfg-btn" id="vcBtnDetalles"><i data-ico="lapiz"></i> Modificar detalles</button>
@@ -904,6 +907,14 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
    <!-- ============ TRATAMIENTOS DEL DÍA (prueba, solo Fede) ============ -->
    <div class="vista col-hidden" id="vistaTrat">
     <div class="fede-nav col-hidden"></div>
+    <div class="sueros-bar"><div></div>
+      <div class="s-tabs vic-tabs" role="tablist" aria-label="Victoria">
+        <button class="s-tab" data-vic="conta" role="tab">Contabilidad</button>
+        <button class="s-tab active" data-vic="trat" role="tab">Cobros</button>
+        <button class="s-tab s-tab-inactivo" title="Próximamente">Ord. Presupuestos</button>
+      </div>
+      <div></div>
+    </div>
     <div class="tr-wrap">
       <h2 class="tr-tit">Tratamientos del día</h2>
       <div class="tr-lab">Profesional</div>
@@ -1884,11 +1895,11 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 
 </div><!-- /#app -->
 
-<script src="js/base.js?v=202611201341"></script>
-<script src="js/caja.js?v=202611201341"></script>
-<script src="js/sueros.js?v=202611201341"></script>
-<script src="js/cremas.js?v=202611201341"></script>
-<script src="js/paneles.js?v=202611201341"></script>
-<script src="js/extras.js?v=202611201341"></script>
+<script src="js/base.js?v=202611241019"></script>
+<script src="js/caja.js?v=202611241019"></script>
+<script src="js/sueros.js?v=202611241019"></script>
+<script src="js/cremas.js?v=202611241019"></script>
+<script src="js/paneles.js?v=202611241019"></script>
+<script src="js/extras.js?v=202611241019"></script>
 </body>
 </html>

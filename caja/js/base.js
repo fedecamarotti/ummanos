@@ -513,14 +513,17 @@ function aplicarRolUI(){
   document.getElementById('sBtnPacientes').classList.toggle('col-hidden', !esAdminSueros());
   // Fila de secciones arriba y los botones de cada sección debajo (cada uno ve solo lo que tiene acceso)
   const tabs = document.getElementById('fedeTabs');
-  const verTab = {movimientos:true, sueros:esAdminSueros(), cremas:esFede(), informes:esAdmin, conta:esFede(), trat:esFede()};
+  const verTab = {movimientos:true, sueros:esAdminSueros(), cremas:esFede(), informes:esAdmin, conta:esFede(), grande:esAdmin, cajas:esAdmin, backup:esAdmin};
   tabs.querySelectorAll('[data-ir]').forEach(b=> b.classList.toggle('col-hidden', !verTab[b.dataset.ir]));
   tabs.classList.toggle('una-sola', Object.values(verTab).filter(Boolean).length===1);
   tabs.classList.remove('col-hidden');
   document.getElementById('movSubTabs').classList.remove('col-hidden');
-  document.getElementById('mSubCajas').classList.toggle('col-hidden', !esAdmin);
-  document.getElementById('mSubBackup').classList.toggle('col-hidden', !esAdmin);
-  document.getElementById('mSubGrande').classList.toggle('col-hidden', !esAdmin);
+  // Fede y Pedro: orden propio de los botones de Movimientos (lo que no tienen, no se agrega)
+  if(esAdmin){
+    const sub = document.getElementById('movSubTabs');
+    ['diarios','prueba','presupuesto','supl','deudores','pacientes','reporte','deriv','pago']
+      .forEach(k=>{ const b = sub.querySelector(`[data-msub="${k}"]`); if(b) sub.appendChild(b); });
+  }
   // Recepcionistas: Tipo como antes (Ingreso / Egreso) y sin selector de caja (siempre CHICA). Fede y Pedro: ING / EGR + CAJA
   document.getElementById('movTipo').classList.toggle('chico', esAdmin);
   document.querySelector('#movTipo [data-tipo="ingreso"]').textContent = esAdmin ? 'ING' : 'Ingreso';
