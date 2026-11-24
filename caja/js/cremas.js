@@ -115,8 +115,8 @@ function pagosPorVenta(ventas){
 
 /* ---- Vista, mes y pestañas ---- */
 document.getElementById('btnCremas').onclick = ()=> mostrarVista('cremas');
-document.getElementById('cMesPrev').onclick = ()=>{ mesCremas.month--; if(mesCremas.month<1){ mesCremas.month=12; mesCremas.year--; } cargarMovsCremas(); renderCremas(); };
-document.getElementById('cMesNext').onclick = ()=>{ mesCremas.month++; if(mesCremas.month>12){ mesCremas.month=1; mesCremas.year++; } cargarMovsCremas(); renderCremas(); };
+document.getElementById('cMesPrev').onclick = ()=>{ mesCremas.month--; if(mesCremas.month<1){ mesCremas.month=12; mesCremas.year--; } renderCremas(); };
+document.getElementById('cMesNext').onclick = ()=>{ mesCremas.month++; if(mesCremas.month>12){ mesCremas.month=1; mesCremas.year++; } renderCremas(); };
 document.querySelectorAll('.c-tab[data-ctab]').forEach(b=> b.onclick = ()=>{ cTab = b.dataset.ctab; renderCremas(); });
 ['cfFecha','cfPaciente','cfConcepto','cfIndica'].forEach(id=> document.getElementById(id).addEventListener('input', renderCremas));
 ['cfStock','cfsArea','cfsVenta','cfsCosto','cfsStock'].forEach(id=> document.getElementById(id).addEventListener('input', renderCremasStock));
@@ -125,12 +125,14 @@ function renderCremas(){
   if(vistaActual!=='cremas') return;
   document.getElementById('cMesLabel').textContent = `${MESES[mesCremas.month-1]} ${mesCremas.year}`;
   document.getElementById('cMesNext').disabled = mesCremas.year===hoyRef.getFullYear() && mesCremas.month===(hoyRef.getMonth()+1);
+  document.getElementById('cMesPrev').disabled = cMesInicio() <= CREMAS_DESDE.slice(0,8) + '01';   // arranca en agosto 2026
+  document.getElementById('cMesSel').style.visibility = cTab==='stock' ? 'hidden' : '';   // Stock no va por mes
   document.querySelectorAll('.c-tab[data-ctab]').forEach(b=> b.classList.toggle('active', b.dataset.ctab===cTab));
   document.getElementById('cPanelMovs').classList.toggle('col-hidden', cTab==='stock');
   document.getElementById('cPanelStock').classList.toggle('col-hidden', cTab!=='stock');
   document.getElementById('cBtnLinea').classList.add('col-hidden');   // reemplazado por el + (Cargar pago)
   document.getElementById('cBtnPagoNuevo').classList.toggle('col-hidden', cTab==='stock');
-  if(cTab==='stock') document.getElementById('cBtnPagados').classList.add('col-hidden');
+  document.getElementById('cBtnPagados').classList.add('col-hidden');   // ya no se usa: la tabla va por mes
   if(cremasVentas==null) cargarVentasCremas();
   if(cTab!=='stock') renderCremasMovs(); else { if(cremasVentas==null) cargarVentasCremas(); renderCremasStock(); }
 }
@@ -216,11 +218,8 @@ function renderCremasMovs(){
       && !f('cfIndica');
   };
   const filtrando = ['cfFecha','cfPaciente','cfConcepto','cfIndica'].some(id=> f(id));
+  const delMes = x=> x >= cMesInicio() && x < cMesFin();   // la tabla va por mes, como Sueros y Movimientos
   const nombreTipo = ({crema:'cremas', colageno:'colágenos', gel:'geles'})[cTab];
-  if(!delTipo.length && !ajTipo.length){
-    tb.innerHTML = `<tr><td colspan="${nCols}" class="empty-state">No hay ventas de ${nombreTipo} desde el 20/8/2026.</td></tr>`;
-    tf.innerHTML = ''; return;
-  }
   const profs = [PARTICULAR, ...todosLosNombresDeProfesionales().filter(n=> !esProfCremas(n))];
   const celdaStock = id=>{ const st = stockTras[id]; return `<td class="${st!=null && st<0 ? 'neg' : ''}" style="font-weight:700;">${st==null ? '<span class="pend">—</span>' : st}</td>`; };
   const filaVenta = m=>{
@@ -276,24 +275,13 @@ function renderCremasMovs(){
     }, {desde:'pac', hasta: usd ? 'usd' : 'indica', html: tit});
   };
   // Lo ya pagado se puede ocultar ("Ver pagados"); sin pagados a la vista, solo lo pendiente
-  const ultimoPago = lineasTipo.length ? lineasTipo[lineasTipo.length-1].fechaPago : '';
-  const verTodo = cVerPagados || filtrando;
-  const ventasVis = delTipo.filter(pasa).filter(m=> verTodo || !pagos[m.id]);
+  const ventasVis = delTipo.filter(m=> delMes(m.fechaISO)).filter(pasa);
   const items = [
     ...ventasVis.map(m=> ({f:m.fechaISO, o:msCreado(m), html:()=> filaVenta(m)})),
-    ...ajTipo.filter(pasaAj).filter(a=> verTodo || a.fechaISO > ultimoPago).map(a=> ({f:a.fechaISO, o:a.creadoMs||0, html:()=> filaAjuste(a)})),
+    ...ajTipo.filter(a=> delMes(a.fechaISO)).filter(pasaAj).map(a=> ({f:a.fechaISO, o:a.creadoMs||0, html:()=> filaAjuste(a)})),
   ].sort((a,b)=> a.f===b.f ? a.o-b.o : (a.f < b.f ? -1 : 1));
-  const btnPag = document.getElementById('cBtnPagados');
-  btnPag.classList.toggle('col-hidden', !lineasTipo.length);
-  btnPag.textContent = cVerPagados ? `▴ Ocultar pagados` : `▾ Ver pagados (${lineasTipo.length})`;
-  btnPag.classList.toggle('btn-primary', cVerPagados);
-  let html = '';
-  if(!verTodo && lineasTipo.length){
-    const n = delTipo.filter(m=> pagos[m.id]).length;
-    html += `<tr class="c-ocultos"><td colspan="${nCols}"><button class="c-ver-pagados" type="button">▾ ${n} ${n===1?'venta pagada oculta':'ventas pagadas ocultas'} (último pago: ${isoToDisplay(ultimoPago)}) — tocá para verlas</button></td></tr>`;
-  }
-  html += items.map(x=> x.html()).join('');
-  if(!items.length) html += `<tr><td colspan="${nCols}" class="empty-state">${filtrando ? 'No hay ventas con ese filtro.' : 'No hay ventas pendientes de pago.'}</td></tr>`;
+  let html = items.map(x=> x.html()).join('');
+  if(!items.length) html = `<tr><td colspan="${nCols}" class="empty-state">${filtrando ? 'No hay ventas con ese filtro en este mes.' : `No hay ventas de ${nombreTipo} en este mes.`}</td></tr>`;
   tb.innerHTML = html;
   // Totales de las ventas a la vista (línea fija abajo, como en Sueros)
   const s = sumas(ventasVis);
@@ -306,7 +294,7 @@ function renderCremasMovs(){
     costo: `<td class="monto">${totM(s.pagar)}</td>`,
     prof: `<td class="monto">${totM(s.prof)}</td>`,
     umm: `<td class="monto ${s.umm<0?'neg':''}">${totM(s.umm)}</td>`,
-  }, {desde:'fecha', hasta: usd ? 'usd' : 'indica', html: `TOTALES <span class="tot-cant">(${ventasVis.length} ${ventasVis.length===1?'venta':'ventas'}${verTodo ? '' : ' sin pagar'})</span>`}) : '';
+  }, {desde:'fecha', hasta: usd ? 'usd' : 'indica', html: `TOTALES <span class="tot-cant">(${ventasVis.length} ${ventasVis.length===1?'venta':'ventas'})</span>`}) : '';
   const verBtn = tb.querySelector('.c-ver-pagados');
   if(verBtn) verBtn.onclick = ()=>{ cVerPagados = true; renderCremasMovs(); };
   tb.querySelectorAll('.c-indica').forEach(sel=> sel.onchange = ()=> guardarExtraCrema(sel.dataset.id, {indica: sel.value}));
@@ -356,7 +344,8 @@ function renderCremasMovs(){
   tb.querySelectorAll('[data-quitar-ajuste]').forEach(b=> b.onclick = ()=> quitarAjusteCrema(b.dataset.quitarAjuste));
   // al entrar, se ve el final (lo más nuevo)
   const wrap = tb.closest('.sheet-wrap');
-  if(wrap && renderCremasMovs._tab !== cTab){ renderCremasMovs._tab = cTab; wrap.scrollTop = wrap.scrollHeight; }
+  const clave = cTab + cMesInicio();
+  if(wrap && renderCremasMovs._tab !== clave){ renderCremasMovs._tab = clave; wrap.scrollTop = wrap.scrollHeight; }
 }
 
 let cVerPagados = false;
@@ -589,7 +578,7 @@ document.getElementById('cpgGuardar').onclick = async ()=>{
     cremasPagos = nuevas;
     cerrarCPago();
     if(cTab!==tipo){ cTab = tipo; }
-    cVerPagados = true; renderCremas();
+    renderCremas();
   }catch(e){ alert("No se pudo guardar el pago: " + e.message); }
 };
 
