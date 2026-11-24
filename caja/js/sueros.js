@@ -94,7 +94,7 @@ function marcarSeccion(){
   if(ms && currentUser && currentUser.rol==='admin') ms.classList.toggle('col-hidden', act==='grande');
 }
 function mostrarVista(v){
-  if((v==='sueros' && !esAdminSueros()) || ((v==="cremas" || v==='conta' || v==='trat') && !esFede()) || (v==='informes' && currentUser.rol!=='admin')) return;
+  if((v==='sueros' && !esAdminSueros()) || (v==='movimientos' && esVictoria()) || (v==="cremas" && !esFede()) || ((v==='conta' || v==='trat') && !puedeVerVictoria()) || (v==='informes' && currentUser.rol!=='admin')) return;
   vistaActual = v;
   document.getElementById('vistaMovimientos').classList.toggle('col-hidden', v!=='movimientos');
   document.getElementById('vistaSueros').classList.toggle('col-hidden', v!=='sueros');
@@ -1431,6 +1431,7 @@ function primerNombre(){ return mayus(((currentUser && currentUser.nombre) || ''
 function esUsuarioCaja(){
   if(!currentUser) return false;
   if(currentUser.rol === 'admin') return true;
+  if(esVictoria()) return true;
   return USUARIOS_CAJA.includes(primerNombre());
 }
 // Quién carga aplicaciones de sueros: usuarios con secciones: ["sueros"] (o Sabrina)

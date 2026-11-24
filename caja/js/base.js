@@ -489,6 +489,9 @@ function seccionesUsuario(){ return currentUser && Array.isArray(currentUser.sec
 function esAdminSueros(){ return esFede() || seccionesUsuario().includes('sueros-admin'); }
 // Portal de sueros + Stock e Informes (sin resumen mensual ni valores): secciones ["sueros","sueros-informes"]
 function suerosLimitado(){ return !esAdminSueros() && seccionesUsuario().includes('sueros-informes'); }
+// Dra. Victoria Barbieri: secciones ["victoria"] → solo ve su botón (Contabilidad solo lectura, Cobros, Ord. Presupuestos)
+function esVictoria(){ return !!currentUser && currentUser.rol !== 'admin' && seccionesUsuario().includes('victoria'); }
+function puedeVerVictoria(){ return esFede() || esVictoria(); }
 function aplicarRolUI(){
   const esAdmin = currentUser.rol === 'admin';
   document.getElementById('btnCierre').classList.toggle('col-hidden', esAdmin);
@@ -513,7 +516,7 @@ function aplicarRolUI(){
   document.getElementById('sBtnPacientes').classList.toggle('col-hidden', !esAdminSueros());
   // Fila de secciones arriba y los botones de cada sección debajo (cada uno ve solo lo que tiene acceso)
   const tabs = document.getElementById('fedeTabs');
-  const verTab = {movimientos:true, sueros:esAdminSueros(), cremas:esFede(), informes:esAdmin, conta:esFede(), grande:esAdmin, cajas:esAdmin, backup:esAdmin};
+  const verTab = {movimientos:!esVictoria(), sueros:esAdminSueros(), cremas:esFede(), informes:esAdmin, conta:puedeVerVictoria(), grande:esAdmin, cajas:esAdmin, backup:esAdmin};
   tabs.querySelectorAll('[data-ir]').forEach(b=> b.classList.toggle('col-hidden', !verTab[b.dataset.ir]));
   tabs.classList.toggle('una-sola', Object.values(verTab).filter(Boolean).length===1);
   tabs.classList.remove('col-hidden');
@@ -533,7 +536,8 @@ function aplicarRolUI(){
   document.getElementById('menuWrap').classList.toggle('col-hidden', !esAdmin);
   document.getElementById('movBar').classList.add('con-tabs');
   document.getElementById('btnNuevo').classList.add('col-hidden');   // "+ Nuevo mov." ahora está debajo de Movimientos
-  mostrarVista('movimientos');
+  document.body.classList.toggle('modo-victoria', esVictoria());
+  mostrarVista(esVictoria() ? 'conta' : 'movimientos');
 }
 
 /* =====================================================================

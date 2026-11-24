@@ -1565,3 +1565,14 @@ tr.mov-rech td{opacity:.45;text-decoration:line-through;} tr.mov-rech td.notas, 
 /* Informes (Asistencias, Packs, Sueroterapia): el bloque de gráficos al 75% del ancho, centrado */
 #asisPanel{width:75%;margin-left:auto;margin-right:auto;}
 @media (max-width:800px){ #asisPanel{width:auto;margin-left:10px;margin-right:10px;} }
+
+/* Dra. Victoria: Contabilidad solo lectura y sin lo que es de caja */
+body.modo-victoria #vcBtnNuevo, body.modo-victoria #vcBtnDetalles, body.modo-victoria #vcBtnPDF,
+body.modo-victoria #vistaConta .editbtn, body.modo-victoria #alWrap, body.modo-victoria #menuWrap,
+body.modo-victoria #cajaStatus, body.modo-victoria #btnCierre, body.modo-victoria #btnVistaPrevia,
+body.modo-victoria #cajaHint{display:none !important;}
+body.modo-victoria #vistaTrat .tr-item .p{cursor:default;}
+/* Contabilidad: cada cuadro con su alto completo; scrollea la pantalla entera (no cuadritos con barra) */
+#vistaConta .s-panel{overflow-y:auto;overscroll-behavior:contain;}
+#vistaConta .s-panel > .sheet-wrap{flex:none !important;min-height:auto;overflow:visible;}
+#vistaConta .s-panel > .sheet-wrap thead th{position:static;}

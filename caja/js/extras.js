@@ -90,7 +90,7 @@ const vcFecha = iso => { const [y,m,d] = iso.split('-'); return `${d}/${m}`; };
 const vcDetalleHTML = m => vcEsc(m.detalle) + (m.extra ? ` <span class="vc-extra">— ${vcEsc(m.extra)}</span>` : '');
 
 function suscribirConta(){
-  if(!esFede()) return;
+  if(!puedeVerVictoria()) return;
   if(!unsubVcCfg){
     unsubVcCfg = db.collection('contaVictoria').doc('_config').onSnapshot(d=>{
       const det = d.exists && d.data().detalles;
@@ -191,7 +191,8 @@ function vcSetMoneda(c){
 document.querySelectorAll('#vcTipo button').forEach(b=> b.onclick = ()=> vcSetTipo(b.dataset.tipo));
 document.querySelectorAll('#vcMoneda button').forEach(b=> b.onclick = ()=> vcSetMoneda(b.dataset.cur));
 document.getElementById('vcValor').addEventListener('input', e=> formatearInputMonto(e.target));
-function abrirConta(id){
+function abrirConta(id){ if(esVictoria()) return; return abrirContaEd(id); }
+function abrirContaEd(id){
   if(!esFede()) return;
   const m = id ? (contaMovs||[]).find(x=> x.id===id) : null;
   vcEditId = m ? m.id : null;
@@ -398,7 +399,7 @@ function trRenderLista(){
 }
 document.getElementById('trLista').addEventListener('click', e=>{
   const ed = e.target.closest('[data-editar]');
-  if(ed && !e.target.closest('input')){ trEditando = ed.dataset.editar; trRenderLista(); return; }
+  if(ed && !e.target.closest('input') && !esVictoria()){ trEditando = ed.dataset.editar; trRenderLista(); return; }
   const b = e.target.closest('.tr-mas'); if(!b) return;
   const con = b.dataset.con, c = trConceptos().find(x=> x.concepto===con);
   if(trSel.some(x=> x.concepto===con)) trSel = trSel.filter(x=> x.concepto!==con);
