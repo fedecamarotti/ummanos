@@ -1669,3 +1669,7 @@ body.fede-nav-on #vistaPedidos > .sueros-bar{margin-top:8px;}
 /* Cobros en el usuario de Victoria: el profesional es ella y no se cambia */
 #trProf.tr-fijo{pointer-events:none;background:#f4f1e8;font-weight:600;}
 @media (max-width:700px){ .pd-2col{grid-template-columns:1fr;} .pd-meta-der{margin-left:0;} #pdPanel .pd-top{margin:10px 12px 0;} }
+/* Pedidos dentro del portal (Gabriela) */
+#pPedidos{display:flex;flex-direction:column;min-height:calc(100vh - 70px);}
+#pPedidos.col-hidden{display:none;}
+#pPedidos #pdPanel{flex:1;}

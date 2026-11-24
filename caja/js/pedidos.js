@@ -12,9 +12,11 @@ const PD_ESTADOS = {pendiente:'PENDIENTE', realizado:'REALIZADO', cancelado:'CAN
 const PD_RESPONSABLES = ['ORIANA','STEPHANIE','TIARA MEDINA'];
 let pdLista = null, unsubPd = null, pdFiltro = 'pendiente', pdAbierto = null, pdPendienteRender = false;
 
-// Quién puede cargar pedidos nuevos: Victoria y los admins. Recepción solo los gestiona.
-const pdPuedeCrear = ()=> !!currentUser && (currentUser.rol === 'admin' || esVictoria());
-const pdPuedeVer = ()=> !!currentUser && (currentUser.rol === 'admin' || esVictoria() || USUARIOS_CAJA.includes(primerNombre()));
+// Médicas que piden: Victoria (secciones ["victoria"]) y quien tenga "pedidos" en secciones (Gabriela Baslini).
+// Cargan pedidos y pueden cancelar los pendientes. Recepción los gestiona. Admins (Fede, Pedro) hacen todo.
+const pdEsMedica = ()=> !!currentUser && currentUser.rol !== 'admin' && (esVictoria() || seccionesUsuario().includes('pedidos'));
+const pdPuedeCrear = ()=> !!currentUser && (currentUser.rol === 'admin' || pdEsMedica());
+const pdPuedeVer = ()=> !!currentUser && (currentUser.rol === 'admin' || pdEsMedica() || USUARIOS_CAJA.includes(primerNombre()));
 const pdNombreUsuario = ()=> mayus(((currentUser && currentUser.nombre) || '').trim()) || 'USUARIO';
 
 // Fecha límite: el día siguiente al envío; si cae domingo, pasa al lunes
@@ -23,6 +25,8 @@ function pdLimite(iso){
   if(d.getDay() === 0) d.setDate(d.getDate() + 1);
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
+// "VICTORIA BARBIERI" → "VICTORIA" (para la columna Pidió)
+const pdQuienCorto = n=> mayus(String(n||'')).trim().split(/[\s,]+/)[0] || '';
 const pdVencido = p=> p.estado === 'pendiente' && p.limiteISO && p.limiteISO < hoyISO();
 const pdAhora = ()=> { const d = new Date(); return cpFechaCorta(hoyISO()) + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); };
 
@@ -38,7 +42,7 @@ function pdIniciar(){
     }
   }, err=>{
     pdLista = [];
-    document.getElementById('pdBody').innerHTML = `<tr><td colspan="8" class="empty-state" style="color:#a13a3a;">No se pudieron leer los pedidos: ${escHtml(err.message)}<br>Revisá que en las reglas de Firebase esté la colección <b>pedidosSecretaria</b>.</td></tr>`;
+    document.getElementById('pdBody').innerHTML = `<tr><td colspan="9" class="empty-state" style="color:#a13a3a;">No se pudieron leer los pedidos: ${escHtml(err.message)}<br>Revisá que en las reglas de Firebase esté la colección <b>pedidosSecretaria</b>.</td></tr>`;
   });
 }
 
@@ -67,7 +71,7 @@ function renderPd(){
   const panel = document.getElementById('pdPanel');
   if(panel.classList.contains('col-hidden')) return;
   const tb = document.getElementById('pdBody');
-  if(pdLista == null){ tb.innerHTML = '<tr><td colspan="8" class="empty-state">Cargando…</td></tr>'; return; }
+  if(pdLista == null){ tb.innerHTML = '<tr><td colspan="9" class="empty-state">Cargando…</td></tr>'; return; }
   document.querySelectorAll('#pdEstados [data-pde]').forEach(b=> b.classList.toggle('active', b.dataset.pde === pdFiltro));
   const ms = ts => ts && ts.toMillis ? ts.toMillis() : Date.now();
   let lista = pdLista.filter(p=> !pdFiltro || p.estado === pdFiltro);
@@ -76,12 +80,13 @@ function renderPd(){
     ? ((a.limiteISO||'') < (b.limiteISO||'') ? -1 : (a.limiteISO||'') > (b.limiteISO||'') ? 1 : ms(a.creadoEn)-ms(b.creadoEn))
     : ((a.fechaISO||'') > (b.fechaISO||'') ? -1 : (a.fechaISO||'') < (b.fechaISO||'') ? 1 : ms(b.creadoEn)-ms(a.creadoEn)));
   if(!lista.length){
-    tb.innerHTML = `<tr><td colspan="8" class="empty-state">${pdFiltro==='pendiente' ? 'No hay pedidos pendientes.' : 'No hay pedidos en esta lista.'}${pdPuedeCrear() && document.getElementById('vistaPedidos').contains(panel) ? ' Cargá uno con el "+".' : ''}</td></tr>`;
+    tb.innerHTML = `<tr><td colspan="9" class="empty-state">${pdFiltro==='pendiente' ? 'No hay pedidos pendientes.' : 'No hay pedidos en esta lista.'}</td></tr>`;
     return;
   }
   tb.innerHTML = lista.map(p=> `<tr data-id="${p.id}" class="pd-fila">
       <td>${cpFechaCorta(p.fechaISO)}</td>
       <td class="left"><b>${escHtml(p.paciente||'')}</b></td>
+      <td class="pd-tipo">${escHtml(pdQuienCorto(p.creadoPor))}</td>
       <td class="pd-tipo">${escHtml(p.tipo||'')}</td>
       <td class="left">${escHtml(p.detalle||'')}</td>
       <td class="${pdVencido(p) ? 'pd-vencido' : ''}">${cpFechaCorta(p.limiteISO)}</td>
@@ -156,12 +161,13 @@ function pdMetaHtml(p){
 function pdAbrirDetalle(id){
   const p = (pdLista || []).find(x=> x.id === id); if(!p) return;
   pdAbierto = id;
-  const gestiona = currentUser.rol === 'admin' || !esVictoria();   // recepción y admins
+  const gestiona = currentUser.rol === 'admin' || !pdEsMedica();   // recepción y admins
   const cerradoParaVic = !gestiona && p.estado !== 'pendiente';
   document.getElementById('pddTitulo').textContent = p.detalle || 'Pedido';
   document.getElementById('pddMeta').innerHTML = pdMetaHtml(p);
   document.getElementById('pddPaciente').textContent = p.paciente || '';
   document.getElementById('pddIndicacion').textContent = p.indicacion || '';
+  document.getElementById('pddIndDe').textContent = 'Indicación de ' + (pdQuienCorto(p.creadoPor) || 'la médica');
   const selR = document.getElementById('pddResp');
   const resp = p.responsable || (gestiona && PD_RESPONSABLES.includes(primerNombre()) ? primerNombre() : '');
   const opcR = PD_RESPONSABLES.includes(resp) || !resp ? PD_RESPONSABLES : [...PD_RESPONSABLES, resp];
@@ -214,3 +220,13 @@ document.getElementById('pddGuardar').onclick = async ()=>{
   catch(e){ err.textContent = 'No se pudo guardar: ' + e.message; }
   finally{ bt.disabled = false; }
 };
+
+/* ---------- Portal (Gabriela y otras médicas con "pedidos" que entran por Sueroterapia) ---------- */
+function pdPortalPreparar(){
+  const ok = pdEsMedica();
+  document.getElementById('pBtnPedidos').classList.toggle('col-hidden', !ok);
+  if(ok) pdIniciar();
+}
+document.getElementById('pBtnPedidos').onclick = ()=> portalIr('pedidos');
+document.getElementById('pPdVolver').onclick = ()=> portalIr('sueros');
+document.getElementById('pPdNuevo').onclick = pdAbrirNuevo;

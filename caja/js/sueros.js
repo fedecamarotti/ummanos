@@ -1468,6 +1468,7 @@ function mostrarPortal(){
     document.getElementById('pBtnInformes').classList.remove('col-hidden');
   }
   if(puedeCrearPacientes()) document.getElementById('pBtnNuevoPac').classList.remove('col-hidden');
+  pdPortalPreparar();   // Pedidos secretaría (Gabriela)
   portalIr('sueros');
   if(puedeCargarSueros()){
     suscribirSueros();
@@ -1494,6 +1495,8 @@ function portalIr(v){
   document.getElementById('pHome').classList.toggle('col-hidden', v!=='home');
   document.getElementById('pSueros').classList.toggle('col-hidden', v!=='sueros');
   document.getElementById('pExtra').classList.toggle('col-hidden', v!=='extra');
+  document.getElementById('pPedidos').classList.toggle('col-hidden', v!=='pedidos');
+  if(v==='pedidos') pdMostrarEn('pPedidos');
   if(v==='extra'){
     vistaActual = 'sueros';
     document.getElementById('vistaSueros').classList.remove('col-hidden');
