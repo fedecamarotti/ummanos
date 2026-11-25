@@ -335,16 +335,14 @@ function dvConectarPickers(root){
 }
 function dvAgregarDroga(card){
   const r = document.createElement('div'); r.className = 'dv-droga';
-  const primera = !card.querySelector('.dv-droga');
-  // Línea 1: Droga / suplemento · Cuándo · Frecuencia · Cantidad · Unidad (los demás componentes: solo droga, cantidad y unidad)
+  // Cada componente es una línea completa: Droga / suplemento · Cuándo · Frecuencia · Cantidad · Unidad
   r.innerHTML = dvPicker('droga','Droga / suplemento', DV_DROGAS, {req:true})
-    + (primera ? dvPicker('momento','Cuándo', DV_MOMENTOS, {req:true}) + dvPicker('frecuencia','Frecuencia', DV_FRECUENCIAS) : '<span></span><span></span>')
+    + dvPicker('momento','Cuándo', DV_MOMENTOS, {req:true}) + dvPicker('frecuencia','Frecuencia', DV_FRECUENCIAS)
     + `<label class="dv-req">Cantidad<input data-dv="cantidad" inputmode="decimal" placeholder="Ej.: 500" data-no-mayus autocomplete="off"></label>`
     + dvPicker('unidad','Unidad', DV_UNIDADES, {req:true, sinMayus:true})
-    + (primera ? '<span></span>' : `<button type="button" class="dv-quitar">Quitar</button>`);
+    + `<button type="button" class="dv-quitar dv-quitar-comp">Quitar</button>`;
   r.querySelector('[data-dv="unidad"]').dataset.sinMayus = '1';
-  const q = r.querySelector('.dv-quitar');
-  if(q) q.onclick = ()=>{ r.remove(); card.dispatchEvent(new Event('dvcomp')); };
+  r.querySelector('.dv-quitar').onclick = ()=>{ r.remove(); card.dispatchEvent(new Event('dvcomp')); };
   card.querySelector('.dv-componentes').appendChild(r);
   dvConectarPickers(r);
 }
@@ -359,7 +357,11 @@ function dvAgregarIndicacion(){
     <label class="dv-nota col-hidden">Notas<textarea data-dv="notas" rows="2" placeholder="Aclaraciones particulares para esta indicación"></textarea></label>`;
   dvConectarPickers(c);
   // con más de un componente es un preparado (formulación magistral)
-  const pintar = ()=> c.querySelector('.dv-magistral').classList.toggle('col-hidden', c.querySelectorAll('.dv-droga').length < 2);
+  const pintar = ()=>{
+    const varias = c.querySelectorAll('.dv-droga').length > 1;
+    c.querySelector('.dv-magistral').classList.toggle('col-hidden', !varias);
+    c.querySelectorAll('.dv-quitar-comp').forEach(b=> b.style.visibility = varias ? '' : 'hidden');   // con una sola línea no se puede quitar
+  };
   c.addEventListener('dvcomp', pintar);
   c.querySelector('.dv-eliminar').onclick = ()=> c.remove();
   c.querySelector('.dv-mas-comp').onclick = ()=>{ dvAgregarDroga(c); pintar(); };
@@ -418,11 +420,13 @@ function dvRecolectar(){
   for(const c of document.querySelectorAll('#pdvItems .dv-item')){
     if(dvVacia(c)) continue;
     const varios = c.querySelectorAll('.dv-droga').length > 1;
-    const it = {momento: dvLeer(c,'momento'), tipo: varios ? DV_MAGISTRAL : DV_TIPOS[0], nombre: mayus(dvLeer(c,'nombre')), base: dvLeer(c,'base'),
-      etapa: dvLeer(c,'etapa'), duracion: dvLeer(c,'duracion'), notas: mayus(dvLeer(c,'notas')), frecuencia: dvLeer(c,'frecuencia'),
-      componentes: [...c.querySelectorAll('.dv-droga')].map(r=> ({droga: dvLeer(r,'droga'), cantidad: dvLeer(r,'cantidad'), unidad: dvLeer(r,'unidad')}))};
+    const comps = [...c.querySelectorAll('.dv-droga')].map(r=> ({droga: dvLeer(r,'droga'), momento: dvLeer(r,'momento'), frecuencia: dvLeer(r,'frecuencia'), cantidad: dvLeer(r,'cantidad'), unidad: dvLeer(r,'unidad')}));
+    const unicos = k=> [...new Set(comps.map(x=> x[k]).filter(Boolean))].join(' / ');
+    const it = {momento: unicos('momento'), tipo: varios ? DV_MAGISTRAL : DV_TIPOS[0], nombre: mayus(dvLeer(c,'nombre')), base: dvLeer(c,'base'),
+      etapa: dvLeer(c,'etapa'), duracion: dvLeer(c,'duracion'), notas: mayus(dvLeer(c,'notas')), frecuencia: unicos('frecuencia'),
+      componentes: comps};
     const n = c.querySelector('.dv-item-h b').textContent;
-    if(!it.momento) return {error: `${n}: elegí cuándo se toma.`};
+    if(it.componentes.some(x=> !x.momento)) return {error: `${n}: elegí cuándo se toma${it.componentes.length > 1 ? ' en cada línea' : ''}.`};
     if(it.componentes.some(x=> !x.droga)) return {error: `${n}: elegí la droga o suplemento.`};
     if(it.componentes.some(x=> !(Number(String(x.cantidad).replace(',','.')) > 0))) return {error: `${n}: cada cantidad debe ser mayor que cero.`};
     if(it.componentes.some(x=> !x.unidad)) return {error: `${n}: elegí la unidad.`};
@@ -529,14 +533,16 @@ async function pdfDevolucion(p){
     const body = dv.items.map(it=>{
       const L = [];
       if(it.nombre) L.push('PREPARADO: ' + it.nombre);
-      it.componentes.forEach(c=> L.push(`${c.droga}  ${c.cantidad} ${c.unidad}`));
+      const distintos = new Set(it.componentes.map(c=> (c.momento||'') + '|' + (c.frecuencia||''))).size > 1;
+      it.componentes.forEach(c=> L.push(`${c.droga}  ${c.cantidad} ${c.unidad}` + (distintos ? [c.momento, c.frecuencia].filter(Boolean).map(x=> ' · ' + x).join('') : '')));
       if(it.tipo === DV_MAGISTRAL && it.base) L.push('CANTIDADES POR: ' + it.base);
       if(it.composicion) L.push(it.composicion);
       if(it.presentacion) L.push('POR TOMA: ' + it.presentacion);
-      const extra = [it.via && 'VÍA ' + it.via, it.frecuencia].filter(Boolean).join(' · ');
+      const distintosF = new Set(it.componentes.map(c=> (c.momento||'') + '|' + (c.frecuencia||''))).size > 1;
+      const extra = [it.via && 'VÍA ' + it.via, !distintosF && it.frecuencia].filter(Boolean).join(' · ');
       if(extra) L.push(extra);
       if(it.notas) L.push(it.notas);
-      return [it.momento, L.join('\n'), [it.etapa, it.duracion].filter(Boolean).join('\n') || '-'];
+      return [distintosF ? '-' : it.momento, L.join('\n'), [it.etapa, it.duracion].filter(Boolean).join('\n') || '-'];
     });
     doc.autoTable({
       startY: y, margin:{left:M, right:M, bottom:70},
