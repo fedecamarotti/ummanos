@@ -1700,6 +1700,27 @@ document.getElementById('pNpGuardar').onclick = async ()=>{
 
 /* ---- Movimientos de un insumo desde el 1/10 (para controlar el stock) ---- */
 const overlayKardex = document.getElementById('overlayKardex');
+let kardexFilas = [], kardexMeses = [], kardexVer = 1;
+const KARDEX_MESES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+function renderKardex(){
+  const meses = kardexMeses.slice(0, kardexVer);
+  let html = '';
+  meses.forEach(mes=>{
+    const [y, m] = mes.split('-');
+    html += `<tr class="k-mes"><td colspan="6" class="left">${KARDEX_MESES[Number(m)-1]} ${y}</td></tr>`;
+    html += kardexFilas.filter(f=> f.fecha.slice(0,7)===mes).map(f=> `<tr class="${f.viejo ? 'k-viejo' : (f.tipo.startsWith('Ajuste') ? 'k-ajuste' : '')}">
+    <td>${fechaLarga(f.fecha)}</td><td class="left">${f.tipo}</td><td class="left">${f.det}</td>
+    <td>${f.viejo ? (f.n>0 ? `<s>+${f.n}</s>` : '') : (f.entra ? '+' + f.entra.toLocaleString('es-AR') : '')}</td><td>${f.viejo ? (f.n<0 ? `<s>−${-f.n}</s>` : '') : (f.sale ? '−' + f.sale.toLocaleString('es-AR') : '')}</td>
+    <td><b>${f.saldo.toLocaleString('es-AR')}</b></td></tr>`).join('');
+  });
+  if(kardexVer < kardexMeses.length){
+    const [y, m] = kardexMeses[kardexVer].split('-');
+    html += `<tr class="k-mas"><td colspan="6"><button type="button" id="kardexMas">Ver más · ${KARDEX_MESES[Number(m)-1].charAt(0) + KARDEX_MESES[Number(m)-1].slice(1).toLowerCase()} ${y}</button></td></tr>`;
+  }
+  document.getElementById('kardexBody').innerHTML = html;
+  const mas = document.getElementById('kardexMas');
+  if(mas) mas.onclick = ()=>{ kardexVer++; renderKardex(); };
+}
 function abrirKardex(insumo){
   const ini = suerosStockInicial && suerosStockInicial.items && Object.keys(suerosStockInicial.items).length ? suerosStockInicial : null;
   const desde = ini ? (ini.fecha || STOCK_DESDE) : STOCK_DESDE;
@@ -1739,10 +1760,12 @@ function abrirKardex(insumo){
   const fila = calcularStock('9999-12-31').find(x=> x.insumo===insumo);
   const tE = filas.slice(1).reduce((a,f)=> a+f.entra, 0), tS = filas.reduce((a,f)=> a+f.sale, 0);
   document.getElementById('kardexTitulo').textContent = insumo;
-  document.getElementById('kardexBody').innerHTML = filas.map(f=> `<tr class="${f.viejo ? 'k-viejo' : (f.tipo.startsWith('Ajuste') ? 'k-ajuste' : '')}">
-    <td>${fechaLarga(f.fecha)}</td><td class="left">${f.tipo}</td><td class="left">${f.det}</td>
-    <td>${f.viejo ? (f.n>0 ? `<s>+${f.n}</s>` : '') : (f.entra ? '+' + f.entra.toLocaleString('es-AR') : '')}</td><td>${f.viejo ? (f.n<0 ? `<s>−${-f.n}</s>` : '') : (f.sale ? '−' + f.sale.toLocaleString('es-AR') : '')}</td>
-    <td><b>${f.saldo.toLocaleString('es-AR')}</b></td></tr>`).join('');
+  // Lo más nuevo arriba, de a un mes: "Ver más" abre el mes anterior
+  kardexFilas = filas.slice().reverse();
+  kardexMeses = [...new Set(kardexFilas.map(f=> f.fecha.slice(0,7)))];
+  kardexVer = 1;
+  renderKardex();
+  document.querySelector('#overlayKardex .inf-wrap').scrollTop = 0;
   document.getElementById('kardexFoot').innerHTML = `<tr><td colspan="3" class="left">Stock actual</td><td>${tE ? '+' + tE.toLocaleString('es-AR') : ''}</td><td>${tS ? '−' + tS.toLocaleString('es-AR') : ''}</td><td><b>${(fila ? fila.cant : saldo).toLocaleString('es-AR')}</b></td></tr>`;
   const hayAjustes = filas.some(f=> f.tipo==='Ajuste (editar insumo)');
   document.getElementById('kardexAviso').classList.toggle('col-hidden', !hayAjustes);
