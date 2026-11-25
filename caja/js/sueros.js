@@ -571,7 +571,7 @@ function renderStock(){
   // Columnas (la de "Faltan" solo con Calcular compra)
   const verCont = esFede();
   document.getElementById('sThCont').classList.toggle('col-hidden', !verCont);
-  document.getElementById('sStockCols').innerHTML = `<col><col style="width:116px"><col style="width:124px"><col style="width:80px"><col style="width:84px">${verCont ? '<col style="width:104px">' : ''}${sCalcCompra ? '<col style="width:90px">' : ''}<col style="width:56px">`;
+  document.getElementById('sStockCols').innerHTML = `<col><col style="width:130px"><col style="width:116px"><col style="width:124px"><col style="width:80px"><col style="width:84px">${verCont ? '<col style="width:104px">' : ''}${sCalcCompra ? '<col style="width:90px">' : ''}<col style="width:56px">`;
   document.getElementById('sThFaltan').classList.toggle('col-hidden', !sCalcCompra);
   // Filtro por proveedor: los insumos que alguna vez se le compraron (el kit, si le compraste algún componente)
   const selProv = document.getElementById('sStockProv');
@@ -588,7 +588,7 @@ function renderStock(){
   const lista = todos.filter(i=> (!q || contiene(i.insumo, q)) && (!delProv || delProv.has(i.insumo)));
   const body = document.getElementById('sStockBody');
   const foot = document.getElementById('sStockFoot');
-  const nCols = 6 + (sCalcCompra ? 1 : 0) + (esFede() ? 1 : 0);
+  const nCols = 7 + (sCalcCompra ? 1 : 0) + (esFede() ? 1 : 0);   // insumo, proveedor, valor, total, stock, mín., lápiz (+ cont, comprar)
   const guion = '<span class="pend">—</span>';
   if(!lista.length){
     body.innerHTML = `<tr><td colspan="${nCols}" class="empty-state">${todos.length ? 'No hay insumos con ese nombre.' : 'Todavía no hay insumos. Cargá una compra (egreso) para empezar el stock.'}</td></tr>`;
@@ -599,7 +599,8 @@ function renderStock(){
     body.innerHTML = lista.map(i=>`
     <tr>
       <td class="left">${i.insumo}</td>
-      ${`<td>${guion}</td>`.repeat(nCols-2)}
+      <td>${escHtml(((suerosCriticos[i.insumo]||{}).prov)||'')}</td>
+      ${`<td>${guion}</td>`.repeat(nCols-3)}
       <td class="editcol"></td>
     </tr>`).join('');
     foot.innerHTML = '';
@@ -608,6 +609,12 @@ function renderStock(){
   const venc = {};
   vencimientosProximos().forEach(v=> (venc[v.insumo] = venc[v.insumo] || []).push(v));
   const puedeEditar = esAdminSueros();
+  // Proveedor de cada insumo (para recordarlo); se guarda en sueros/_criticos junto al mínimo crítico
+  const celdaProv = i=>{
+    const v = (suerosCriticos[i.insumo]||{}).prov || '';
+    if(puedeEditar) return `<td><input class="s-prov" data-k="${escAttr(i.insumo)}" value="${escAttr(v)}" placeholder="—" autocomplete="off"></td>`;
+    return `<td>${v ? escHtml(v) : guion}</td>`;
+  };
   const celdaCrit = (i, campo)=>{
     const v = (suerosCriticos[i.insumo]||{})[campo];
     if(puedeEditar) return `<td><input class="s-crit" data-k="${escAttr(i.insumo)}" data-campo="${campo}" inputmode="numeric" value="${v!=null && v!=='' ? v : ''}" placeholder="—"></td>`;
@@ -633,6 +640,7 @@ function renderStock(){
     if(i.kit) return `
     <tr>
       <td class="left" title="Suma de ${componentesVias().join(', ')}, redondeada para arriba a $1.000">${i.insumo}</td>
+      <td></td>
       <td>${i.valorUnit ? fmtPesos(i.valorUnit) : guion}</td>
       <td>${guion}</td><td>${guion}</td><td>${guion}</td>${esFede() ? `<td>${guion}</td>` : ''}${sCalcCompra ? `<td>${guion}</td>` : ''}
       <td class="editcol">${ordCell(i) || '<button class="editbtn" style="visibility:hidden" tabindex="-1">&#9998;</button>'}</td>
@@ -644,6 +652,7 @@ function renderStock(){
     return `
     <tr class="${critico ? 's-critico' : ''}">
       <td class="left k-link" data-k="${escAttr(i.insumo)}" title="Ver movimientos desde el 1/10">${i.insumo}${chips}</td>
+      ${celdaProv(i)}
       <td>${i.valorUnit ? fmtPesos(i.valorUnit) : guion}</td>
       <td class="${i.total<0?'neg':''}">${fmtPesos(i.total)}</td>
       <td class="${i.cant<0?'neg':''}" style="font-weight:700;">${i.cant.toLocaleString('es-AR')}</td>
@@ -655,6 +664,10 @@ function renderStock(){
   body.querySelectorAll('.editbtn[data-insumo]').forEach(b=> b.onclick = ()=> abrirEdicionInsumo(b.dataset.insumo));
   body.querySelectorAll('[data-sube]').forEach(b=> b.onclick = ()=> moverInsumo(b.dataset.sube, -1));
   body.querySelectorAll('[data-baja]').forEach(b=> b.onclick = ()=> moverInsumo(b.dataset.baja, 1));
+  body.querySelectorAll('.s-prov').forEach(inp=>{
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } });
+    inp.addEventListener('blur', ()=> guardarProvInsumo(inp.dataset.k, inp.value));
+  });
   body.querySelectorAll('.s-crit').forEach(inp=>{
     inp.addEventListener('input', ()=> inp.value = inp.value.replace(/\D/g,''));
     inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } });
@@ -681,6 +694,7 @@ function renderStock(){
   foot.innerHTML = `
     <tr>
       <td class="left">TOTALES</td>
+      <td></td>
       <td></td>
       <td>${fmtPesos(totVal)}</td>
       <td>${totCant.toLocaleString('es-AR')}</td>
@@ -714,6 +728,17 @@ async function guardarConteo(insumo, valor){
   renderStock();
   try{ await db.collection('sueros').doc('_conteo').set({lista: nuevo}); }
   catch(e){ alert("No se pudo guardar el conteo: " + e.message); }
+}
+async function guardarProvInsumo(insumo, valor){
+  if(!esAdminSueros()) return;
+  const v = mayus(String(valor||'').trim());
+  const actual = (suerosCriticos[insumo]||{}).prov || '';
+  if(v === actual) return;
+  const nuevo = {...suerosCriticos, [insumo]: {...(suerosCriticos[insumo]||{}), prov: v}};
+  suerosCriticos = nuevo;
+  renderStock();
+  try{ await db.collection('sueros').doc('_criticos').set({lista: nuevo}); }
+  catch(e){ alert("No se pudo guardar el proveedor: " + e.message); }
 }
 async function guardarCritico(insumo, campo, valor){
   if(!esAdminSueros()) return;
