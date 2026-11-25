@@ -1685,7 +1685,7 @@ body.fede-nav-on #vistaPedidos > .sueros-bar{margin-top:8px;}
 #kardexBody tr.k-mas button:hover{background:#f4eeda;}
 
 /* Stock de sueros: proveedor editable */
-.tabla-stock input.s-prov{width:100%;padding:3px 6px;font-size:11px;font-weight:600;text-align:center;border:1px solid transparent;background:transparent;border-radius:6px;font-family:inherit;color:var(--text);}
+.tabla-stock input.s-prov{width:100%;padding:3px 6px;font-size:11px;font-weight:400;font-style:italic;text-align:center;border:1px solid transparent;background:transparent;border-radius:6px;font-family:inherit;color:var(--text);}
 .tabla-stock input.s-prov:hover{border-color:var(--border);background:#fdfbf2;}
 .tabla-stock input.s-prov:focus{outline:none;border-color:var(--accent);background:#fffcf5;}
 .tabla-stock input.s-prov::placeholder{color:#c8bfa3;}
