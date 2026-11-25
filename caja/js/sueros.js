@@ -43,33 +43,49 @@ function calcularRepartoSuero(m){
 // El stock se contabiliza desde esta fecha: los meses anteriores se muestran sin valores
 const STOCK_DESDE = '2026-10-01';
 /* ---- "VIAS Y OTROS INSUMOS" es un kit: desde el 1/10/2026 descuenta 1 de cada componente
-   y su valor unitario es la suma de los cuatro ---- */
+   y su valor unitario es la suma de los componentes.
+   Desde el 25/11/2026 "OTROS (AGUJAS, ETC)" se abre en agujas y jeringas, y el valor del kit
+   se redondea para arriba a múltiplos de $1.000 (ej.: 6.646 → 7.000). ---- */
 const claveInsumo = v => normBusqueda(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9ñ]/g,'');
 const esVias = n => claveInsumo(n).startsWith('viasyotros');
-const KIT_VIAS = [
+const KIT_BASE = [
   {nombre:'GUIA',                prefijos:['guia']},
   {nombre:'CATETER',             prefijos:['cateter']},
   {nombre:'SOL. FISIOLOGICA',    prefijos:['solfisiolog','solucionfisiolog']},
-  {nombre:'OTROS (AGUJAS, ETC)', prefijos:['otros']},
 ];
+const KIT_VIAS_NUEVO_DESDE = '2026-11-25';
+const KIT_VIAS_VIEJO = [...KIT_BASE, {nombre:'OTROS (AGUJAS, ETC)', prefijos:['otros']}];
+const KIT_VIAS_NUEVO = [...KIT_BASE,
+  {nombre:'AGUJA 21GX1',      prefijos:['aguja21gx1']},
+  {nombre:'AGUJA 50X8 21GX2', prefijos:['aguja50x821gx2']},
+  {nombre:'JERINGA 10ML',     prefijos:['jeringa10ml']},
+  {nombre:'JERINGA 20ML',     prefijos:['jeringa20ml']},
+];
+// Insumos dados de baja: no se muestran en Stock ni se ofrecen al cargar (el historial los sigue contando)
+const INSUMOS_DE_BAJA = new Set(['OTROS (AGUJAS, ETC)']);
+const deBaja = i=> INSUMOS_DE_BAJA.has(i.insumo) && !(Number(i.cant) > 0);
+const kitVias = fechaISO => (fechaISO || hoyISO()) >= KIT_VIAS_NUEVO_DESDE ? KIT_VIAS_NUEVO : KIT_VIAS_VIEJO;
+// Valor del kit: desde el 25/11/2026, redondeado para arriba a $1.000
+const redondearKit = (v, fechaISO)=> (fechaISO || hoyISO()) >= KIT_VIAS_NUEVO_DESDE && v > 0 ? Math.ceil(v / 1000) * 1000 : v;
 // Nombres reales de los componentes, tal como se cargaron en las compras
-let cacheComps = {ref:null, len:-1, val:null};
-function componentesVias(){
-  if(cacheComps.ref===sueros && cacheComps.len===sueros.length) return cacheComps.val;
-  const val = calcularComponentesVias();
-  cacheComps = {ref:sueros, len:sueros.length, val};
-  return val;
+let cacheComps = {ref:null, len:-1, val:{}};
+function componentesVias(fechaISO){
+  const kit = kitVias(fechaISO), clave = kit===KIT_VIAS_NUEVO ? 'n' : 'v';
+  if(cacheComps.ref!==sueros || cacheComps.len!==sueros.length) cacheComps = {ref:sueros, len:sueros.length, val:{}};
+  if(!cacheComps.val[clave]) cacheComps.val[clave] = calcularComponentesVias(kit);
+  return cacheComps.val[clave];
 }
-function calcularComponentesVias(){
+function calcularComponentesVias(kit){
   const nombres = new Set();
   sueros.forEach(m=>{ if(m.tipo==='egreso' || m.tipo==='ajuste') (m.items||[]).forEach(it=> it.insumo && nombres.add(it.insumo)); });
+  if(suerosStockInicial && suerosStockInicial.items) Object.keys(suerosStockInicial.items).forEach(n=> nombres.add(n));
   const lista = [...nombres];
-  return KIT_VIAS.map(k=> lista.find(n=> k.prefijos.some(p=> claveInsumo(n).startsWith(p))) || k.nombre);
+  return kit.map(k=> lista.find(n=> k.prefijos.some(p=> claveInsumo(n).startsWith(p))) || k.nombre);
 }
 // Expande el kit en sus componentes (solo para aplicaciones desde el 1/10/2026)
 function expandirKit(items, fechaISO){
   const out = [];
-  const comps = (fechaISO||hoyISO()) >= STOCK_DESDE ? componentesVias() : null;
+  const comps = (fechaISO||hoyISO()) >= STOCK_DESDE ? componentesVias(fechaISO) : null;
   (items||[]).forEach(it=>{
     const cant = Number(it.cant)||0;
     if(comps && esVias(it.insumo)) comps.forEach(c=> out.push({insumo:c, cant}));
@@ -472,11 +488,14 @@ function simularLotes(hastaISO, opts){
 // Costo real de una aplicación (lote más viejo primero), ubicándola en su fecha
 function costearFIFO(items, fechaISO, excluirId){
   const sim = simularLotes(diaSiguiente(fechaISO), {excluirId, sinCache:true});
-  const comps = componentesVias();
+  const comps = componentesVias(fechaISO);
   return items.map(it=>{
     const cant = Number(it.cant)||0;
     let costo = 0;
-    if(esVias(it.insumo)) comps.forEach(c=> costo += sim.consumir(c, cant, null));
+    if(esVias(it.insumo)){
+      comps.forEach(c=> costo += sim.consumir(c, cant, null));
+      if(cant) costo = redondearKit(costo / cant, fechaISO) * cant;   // desde el 25/11: redondeado a $1.000
+    }
     else if(it.insumo) costo = sim.consumir(it.insumo, cant, null);
     return {...it, valorUnit: cant ? Math.round(costo/cant) : 0, subtotal: Math.round(costo)};
   });
@@ -493,11 +512,12 @@ function calcularStock(hastaISO){
   // Kit: valor unitario = suma de los componentes (si ya tienen precio)
   const kit = Object.keys(filas).find(esVias);
   if(kit){
-    const comps = componentesVias();
+    const fKit = hastaISO > hoyISO() ? hoyISO() : (()=>{ const d = new Date(hastaISO + 'T12:00:00'); d.setDate(d.getDate()-1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })();
+    const comps = componentesVias(fKit);
     const suma = comps.reduce((a,c)=> a + ((filas[c]||{}).valorUnit||0), 0);
     const sumaUlt = comps.reduce((a,c)=> a + ((filas[c]||{}).ultimo||0), 0);
-    if(suma > 0) filas[kit].valorUnit = suma;
-    if(sumaUlt > 0) filas[kit].ultimo = sumaUlt;
+    if(suma > 0) filas[kit].valorUnit = redondearKit(suma, fKit);
+    if(sumaUlt > 0) filas[kit].ultimo = redondearKit(sumaUlt, fKit);
   }
   return ordenarPorInsumo(Object.values(filas));
 }
@@ -541,7 +561,7 @@ function renderStock(){
     : `Stock al ${ultimoDia}/${m}/${y}`)
     + (previo ? ' <span class="s-stock-aviso">Stock contabilizado a partir del 1/10/2026</span>' : '');
   const q = document.getElementById('sfInsumoStock').value;
-  const todos = previo ? insumosStock() : calcularStock(sMesFin());
+  const todos = (previo ? insumosStock() : calcularStock(sMesFin())).filter(i=> !deBaja(i) || sMesFin() <= KIT_VIAS_NUEVO_DESDE);
   const btnOrd = document.getElementById('sBtnOrdenar');
   btnOrd.textContent = sOrdenando ? '✓ Listo' : '↕ Ordenar';
   btnOrd.classList.toggle('btn-primary', sOrdenando);
@@ -563,7 +583,7 @@ function renderStock(){
   if(provActual){
     delProv = new Set();
     sueros.filter(x=> x.tipo==='egreso' && x.tercero===provActual).forEach(x=> (x.items||[]).forEach(it=> it.insumo && delProv.add(it.insumo)));
-    if(componentesVias().some(c=> delProv.has(c))) todos.filter(i=> esVias(i.insumo)).forEach(i=> delProv.add(i.insumo));
+    if([...componentesVias('2026-10-01'), ...componentesVias()].some(c=> delProv.has(c))) todos.filter(i=> esVias(i.insumo)).forEach(i=> delProv.add(i.insumo));
   }
   const lista = todos.filter(i=> (!q || contiene(i.insumo, q)) && (!delProv || delProv.has(i.insumo)));
   const body = document.getElementById('sStockBody');
@@ -612,7 +632,7 @@ function renderStock(){
   body.innerHTML = lista.map(i=>{
     if(i.kit) return `
     <tr>
-      <td class="left" title="Suma de ${componentesVias().join(', ')}">${i.insumo}</td>
+      <td class="left" title="Suma de ${componentesVias().join(', ')}, redondeada para arriba a $1.000">${i.insumo}</td>
       <td>${i.valorUnit ? fmtPesos(i.valorUnit) : guion}</td>
       <td>${guion}</td><td>${guion}</td><td>${guion}</td>${esFede() ? `<td>${guion}</td>` : ''}${sCalcCompra ? `<td>${guion}</td>` : ''}
       <td class="editcol">${ordCell(i) || '<button class="editbtn" style="visibility:hidden" tabindex="-1">&#9998;</button>'}</td>
@@ -989,7 +1009,7 @@ function renderResumenSueros(){
     apps.forEach(m=> (m.items||[]).forEach(it=>{
       const c = Number(it.cant)||0;
       if(esVias(it.insumo) && m.fechaISO >= STOCK_DESDE){
-        componentesVias().forEach(comp=>{ if(delProv.has(comp)) sumar(comp, c, c*precioAl(comp, m.fechaISO)); });
+        componentesVias(m.fechaISO).forEach(comp=>{ if(delProv.has(comp)) sumar(comp, c, c*precioAl(comp, m.fechaISO)); });
         return;
       }
       if(!delProv.has(it.insumo)) return;
@@ -1107,7 +1127,7 @@ function conceptosSueroterapia(){
 function insumosStock(){
   return calcularStock('9999-12-31');
 }
-function insumosConocidos(){ return insumosStock().map(i=> i.insumo); }
+function insumosConocidos(){ return insumosStock().filter(i=> !deBaja(i)).map(i=> i.insumo); }
 // Precio vigente a la fecha de la ficha: el de la última compra/ajuste hasta ese día inclusive
 function hastaFechaFicha(){
   const f = document.getElementById('sFecha').value || hoyISO();
