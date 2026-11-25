@@ -1673,3 +1673,7 @@ body.fede-nav-on #vistaPedidos > .sueros-bar{margin-top:8px;}
 #pPedidos{display:flex;flex-direction:column;min-height:calc(100vh - 70px);}
 #pPedidos.col-hidden{display:none;}
 #pPedidos #pdPanel{flex:1;}
+
+/* Pedidos secretaría: botón Eliminar a la izquierda, en rojo suave */
+.pd-btn-eliminar{margin-right:auto;color:#c62828;border-color:#f0c9c9;}
+.pd-btn-eliminar:hover{background:#fdecec;}

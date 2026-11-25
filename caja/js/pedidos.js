@@ -3,7 +3,8 @@
    La Dra. Victoria (y Fede/Pedro) cargan pedidos para un paciente de Ummana;
    recepción los ve en Movimientos → Pedidos secretaría, copia la indicación,
    se asigna, cambia el estado y deja notas.
-   Colección: pedidosSecretaria (nunca se borra: se cancela con nota obligatoria).
+   Colección: pedidosSecretaria. Fede y la Dra. Victoria pueden eliminar: el pedido se marca eliminado:true
+   (no se borra de la base) y deja de verse en todas las listas.
    ===================================================================== */
 // Tipos en orden alfabético; OTRO PEDIDO siempre último
 const PD_TIPOS = [
@@ -24,6 +25,8 @@ let pdLista = null, unsubPd = null, pdFiltro = 'pendiente', pdAbierto = null, pd
 const pdEsMedica = ()=> !!currentUser && currentUser.rol !== 'admin' && (esVictoria() || seccionesUsuario().includes('pedidos'));
 const pdPuedeCrear = ()=> !!currentUser && (currentUser.rol === 'admin' || pdEsMedica());
 const pdPuedeVer = ()=> !!currentUser && (currentUser.rol === 'admin' || pdEsMedica() || USUARIOS_CAJA.includes(primerNombre()));
+// Eliminar: Fede cualquiera; la Dra. Victoria los que pidió ella
+const pdPuedeEliminar = p=> !!currentUser && !!p && (esFede() || (esVictoria() && (p.creadoPorUid ? p.creadoPorUid === currentUser.uid : pdQuienCorto(p.creadoPor) === 'VICTORIA')));
 const pdNombreUsuario = ()=> mayus(((currentUser && currentUser.nombre) || '').trim()) || 'USUARIO';
 
 // Fecha límite: el día siguiente al envío; si cae domingo, pasa al lunes
@@ -41,7 +44,7 @@ function pdIniciar(){
   if(unsubPd){ unsubPd(); unsubPd = null; }
   if(!pdPuedeVer()) return;
   unsubPd = db.collection('pedidosSecretaria').onSnapshot(snap=>{
-    pdLista = snap.docs.map(d=> ({id:d.id, ...d.data()}));
+    pdLista = snap.docs.map(d=> ({id:d.id, ...d.data()})).filter(p=> !p.eliminado);   // los eliminados no se ven
     pdContadores(); renderPd();
     if(pdAbierto && document.getElementById('overlayPdDet').classList.contains('show')){
       const p = pdLista.find(x=> x.id === pdAbierto);
@@ -192,6 +195,7 @@ function pdAbrirDetalle(id){
   document.getElementById('pddHistN').textContent = h.length;
   document.getElementById('pddHist').innerHTML = h.map(x=> `<div>${escHtml(x.f||'')} · ${escHtml(x.q||'')} · ${escHtml(x.a||'')}</div>`).join('');
   document.getElementById('pddHistWrap').open = false;
+  document.getElementById('pddEliminar').classList.toggle('col-hidden', !pdPuedeEliminar(p));
   ovPdDet.classList.add('show');
 }
 document.getElementById('pddCopiar').onclick = async ()=>{
@@ -226,6 +230,20 @@ document.getElementById('pddGuardar').onclick = async ()=>{
   try{ await db.collection('pedidosSecretaria').doc(p.id).update(cambios); pddCerrar(); }
   catch(e){ err.textContent = 'No se pudo guardar: ' + e.message; }
   finally{ bt.disabled = false; }
+};
+
+document.getElementById('pddEliminar').onclick = async ()=>{
+  const p = (pdLista || []).find(x=> x.id === pdAbierto); if(!pdPuedeEliminar(p)) return;
+  if(!await ummConfirm(`¿Eliminar el pedido "${p.detalle || p.tipo || ''}" de ${p.paciente || ''}?\n\nDeja de aparecer en Pedidos secretaría (para Victoria y para recepción).`, {si:'Eliminar'})) return;
+  const quien = pdNombreUsuario();
+  try{
+    await db.collection('pedidosSecretaria').doc(p.id).update({
+      eliminado: true, eliminadoPor: quien,
+      historial: [...(Array.isArray(p.historial) ? p.historial : []), {f: pdAhora(), q: quien, a: 'PEDIDO ELIMINADO'}],
+      actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    pddCerrar();
+  }catch(e){ document.getElementById('pddError').textContent = 'No se pudo eliminar: ' + e.message; }
 };
 
 /* ---------- Portal (Gabriela y otras médicas con "pedidos" que entran por Sueroterapia) ---------- */

@@ -7,9 +7,9 @@
 if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1)){
   var vp=document.querySelector('meta[name=viewport]'); if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0');
 }</script>
-<link rel="manifest" href="/manifest.webmanifest?v=202611241908">
+<link rel="manifest" href="/manifest.webmanifest?v=202611251054">
 <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611241908">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611251054">
 <meta name="theme-color" content="#fffcf5">
 <title>CAJA UMMANA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,7 +37,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<link rel="stylesheet" href="caja.css?v=202611241908">
+<link rel="stylesheet" href="caja.css?v=202611251054">
 </head>
 <body>
 <div id="ummLoader" aria-hidden="true"><div class="ul-logo"><img class="ul-base" src="images/logo.png" alt=""><img class="ul-fill" src="images/logo.png" alt=""></div></div>
@@ -163,6 +163,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
     <details class="pd-hist" id="pddHistWrap"><summary>Historial (<span id="pddHistN">0</span>)</summary><div id="pddHist"></div></details>
     <div class="pd-error" id="pddError"></div>
     <div class="modal-actions">
+      <button class="btn pd-btn-eliminar col-hidden" id="pddEliminar" title="Eliminar este pedido">Eliminar</button>
       <button class="btn" id="pddCerrar2">Cerrar</button>
       <button class="btn btn-primary" id="pddGuardar">Guardar</button>
     </div>
@@ -2005,12 +2006,12 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 
 </div><!-- /#app -->
 
-<script src="js/base.js?v=202611241908"></script>
-<script src="js/caja.js?v=202611241908"></script>
-<script src="js/sueros.js?v=202611241908"></script>
-<script src="js/cremas.js?v=202611241908"></script>
-<script src="js/paneles.js?v=202611241908"></script>
-<script src="js/pedidos.js?v=202611241908"></script>
-<script src="js/extras.js?v=202611241908"></script>
+<script src="js/base.js?v=202611251054"></script>
+<script src="js/caja.js?v=202611251054"></script>
+<script src="js/sueros.js?v=202611251054"></script>
+<script src="js/cremas.js?v=202611251054"></script>
+<script src="js/paneles.js?v=202611251054"></script>
+<script src="js/pedidos.js?v=202611251054"></script>
+<script src="js/extras.js?v=202611251054"></script>
 </body>
 </html>
