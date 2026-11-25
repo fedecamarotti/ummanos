@@ -651,7 +651,7 @@ function renderStock(){
     const f = sCalcCompra ? faltanDe(i) : null;
     return `
     <tr class="${critico ? 's-critico' : ''}">
-      <td class="left k-link" data-k="${escAttr(i.insumo)}" title="Ver movimientos desde el 1/10">${i.insumo}${chips}</td>
+      ${esFede() ? `<td class="left k-link" data-k="${escAttr(i.insumo)}" title="Ver movimientos desde el 1/10">${i.insumo}${chips}</td>` : `<td class="left">${i.insumo}${chips}</td>`}
       ${celdaProv(i)}
       <td>${i.valorUnit ? fmtPesos(i.valorUnit) : guion}</td>
       <td class="${i.total<0?'neg':''}">${fmtPesos(i.total)}</td>

@@ -1722,6 +1722,7 @@ function renderKardex(){
   if(mas) mas.onclick = ()=>{ kardexVer++; renderKardex(); };
 }
 function abrirKardex(insumo){
+  if(!esFede()) return;   // los movimientos de cada insumo los ve solo Fede
   const ini = suerosStockInicial && suerosStockInicial.items && Object.keys(suerosStockInicial.items).length ? suerosStockInicial : null;
   const desde = ini ? (ini.fecha || STOCK_DESDE) : STOCK_DESDE;
   const filas = [];
