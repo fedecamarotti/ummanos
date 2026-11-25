@@ -290,7 +290,7 @@ document.getElementById('pPdNuevo').onclick = pdAbrirNuevo;
    INDICACIONES / DEVOLUCIÓN (formulario del módulo de Pedro, adaptado)
    La médica completa la devolución, la revisa en PDF y la envía a secretaría.
    Recepción baja el PDF (mismo estilo que los presupuestos) y se lo manda al paciente.
-   Los "Pendientes internos" van a las Notas del pedido y no salen en el PDF.
+   La "Nota interna" va a las Notas del pedido y no sale en el PDF.
    ===================================================================== */
 const DV_DROGAS = ['Ácido alfa-lipoico (ALA)','Ácido glutámico','Ashwaghanda','BCAA','Benfotiamina','Berberina','Berberina clorhidrato',
   'Bisglicinato de magnesio','Cinamaldehído (extracto estandarizado de canela)','Cisteína','Citrato de magnesio','Cobre','Coenzima Q10',
@@ -326,6 +326,8 @@ function dvLeer(root, key){
   return s.value.trim();
 }
 function dvConectarPickers(root){
+  // sin elegir: "Seleccionar…" en gris, como sugerencia
+  root.querySelectorAll('select[data-dv]').forEach(s=>{ const pin = ()=> s.classList.toggle('dv-vacio', !s.value); pin(); s.addEventListener('change', pin); });
   root.querySelectorAll('select[data-dv]').forEach(s=> s.addEventListener('change', ()=>{
     const o = s.parentElement.querySelector('[data-dv-otro]'); if(!o) return;
     o.classList.toggle('col-hidden', s.value !== '__otro'); if(s.value === '__otro') o.focus();
@@ -333,15 +335,16 @@ function dvConectarPickers(root){
 }
 function dvAgregarDroga(card){
   const r = document.createElement('div'); r.className = 'dv-droga';
-  r.innerHTML = dvPicker('droga','Droga o suplemento', DV_DROGAS, {req:true})
-    + `<label class="dv-req">Cantidad<input data-dv="cantidad" inputmode="decimal" placeholder="Sin dosis precargada" data-no-mayus autocomplete="off"></label>`
+  const primera = !card.querySelector('.dv-droga');
+  // Línea 1: Droga / suplemento · Cuándo · Frecuencia · Cantidad · Unidad (los demás componentes: solo droga, cantidad y unidad)
+  r.innerHTML = dvPicker('droga','Droga / suplemento', DV_DROGAS, {req:true})
+    + (primera ? dvPicker('momento','Cuándo', DV_MOMENTOS, {req:true}) + dvPicker('frecuencia','Frecuencia', DV_FRECUENCIAS) : '<span></span><span></span>')
+    + `<label class="dv-req">Cantidad<input data-dv="cantidad" inputmode="decimal" placeholder="Ej.: 500" data-no-mayus autocomplete="off"></label>`
     + dvPicker('unidad','Unidad', DV_UNIDADES, {req:true, sinMayus:true})
-    + `<button type="button" class="dv-quitar">Quitar</button>`;
+    + (primera ? '<span></span>' : `<button type="button" class="dv-quitar">Quitar</button>`);
   r.querySelector('[data-dv="unidad"]').dataset.sinMayus = '1';
-  r.querySelector('.dv-quitar').onclick = ()=>{
-    if(card.querySelectorAll('.dv-droga').length === 1){ r.querySelectorAll('input,select').forEach(x=> x.value = ''); r.querySelectorAll('[data-dv-otro]').forEach(x=> x.classList.add('col-hidden')); }
-    else r.remove();
-  };
+  const q = r.querySelector('.dv-quitar');
+  if(q) q.onclick = ()=>{ r.remove(); card.dispatchEvent(new Event('dvcomp')); };
   card.querySelector('.dv-componentes').appendChild(r);
   dvConectarPickers(r);
 }
@@ -349,25 +352,21 @@ function dvAgregarIndicacion(){
   dvN++;
   const c = document.createElement('div'); c.className = 'dv-item';
   c.innerHTML = `<div class="dv-item-h"><b>Indicación ${dvN}</b><button type="button" class="dv-quitar dv-eliminar">Eliminar indicación</button></div>
-    <div class="dv-g2">${dvPicker('momento','Cuándo', DV_MOMENTOS, {req:true})}<label>Tipo<select data-dv="tipo">${DV_TIPOS.map(t=> `<option>${t}</option>`).join('')}</select></label></div>
     <div class="dv-componentes"></div>
-    <button type="button" class="dv-mas-comp">+ Agregar componente al mismo preparado</button>
-    <p class="dv-ayuda">Para productos separados, agregá otra indicación. Los componentes de esta tarjeta pertenecen al mismo preparado.</p>
     <div class="dv-magistral col-hidden"><div class="dv-g2"><label>Nombre del preparado · opcional<input data-dv="nombre" placeholder="Identificación del preparado" autocomplete="off"></label>${dvPicker('base','Las cantidades de los componentes corresponden a', DV_BASE, {req:true})}</div></div>
-    <div class="dv-g2">${dvPicker('etapa','Etapa o inicio', DV_ETAPAS)}${dvPicker('duracion','Duración', DV_DURACIONES)}</div>
-    <label>Notas · opcional<textarea data-dv="notas" rows="2" placeholder="Aclaraciones particulares para esta indicación"></textarea></label>
-    <details class="dv-mas"><summary>Presentación, vía y frecuencia adicional</summary><div class="dv-g2">${dvPicker('via','Vía', DV_VIAS)}${dvPicker('frecuencia','Frecuencia adicional', DV_FRECUENCIAS)}
-      <label>Cantidad de presentación por toma · si corresponde<input data-dv="presentacion" placeholder="Completar sin calcular equivalencias" autocomplete="off"></label>
-      <label>Detalle de composición · opcional<textarea data-dv="composicion" rows="2" placeholder="Proporciones, concentración por componente u otros detalles"></textarea></label></div></details>`;
+    <div class="dv-g2">${dvPicker('etapa','Etapa / inicio', DV_ETAPAS)}${dvPicker('duracion','Duración', DV_DURACIONES)}</div>
+    <div class="dv-botones"><button type="button" class="dv-mas-comp">+ Agregar componente al mismo preparado</button><button type="button" class="dv-mas-comp dv-mas-nota">+ Agregar nota para esta indicación</button></div>
+    <label class="dv-nota col-hidden">Notas<textarea data-dv="notas" rows="2" placeholder="Aclaraciones particulares para esta indicación"></textarea></label>`;
   dvConectarPickers(c);
-  const tipo = c.querySelector('[data-dv="tipo"]');
-  const pintar = ()=>{
-    if(c.querySelectorAll('.dv-droga').length > 1) tipo.value = DV_MAGISTRAL;
-    c.querySelector('.dv-magistral').classList.toggle('col-hidden', tipo.value !== DV_MAGISTRAL);
-  };
-  tipo.onchange = pintar;
+  // con más de un componente es un preparado (formulación magistral)
+  const pintar = ()=> c.querySelector('.dv-magistral').classList.toggle('col-hidden', c.querySelectorAll('.dv-droga').length < 2);
+  c.addEventListener('dvcomp', pintar);
   c.querySelector('.dv-eliminar').onclick = ()=> c.remove();
   c.querySelector('.dv-mas-comp').onclick = ()=>{ dvAgregarDroga(c); pintar(); };
+  c.querySelector('.dv-mas-nota').onclick = ()=>{
+    const n = c.querySelector('.dv-nota'); n.classList.remove('col-hidden');
+    c.querySelector('.dv-mas-nota').classList.add('col-hidden'); n.querySelector('textarea').focus();
+  };
   document.getElementById('pdvItems').appendChild(c);
   dvAgregarDroga(c); pintar();
 }
@@ -407,7 +406,7 @@ function dvPaso(p){
   document.getElementById('pdvTitulo').textContent = p === 'prev' ? 'Revisá la devolución' : 'Indicaciones / devolución';
 }
 const dvVacia = c=> !dvLeer(c,'momento') && [...c.querySelectorAll('.dv-droga')].every(r=> !dvLeer(r,'droga') && !dvLeer(r,'cantidad') && !dvLeer(r,'unidad'))
-  && !dvLeer(c,'notas') && !dvLeer(c,'presentacion');
+  && !dvLeer(c,'notas');
 function dvRecolectar(){
   const v = id=> mayus(document.getElementById(id).value.trim());
   const pacTxt = v('pdvPaciente');
@@ -418,9 +417,9 @@ function dvRecolectar(){
   const items = [];
   for(const c of document.querySelectorAll('#pdvItems .dv-item')){
     if(dvVacia(c)) continue;
-    const it = {momento: dvLeer(c,'momento'), tipo: dvLeer(c,'tipo'), nombre: mayus(dvLeer(c,'nombre')), base: dvLeer(c,'base'),
-      etapa: dvLeer(c,'etapa'), duracion: dvLeer(c,'duracion'), notas: mayus(dvLeer(c,'notas')), via: dvLeer(c,'via'), frecuencia: dvLeer(c,'frecuencia'),
-      presentacion: mayus(dvLeer(c,'presentacion')), composicion: mayus(dvLeer(c,'composicion')),
+    const varios = c.querySelectorAll('.dv-droga').length > 1;
+    const it = {momento: dvLeer(c,'momento'), tipo: varios ? DV_MAGISTRAL : DV_TIPOS[0], nombre: mayus(dvLeer(c,'nombre')), base: dvLeer(c,'base'),
+      etapa: dvLeer(c,'etapa'), duracion: dvLeer(c,'duracion'), notas: mayus(dvLeer(c,'notas')), frecuencia: dvLeer(c,'frecuencia'),
       componentes: [...c.querySelectorAll('.dv-droga')].map(r=> ({droga: dvLeer(r,'droga'), cantidad: dvLeer(r,'cantidad'), unidad: dvLeer(r,'unidad')}))};
     const n = c.querySelector('.dv-item-h b').textContent;
     if(!it.momento) return {error: `${n}: elegí cuándo se toma.`};
@@ -428,10 +427,6 @@ function dvRecolectar(){
     if(it.componentes.some(x=> !(Number(String(x.cantidad).replace(',','.')) > 0))) return {error: `${n}: cada cantidad debe ser mayor que cero.`};
     if(it.componentes.some(x=> !x.unidad)) return {error: `${n}: elegí la unidad.`};
     if(it.tipo === DV_MAGISTRAL && !it.base) return {error: `${n}: indicá a qué corresponden las cantidades del preparado.`};
-    if((it.tipo === DV_MAGISTRAL || it.componentes.some(x=> x.unidad.includes('/'))) && !it.presentacion){
-      c.querySelector('.dv-mas').open = true;
-      return {error: `${n}: en una formulación magistral o una concentración, completá la cantidad de presentación por toma (en «Presentación, vía y frecuencia adicional»).`};
-    }
     items.push(it);
   }
   const habitos = Object.fromEntries(DV_HABITOS.map(([k])=> [k, v('pdv-' + k)]));

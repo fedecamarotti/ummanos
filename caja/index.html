@@ -7,9 +7,9 @@
 if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1)){
   var vp=document.querySelector('meta[name=viewport]'); if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0');
 }</script>
-<link rel="manifest" href="/manifest.webmanifest?v=202611251609">
+<link rel="manifest" href="/manifest.webmanifest?v=202611252008">
 <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611251609">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611252008">
 <meta name="theme-color" content="#fffcf5">
 <title>CAJA UMMANA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,7 +37,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<link rel="stylesheet" href="caja.css?v=202611251609">
+<link rel="stylesheet" href="caja.css?v=202611252008">
 </head>
 <body>
 <div id="ummLoader" aria-hidden="true"><div class="ul-logo"><img class="ul-base" src="images/logo.png" alt=""><img class="ul-fill" src="images/logo.png" alt=""></div></div>
@@ -148,13 +148,13 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
         </div></section>
       <section class="dv-sec"><div class="dv-sec-h"><span>02</span><div><h3>Hábitos y cuidados</h3><p>Se muestran únicamente los apartados que completes.</p></div></div>
         <div class="dv-g2"><label>Alimentación<textarea id="pdv-alimentacion" rows="3" placeholder="Plan, pautas y profesional de seguimiento"></textarea></label><label>Movimiento<textarea id="pdv-movimiento" rows="3" placeholder="Actividad, duración, frecuencia, intensidad y restricciones"></textarea></label><label>Hidratación<textarea id="pdv-hidratacion" rows="3" placeholder="Indicación personalizada"></textarea></label><label>Descanso y otros cuidados<textarea id="pdv-descanso" rows="3" placeholder="Indicación personalizada"></textarea></label></div></section>
-      <section class="dv-sec"><div class="dv-sec-h"><span>03</span><div><h3>Medicación, suplementos y procedimientos</h3><p>Elegí cuándo, seleccioná la droga y completá cantidad y unidad. Agregá tantas indicaciones como necesites.</p></div></div>
+      <section class="dv-sec"><div class="dv-sec-h"><span>03</span><div><h3>Medicación, suplementos y procedimientos</h3><p>Elegí la droga, cuándo y con qué frecuencia, y completá cantidad y unidad. Agregá tantas indicaciones como necesites.</p></div></div>
         <div id="pdvItems"></div><button type="button" class="dv-agregar" id="pdvAddItem">+ Agregar otra indicación</button></section>
       <section class="dv-sec"><div class="dv-sec-h"><span>04</span><div><h3>Seguimiento</h3><p>Qué debe registrar, qué estudios necesita y cuándo volver.</p></div></div>
         <div class="dv-g2"><label>Registros domiciliarios<textarea id="pdv-registros" rows="3" placeholder="Qué medir, momentos, frecuencia, duración y cómo entregar los registros"></textarea></label><label>Estudios solicitados<textarea id="pdv-estudios" rows="3" placeholder="Estudios, fecha o plazo y orden correspondiente"></textarea></label><label>Próximo control<textarea id="pdv-control" rows="3" placeholder="Cuándo volver y qué llevar a la consulta"></textarea></label><label>Derivaciones<textarea id="pdv-derivaciones" rows="3" placeholder="Profesional o especialidad, instrucciones y contacto aprobado"></textarea></label></div></section>
       <section class="dv-sec"><div class="dv-sec-h"><span>05</span><div><h3>Documentos complementarios</h3><p>Documentos o materiales para este paciente.</p></div></div>
         <div id="pdvDocs"></div><button type="button" class="dv-agregar" id="pdvAddDoc">+ Agregar documento</button></section>
-      <section class="dv-sec"><div class="dv-sec-h"><span>06</span><div><h3>Pendientes internos <small>Solo equipo</small></h3><p>No aparece en la devolución del paciente: va a las Notas del pedido para recepción.</p></div></div>
+      <section class="dv-sec"><div class="dv-sec-h"><span>06</span><div><h3>Nota interna <small>Solo equipo</small></h3><p>No aparece en la devolución del paciente: va a las Notas del pedido para recepción.</p></div></div>
         <label>Coordinaciones y tareas<textarea id="pdv-interno" rows="3" placeholder="Tarea, responsable y estado"></textarea></label></section>
     </div>
     <div id="pdvPrev" class="col-hidden"><iframe id="pdvIframe" title="Vista previa de la devolución"></iframe></div>
@@ -2051,12 +2051,12 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 
 </div><!-- /#app -->
 
-<script src="js/base.js?v=202611251609"></script>
-<script src="js/caja.js?v=202611251609"></script>
-<script src="js/sueros.js?v=202611251609"></script>
-<script src="js/cremas.js?v=202611251609"></script>
-<script src="js/paneles.js?v=202611251609"></script>
-<script src="js/pedidos.js?v=202611251609"></script>
-<script src="js/extras.js?v=202611251609"></script>
+<script src="js/base.js?v=202611252008"></script>
+<script src="js/caja.js?v=202611252008"></script>
+<script src="js/sueros.js?v=202611252008"></script>
+<script src="js/cremas.js?v=202611252008"></script>
+<script src="js/paneles.js?v=202611252008"></script>
+<script src="js/pedidos.js?v=202611252008"></script>
+<script src="js/extras.js?v=202611252008"></script>
 </body>
 </html>

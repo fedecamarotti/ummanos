@@ -1731,3 +1731,14 @@ body.fede-nav-on #vistaPedidos > .sueros-bar{margin-top:8px;}
 .dv-agregar:hover{border-color:#6f7f5e;color:#6f7f5e;}
 #pdvPrev iframe{width:100%;height:70vh;border:1px solid var(--border);border-radius:8px;background:#fff;}
 @media (max-width:700px){ .dv-g2, .dv-droga, .dv-doc{grid-template-columns:1fr;} }
+
+/* Indicaciones / devolución: lo de adentro de los cuadros sin negrita; sugerencias en gris */
+#overlayPdDev .dv-sec input, #overlayPdDev .dv-sec select, #overlayPdDev .dv-sec textarea{font-weight:400;color:var(--text);}
+#overlayPdDev .dv-sec input::placeholder, #overlayPdDev .dv-sec textarea::placeholder{font-weight:400;color:#a9a594;}
+#overlayPdDev .dv-sec select.dv-vacio{color:#a9a594;}
+#overlayPdDev .dv-sec select option{color:var(--text);}
+/* 03: línea 1 = droga, cuándo, frecuencia, cantidad, unidad */
+#overlayPdDev .dv-droga{grid-template-columns:1.6fr 1.4fr 1.1fr .7fr .8fr 48px;margin-bottom:6px;}
+#overlayPdDev .dv-droga .dv-quitar{padding:8px 0;}
+#overlayPdDev .dv-botones{display:flex;gap:8px;flex-wrap:wrap;}
+@media (max-width:700px){ #overlayPdDev .dv-droga{grid-template-columns:1fr 1fr;} #overlayPdDev .dv-droga > span:empty{display:none;} }
