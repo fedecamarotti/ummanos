@@ -1266,6 +1266,10 @@ body.fede-nav-on #vistaConta > .sueros-bar{margin-top:8px;}
   .tabla-stock{min-width:720px;}
   .tabla-vc{min-width:640px;}
   #cPanelStock .tabla-stock{min-width:780px;}
+  /* Stock de sueros en celular: el insumo con ancho fijo (si no, la columna Proveedor lo dejaba sin lugar) */
+  #sPanelStock .tabla-stock{min-width:820px;}
+  #sStockCols col:first-child{width:150px;}
+  #sStockCols col:nth-child(2){width:100px !important;}
   .tabla-mov.tabla-cremas{min-width:1500px;}
   .tabla-mov.tabla-cremas.c-pesos{min-width:1250px;}
   .tabla-stock td{overflow:hidden;text-overflow:ellipsis;}
