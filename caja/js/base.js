@@ -44,14 +44,17 @@ document.querySelectorAll('i[data-ico]').forEach(el=> el.outerHTML = ico(el.data
    Se guarda en presupuestos/_descuentos (colección que ya existe: no hace falta cambiar las reglas). */
 const DESC_INICIALES = [{n:'EFECTIVO', p:10}, {n:'PROTOCOLO + DE 1 SESION', p:20}, {n:'JORNADA DE TRATAMIENTOS', p:20}, {n:'UMMANOS', p:40}, {n:'FAMILIA', p:40}];
 let descuentosLista = DESC_INICIALES.slice();
+const DESC_VICTORIA = [{n:'20% jornada de tratamientos', p:20}, {n:'40% ummanos / familia', p:40}];
 const descEtiqueta = d=> `${d.n.charAt(0) + d.n.slice(1).toLowerCase()} ${d.p}%`;
 function refrescarSelectsDescuento(){
   const escAttr = v=> String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'), escHtml = escAttr;   // (las globales se definen más abajo)
   const html = '<option value="">Sin descuento</option>' + descuentosLista.map(d=> `<option value="${d.p}|${escAttr(descEtiqueta(d))}">${escHtml(descEtiqueta(d))}</option>`).join('');
+  // Dra. Victoria, en Cobros: solo estos dos descuentos, con estos nombres
+  const htmlVic = '<option value="">Sin descuento</option>' + DESC_VICTORIA.map(d=> `<option value="${d.p}|${escAttr(d.n)}">${escHtml(d.n)}</option>`).join('');
   ['prDesc','selDescMov','trDesc'].forEach(id=>{
     const sel = document.getElementById(id); if(!sel) return;
     const v = sel.value;
-    sel.innerHTML = html;
+    sel.innerHTML = id==='trDesc' && typeof esVictoria==='function' && esVictoria() ? htmlVic : html;
     if(v){
       if(![...sel.options].some(o=> o.value===v)) sel.insertAdjacentHTML('beforeend', `<option value="${escAttr(v)}">${escHtml(v.split('|')[1]||'')}</option>`);
       sel.value = v;
@@ -537,6 +540,7 @@ function aplicarRolUI(){
   document.getElementById('movBar').classList.add('con-tabs');
   document.getElementById('btnNuevo').classList.add('col-hidden');   // "+ Nuevo mov." ahora está debajo de Movimientos
   document.body.classList.toggle('modo-victoria', esVictoria());
+  refrescarSelectsDescuento();   // Cobros: los descuentos de Victoria
   pdIniciar();   // pedidos a secretaría (globito de pendientes)
   mostrarVista(esVictoria() ? 'pedidos' : 'movimientos');
 }
