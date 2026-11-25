@@ -7,9 +7,9 @@
 if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1)){
   var vp=document.querySelector('meta[name=viewport]'); if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0');
 }</script>
-<link rel="manifest" href="/manifest.webmanifest?v=202611251215">
+<link rel="manifest" href="/manifest.webmanifest?v=202611251757">
 <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611251215">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611251757">
 <meta name="theme-color" content="#fffcf5">
 <title>CAJA UMMANA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,7 +37,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<link rel="stylesheet" href="caja.css?v=202611251215">
+<link rel="stylesheet" href="caja.css?v=202611251757">
 </head>
 <body>
 <div id="ummLoader" aria-hidden="true"><div class="ul-logo"><img class="ul-base" src="images/logo.png" alt=""><img class="ul-fill" src="images/logo.png" alt=""></div></div>
@@ -124,6 +124,50 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
   </div>
 </div>
 
+<!-- ============ MODAL: ELEGIR TIPO DE PEDIDO ============ -->
+<div class="overlay" id="overlayPdTipo">
+  <div class="modal pd-tipo-modal">
+    <button class="close-x" id="pdtCerrar">✕</button>
+    <h2>¿Qué querés pedirle a secretaría?</h2>
+    <div class="pd-tipos" id="pdtLista"></div>
+  </div>
+</div>
+
+<!-- ============ MODAL: INDICACIONES / DEVOLUCIÓN ============ -->
+<div class="overlay" id="overlayPdDev">
+  <div class="modal pd-dev-modal">
+    <button class="close-x" id="pdvCerrar">✕</button>
+    <h2 id="pdvTitulo">Indicaciones / devolución</h2>
+    <div id="pdvForm">
+      <section class="dv-sec"><div class="dv-sec-h"><span>01</span><div><h3>Datos de la consulta</h3><p>Paciente y consulta a la que corresponde esta devolución.</p></div></div>
+        <div class="dv-g2">
+          <label class="dv-req">Nombre del paciente<div class="ac-wrap"><input type="text" id="pdvPaciente" placeholder="Buscá en pacientes/alumnos…" autocomplete="off"></div></label>
+          <label class="dv-req">Fecha de consulta<input type="date" id="pdvFecha"></label>
+          <label>Profesional<input type="text" id="pdvProf" disabled></label>
+          <label>Duración general del plan · opcional<input type="text" id="pdvPlan" placeholder="Indicar duración, si corresponde" autocomplete="off"></label>
+        </div></section>
+      <section class="dv-sec"><div class="dv-sec-h"><span>02</span><div><h3>Hábitos y cuidados</h3><p>Se muestran únicamente los apartados que completes.</p></div></div>
+        <div class="dv-g2"><label>Alimentación<textarea id="pdv-alimentacion" rows="3" placeholder="Plan, pautas y profesional de seguimiento"></textarea></label><label>Movimiento<textarea id="pdv-movimiento" rows="3" placeholder="Actividad, duración, frecuencia, intensidad y restricciones"></textarea></label><label>Hidratación<textarea id="pdv-hidratacion" rows="3" placeholder="Indicación personalizada"></textarea></label><label>Descanso y otros cuidados<textarea id="pdv-descanso" rows="3" placeholder="Indicación personalizada"></textarea></label></div></section>
+      <section class="dv-sec"><div class="dv-sec-h"><span>03</span><div><h3>Medicación, suplementos y procedimientos</h3><p>Elegí cuándo, seleccioná la droga y completá cantidad y unidad. Agregá tantas indicaciones como necesites.</p></div></div>
+        <div id="pdvItems"></div><button type="button" class="dv-agregar" id="pdvAddItem">+ Agregar otra indicación</button></section>
+      <section class="dv-sec"><div class="dv-sec-h"><span>04</span><div><h3>Seguimiento</h3><p>Qué debe registrar, qué estudios necesita y cuándo volver.</p></div></div>
+        <div class="dv-g2"><label>Registros domiciliarios<textarea id="pdv-registros" rows="3" placeholder="Qué medir, momentos, frecuencia, duración y cómo entregar los registros"></textarea></label><label>Estudios solicitados<textarea id="pdv-estudios" rows="3" placeholder="Estudios, fecha o plazo y orden correspondiente"></textarea></label><label>Próximo control<textarea id="pdv-control" rows="3" placeholder="Cuándo volver y qué llevar a la consulta"></textarea></label><label>Derivaciones<textarea id="pdv-derivaciones" rows="3" placeholder="Profesional o especialidad, instrucciones y contacto aprobado"></textarea></label></div></section>
+      <section class="dv-sec"><div class="dv-sec-h"><span>05</span><div><h3>Documentos complementarios</h3><p>Documentos o materiales para este paciente.</p></div></div>
+        <div id="pdvDocs"></div><button type="button" class="dv-agregar" id="pdvAddDoc">+ Agregar documento</button></section>
+      <section class="dv-sec"><div class="dv-sec-h"><span>06</span><div><h3>Pendientes internos <small>Solo equipo</small></h3><p>No aparece en la devolución del paciente: va a las Notas del pedido para recepción.</p></div></div>
+        <label>Coordinaciones y tareas<textarea id="pdv-interno" rows="3" placeholder="Tarea, responsable y estado"></textarea></label></section>
+    </div>
+    <div id="pdvPrev" class="col-hidden"><iframe id="pdvIframe" title="Vista previa de la devolución"></iframe></div>
+    <div class="pd-error" id="pdvError"></div>
+    <div class="modal-actions">
+      <button class="btn" id="pdvCancelar">Cancelar</button>
+      <button class="btn col-hidden" id="pdvVolver">← Volver a editar</button>
+      <button class="btn btn-primary" id="pdvRevisar">Revisar devolución →</button>
+      <button class="btn btn-primary col-hidden" id="pdvEnviar">Enviar a secretaría</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ MODAL: NUEVO PEDIDO A SECRETARÍA ============ -->
 <div class="overlay" id="overlayPdNuevo">
   <div class="modal">
@@ -131,7 +175,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
     <h2>Nuevo pedido a secretaría</h2>
     <div class="cpn-grid">
       <label>Paciente<div class="ac-wrap"><input type="text" id="pdnPaciente" placeholder="Buscá en pacientes/alumnos…" autocomplete="off"></div></label>
-      <label>Tipo de pedido<select id="pdnTipo"></select></label>
+      <div class="pd-tipo-fijo" id="pdnTipoTxt"></div><select id="pdnTipo" class="col-hidden"></select>
       <label><span class="pd-lab">Detalle breve <em id="pdnCont" class="pd-cont">0/50</em></span><input type="text" id="pdnDetalle" maxlength="50" placeholder="Ej.: LABORATORIO DE CONTROL" autocomplete="off"></label>
       <label>Indicación<textarea id="pdnIndicacion" rows="8" placeholder="Todo lo que tiene que gestionar recepción"></textarea></label>
     </div>
@@ -152,7 +196,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
     <div class="pd-meta" id="pddMeta"></div>
     <div class="pd-pac" id="pddPaciente"></div>
     <div class="pd-ind">
-      <div class="pd-ind-top"><span id="pddIndDe">Indicación</span><button type="button" class="btn s-cfg-btn" id="pddCopiar">Copiar</button></div>
+      <div class="pd-ind-top"><span id="pddIndDe">Indicación</span><span><button type="button" class="btn btn-primary s-cfg-btn col-hidden" id="pddPdf">Ver / descargar PDF</button> <button type="button" class="btn s-cfg-btn" id="pddCopiar">Copiar</button></span></div>
       <div class="pd-ind-txt" id="pddIndicacion"></div>
     </div>
     <div class="cpn-grid pd-2col">
@@ -2007,12 +2051,12 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 
 </div><!-- /#app -->
 
-<script src="js/base.js?v=202611251215"></script>
-<script src="js/caja.js?v=202611251215"></script>
-<script src="js/sueros.js?v=202611251215"></script>
-<script src="js/cremas.js?v=202611251215"></script>
-<script src="js/paneles.js?v=202611251215"></script>
-<script src="js/pedidos.js?v=202611251215"></script>
-<script src="js/extras.js?v=202611251215"></script>
+<script src="js/base.js?v=202611251757"></script>
+<script src="js/caja.js?v=202611251757"></script>
+<script src="js/sueros.js?v=202611251757"></script>
+<script src="js/cremas.js?v=202611251757"></script>
+<script src="js/paneles.js?v=202611251757"></script>
+<script src="js/pedidos.js?v=202611251757"></script>
+<script src="js/extras.js?v=202611251757"></script>
 </body>
 </html>
