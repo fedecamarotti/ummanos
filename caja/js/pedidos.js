@@ -136,7 +136,7 @@ document.getElementById('pdtLista').innerHTML = PD_TIPOS.map(t=> `<button type="
 document.getElementById('pdtLista').addEventListener('click', e=>{
   const b = e.target.closest('[data-t]'); if(!b) return;
   ovPdTipo.classList.remove('show');
-  if(b.dataset.t === PD_DEV) pdDevAbrir(); else if(b.dataset.t === PD_BONO) pdBonoAbrir(); else pdAbrirSimple(b.dataset.t);
+  if(b.dataset.t === PD_DEV) pdDevAbrir(); else if(PD_FORMS[b.dataset.t]) pdFormAbrir(b.dataset.t); else pdAbrirSimple(b.dataset.t);
 });
 document.getElementById('pdtCerrar').onclick = ()=> ovPdTipo.classList.remove('show');
 attachAutocomplete(document.getElementById('pdnPaciente'), ()=> pacienteRegistry);
@@ -145,75 +145,240 @@ function pdContarDetalle(){
   c.textContent = `${n}/50`; c.classList.toggle('lleno', n >= 50);
 }
 document.getElementById('pdnDetalle').addEventListener('input', pdContarDetalle);
-/* ---------- BONOS DE DESCUENTO: paciente, fecha y una o más líneas Marca + Producto ---------- */
-const PD_BONO = 'BONO DE DESCUENTO';
+/* ---------- Pedidos con formulario propio (mismo estilo que Indicaciones / devolución) ----------
+   Cada tipo es una lista de secciones: 01 paciente y fecha, sus campos, notas para el paciente y notas internas.
+   Lo que ve recepción: "detalle" (título en la lista), "indicacion" (texto para copiar, con las notas para el paciente)
+   y "notas" (las notas internas). Los datos quedan además estructurados en "datos". */
+const PD_BONO = 'BONO DE DESCUENTO', PD_VIP = 'FORMULACION SUPLEMENTACION VIP', PD_EST = 'ORDEN DE ESTUDIOS / LABORATORIO',
+  PD_PRES = 'PRESUPUESTO TRATAMIENTOS', PD_BIO = 'RECETA BIOHELPER / YSONUT', PD_MED = 'RECETA MEDICACION (OTROS)';
 const PDB_MARCAS = ['Isdin','La Roche-Posay','Eucerin','Avène','Vichy'];
-const ovPdBono = document.getElementById('overlayPdBono');
-attachAutocomplete(document.getElementById('pdbPaciente'), ()=> pacienteRegistry);
-function pdbPintarQuitar(){
-  const filas = document.querySelectorAll('#pdbItems .pdb-fila');
-  filas.forEach(f=> f.querySelector('.dv-quitar').style.display = filas.length > 1 ? '' : 'none');
-}
-function pdbAgregar(){
-  const r = document.createElement('div'); r.className = 'pdb-fila';
-  r.innerHTML = `<label class="dv-req">Marca<select data-pdb="marca"><option value="">Seleccionar…</option>${PDB_MARCAS.map(m=> `<option>${escHtml(m)}</option>`).join('')}<option value="__otra">Otra</option></select><input data-pdb="otra" class="col-hidden" placeholder="Nombre de la marca" autocomplete="off"></label>
-    <label class="dv-req"><span class="pd-lab">Producto <em class="pd-cont">0/80</em></span><input data-pdb="producto" maxlength="80" placeholder="Nombre completo del producto a comprar" autocomplete="off"></label>
-    <button type="button" class="dv-quitar">Quitar</button>`;
-  const sel = r.querySelector('select'), otra = r.querySelector('[data-pdb="otra"]');
+const PDF_VIP_PRODS = ['Vitamina C','Vitamina D','Omega 3','Magnesio'];
+const PD_FORMS = {
+  [PD_BONO]: {titulo:'BONOS DE DESCUENTO', secs:[{t:'Paciente / fecha', k:'pac'}, {t:'Productos', k:'marcas'}, {t:'Notas para paciente', k:'npac'}, {t:'Notas interno', k:'nint'}]},
+  [PD_VIP]:  {titulo:'FORMULACIÓN VIP', secs:[{t:'Paciente / fecha', k:'pac'}, {t:'Producto', k:'vip'}, {t:'Notas para paciente', k:'npac'}, {t:'Notas interno', k:'nint'}]},
+  [PD_EST]:  {titulo:'ORDEN DE ESTUDIOS', secs:[{t:'Paciente / fecha', k:'pac'}, {t:'Detalle breve', k:'breve'}, {t:'Indicación de estudios', k:'texto', ph:'Estudios a pedir, ayuno, indicaciones…'}, {t:'Notas para paciente', k:'npac'}, {t:'Notas interno', k:'nint'}]},
+  [PD_PRES]: {titulo:'PRESUPUESTO TRATAMIENTOS', secs:[{t:'Paciente / fecha', k:'pac'}, {t:'Tratamientos', k:'trat'}, {t:'Notas para paciente', k:'npac'}, {t:'Notas interno', k:'nint'}]},
+  [PD_BIO]:  {titulo:'RECETA BIOHELPER / YSONUT', secs:[{t:'Paciente / fecha', k:'pac'}, {t:'Proveedor', k:'prov'}, {t:'Producto', k:'prods'}, {t:'Notas para paciente', k:'npac'}, {t:'Notas interno', k:'nint'}]},
+  [PD_MED]:  {titulo:'RECETA MEDICACIÓN (OTROS)', secs:[{t:'Paciente / fecha', k:'pac'}, {t:'Pedido receta', k:'texto', ph:'Medicación, dosis, presentación…'}, {t:'Notas para paciente', k:'npac'}, {t:'Notas interno', k:'nint'}]},
+};
+const ovPdForm = document.getElementById('overlayPdForm');
+let pfmTipo = null;
+const pfmOpts = (lista, ph='Seleccionar…')=> `<option value="">${ph}</option>` + lista.map(v=> `<option>${escHtml(v)}</option>`).join('');
+// desplegables: "Seleccionar…" en gris; "Otra/Otros" abre un casillero para escribir
+function pfmConectarSelect(sel, otro){
   const pin = ()=> sel.classList.toggle('dv-vacio', !sel.value); pin();
-  sel.addEventListener('change', ()=>{ pin(); otra.classList.toggle('col-hidden', sel.value !== '__otra'); if(sel.value === '__otra') otra.focus(); });
-  const prod = r.querySelector('[data-pdb="producto"]'), cont = r.querySelector('.pd-cont');
-  prod.addEventListener('input', ()=>{ cont.textContent = `${prod.value.length}/80`; cont.classList.toggle('lleno', prod.value.length >= 80); });
-  r.querySelector('.dv-quitar').onclick = ()=>{ r.remove(); pdbPintarQuitar(); };
-  document.getElementById('pdbItems').appendChild(r);
-  pdbPintarQuitar();
+  sel.addEventListener('change', ()=>{ pin(); if(otro){ otro.classList.toggle('col-hidden', sel.value !== '__otro'); if(sel.value === '__otro') otro.focus(); } });
 }
-document.getElementById('pdbAdd').onclick = ()=>{ pdbAgregar(); document.querySelector('#pdbItems .pdb-fila:last-child select').focus(); };
-function pdBonoAbrir(){
+function pfmPintarQuitar(cont){
+  const filas = cont.querySelectorAll('.pdb-fila');
+  filas.forEach(f=>{ const q = f.querySelector('.dv-quitar'); if(q) q.style.display = filas.length > 1 ? '' : 'none'; });
+}
+// Victoria: sus tratamientos (de los conceptos de la caja) con el valor sugerido
+const pfmProfVic = ()=> Object.keys(CONCEPTOS).find(vcEsVictoria) || '';
+function pfmTratamientos(){
+  const vistos = new Set();
+  return (CONCEPTOS[pfmProfVic()] || []).filter(c=> (c.tipo||'ingreso')!=='egreso' && !vistos.has(c.concepto) && vistos.add(c.concepto))
+    .sort((a,b)=> a.concepto.localeCompare(b.concepto,'es',{numeric:true}));
+}
+function pfmFila(k){
+  const r = document.createElement('div'); r.className = 'pdb-fila pfm-' + k;
+  const quitar = `<button type="button" class="dv-quitar">Quitar</button>`;
+  if(k === 'marcas') r.innerHTML = `<label class="dv-req">Marca<select data-f="marca">${pfmOpts(PDB_MARCAS)}<option value="__otro">Otra</option></select><input data-f="marcaOtra" class="col-hidden" placeholder="Nombre de la marca" autocomplete="off"></label>
+      <label class="dv-req"><span class="pd-lab">Producto <em class="pd-cont">0/80</em></span><input data-f="producto" maxlength="80" placeholder="Nombre completo del producto a comprar" autocomplete="off"></label>${quitar}`;
+  if(k === 'vip') r.innerHTML = `<label class="dv-req">Producto<select data-f="producto">${pfmOpts(PDF_VIP_PRODS)}<option value="__otro">Otros</option></select><input data-f="productoOtro" class="col-hidden" placeholder="Nombre del producto" autocomplete="off"></label>
+      <label class="dv-req">Cantidad<input data-f="cantidad" inputmode="decimal" placeholder="Ej.: 500" data-no-mayus autocomplete="off"></label>
+      <label class="dv-req">Unidad<select data-f="unidad">${pfmOpts(DV_UNIDADES)}</select></label>${quitar}`;
+  if(k === 'prods') r.innerHTML = `<label class="dv-req">Producto<input data-f="producto" placeholder="Nombre del producto" autocomplete="off"></label>
+      <label class="dv-req">Cantidad<input data-f="cantidad" inputmode="decimal" placeholder="Ej.: 1" data-no-mayus autocomplete="off"></label>
+      <label class="dv-req">Unidad<select data-f="unidad">${pfmOpts(DV_UNIDADES)}</select></label>${quitar}`;
+  if(k === 'trat') r.innerHTML = `<label class="dv-req">Tratamiento<select data-f="trat">${pfmOpts(pfmTratamientos().map(c=> c.concepto), pfmTratamientos().length ? 'Seleccionar…' : 'Sin tratamientos cargados')}</select></label>
+      <label>Valor sugerido<input data-f="valor" inputmode="numeric" placeholder="$0" autocomplete="off"></label>${quitar}`;
+  r.querySelectorAll('select').forEach(sel=> pfmConectarSelect(sel, sel.parentElement.querySelector('input.col-hidden')));
+  const prod = r.querySelector('[data-f="producto"][maxlength]'), cont = r.querySelector('.pd-cont');
+  if(prod && cont) prod.addEventListener('input', ()=>{ cont.textContent = `${prod.value.length}/80`; cont.classList.toggle('lleno', prod.value.length >= 80); });
+  if(k === 'trat'){
+    const sel = r.querySelector('[data-f="trat"]'), val = r.querySelector('[data-f="valor"]');
+    sel.addEventListener('change', ()=>{
+      const c = pfmTratamientos().find(x=> x.concepto === sel.value);
+      val.value = c && c.valor ? Number(c.valor).toLocaleString('es-AR') : ''; val.dataset.mon = c ? (c.valorMoneda || '$') : '$';
+      pfmTotal();
+    });
+    val.addEventListener('input', ()=>{ formatearInputMonto(val); pfmTotal(); });
+  }
+  const lista = ()=> r.parentElement;
+  r.querySelector('.dv-quitar').onclick = ()=>{ const c = lista(); r.remove(); pfmPintarQuitar(c); if(k === 'trat') pfmTotal(); };
+  return r;
+}
+function pfmTotal(){
+  const box = document.getElementById('pfmTotal'); if(!box) return;
+  const filas = [...document.querySelectorAll('#pfmBody .pfm-trat')];
+  const sub = filas.reduce((a,f)=> a + parseMonto(f.querySelector('[data-f="valor"]').value), 0);
+  const pct = Number((document.getElementById('pfmDesc').value || '').split('|')[0]) || 0;
+  const total = totalConDescuento(sub, pct, '$');
+  box.innerHTML = sub ? `Subtotal ${fmtMonto(sub,'$')}${pct ? ` · Descuento −${fmtMonto(sub - total,'$')}` : ''} · <b>Total ${fmtMonto(total,'$')}</b>` : '';
+}
+function pfmSeccion(n, sec){
+  const h = `<div class="dv-sec-h"><span>${String(n).padStart(2,'0')}</span><div><h3>${sec.t}${sec.k === 'nint' ? ' <small>Solo equipo</small>' : ''}</h3></div></div>`;
+  const id = 'pfm-' + sec.k;
+  let body = '';
+  if(sec.k === 'pac') body = `<div class="pdb-g1"><label class="dv-req">Nombre del paciente<div class="ac-wrap"><input type="text" id="pfmPaciente" placeholder="Buscá en pacientes/alumnos…" autocomplete="off"></div></label><label class="dv-req">Fecha<input type="date" id="pfmFecha"></label></div>`;
+  if(sec.k === 'breve') body = `<label class="pfm-lab"><span class="pd-lab">Detalle breve <em class="pd-cont" id="pfmBreveCont">0/50</em></span><input id="${id}" maxlength="50" placeholder="Ej.: LABORATORIO DE CONTROL" autocomplete="off"></label>`;
+  if(sec.k === 'texto') body = `<textarea id="${id}" rows="5" placeholder="${sec.ph || ''}"></textarea>`;
+  if(sec.k === 'npac') body = `<textarea id="${id}" rows="3" placeholder="Lo que tiene que saber el paciente"></textarea>`;
+  if(sec.k === 'nint') body = `<textarea id="${id}" rows="3" placeholder="Coordinaciones y tareas para recepción (no lo ve el paciente)"></textarea>`;
+  if(sec.k === 'prov') body = `<div class="pdb-g1"><label class="dv-req">Proveedor<select id="${id}">${pfmOpts(['BIOHELPER','YSONUT'])}</select></label></div>`;
+  if(['marcas','vip','prods','trat'].includes(sec.k)){
+    const mas = {marcas:'+ Agregar otra', vip:'+ Agregar formulación', prods:'+ Agregar otro producto', trat:'+ Agregar tratamiento'}[sec.k];
+    body = `<div class="pfm-filas" data-k="${sec.k}"></div><button type="button" class="dv-agregar" data-mas="${sec.k}">${mas}</button>`;
+    if(sec.k === 'trat') body += `<div class="pdb-g1 pfm-desc"><label>Descuento<select id="pfmDesc"><option value="">Sin descuento</option>${DESC_VICTORIA.map(d=> `<option value="${d.p}|${escHtml(d.n)}">${escHtml(d.n)}</option>`).join('')}</select></label></div><div class="pfm-total" id="pfmTotal"></div>`;
+  }
+  return `<section class="dv-sec">${h}${body}</section>`;
+}
+function pdFormAbrir(tipo){
   if(!pdPuedeCrear()) return;
-  document.getElementById('pdbPaciente').value = '';
-  document.getElementById('pdbFecha').value = hoyISO();
-  document.getElementById('pdbItems').innerHTML = ''; pdbAgregar();
-  document.getElementById('pdbError').textContent = '';
-  ovPdBono.classList.add('show');
+  const f = PD_FORMS[tipo]; pfmTipo = tipo;
+  document.getElementById('pfmTitulo').textContent = f.titulo;
+  const body = document.getElementById('pfmBody');
+  body.innerHTML = f.secs.map((s,i)=> pfmSeccion(i+1, s)).join('');
+  attachAutocomplete(document.getElementById('pfmPaciente'), ()=> pacienteRegistry);
+  document.getElementById('pfmFecha').value = hoyISO();
+  body.querySelectorAll('.pfm-filas').forEach(c=>{ c.appendChild(pfmFila(c.dataset.k)); pfmPintarQuitar(c); });
+  body.querySelectorAll('[data-mas]').forEach(b=> b.onclick = ()=>{
+    const c = body.querySelector(`.pfm-filas[data-k="${b.dataset.mas}"]`); const r = pfmFila(b.dataset.mas);
+    c.appendChild(r); pfmPintarQuitar(c); const x = r.querySelector('select,input'); if(x) x.focus();
+  });
+  body.querySelectorAll('select[id]').forEach(sel=> pfmConectarSelect(sel));
+  const d = document.getElementById('pfmDesc'); if(d) d.onchange = pfmTotal;
+  const breve = document.getElementById('pfm-breve'), bc = document.getElementById('pfmBreveCont');
+  if(breve) breve.addEventListener('input', ()=>{ bc.textContent = `${breve.value.length}/50`; bc.classList.toggle('lleno', breve.value.length >= 50); });
+  document.getElementById('pfmError').textContent = '';
+  ovPdForm.classList.add('show'); ovPdForm.querySelector('.modal').scrollTop = 0;
 }
-const pdbCerrar = ()=> ovPdBono.classList.remove('show');
-document.getElementById('pdbCerrar').onclick = pdbCerrar;
-document.getElementById('pdbCancelar').onclick = pdbCerrar;
-document.getElementById('pdbGuardar').onclick = async ()=>{
-  const err = document.getElementById('pdbError'); err.textContent = '';
-  const pacTxt = mayus(document.getElementById('pdbPaciente').value.trim());
+const pfmCerrar = ()=> ovPdForm.classList.remove('show');
+document.getElementById('pfmCerrar').onclick = pfmCerrar;
+document.getElementById('pfmCancelar').onclick = pfmCerrar;
+// lee las filas de una sección; devuelve {items} o {error}
+function pfmLeerFilas(k){
+  const filas = [...document.querySelectorAll(`#pfmBody .pfm-filas[data-k="${k}"] .pdb-fila`)];
+  const items = [], varias = filas.length > 1;
+  for(const [i, r] of filas.entries()){
+    const g = n=>{ const e = r.querySelector(`[data-f="${n}"]`); return e ? e.value.trim() : ''; };
+    const conOtro = (n, o)=> g(n) === '__otro' ? mayus(g(o)) : g(n);
+    const ln = varias ? ` (línea ${i+1})` : '';
+    if(k === 'marcas'){
+      const marca = mayus(conOtro('marca','marcaOtra')), producto = mayus(g('producto')).slice(0,80);
+      if(!marca && !producto) continue;
+      if(!marca) return {error:`Elegí la marca${ln}.`}; if(!producto) return {error:`Completá el producto${ln}.`};
+      items.push({marca, producto});
+    }
+    if(k === 'vip' || k === 'prods'){
+      const producto = mayus(k === 'vip' ? conOtro('producto','productoOtro') : g('producto')), cantidad = g('cantidad'), unidad = g('unidad');
+      if(!producto && !cantidad && !unidad) continue;
+      if(!producto) return {error:`Completá el producto${ln}.`};
+      if(!(Number(String(cantidad).replace(',','.')) > 0)) return {error:`La cantidad debe ser mayor que cero${ln}.`};
+      if(!unidad) return {error:`Elegí la unidad${ln}.`};
+      items.push({producto, cantidad, unidad});
+    }
+    if(k === 'trat'){
+      const det = g('trat'), val = parseMonto(g('valor'));
+      if(!det && !val) continue;
+      if(!det) return {error:`Elegí el tratamiento${ln}.`}; if(!val) return {error:`Completá el valor${ln}.`};
+      items.push({det, cant:1, val});
+    }
+  }
+  if(!items.length) return {error: {marcas:'Completá al menos una marca y su producto.', vip:'Completá al menos una formulación.', prods:'Completá al menos un producto.', trat:'Elegí al menos un tratamiento.'}[k]};
+  return {items};
+}
+document.getElementById('pfmGuardar').onclick = async ()=>{
+  const err = document.getElementById('pfmError'); err.textContent = '';
+  const tipo = pfmTipo, f = PD_FORMS[tipo]; if(!f) return;
+  const pacTxt = mayus(document.getElementById('pfmPaciente').value.trim());
   const pac = (pacientesFullList || []).find(p=> mayus(p.nombreCompleto || '') === pacTxt);
   if(!pac){ err.textContent = 'Elegí el paciente de la lista. Si no aparece, pedile a recepción que lo dé de alta en Pacientes/alumnos.'; return; }
-  const fecha = document.getElementById('pdbFecha').value;
+  const fecha = document.getElementById('pfmFecha').value;
   if(!fecha){ err.textContent = 'Completá la fecha.'; return; }
-  const items = [];
-  for(const [i, r] of [...document.querySelectorAll('#pdbItems .pdb-fila')].entries()){
-    const sel = r.querySelector('select').value;
-    const marca = mayus(sel === '__otra' ? r.querySelector('[data-pdb="otra"]').value.trim() : sel);
-    const producto = mayus(r.querySelector('[data-pdb="producto"]').value.trim()).slice(0, 80);
-    if(!marca && !producto) continue;
-    const n = document.querySelectorAll('#pdbItems .pdb-fila').length > 1 ? ` (línea ${i+1})` : '';
-    if(!marca){ err.textContent = `Elegí la marca${n}.`; return; }
-    if(!producto){ err.textContent = `Completá el producto${n}.`; return; }
-    items.push({marca, producto});
+  const val = id=>{ const e = document.getElementById(id); return e ? e.value.trim() : ''; };
+  const notasPac = mayus(val('pfm-npac')), notasInt = mayus(val('pfm-nint'));
+  const datos = {}; let detalle = '', lineas = [];
+  for(const sec of f.secs){
+    if(['marcas','vip','prods','trat'].includes(sec.k)){
+      const r = pfmLeerFilas(sec.k); if(r.error){ err.textContent = r.error; return; }
+      datos[sec.k] = r.items;
+    }
   }
-  if(!items.length){ err.textContent = 'Completá al menos una marca y su producto.'; return; }
-  const bt = document.getElementById('pdbGuardar'); if(bt.disabled) return; bt.disabled = true;
+  if(tipo === PD_BONO){
+    detalle = [...new Set(datos.marcas.map(x=> x.marca))].join(' / ');
+    lineas = datos.marcas.map(x=> `${x.marca} — ${x.producto}`);
+  }
+  if(tipo === PD_VIP){
+    detalle = datos.vip.map(x=> x.producto).join(' + ');
+    lineas = datos.vip.map(x=> `${x.producto} ${x.cantidad} ${x.unidad}`);
+  }
+  if(tipo === PD_BIO){
+    const prov = val('pfm-prov'); if(!prov){ err.textContent = 'Elegí el proveedor.'; return; }
+    datos.proveedor = prov;
+    detalle = prov + ': ' + datos.prods.map(x=> x.producto).join(' + ');
+    lineas = ['PROVEEDOR: ' + prov, ...datos.prods.map(x=> `${x.producto} ${x.cantidad} ${x.unidad}`)];
+  }
+  if(tipo === PD_EST){
+    detalle = mayus(val('pfm-breve')); const t = val('pfm-texto');
+    if(!detalle){ err.textContent = 'Completá el detalle breve.'; return; }
+    if(!t){ err.textContent = 'Escribí la indicación de estudios.'; return; }
+    lineas = [t];
+  }
+  if(tipo === PD_MED){
+    const t = val('pfm-texto'); if(!t){ err.textContent = 'Escribí el pedido de receta.'; return; }
+    detalle = mayus(t.split('\n')[0]); lineas = [t];
+  }
+  let presupuesto = null;
+  if(tipo === PD_PRES){
+    const [pct, lbl] = (val('pfmDesc') || '').split('|');
+    const sub = datos.trat.reduce((a,x)=> a + x.val, 0);
+    presupuesto = {profesional: pfmProfVic(), items: datos.trat, moneda:'$', descuentoPct: Number(pct) || 0, descuentoLbl: lbl || '', subtotal: sub, total: totalConDescuento(sub, Number(pct)||0, '$')};
+    detalle = datos.trat.map(x=> x.det).join(' + ');
+    lineas = [...datos.trat.map(x=> `${x.det} — ${fmtMonto(x.val,'$')}`), lbl ? 'DESCUENTO: ' + lbl : '', 'TOTAL: ' + fmtMonto(presupuesto.total,'$')].filter(Boolean);
+  }
+  if(notasPac) lineas.push('', 'NOTAS PARA EL PACIENTE: ' + notasPac);
+  const bt = document.getElementById('pfmGuardar'); if(bt.disabled) return; bt.disabled = true;
   const quien = pdNombreUsuario();
-  const detalle = [...new Set(items.map(x=> x.marca))].join(' / ').slice(0, 50);
-  const indicacion = items.map(x=> `${x.marca} — ${x.producto}`).join('\n');
   try{
     await db.collection('pedidosSecretaria').add({
       fechaISO: fecha, limiteISO: pdLimite(fecha), pacienteId: pac.id || '', paciente: pac.nombreCompleto || pacTxt,
-      tipo: PD_BONO, detalle, indicacion, bono: items, estado: 'pendiente', responsable: '', notas: '',
+      tipo, detalle: mayus(detalle).slice(0, 50), indicacion: lineas.join('\n'), datos, notasPaciente: notasPac,
+      ...(presupuesto ? {presupuesto} : {}), ...(tipo === PD_BONO ? {bono: datos.marcas} : {}),
+      estado: 'pendiente', responsable: '', notas: notasInt,
       creadoPor: quien, creadoPorUid: currentUser.uid || '',
       historial: [{f: pdAhora(), q: quien, a: 'PEDIDO ENVIADO'}],
       creadoEn: firebase.firestore.FieldValue.serverTimestamp(), actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()
     });
-    pdbCerrar(); pdFiltro = 'pendiente'; renderPd();
+    pfmCerrar(); pdFiltro = 'pendiente'; renderPd();
   }catch(e){ err.textContent = 'No se pudo guardar: ' + e.message; }
   finally{ bt.disabled = false; }
+};
+// Recepción: abre el armado de presupuesto con lo que pidió la médica, para editarlo y exportarlo
+document.getElementById('pddPres').onclick = ()=>{
+  const p = (pdLista || []).find(x=> x.id === pdAbierto); if(!p || !p.presupuesto) return;
+  const pr = p.presupuesto;
+  abrirPresupuesto();
+  document.getElementById('prPac').value = p.paciente || '';
+  document.getElementById('prProf').value = pr.profesional || pfmProfVic();
+  document.getElementById('prFecha').value = hoyISO();
+  document.getElementById('prNotas').value = p.notasPaciente || '';
+  document.getElementById('prItems').innerHTML = '';
+  (pr.items || []).forEach(it=>{
+    prAgregarFila();
+    const f = document.querySelector('#prItems .pr-fila:last-child');
+    f.querySelector('.pr-det').value = it.det; f.querySelector('.pr-cant').value = it.cant || 1;
+    f.querySelector('.pr-val').value = Number(it.val||0).toLocaleString('es-AR');
+  });
+  if(!(pr.items || []).length) prAgregarFila();
+  const sd = document.getElementById('prDesc');
+  if(pr.descuentoPct){
+    const v = `${pr.descuentoPct}|${pr.descuentoLbl}`;
+    if(![...sd.options].some(o=> o.value === v)) sd.insertAdjacentHTML('beforeend', `<option value="${escHtml(v)}">${escHtml(pr.descuentoLbl)}</option>`);
+    sd.value = v;
+  }
+  prRecalc();
 };
 
 function pdAbrirNuevo(){
@@ -278,6 +443,7 @@ function pdAbrirDetalle(id){
   const esDev = !!p.devolucion;
   document.getElementById('pddIndDe').textContent = (esDev ? 'Devolución de ' : 'Indicación de ') + (pdQuienCorto(p.creadoPor) || 'la médica');
   document.getElementById('pddPdf').classList.toggle('col-hidden', !esDev);
+  document.getElementById('pddPres').classList.toggle('col-hidden', !p.presupuesto || !gestiona);
   document.getElementById('pddIndicacion').classList.toggle('pd-ind-corto', esDev);
   const selR = document.getElementById('pddResp');
   const resp = p.responsable || (gestiona && PD_RESPONSABLES.includes(primerNombre()) ? primerNombre() : '');
@@ -507,9 +673,9 @@ function dvRecolectar(){
   const habitos = Object.fromEntries(DV_HABITOS.map(([k])=> [k, v('pdv-' + k)]));
   const seguimiento = Object.fromEntries(DV_SEGUIMIENTO.map(([k])=> [k, v('pdv-' + k)]));
   const docs = [...document.querySelectorAll('#pdvDocs .dv-doc')].map(r=> ({nombre: mayus(dvLeer(r,'nombre')), estado: dvLeer(r,'estado')})).filter(d=> d.nombre);
-  if(!items.length && !Object.values(habitos).some(Boolean) && !Object.values(seguimiento).some(Boolean))
+  if(!items.length && !Object.values(habitos).some(Boolean) && !Object.values(seguimiento).some(Boolean) && !v('pdv-notaspac'))
     return {error: 'Completá al menos una indicación para generar la devolución.'};
-  return {pac, dv: {fechaConsulta: fecha, profesional: document.getElementById('pdvProf').value, plan: v('pdvPlan'), habitos, items, seguimiento, docs},
+  return {pac, dv: {fechaConsulta: fecha, profesional: document.getElementById('pdvProf').value, plan: v('pdvPlan'), habitos, items, seguimiento, docs, notasPaciente: v('pdv-notaspac')},
     interno: v('pdv-interno')};
 }
 // Texto plano de la devolución (para buscar y copiar)
@@ -520,6 +686,7 @@ function dvResumen(dv){
   dv.items.forEach((it,i)=> L.push(`${i+1}. ${it.momento} · ${it.componentes.map(c=> `${c.droga} ${c.cantidad} ${c.unidad}`).join(' + ')}${it.duracion ? ' · ' + it.duracion : ''}`));
   DV_SEGUIMIENTO.forEach(([k,l])=>{ if(dv.seguimiento[k]) L.push(mayus(l) + ': ' + dv.seguimiento[k]); });
   dv.docs.forEach(d=> L.push('DOCUMENTO: ' + d.nombre));
+  if(dv.notasPaciente) L.push('NOTAS PARA EL PACIENTE: ' + dv.notasPaciente);
   return L.join('\n');
 }
 document.getElementById('pdvRevisar').onclick = async ()=>{
@@ -633,6 +800,7 @@ async function pdfDevolucion(p){
     dv.docs.forEach(d=>{ nuevaPagSi(16); y += 6; doc.setFillColor(...UMM_TXT); doc.circle(M + 4, y - 3, 1.3, 'F');
       doc.setFont(F,'normal'); doc.setFontSize(9.5); doc.setTextColor(...UMM_TXT); doc.text(T(d.nombre), M + 12, y); y += 8; });
   }
+  if(dv.notasPaciente){ etiqueta('NOTAS'); bloque('PARA EL PACIENTE', dv.notasPaciente); }
   // pie de contacto en todas las páginas
   const contactos = UMM_CONTACTO;
   const icons = await Promise.all(contactos.map(([ic])=> ummImg(`images/${ic}.png`)));
