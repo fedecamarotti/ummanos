@@ -98,7 +98,7 @@ function renderPd(){
       <td class="pd-tipo">${escHtml(pdQuienCorto(p.creadoPor))}</td>
       <td class="pd-tipo">${escHtml(p.tipo||'')}</td>
       <td class="${pdVencido(p) ? 'pd-vencido' : ''}">${cpFechaCorta(p.limiteISO)}</td>
-      <td><span class="pd-estado pd-${p.estado}">${PD_ESTADOS[p.estado] || ''}</span></td>
+      <td>${pdPillEstado(p)}</td>
       <td>${escHtml(p.responsable || '—')}</td>
       <td class="left pd-notas">${escHtml(p.notas || '')}</td>
     </tr>`).join('')).join('');
@@ -122,8 +122,77 @@ new MutationObserver(()=>{ plFiltrar('pdBody'); pdOcultarGrupos(); }).observe(do
 
 document.querySelectorAll('#pdEstados [data-pde]').forEach(b=> b.onclick = ()=>{ pdFiltro = b.dataset.pde; renderPd(); });
 document.getElementById('pdBody').addEventListener('click', e=>{
+  const pill = e.target.closest('[data-pd-estado]');
+  if(pill){ e.stopPropagation(); pdMenuEstado(pill); return; }   // la pastilla de estado no abre el pedido
   const tr = e.target.closest('tr[data-id]'); if(tr) pdAbrirDetalle(tr.dataset.id);
 });
+/* ---------- Estado desde la lista: pastilla con menú (Pendiente / Realizado / Cancelado…) ---------- */
+// Recepción y admins cambian a cualquier estado; la médica solo puede cancelar lo pendiente
+function pdOpcionesEstado(p){
+  const gestiona = currentUser && (currentUser.rol === 'admin' || !pdEsMedica());
+  if(gestiona) return ['pendiente','realizado','cancelado'].filter(x=> x !== p.estado);
+  return p.estado === 'pendiente' ? ['cancelado'] : [];
+}
+function pdPillEstado(p){
+  const puede = pdOpcionesEstado(p).length > 0;
+  return `<button type="button" class="pd-estado pd-${p.estado} pd-pill${puede ? '' : ' fija'}" ${puede ? `data-pd-estado="${p.id}"` : 'tabindex="-1"'}>${PD_ESTADOS[p.estado] || ''}${puede ? ' <span class="pd-flecha">▾</span>' : ''}</button>`;
+}
+function pdCerrarMenuEstado(){ const m = document.getElementById('pdMenuEstado'); if(m) m.remove(); document.removeEventListener('click', pdMenuFuera, true); }
+function pdMenuFuera(e){ const m = document.getElementById('pdMenuEstado'); if(m && !m.contains(e.target)) pdCerrarMenuEstado(); }
+function pdMenuEstado(pill){
+  const abierto = document.getElementById('pdMenuEstado');
+  pdCerrarMenuEstado(); if(abierto && abierto.dataset.id === pill.dataset.pdEstado) return;
+  const p = (pdLista || []).find(x=> x.id === pill.dataset.pdEstado); if(!p) return;
+  const ICO = {pendiente:'◷', realizado:'✓', cancelado:'✕'};
+  const m = document.createElement('div'); m.id = 'pdMenuEstado'; m.className = 'pd-menu-estado'; m.dataset.id = p.id;
+  m.innerHTML = ['pendiente','realizado','cancelado'].map(x=>{
+    const ok = x === p.estado || pdOpcionesEstado(p).includes(x);
+    return ok ? `<button type="button" class="pd-me-${x}${x === p.estado ? ' actual' : ''}" data-e="${x}"><span>${ICO[x]}</span>${PD_ESTADOS[x].charAt(0) + PD_ESTADOS[x].slice(1).toLowerCase()}${x === 'cancelado' ? '…' : ''}</button>` : '';
+  }).join('');
+  document.body.appendChild(m);
+  const r = pill.getBoundingClientRect();
+  m.style.left = Math.min(r.left, window.innerWidth - m.offsetWidth - 8) + 'px';
+  m.style.top = (r.bottom + 4 + m.offsetHeight > window.innerHeight ? r.top - m.offsetHeight - 4 : r.bottom + 4) + 'px';
+  m.querySelectorAll('[data-e]').forEach(b=> b.onclick = ()=>{ pdCerrarMenuEstado(); if(b.dataset.e !== p.estado) pdCambiarEstado(p.id, b.dataset.e); });
+  setTimeout(()=> document.addEventListener('click', pdMenuFuera, true), 0);
+}
+document.addEventListener('scroll', e=>{ const m = document.getElementById('pdMenuEstado'); if(m && !m.contains(e.target)) pdCerrarMenuEstado(); }, true);
+document.addEventListener('keydown', e=>{ if(e.key === 'Escape') pdCerrarMenuEstado(); });
+// Cartel para la nota (obligatoria al cancelar)
+function pdPedirNota(titulo, sub){
+  return new Promise(res=>{
+    const ov = document.createElement('div'); ov.className = 'umm-dlg';
+    ov.innerHTML = `<div class="umm-dlg-card pd-nota-card" role="dialog" aria-modal="true"><div class="umm-dlg-msg"><b>${escHtml(titulo)}</b><br><span class="pd-nota-sub">${escHtml(sub)}</span></div>
+      <textarea class="pd-nota-txt" rows="3" placeholder="Motivo de la cancelación…"></textarea><div class="pd-error pd-nota-err"></div>
+      <div class="umm-dlg-acc"><button type="button" class="btn" data-v="no">Volver</button><button type="button" class="btn btn-primary" data-v="si">Cancelar pedido</button></div></div>`;
+    document.body.appendChild(ov); requestAnimationFrame(()=> ov.classList.add('show'));
+    const ta = ov.querySelector('textarea'); setTimeout(()=> ta.focus(), 30);
+    ta.addEventListener('input', ()=> ov.querySelector('.pd-nota-err').textContent = '');
+    const fin = v=>{ document.removeEventListener('keydown', tec, true); ov.remove(); res(v); };
+    const ok = ()=>{ const v = mayus(ta.value.trim()); if(!v){ ov.querySelector('.pd-nota-err').textContent = 'Escribí el motivo para cancelar.'; ta.focus(); return; } fin(v); };
+    const tec = e=>{ if(e.key === 'Escape'){ e.preventDefault(); e.stopImmediatePropagation(); fin(null); } };
+    document.addEventListener('keydown', tec, true);
+    ov.querySelector('[data-v="no"]').onclick = ()=> fin(null);
+    ov.querySelector('[data-v="si"]').onclick = ok;
+  });
+}
+async function pdCambiarEstado(id, estado){
+  const p = (pdLista || []).find(x=> x.id === id); if(!p || !pdOpcionesEstado(p).includes(estado)) return;
+  let nota = '';
+  if(estado === 'cancelado'){
+    nota = await pdPedirNota('Cancelar pedido', `${pdTituloTipo(p.tipo)} · ${p.paciente || ''}`);
+    if(nota == null) return;
+  }
+  const quien = pdNombreUsuario();
+  const cambios = {estado, actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()};
+  const hist = ['ESTADO: ' + PD_ESTADOS[estado]];
+  if(nota){ cambios.notas = p.notas ? `${p.notas}\n${nota}` : nota; hist.push('NOTAS ACTUALIZADAS'); }
+  // si lo resuelve una recepcionista y no tenía responsable, queda asignado a ella
+  if(!p.responsable && PD_RESPONSABLES.includes(primerNombre()) && estado !== 'pendiente'){ cambios.responsable = primerNombre(); hist.push('RESPONSABLE: ' + primerNombre()); }
+  cambios.historial = [...(Array.isArray(p.historial) ? p.historial : []), ...hist.map(a=> ({f: pdAhora(), q: quien, a}))];
+  try{ await db.collection('pedidosSecretaria').doc(id).update(cambios); }
+  catch(e){ alert('No se pudo cambiar el estado: ' + e.message); }
+}
 
 /* ---------- Nuevo pedido ---------- */
 const ovPdNuevo = document.getElementById('overlayPdNuevo');
