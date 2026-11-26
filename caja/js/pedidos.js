@@ -464,12 +464,22 @@ function pdMetaHtml(p){
     <span>${escHtml(p.tipo||'')}</span>
     <span class="pd-meta-der">Enviado ${cpFechaCorta(p.fechaISO)} por ${escHtml(p.creadoPor||'')} · Límite <b class="${pdVencido(p)?'pd-vencido':''}">${cpFechaCorta(p.limiteISO)}</b></span>`;
 }
+const pdTituloTipo = t=> (PD_FORMS[t] && PD_FORMS[t].titulo) || (t === PD_DEV ? 'INDICACIONES / DEVOLUCIÓN' : (t || 'PEDIDO'));
+// Presupuesto guardado en el pedido, completo para el PDF (los primeros no guardaban el monto del descuento)
+function pdPresCompleto(p){
+  const pr = {paciente: p.paciente, fechaISO: p.fechaISO, costoAdm: 0, redondeo: true, notas: p.notasPaciente || '', ...p.presupuesto};
+  const sub = Number(pr.subtotal) || (pr.items||[]).reduce((a,i)=> a + (i.cant||1) * (i.val||0), 0);
+  pr.subtotal = sub;
+  if(pr.descuento == null || (!pr.descuento && sub > pr.total)){ pr.descuento = Math.max(0, sub - (Number(pr.total)||sub)); }
+  if(pr.descuento && !pr.descuentoLbl) pr.descuentoLbl = 'Descuento';
+  return pr;
+}
 function pdAbrirDetalle(id){
   const p = (pdLista || []).find(x=> x.id === id); if(!p) return;
   pdAbierto = id;
   const gestiona = currentUser.rol === 'admin' || !pdEsMedica();   // recepción y admins
   const cerradoParaVic = !gestiona && p.estado !== 'pendiente';
-  document.getElementById('pddTitulo').textContent = p.detalle || 'Pedido';
+  document.getElementById('pddTitulo').textContent = pdTituloTipo(p.tipo);   // siempre el título del formulario (PRESUPUESTO TRATAMIENTOS, INDICACIONES / DEVOLUCIÓN…)
   document.getElementById('pddMeta').innerHTML = pdMetaHtml(p);
   document.getElementById('pddPaciente').textContent = p.paciente || '';
   document.getElementById('pddIndicacion').textContent = p.indicacion || '';
@@ -858,7 +868,7 @@ async function pdfDevolucion(p){
 document.getElementById('pddPdf').onclick = async ()=>{
   const p = (pdLista || []).find(x=> x.id === pdAbierto); if(!p || (!p.devolucion && !p.presupuesto)) return;
   try{
-    const {doc, archivo} = p.devolucion ? await pdfDevolucion(p) : await pdfPresupuesto({paciente: p.paciente, fechaISO: p.fechaISO, ...p.presupuesto});
+    const {doc, archivo} = p.devolucion ? await pdfDevolucion(p) : await pdfPresupuesto(pdPresCompleto(p));
     pdAbierto = null; mostrarPreviewPDF(doc, archivo);
   }
   catch(e){ document.getElementById('pddError').textContent = 'No se pudo armar el PDF: ' + e.message; }
