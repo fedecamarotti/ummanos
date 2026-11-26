@@ -1742,3 +1742,18 @@ body.fede-nav-on #vistaPedidos > .sueros-bar{margin-top:8px;}
 #overlayPdDev .dv-droga .dv-quitar{padding:8px 0;}
 #overlayPdDev .dv-botones{display:flex;gap:8px;flex-wrap:wrap;}
 @media (max-width:700px){ #overlayPdDev .dv-droga{grid-template-columns:1fr 1fr;} #overlayPdDev .dv-droga > span:empty{display:none;} }
+
+/* Pedidos: títulos de los formularios en mayúscula; BONOS DE DESCUENTO */
+#overlayPdNuevo #pdnTipoTxt{display:none;}
+.pd-bono-modal{max-width:760px;}
+.pdb-g1{display:grid;grid-template-columns:1fr 200px;gap:10px 14px;}
+.pdb-fila{display:grid;grid-template-columns:200px 1fr 48px;gap:10px 14px;align-items:start;margin-bottom:8px;}
+.pdb-fila .dv-quitar{margin-top:22px;}
+.pdb-fila label input[data-pdb="otra"]{margin-top:6px;}
+.pdb-fila .dv-quitar{padding:8px 0;}
+.pdb-fila label, .pdb-g1 label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;color:#555;}
+.pd-bono-modal .dv-sec input, .pd-bono-modal .dv-sec select{font-weight:400;color:var(--text);}
+.pd-bono-modal .dv-sec input::placeholder{font-weight:400;color:#a9a594;}
+.pd-bono-modal .dv-sec select.dv-vacio{color:#a9a594;}
+.pd-bono-modal .dv-sec select option{color:var(--text);}
+@media (max-width:700px){ .pdb-g1{grid-template-columns:1fr 1fr;} .pdb-fila{grid-template-columns:1fr 1fr;} .pdb-fila .dv-quitar{grid-column:1/-1;justify-self:end;} }

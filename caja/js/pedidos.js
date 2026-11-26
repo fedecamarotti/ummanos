@@ -136,7 +136,7 @@ document.getElementById('pdtLista').innerHTML = PD_TIPOS.map(t=> `<button type="
 document.getElementById('pdtLista').addEventListener('click', e=>{
   const b = e.target.closest('[data-t]'); if(!b) return;
   ovPdTipo.classList.remove('show');
-  if(b.dataset.t === PD_DEV) pdDevAbrir(); else pdAbrirSimple(b.dataset.t);
+  if(b.dataset.t === PD_DEV) pdDevAbrir(); else if(b.dataset.t === PD_BONO) pdBonoAbrir(); else pdAbrirSimple(b.dataset.t);
 });
 document.getElementById('pdtCerrar').onclick = ()=> ovPdTipo.classList.remove('show');
 attachAutocomplete(document.getElementById('pdnPaciente'), ()=> pacienteRegistry);
@@ -145,6 +145,77 @@ function pdContarDetalle(){
   c.textContent = `${n}/50`; c.classList.toggle('lleno', n >= 50);
 }
 document.getElementById('pdnDetalle').addEventListener('input', pdContarDetalle);
+/* ---------- BONOS DE DESCUENTO: paciente, fecha y una o más líneas Marca + Producto ---------- */
+const PD_BONO = 'BONO DE DESCUENTO';
+const PDB_MARCAS = ['Isdin','La Roche-Posay','Eucerin','Avène','Vichy'];
+const ovPdBono = document.getElementById('overlayPdBono');
+attachAutocomplete(document.getElementById('pdbPaciente'), ()=> pacienteRegistry);
+function pdbPintarQuitar(){
+  const filas = document.querySelectorAll('#pdbItems .pdb-fila');
+  filas.forEach(f=> f.querySelector('.dv-quitar').style.display = filas.length > 1 ? '' : 'none');
+}
+function pdbAgregar(){
+  const r = document.createElement('div'); r.className = 'pdb-fila';
+  r.innerHTML = `<label class="dv-req">Marca<select data-pdb="marca"><option value="">Seleccionar…</option>${PDB_MARCAS.map(m=> `<option>${escHtml(m)}</option>`).join('')}<option value="__otra">Otra</option></select><input data-pdb="otra" class="col-hidden" placeholder="Nombre de la marca" autocomplete="off"></label>
+    <label class="dv-req"><span class="pd-lab">Producto <em class="pd-cont">0/80</em></span><input data-pdb="producto" maxlength="80" placeholder="Nombre completo del producto a comprar" autocomplete="off"></label>
+    <button type="button" class="dv-quitar">Quitar</button>`;
+  const sel = r.querySelector('select'), otra = r.querySelector('[data-pdb="otra"]');
+  const pin = ()=> sel.classList.toggle('dv-vacio', !sel.value); pin();
+  sel.addEventListener('change', ()=>{ pin(); otra.classList.toggle('col-hidden', sel.value !== '__otra'); if(sel.value === '__otra') otra.focus(); });
+  const prod = r.querySelector('[data-pdb="producto"]'), cont = r.querySelector('.pd-cont');
+  prod.addEventListener('input', ()=>{ cont.textContent = `${prod.value.length}/80`; cont.classList.toggle('lleno', prod.value.length >= 80); });
+  r.querySelector('.dv-quitar').onclick = ()=>{ r.remove(); pdbPintarQuitar(); };
+  document.getElementById('pdbItems').appendChild(r);
+  pdbPintarQuitar();
+}
+document.getElementById('pdbAdd').onclick = ()=>{ pdbAgregar(); document.querySelector('#pdbItems .pdb-fila:last-child select').focus(); };
+function pdBonoAbrir(){
+  if(!pdPuedeCrear()) return;
+  document.getElementById('pdbPaciente').value = '';
+  document.getElementById('pdbFecha').value = hoyISO();
+  document.getElementById('pdbItems').innerHTML = ''; pdbAgregar();
+  document.getElementById('pdbError').textContent = '';
+  ovPdBono.classList.add('show');
+}
+const pdbCerrar = ()=> ovPdBono.classList.remove('show');
+document.getElementById('pdbCerrar').onclick = pdbCerrar;
+document.getElementById('pdbCancelar').onclick = pdbCerrar;
+document.getElementById('pdbGuardar').onclick = async ()=>{
+  const err = document.getElementById('pdbError'); err.textContent = '';
+  const pacTxt = mayus(document.getElementById('pdbPaciente').value.trim());
+  const pac = (pacientesFullList || []).find(p=> mayus(p.nombreCompleto || '') === pacTxt);
+  if(!pac){ err.textContent = 'Elegí el paciente de la lista. Si no aparece, pedile a recepción que lo dé de alta en Pacientes/alumnos.'; return; }
+  const fecha = document.getElementById('pdbFecha').value;
+  if(!fecha){ err.textContent = 'Completá la fecha.'; return; }
+  const items = [];
+  for(const [i, r] of [...document.querySelectorAll('#pdbItems .pdb-fila')].entries()){
+    const sel = r.querySelector('select').value;
+    const marca = mayus(sel === '__otra' ? r.querySelector('[data-pdb="otra"]').value.trim() : sel);
+    const producto = mayus(r.querySelector('[data-pdb="producto"]').value.trim()).slice(0, 80);
+    if(!marca && !producto) continue;
+    const n = document.querySelectorAll('#pdbItems .pdb-fila').length > 1 ? ` (línea ${i+1})` : '';
+    if(!marca){ err.textContent = `Elegí la marca${n}.`; return; }
+    if(!producto){ err.textContent = `Completá el producto${n}.`; return; }
+    items.push({marca, producto});
+  }
+  if(!items.length){ err.textContent = 'Completá al menos una marca y su producto.'; return; }
+  const bt = document.getElementById('pdbGuardar'); if(bt.disabled) return; bt.disabled = true;
+  const quien = pdNombreUsuario();
+  const detalle = [...new Set(items.map(x=> x.marca))].join(' / ').slice(0, 50);
+  const indicacion = items.map(x=> `${x.marca} — ${x.producto}`).join('\n');
+  try{
+    await db.collection('pedidosSecretaria').add({
+      fechaISO: fecha, limiteISO: pdLimite(fecha), pacienteId: pac.id || '', paciente: pac.nombreCompleto || pacTxt,
+      tipo: PD_BONO, detalle, indicacion, bono: items, estado: 'pendiente', responsable: '', notas: '',
+      creadoPor: quien, creadoPorUid: currentUser.uid || '',
+      historial: [{f: pdAhora(), q: quien, a: 'PEDIDO ENVIADO'}],
+      creadoEn: firebase.firestore.FieldValue.serverTimestamp(), actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    pdbCerrar(); pdFiltro = 'pendiente'; renderPd();
+  }catch(e){ err.textContent = 'No se pudo guardar: ' + e.message; }
+  finally{ bt.disabled = false; }
+};
+
 function pdAbrirNuevo(){
   if(!pdPuedeCrear()) return;
   ovPdTipo.classList.add('show');
@@ -154,7 +225,7 @@ function pdAbrirSimple(tipo){
   document.getElementById('pdnTipo').value = tipo;
   document.getElementById('pdnTipoTxt').textContent = tipo;
   document.getElementById('pdnError').textContent = '';
-  document.getElementById('pdnLimite').innerHTML = `Fecha límite automática: <b>${cpFechaCorta(pdLimite(hoyISO()))}</b> (el día siguiente; si cae domingo, el lunes).`;
+  document.getElementById('pdnTitulo').textContent = tipo;
   pdContarDetalle();
   ovPdNuevo.classList.add('show');
 }
@@ -405,7 +476,7 @@ function dvPaso(p){
   document.getElementById('pdvRevisar').classList.toggle('col-hidden', p !== 'form');
   document.getElementById('pdvVolver').classList.toggle('col-hidden', p !== 'prev');
   document.getElementById('pdvEnviar').classList.toggle('col-hidden', p !== 'prev');
-  document.getElementById('pdvTitulo').textContent = p === 'prev' ? 'Revisá la devolución' : 'Indicaciones / devolución';
+  document.getElementById('pdvTitulo').textContent = p === 'prev' ? 'REVISÁ LA DEVOLUCIÓN' : 'INDICACIONES / DEVOLUCIÓN';
 }
 const dvVacia = c=> !dvLeer(c,'momento') && [...c.querySelectorAll('.dv-droga')].every(r=> !dvLeer(r,'droga') && !dvLeer(r,'cantidad') && !dvLeer(r,'unidad'))
   && !dvLeer(c,'notas');
