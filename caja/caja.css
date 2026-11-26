@@ -1768,3 +1768,4 @@ body.fede-nav-on #vistaPedidos > .sueros-bar{margin-top:8px;}
 .pd-bono-modal .pfm-total{margin-top:10px;font-size:12.5px;text-align:right;color:#555;}
 .pd-bono-modal .dv-agregar{margin-top:4px;}
 @media (max-width:700px){ .pdb-fila.pfm-vip, .pdb-fila.pfm-prods{grid-template-columns:1fr 1fr;} .pdb-fila.pfm-trat{grid-template-columns:1fr 1fr;} }
+#pfmPrev iframe{width:100%;height:68vh;border:1px solid var(--border);border-radius:10px;background:#fff;}

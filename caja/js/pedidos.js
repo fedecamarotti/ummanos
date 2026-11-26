@@ -52,7 +52,7 @@ function pdIniciar(){
     }
   }, err=>{
     pdLista = [];
-    document.getElementById('pdBody').innerHTML = `<tr><td colspan="9" class="empty-state" style="color:#a13a3a;">No se pudieron leer los pedidos: ${escHtml(err.message)}<br>Revisá que en las reglas de Firebase esté la colección <b>pedidosSecretaria</b>.</td></tr>`;
+    document.getElementById('pdBody').innerHTML = `<tr><td colspan="8" class="empty-state" style="color:#a13a3a;">No se pudieron leer los pedidos: ${escHtml(err.message)}<br>Revisá que en las reglas de Firebase esté la colección <b>pedidosSecretaria</b>.</td></tr>`;
   });
 }
 
@@ -81,23 +81,22 @@ function renderPd(){
   const panel = document.getElementById('pdPanel');
   if(panel.classList.contains('col-hidden')) return;
   const tb = document.getElementById('pdBody');
-  if(pdLista == null){ tb.innerHTML = '<tr><td colspan="9" class="empty-state">Cargando…</td></tr>'; return; }
+  if(pdLista == null){ tb.innerHTML = '<tr><td colspan="8" class="empty-state">Cargando…</td></tr>'; return; }
   document.querySelectorAll('#pdEstados [data-pde]').forEach(b=> b.classList.toggle('active', b.dataset.pde === pdFiltro));
   let lista = pdLista.filter(p=> !pdFiltro || p.estado === pdFiltro);
   if(!lista.length){
-    tb.innerHTML = `<tr><td colspan="9" class="empty-state">${pdFiltro==='pendiente' ? 'No hay pedidos pendientes.' : 'No hay pedidos en esta lista.'}</td></tr>`;
+    tb.innerHTML = `<tr><td colspan="8" class="empty-state">${pdFiltro==='pendiente' ? 'No hay pedidos pendientes.' : 'No hay pedidos en esta lista.'}</td></tr>`;
     return;
   }
   // Agrupados por paciente: arriba el paciente con el pedido más nuevo; dentro, del más nuevo al más viejo
   const grupos = new Map();
   lista.forEach(p=>{ const k = mayus(p.paciente||'').trim(); if(!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(p); });
   const orden = [...grupos.values()].map(g=> g.sort((a,b)=> pdClave(b) - pdClave(a))).sort((a,b)=> pdClave(b[0]) - pdClave(a[0]));
-  tb.innerHTML = orden.map(g=> `<tr class="pd-grupo"><td colspan="9"><b>${escHtml(g[0].paciente||'')}</b><span>${g.length} ${g.length===1?'pedido':'pedidos'}</span></td></tr>` + g.map(p=> `<tr data-id="${p.id}" class="pd-fila">
+  tb.innerHTML = orden.map(g=> `<tr class="pd-grupo"><td colspan="8"><b>${escHtml(g[0].paciente||'')}</b><span>${g.length} ${g.length===1?'pedido':'pedidos'}</span></td></tr>` + g.map(p=> `<tr data-id="${p.id}" class="pd-fila">
       <td>${cpFechaCorta(p.fechaISO)}</td>
       <td class="left pd-pac-rep"><span>${escHtml(p.paciente||'')}</span></td>
       <td class="pd-tipo">${escHtml(pdQuienCorto(p.creadoPor))}</td>
       <td class="pd-tipo">${escHtml(p.tipo||'')}</td>
-      <td class="left">${escHtml(p.detalle||'')}</td>
       <td class="${pdVencido(p) ? 'pd-vencido' : ''}">${cpFechaCorta(p.limiteISO)}</td>
       <td><span class="pd-estado pd-${p.estado}">${PD_ESTADOS[p.estado] || ''}</span></td>
       <td>${escHtml(p.responsable || '—')}</td>
@@ -132,7 +131,7 @@ const PD_DEV = 'INDICACIONES / DEVOLUCION';
 document.getElementById('pdnTipo').innerHTML = '<option value="">Elegí el tipo…</option>' + PD_TIPOS.map(t=> `<option>${t}</option>`).join('');
 // "+": primero se elige qué pedido es; cada tipo abre su formulario
 const ovPdTipo = document.getElementById('overlayPdTipo');
-document.getElementById('pdtLista').innerHTML = PD_TIPOS.map(t=> `<button type="button" class="pd-tipo-op" data-t="${t}">${t}</button>`).join('');
+document.getElementById('pdtLista').innerHTML = PD_TIPOS.filter(t=> t !== 'OTRO PEDIDO').map(t=> `<button type="button" class="pd-tipo-op" data-t="${t}">${t}</button>`).join('');
 document.getElementById('pdtLista').addEventListener('click', e=>{
   const b = e.target.closest('[data-t]'); if(!b) return;
   ovPdTipo.classList.remove('show');
@@ -183,23 +182,24 @@ function pfmTratamientos(){
 function pfmFila(k){
   const r = document.createElement('div'); r.className = 'pdb-fila pfm-' + k;
   const quitar = `<button type="button" class="dv-quitar">Quitar</button>`;
-  if(k === 'marcas') r.innerHTML = `<label class="dv-req">Marca<select data-f="marca">${pfmOpts(PDB_MARCAS)}<option value="__otro">Otra</option></select><input data-f="marcaOtra" class="col-hidden" placeholder="Nombre de la marca" autocomplete="off"></label>
+  const combo = (key, label, lista, o)=> pdCombo('data-f', key, label, lista, o);
+  if(k === 'marcas') r.innerHTML = `${combo('marca','Marca', PDB_MARCAS, {req:true})}
       <label class="dv-req"><span class="pd-lab">Producto <em class="pd-cont">0/80</em></span><input data-f="producto" maxlength="80" placeholder="Nombre completo del producto a comprar" autocomplete="off"></label>${quitar}`;
-  if(k === 'vip') r.innerHTML = `<label class="dv-req">Producto<select data-f="producto">${pfmOpts(PDF_VIP_PRODS)}<option value="__otro">Otros</option></select><input data-f="productoOtro" class="col-hidden" placeholder="Nombre del producto" autocomplete="off"></label>
+  if(k === 'vip') r.innerHTML = `${combo('producto','Producto', PDF_VIP_PRODS, {req:true})}
       <label class="dv-req">Cantidad<input data-f="cantidad" inputmode="decimal" placeholder="Ej.: 500" data-no-mayus autocomplete="off"></label>
-      <label class="dv-req">Unidad<select data-f="unidad">${pfmOpts(DV_UNIDADES)}</select></label>${quitar}`;
+      ${combo('unidad','Unidad', DV_UNIDADES, {req:true, sinMayus:true})}${quitar}`;
   if(k === 'prods') r.innerHTML = `<label class="dv-req">Producto<input data-f="producto" placeholder="Nombre del producto" autocomplete="off"></label>
       <label class="dv-req">Cantidad<input data-f="cantidad" inputmode="decimal" placeholder="Ej.: 1" data-no-mayus autocomplete="off"></label>
-      <label class="dv-req">Unidad<select data-f="unidad">${pfmOpts(DV_UNIDADES)}</select></label>${quitar}`;
-  if(k === 'trat') r.innerHTML = `<label class="dv-req">Tratamiento<select data-f="trat">${pfmOpts(pfmTratamientos().map(c=> c.concepto), pfmTratamientos().length ? 'Seleccionar…' : 'Sin tratamientos cargados')}</select></label>
+      ${combo('unidad','Unidad', DV_UNIDADES, {req:true, sinMayus:true})}${quitar}`;
+  if(k === 'trat') r.innerHTML = `${combo('trat','Tratamiento', pfmTratamientos().map(c=> c.concepto), {req:true, ph: pfmTratamientos().length ? 'Escribí o elegí…' : 'Sin tratamientos cargados'})}
       <label>Valor sugerido<input data-f="valor" inputmode="numeric" placeholder="$0" autocomplete="off"></label>${quitar}`;
-  r.querySelectorAll('select').forEach(sel=> pfmConectarSelect(sel, sel.parentElement.querySelector('input.col-hidden')));
+  pdConectarCombos(r);
   const prod = r.querySelector('[data-f="producto"][maxlength]'), cont = r.querySelector('.pd-cont');
   if(prod && cont) prod.addEventListener('input', ()=>{ cont.textContent = `${prod.value.length}/80`; cont.classList.toggle('lleno', prod.value.length >= 80); });
   if(k === 'trat'){
     const sel = r.querySelector('[data-f="trat"]'), val = r.querySelector('[data-f="valor"]');
     sel.addEventListener('change', ()=>{
-      const c = pfmTratamientos().find(x=> x.concepto === sel.value);
+      const c = pfmTratamientos().find(x=> x.concepto === mayus(sel.value.trim()));
       val.value = c && c.valor ? Number(c.valor).toLocaleString('es-AR') : ''; val.dataset.mon = c ? (c.valorMoneda || '$') : '$';
       pfmTotal();
     });
@@ -252,8 +252,21 @@ function pdFormAbrir(tipo){
   const breve = document.getElementById('pfm-breve'), bc = document.getElementById('pfmBreveCont');
   if(breve) breve.addEventListener('input', ()=>{ bc.textContent = `${breve.value.length}/50`; bc.classList.toggle('lleno', breve.value.length >= 50); });
   document.getElementById('pfmError').textContent = '';
+  pfmPaso('form');
   ovPdForm.classList.add('show'); ovPdForm.querySelector('.modal').scrollTop = 0;
 }
+// Presupuesto: primero se revisa en el formato de presupuesto y después se envía
+let pfmPendiente = null;
+function pfmPaso(p){
+  const pres = pfmTipo === PD_PRES;
+  document.getElementById('pfmBody').classList.toggle('col-hidden', p !== 'form');
+  document.getElementById('pfmPrev').classList.toggle('col-hidden', p !== 'prev');
+  document.getElementById('pfmVolver').classList.toggle('col-hidden', p !== 'prev');
+  document.getElementById('pfmGuardar').textContent = pres && p === 'form' ? 'Revisar presupuesto →' : 'Enviar a secretaría';
+  document.getElementById('pfmTitulo').textContent = pres && p === 'prev' ? 'REVISÁ EL PRESUPUESTO' : (PD_FORMS[pfmTipo] || {}).titulo || '';
+  if(p === 'form') pfmPendiente = null;
+}
+document.getElementById('pfmVolver').onclick = ()=> pfmPaso('form');
 const pfmCerrar = ()=> ovPdForm.classList.remove('show');
 document.getElementById('pfmCerrar').onclick = pfmCerrar;
 document.getElementById('pfmCancelar').onclick = pfmCerrar;
@@ -266,13 +279,13 @@ function pfmLeerFilas(k){
     const conOtro = (n, o)=> g(n) === '__otro' ? mayus(g(o)) : g(n);
     const ln = varias ? ` (línea ${i+1})` : '';
     if(k === 'marcas'){
-      const marca = mayus(conOtro('marca','marcaOtra')), producto = mayus(g('producto')).slice(0,80);
+      const marca = mayus(g('marca')), producto = mayus(g('producto')).slice(0,80);
       if(!marca && !producto) continue;
       if(!marca) return {error:`Elegí la marca${ln}.`}; if(!producto) return {error:`Completá el producto${ln}.`};
       items.push({marca, producto});
     }
     if(k === 'vip' || k === 'prods'){
-      const producto = mayus(k === 'vip' ? conOtro('producto','productoOtro') : g('producto')), cantidad = g('cantidad'), unidad = g('unidad');
+      const producto = mayus(g('producto')), cantidad = g('cantidad'), unidad = g('unidad');
       if(!producto && !cantidad && !unidad) continue;
       if(!producto) return {error:`Completá el producto${ln}.`};
       if(!(Number(String(cantidad).replace(',','.')) > 0)) return {error:`La cantidad debe ser mayor que cero${ln}.`};
@@ -280,7 +293,7 @@ function pfmLeerFilas(k){
       items.push({producto, cantidad, unidad});
     }
     if(k === 'trat'){
-      const det = g('trat'), val = parseMonto(g('valor'));
+      const det = mayus(g('trat')), val = parseMonto(g('valor'));
       if(!det && !val) continue;
       if(!det) return {error:`Elegí el tratamiento${ln}.`}; if(!val) return {error:`Completá el valor${ln}.`};
       items.push({det, cant:1, val});
@@ -291,6 +304,7 @@ function pfmLeerFilas(k){
 }
 document.getElementById('pfmGuardar').onclick = async ()=>{
   const err = document.getElementById('pfmError'); err.textContent = '';
+  if(pfmPendiente) return pfmEnviar(pfmPendiente);
   const tipo = pfmTipo, f = PD_FORMS[tipo]; if(!f) return;
   const pacTxt = mayus(document.getElementById('pfmPaciente').value.trim());
   const pac = (pacientesFullList || []).find(p=> mayus(p.nombreCompleto || '') === pacTxt);
@@ -333,28 +347,47 @@ document.getElementById('pfmGuardar').onclick = async ()=>{
   let presupuesto = null;
   if(tipo === PD_PRES){
     const [pct, lbl] = (val('pfmDesc') || '').split('|');
-    const sub = datos.trat.reduce((a,x)=> a + x.val, 0);
-    presupuesto = {profesional: pfmProfVic(), items: datos.trat, moneda:'$', descuentoPct: Number(pct) || 0, descuentoLbl: lbl || '', subtotal: sub, total: totalConDescuento(sub, Number(pct)||0, '$')};
+    const sub = datos.trat.reduce((a,x)=> a + x.val, 0), total = totalConDescuento(sub, Number(pct)||0, '$');
+    // mismo formato que los presupuestos de la caja (así se arma el PDF igual)
+    presupuesto = {paciente: pac.nombreCompleto || pacTxt, profesional: pfmProfVic(), fechaISO: fecha, moneda:'$', items: datos.trat,
+      subtotal: sub, costoAdm: 0, descuento: sub - total, descuentoLbl: sub > total ? (lbl || 'Descuento') : '', descuentoPct: Number(pct) || 0, total, redondeo: true,
+      notas: notasPac, observaciones: PR_OBSERVACIONES, contacto: UMM_CONTACTO.map(([ic, t])=> ({ic, t}))};
     detalle = datos.trat.map(x=> x.det).join(' + ');
     lineas = [...datos.trat.map(x=> `${x.det} — ${fmtMonto(x.val,'$')}`), lbl ? 'DESCUENTO: ' + lbl : '', 'TOTAL: ' + fmtMonto(presupuesto.total,'$')].filter(Boolean);
   }
   if(notasPac) lineas.push('', 'NOTAS PARA EL PACIENTE: ' + notasPac);
+  const pedido = {
+      fechaISO: fecha, limiteISO: pdLimite(fecha), pacienteId: pac.id || '', paciente: pac.nombreCompleto || pacTxt,
+      tipo, detalle: mayus(detalle).slice(0, 50), indicacion: lineas.join('\n'), datos, notasPaciente: notasPac,
+      ...(presupuesto ? {presupuesto} : {}), ...(tipo === PD_BONO ? {bono: datos.marcas} : {}),
+      estado: 'pendiente', responsable: '', notas: notasInt};
+  if(presupuesto){
+    const bt = document.getElementById('pfmGuardar'); bt.disabled = true;
+    try{
+      const {doc} = await pdfPresupuesto(presupuesto);
+      document.getElementById('pfmIframe').src = doc.output('bloburl');
+      pfmPaso('prev'); pfmPendiente = pedido; ovPdForm.querySelector('.modal').scrollTop = 0;
+    }catch(e){ err.textContent = 'No se pudo armar el presupuesto: ' + e.message; }
+    finally{ bt.disabled = false; }
+    return;
+  }
+  return pfmEnviar(pedido);
+};
+async function pfmEnviar(pedido){
+  const err = document.getElementById('pfmError');
   const bt = document.getElementById('pfmGuardar'); if(bt.disabled) return; bt.disabled = true;
   const quien = pdNombreUsuario();
   try{
     await db.collection('pedidosSecretaria').add({
-      fechaISO: fecha, limiteISO: pdLimite(fecha), pacienteId: pac.id || '', paciente: pac.nombreCompleto || pacTxt,
-      tipo, detalle: mayus(detalle).slice(0, 50), indicacion: lineas.join('\n'), datos, notasPaciente: notasPac,
-      ...(presupuesto ? {presupuesto} : {}), ...(tipo === PD_BONO ? {bono: datos.marcas} : {}),
-      estado: 'pendiente', responsable: '', notas: notasInt,
+      ...pedido,
       creadoPor: quien, creadoPorUid: currentUser.uid || '',
       historial: [{f: pdAhora(), q: quien, a: 'PEDIDO ENVIADO'}],
       creadoEn: firebase.firestore.FieldValue.serverTimestamp(), actualizadoEn: firebase.firestore.FieldValue.serverTimestamp()
     });
-    pfmCerrar(); pdFiltro = 'pendiente'; renderPd();
+    pfmCerrar(); pfmPendiente = null; pdFiltro = 'pendiente'; renderPd();
   }catch(e){ err.textContent = 'No se pudo guardar: ' + e.message; }
   finally{ bt.disabled = false; }
-};
+}
 // Recepción: abre el armado de presupuesto con lo que pidió la médica, para editarlo y exportarlo
 document.getElementById('pddPres').onclick = ()=>{
   const p = (pdLista || []).find(x=> x.id === pdAbierto); if(!p || !p.presupuesto) return;
@@ -442,7 +475,7 @@ function pdAbrirDetalle(id){
   document.getElementById('pddIndicacion').textContent = p.indicacion || '';
   const esDev = !!p.devolucion;
   document.getElementById('pddIndDe').textContent = (esDev ? 'Devolución de ' : 'Indicación de ') + (pdQuienCorto(p.creadoPor) || 'la médica');
-  document.getElementById('pddPdf').classList.toggle('col-hidden', !esDev);
+  document.getElementById('pddPdf').classList.toggle('col-hidden', !esDev && !p.presupuesto);
   document.getElementById('pddPres').classList.toggle('col-hidden', !p.presupuesto || !gestiona);
   document.getElementById('pddIndicacion').classList.toggle('pd-ind-corto', esDev);
   const selR = document.getElementById('pddResp');
@@ -535,7 +568,7 @@ const DV_DROGAS = ['Ácido alfa-lipoico (ALA)','Ácido glutámico','Ashwaghanda'
   'Melatonina','Metilcobalamina','Myo-inositol + D-chiro-inositol (40:1)','N-acetil cisteína','Omega 3 (EPA + DHA)','Probiovance D12',
   'Pycnogenol','Rozuvastatina','Selenio','Silimarina','Vitamina B6','Vitamina B9','Vitamina B12','Vitamina C','Vitamina D3','Vitamina K2',
   'Vitamina D3 + K2','Vitamina E','Zinc'].map(mayus);
-const DV_UNIDADES = ['mg','mcg','g','UI','mL','gotas','cápsulas','comprimidos','ampollas','mg/mL','UI/mL'];
+const DV_UNIDADES = ['mg','mcg','g','UI','mL','gotas','cápsulas','comprimidos','ampollas','caja','frasco','mg/mL','UI/mL'];
 const DV_MOMENTOS = ['En ayunas','Con el desayuno','Con la primera comida del día','30 minutos antes del almuerzo','30 minutos antes de la cena',
   '30 minutos antes del almuerzo y de la cena','Con el almuerzo','Con la cena','Con el almuerzo y con la cena','Después de la comida principal',
   'Lejos de las comidas','Antes de acostarse'].map(mayus);
@@ -553,23 +586,26 @@ const ovPdDev = document.getElementById('overlayPdDev');
 let dvDatos = null, dvN = 0;
 
 // Desplegable con "Otro / escribir" (como en el módulo original)
-function dvPicker(key, label, valores, {req=false, sinMayus=false}={}){
-  return `<label class="${req?'dv-req':''}">${label}<select data-dv="${key}"><option value="">Seleccionar…</option>${valores.map(v=> `<option>${escHtml(v)}</option>`).join('')}<option value="__otro">Otro / escribir</option></select><input data-dv-otro="${key}" class="col-hidden" placeholder="Especificar" ${sinMayus?'data-no-mayus':''} autocomplete="off"></label>`;
+// Casillero con autocompletado: se escribe y van apareciendo las opciones (también se puede escribir algo que no está)
+const PD_LISTAS = {};
+function pdCombo(attr, key, label, valores, {req=false, sinMayus=false, ph='Escribí o elegí…'}={}){
+  PD_LISTAS[key] = valores;
+  return `<label class="${req?'dv-req':''}">${label}<div class="ac-wrap"><input ${attr}="${key}" data-lista="${key}" data-ac-libre data-ac-sin-enter placeholder="${ph}" ${sinMayus?'data-no-mayus':''} autocomplete="off"></div></label>`;
 }
+function pdConectarCombos(root){
+  root.querySelectorAll('input[data-lista]').forEach(inp=>{
+    if(inp.dataset.acOk) return; inp.dataset.acOk = '1';
+    attachAutocomplete(inp, ()=> PD_LISTAS[inp.dataset.lista] || [], v=> inp.dispatchEvent(new Event('change', {bubbles:true})));
+    // si lo escrito coincide con una opción, queda escrito como la opción
+    inp.addEventListener('blur', ()=>{ const v = normBusqueda(inp.value.trim()); const o = (PD_LISTAS[inp.dataset.lista] || []).find(x=> normBusqueda(x) === v); if(o && inp.value !== o){ inp.value = o; inp.dispatchEvent(new Event('change', {bubbles:true})); } });
+  });
+}
+const dvPicker = (key, label, valores, opts)=> pdCombo('data-dv', key, label, valores, opts);
 function dvLeer(root, key){
   const s = root.querySelector(`[data-dv="${key}"]`); if(!s) return '';
-  if(s.tagName !== 'SELECT') return s.value.trim();
-  if(s.value === '__otro'){ const o = root.querySelector(`[data-dv-otro="${key}"]`).value.trim(); return s.dataset.sinMayus ? o : mayus(o); }
-  return s.value.trim();
+  return s.hasAttribute('data-no-mayus') ? s.value.trim() : mayus(s.value.trim());
 }
-function dvConectarPickers(root){
-  // sin elegir: "Seleccionar…" en gris, como sugerencia
-  root.querySelectorAll('select[data-dv]').forEach(s=>{ const pin = ()=> s.classList.toggle('dv-vacio', !s.value); pin(); s.addEventListener('change', pin); });
-  root.querySelectorAll('select[data-dv]').forEach(s=> s.addEventListener('change', ()=>{
-    const o = s.parentElement.querySelector('[data-dv-otro]'); if(!o) return;
-    o.classList.toggle('col-hidden', s.value !== '__otro'); if(s.value === '__otro') o.focus();
-  }));
-}
+const dvConectarPickers = root=> pdConectarCombos(root);
 function dvAgregarDroga(card){
   const r = document.createElement('div'); r.className = 'dv-droga';
   // Cada componente es una línea completa: Droga / suplemento · Cuándo · Frecuencia · Cantidad · Unidad
@@ -588,7 +624,6 @@ function dvAgregarIndicacion(){
   const c = document.createElement('div'); c.className = 'dv-item';
   c.innerHTML = `<div class="dv-item-h"><b>Indicación ${dvN}</b><button type="button" class="dv-quitar dv-eliminar">Eliminar indicación</button></div>
     <div class="dv-componentes"></div>
-    <div class="dv-magistral col-hidden"><div class="dv-g2"><label>Nombre del preparado · opcional<input data-dv="nombre" placeholder="Identificación del preparado" autocomplete="off"></label>${dvPicker('base','Las cantidades de los componentes corresponden a', DV_BASE, {req:true})}</div></div>
     <div class="dv-g2">${dvPicker('etapa','Etapa / inicio', DV_ETAPAS)}${dvPicker('duracion','Duración', DV_DURACIONES)}</div>
     <div class="dv-botones"><button type="button" class="dv-mas-comp">+ Agregar componente al mismo preparado</button><button type="button" class="dv-mas-comp dv-mas-nota">+ Agregar nota para esta indicación</button></div>
     <label class="dv-nota col-hidden">Notas<textarea data-dv="notas" rows="2" placeholder="Aclaraciones particulares para esta indicación"></textarea></label>`;
@@ -596,7 +631,6 @@ function dvAgregarIndicacion(){
   // con más de un componente es un preparado (formulación magistral)
   const pintar = ()=>{
     const varias = c.querySelectorAll('.dv-droga').length > 1;
-    c.querySelector('.dv-magistral').classList.toggle('col-hidden', !varias);
     c.querySelectorAll('.dv-quitar-comp').forEach(b=> b.style.visibility = varias ? '' : 'hidden');   // con una sola línea no se puede quitar
   };
   c.addEventListener('dvcomp', pintar);
@@ -667,7 +701,6 @@ function dvRecolectar(){
     if(it.componentes.some(x=> !x.droga)) return {error: `${n}: elegí la droga o suplemento.`};
     if(it.componentes.some(x=> !(Number(String(x.cantidad).replace(',','.')) > 0))) return {error: `${n}: cada cantidad debe ser mayor que cero.`};
     if(it.componentes.some(x=> !x.unidad)) return {error: `${n}: elegí la unidad.`};
-    if(it.tipo === DV_MAGISTRAL && !it.base) return {error: `${n}: indicá a qué corresponden las cantidades del preparado.`};
     items.push(it);
   }
   const habitos = Object.fromEntries(DV_HABITOS.map(([k])=> [k, v('pdv-' + k)]));
@@ -768,30 +801,33 @@ async function pdfDevolucion(p){
   if(habitos.length){ etiqueta('HÁBITOS Y CUIDADOS'); habitos.forEach(([k,l])=> bloque(mayus(l), dv.habitos[k])); }
   if(dv.items && dv.items.length){
     etiqueta('MEDICACIÓN, SUPLEMENTACIÓN Y PROCEDIMIENTOS');
-    const body = dv.items.map(it=>{
-      const L = [];
-      if(it.nombre) L.push('PREPARADO: ' + it.nombre);
-      const distintos = new Set(it.componentes.map(c=> (c.momento||'') + '|' + (c.frecuencia||''))).size > 1;
-      it.componentes.forEach(c=> L.push(`${c.droga}  ${c.cantidad} ${c.unidad}` + (distintos ? [c.momento, c.frecuencia].filter(Boolean).map(x=> ' · ' + x).join('') : '')));
-      if(it.tipo === DV_MAGISTRAL && it.base) L.push('CANTIDADES POR: ' + it.base);
-      if(it.composicion) L.push(it.composicion);
-      if(it.presentacion) L.push('POR TOMA: ' + it.presentacion);
-      const distintosF = new Set(it.componentes.map(c=> (c.momento||'') + '|' + (c.frecuencia||''))).size > 1;
-      const extra = [it.via && 'VÍA ' + it.via, !distintosF && it.frecuencia].filter(Boolean).join(' · ');
-      if(extra) L.push(extra);
-      if(it.notas) L.push(it.notas);
-      return [distintosF ? '-' : it.momento, L.join('\n'), [it.etapa, it.duracion].filter(Boolean).join('\n') || '-'];
+    // Cada componente: droga con cantidad y unidad (negrita) y debajo cuándo · frecuencia · inicio · duración; una línea fina entre uno y otro
+    const ancho = W - 2*M - 28;
+    const filas = [];
+    dv.items.forEach(it=> (it.componentes||[]).forEach((c, j, arr)=>{
+      const ult = j === arr.length - 1;
+      filas.push({
+        titulo: [c.droga, [c.cantidad, c.unidad].filter(Boolean).join(' ')].filter(Boolean).join('   '),
+        detalle: [c.momento || it.momento, c.frecuencia || (arr.length === 1 ? it.frecuencia : ''), it.etapa, it.duracion].filter(Boolean).join('  ·  '),
+        notas: ult ? (it.notas || '') : '',
+      });
+    }));
+    y += 6;
+    filas.forEach((f, i)=>{
+      doc.setFont(F,'normal'); doc.setFontSize(9);
+      const det = f.detalle ? doc.splitTextToSize(T(f.detalle), ancho) : [];
+      const nts = f.notas ? doc.splitTextToSize(T(f.notas), ancho) : [];
+      const alto = 16 + det.length * 12 + (nts.length ? nts.length * 12 + 3 : 0) + 12;
+      nuevaPagSi(alto);
+      if(i){ doc.setDrawColor(226,224,212); doc.setLineWidth(0.5); doc.line(M + 14, y, W - M - 14, y); }
+      y += 17;
+      doc.setFont(F,'bold'); doc.setFontSize(10.5); doc.setTextColor(...UMM_TXT);
+      doc.text(doc.splitTextToSize(T(f.titulo), ancho)[0], M + 14, y);
+      if(det.length){ y += 13; doc.setFont(F,'normal'); doc.setFontSize(9); doc.setTextColor(...UMM_VERDE_OSC); doc.text(det, M + 14, y); y += (det.length - 1) * 12; }
+      if(nts.length){ y += 14; doc.setFont(F,'italic'); doc.setFontSize(9); doc.setTextColor(110,110,104); doc.text(nts, M + 14, y); y += (nts.length - 1) * 12; }
+      y += 11;
     });
-    doc.autoTable({
-      startY: y, margin:{left:M, right:M, bottom:70},
-      head: [['Cuándo','Indicación','Inicio / duración'].map(T)], body: body.map(f=> f.map(T)),
-      theme: 'plain',
-      styles: {font:F, fontSize:9.5, textColor:UMM_TXT, cellPadding:{top:7, bottom:7, left:7, right:7}, valign:'top'},
-      headStyles: {fillColor:UMM_VERDE, textColor:255, fontStyle:'bold', fontSize:8.5},
-      alternateRowStyles: {fillColor:[247,247,242]},
-      columnStyles: {0:{cellWidth:130, fontStyle:'bold'}, 2:{cellWidth:110}},
-    });
-    y = doc.lastAutoTable.finalY + 8;
+    y += 4;
   }
   const seg = DV_SEGUIMIENTO.filter(([k])=> dv.seguimiento && dv.seguimiento[k]);
   if(seg.length){ etiqueta('SEGUIMIENTO'); seg.forEach(([k,l])=> bloque(mayus(l), dv.seguimiento[k])); }
@@ -820,7 +856,10 @@ async function pdfDevolucion(p){
   return {doc, archivo};
 }
 document.getElementById('pddPdf').onclick = async ()=>{
-  const p = (pdLista || []).find(x=> x.id === pdAbierto); if(!p || !p.devolucion) return;
-  try{ const {doc, archivo} = await pdfDevolucion(p); pdAbierto = null; mostrarPreviewPDF(doc, archivo); }
+  const p = (pdLista || []).find(x=> x.id === pdAbierto); if(!p || (!p.devolucion && !p.presupuesto)) return;
+  try{
+    const {doc, archivo} = p.devolucion ? await pdfDevolucion(p) : await pdfPresupuesto({paciente: p.paciente, fechaISO: p.fechaISO, ...p.presupuesto});
+    pdAbierto = null; mostrarPreviewPDF(doc, archivo);
+  }
   catch(e){ document.getElementById('pddError').textContent = 'No se pudo armar el PDF: ' + e.message; }
 };

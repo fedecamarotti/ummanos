@@ -7,9 +7,9 @@
 if(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1)){
   var vp=document.querySelector('meta[name=viewport]'); if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0');
 }</script>
-<link rel="manifest" href="/manifest.webmanifest?v=202611260955">
+<link rel="manifest" href="/manifest.webmanifest?v=202611261018">
 <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611260955">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=202611261018">
 <meta name="theme-color" content="#fffcf5">
 <title>CAJA UMMANA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,7 +37,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<link rel="stylesheet" href="caja.css?v=202611260955">
+<link rel="stylesheet" href="caja.css?v=202611261018">
 </head>
 <body>
 <div id="ummLoader" aria-hidden="true"><div class="ul-logo"><img class="ul-base" src="images/logo.png" alt=""><img class="ul-fill" src="images/logo.png" alt=""></div></div>
@@ -139,9 +139,11 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
     <button class="close-x" id="pfmCerrar">✕</button>
     <h2 id="pfmTitulo"></h2>
     <div id="pfmBody"></div>
+    <div id="pfmPrev" class="col-hidden"><iframe id="pfmIframe" title="Vista previa del presupuesto"></iframe></div>
     <div class="pd-error" id="pfmError"></div>
     <div class="modal-actions">
       <button class="btn" id="pfmCancelar">Cancelar</button>
+      <button class="btn col-hidden" id="pfmVolver">← Volver a editar</button>
       <button class="btn btn-primary" id="pfmGuardar">Enviar a secretaría</button>
     </div>
   </div>
@@ -211,7 +213,7 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
     <div class="pd-meta" id="pddMeta"></div>
     <div class="pd-pac" id="pddPaciente"></div>
     <div class="pd-ind">
-      <div class="pd-ind-top"><span id="pddIndDe">Indicación</span><span><button type="button" class="btn btn-primary s-cfg-btn col-hidden" id="pddPdf">Ver / descargar PDF</button><button type="button" class="btn btn-primary s-cfg-btn col-hidden" id="pddPres">Armar presupuesto</button> <button type="button" class="btn s-cfg-btn" id="pddCopiar">Copiar</button></span></div>
+      <div class="pd-ind-top"><span id="pddIndDe">Indicación</span><span><button type="button" class="btn btn-primary s-cfg-btn col-hidden" id="pddPdf">Ver / descargar PDF</button><button type="button" class="btn s-cfg-btn col-hidden" id="pddPres">Editar presupuesto</button> <button type="button" class="btn s-cfg-btn" id="pddCopiar">Copiar</button></span></div>
       <div class="pd-ind-txt" id="pddIndicacion"></div>
     </div>
     <div class="cpn-grid pd-2col">
@@ -805,8 +807,8 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
       </div>
       <div class="sheet-wrap cp-hoja">
         <table class="cp-tabla pd-tabla">
-          <colgroup><col style="width:70px"><col style="width:200px"><col style="width:80px"><col style="width:170px"><col style="width:260px"><col style="width:76px"><col style="width:96px"><col style="width:110px"><col></colgroup>
-          <thead><tr><th><input type="text" class="th-search pl-busca" placeholder="Fecha" autocomplete="off" aria-label="Buscar Fecha"></th><th><input type="text" class="th-search pl-busca" placeholder="Paciente" autocomplete="off" aria-label="Buscar Paciente"></th><th><input type="text" class="th-search pl-busca" placeholder="Pidió" autocomplete="off" aria-label="Buscar quién pidió"></th><th><input type="text" class="th-search pl-busca" placeholder="Tipo" autocomplete="off" aria-label="Buscar Tipo"></th><th><input type="text" class="th-search pl-busca" placeholder="Detalle" autocomplete="off" aria-label="Buscar Detalle"></th><th><input type="text" class="th-search pl-busca" placeholder="Límite" autocomplete="off" aria-label="Buscar Fecha límite"></th><th><input type="text" class="th-search pl-busca" placeholder="Estado" autocomplete="off" aria-label="Buscar Estado"></th><th><input type="text" class="th-search pl-busca" placeholder="Responsable" autocomplete="off" aria-label="Buscar Responsable"></th><th><input type="text" class="th-search pl-busca" placeholder="Notas" autocomplete="off" aria-label="Buscar Notas"></th></tr></thead>
+          <colgroup><col style="width:70px"><col style="width:220px"><col style="width:80px"><col style="width:220px"><col style="width:76px"><col style="width:96px"><col style="width:110px"><col></colgroup>
+          <thead><tr><th><input type="text" class="th-search pl-busca" placeholder="Fecha" autocomplete="off" aria-label="Buscar Fecha"></th><th><input type="text" class="th-search pl-busca" placeholder="Paciente" autocomplete="off" aria-label="Buscar Paciente"></th><th><input type="text" class="th-search pl-busca" placeholder="Pidió" autocomplete="off" aria-label="Buscar quién pidió"></th><th><input type="text" class="th-search pl-busca" placeholder="Tipo" autocomplete="off" aria-label="Buscar Tipo"></th><th><input type="text" class="th-search pl-busca" placeholder="Límite" autocomplete="off" aria-label="Buscar Fecha límite"></th><th><input type="text" class="th-search pl-busca" placeholder="Estado" autocomplete="off" aria-label="Buscar Estado"></th><th><input type="text" class="th-search pl-busca" placeholder="Responsable" autocomplete="off" aria-label="Buscar Responsable"></th><th><input type="text" class="th-search pl-busca" placeholder="Notas" autocomplete="off" aria-label="Buscar Notas"></th></tr></thead>
           <tbody id="pdBody"></tbody>
         </table>
       </div>
@@ -2066,12 +2068,12 @@ body.listo #ummLoader{opacity:0;visibility:hidden;pointer-events:none;}
 
 </div><!-- /#app -->
 
-<script src="js/base.js?v=202611260955"></script>
-<script src="js/caja.js?v=202611260955"></script>
-<script src="js/sueros.js?v=202611260955"></script>
-<script src="js/cremas.js?v=202611260955"></script>
-<script src="js/paneles.js?v=202611260955"></script>
-<script src="js/pedidos.js?v=202611260955"></script>
-<script src="js/extras.js?v=202611260955"></script>
+<script src="js/base.js?v=202611261018"></script>
+<script src="js/caja.js?v=202611261018"></script>
+<script src="js/sueros.js?v=202611261018"></script>
+<script src="js/cremas.js?v=202611261018"></script>
+<script src="js/paneles.js?v=202611261018"></script>
+<script src="js/pedidos.js?v=202611261018"></script>
+<script src="js/extras.js?v=202611261018"></script>
 </body>
 </html>
