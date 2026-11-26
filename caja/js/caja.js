@@ -1653,6 +1653,8 @@ document.getElementById('pfPresLista').addEventListener('click', async e=>{
 /* ---- Estado de cuenta en PDF para mandarle al deudor (el concepto se puede corregir solo para el PDF) ---- */
 const overlayEstadoCuenta = document.getElementById('overlayEstadoCuenta');
 let ecDeudas = [];
+// Observaciones fijas del estado de cuenta (pedido de Fede 26/11/2026)
+const EC_OBSERVACIONES = [{t:'Luego del día 10 del mes siguiente el saldo pendiente se abonará con un recargo del 15%.', b:true}];
 const ecFecha = iso => { const [y,m,d] = (iso||'').split('-'); return d ? `${d}/${m}/${y}` : ''; };
 document.getElementById('deuExportar').onclick = ()=>{
   const lista = deuFiltradas();
@@ -1697,6 +1699,7 @@ document.getElementById('descargarEstadoCuenta').onclick = async ()=>{
       columnStyles: {0:{cellWidth:80}, 2:{halign:'right', cellWidth:110}},
       totales,
       notas: document.getElementById('ecNotas').value,
+      observaciones: EC_OBSERVACIONES,
     });
     mostrarPreviewPDF(doc, `cuenta-corriente-${pac.replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()}.pdf`);
     overlayEstadoCuenta.classList.remove('show');
