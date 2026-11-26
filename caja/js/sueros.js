@@ -1553,7 +1553,7 @@ function portalIr(v){
     renderPortalSueros();
   }
 }
-document.getElementById('pLogout').onclick = ()=> auth.signOut().then(()=> location.replace('../'));
+document.getElementById('pLogout').onclick = ()=>{ if(typeof unsubPd==='function' && unsubPd){ unsubPd(); unsubPd = null; } auth.signOut().then(()=> location.replace('../')); };
 document.getElementById('pIrSueros').onclick = ()=>{ if(puedeCargarSueros()) portalIr('sueros'); };
 document.getElementById('pBtnStock').onclick = ()=>{ if(!suerosLimitado()) return; sTabActual = 'stock'; portalIr('extra'); };
 document.getElementById('pBtnInformes').onclick = ()=>{ if(!suerosLimitado()) return; sTabActual = 'resumen'; sResAlMesActual(); portalIr('extra'); };

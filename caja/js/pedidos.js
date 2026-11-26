@@ -53,6 +53,7 @@ function pdIniciar(){
       if(p) document.getElementById('pddMeta').innerHTML = pdMetaHtml(p);
     }
   }, err=>{
+    if(!auth.currentUser) return;   // se está cerrando la sesión: no es un error de lectura
     pdLista = [];
     document.getElementById('pdBody').innerHTML = `<tr><td colspan="8" class="empty-state" style="color:#a13a3a;">No se pudieron leer los pedidos: ${escHtml(err.message)}<br>Revisá que en las reglas de Firebase esté la colección <b>pedidosSecretaria</b>.</td></tr>`;
   });

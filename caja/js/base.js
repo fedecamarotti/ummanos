@@ -287,7 +287,7 @@ function intentarLogin(){
     err.classList.remove('col-hidden');
   });
 }
-document.getElementById('btnLogout').onclick = ()=> auth.signOut().then(()=> location.replace('../'));
+document.getElementById('btnLogout').onclick = ()=>{ if(typeof unsubPd==='function' && unsubPd){ unsubPd(); unsubPd = null; } auth.signOut().then(()=> location.replace('../')); };
 /* ---------- Menú desplegable ---------- */
 const btnMenu = document.getElementById('btnMenu');
 const menuDropdown = document.getElementById('menuDropdown');
