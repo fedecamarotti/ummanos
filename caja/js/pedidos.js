@@ -283,14 +283,14 @@ function pdAbrirDetalle(id){
   const resp = p.responsable || (gestiona && PD_RESPONSABLES.includes(primerNombre()) ? primerNombre() : '');
   const opcR = PD_RESPONSABLES.includes(resp) || !resp ? PD_RESPONSABLES : [...PD_RESPONSABLES, resp];
   selR.innerHTML = '<option value="">Sin asignar</option>' + opcR.map(r=> `<option ${r===resp?'selected':''}>${r}</option>`).join('');
-  selR.disabled = !gestiona;
+  selR.disabled = !gestiona && !esVictoria();   // la Dra. Victoria también puede asignar el responsable
   const selE = document.getElementById('pddEstado');
   const estados = gestiona ? Object.keys(PD_ESTADOS) : (p.estado === 'pendiente' ? ['pendiente','cancelado'] : [p.estado]);
   selE.innerHTML = estados.map(k=> `<option value="${k}" ${k===p.estado?'selected':''}>${PD_ESTADOS[k]}</option>`).join('');
   selE.disabled = cerradoParaVic;
   const notas = document.getElementById('pddNotas');
   notas.value = p.notas || ''; notas.disabled = cerradoParaVic;
-  document.getElementById('pddGuardar').classList.toggle('col-hidden', cerradoParaVic);
+  document.getElementById('pddGuardar').classList.toggle('col-hidden', cerradoParaVic && !esVictoria());
   document.getElementById('pddError').textContent = '';
   const h = Array.isArray(p.historial) ? p.historial.slice().reverse() : [];
   document.getElementById('pddHistN').textContent = h.length;
