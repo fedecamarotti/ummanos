@@ -542,6 +542,9 @@ function aplicarRolUI(){
   document.body.classList.toggle('modo-victoria', esVictoria());
   refrescarSelectsDescuento();   // Cobros: los descuentos de Victoria
   pdIniciar();   // pedidos a secretaría (globito de pendientes)
+  // Pedidos secretaría: solo quien lo puede ver (por ahora las recepcionistas no)
+  const bPd = document.querySelector('#movSubTabs [data-msub="pedidos"]');
+  if(bPd) bPd.classList.toggle('col-hidden', typeof pdPuedeVer === 'function' && !pdPuedeVer());
   mostrarVista(esVictoria() ? 'pedidos' : 'movimientos');
 }
 

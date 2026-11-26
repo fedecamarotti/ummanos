@@ -24,7 +24,9 @@ let pdLista = null, unsubPd = null, pdFiltro = 'pendiente', pdAbierto = null, pd
 // Cargan pedidos y pueden cancelar los pendientes. Recepción los gestiona. Admins (Fede, Pedro) hacen todo.
 const pdEsMedica = ()=> !!currentUser && currentUser.rol !== 'admin' && (esVictoria() || seccionesUsuario().includes('pedidos'));
 const pdPuedeCrear = ()=> !!currentUser && (currentUser.rol === 'admin' || pdEsMedica());
-const pdPuedeVer = ()=> !!currentUser && (currentUser.rol === 'admin' || pdEsMedica() || USUARIOS_CAJA.includes(primerNombre()));
+// Recepción todavía no lo usa (pedido de Fede 26/11/2026): cuando esté listo, pasar a true
+const PD_RECEPCION_ACTIVO = false;
+const pdPuedeVer = ()=> !!currentUser && (currentUser.rol === 'admin' || pdEsMedica() || (PD_RECEPCION_ACTIVO && USUARIOS_CAJA.includes(primerNombre())));
 // Eliminar: Fede cualquiera; la Dra. Victoria los que pidió ella
 const pdPuedeEliminar = p=> !!currentUser && !!p && (esFede() || (esVictoria() && (p.creadoPorUid ? p.creadoPorUid === currentUser.uid : pdQuienCorto(p.creadoPor) === 'VICTORIA')));
 const pdNombreUsuario = ()=> mayus(((currentUser && currentUser.nombre) || '').trim()) || 'USUARIO';
